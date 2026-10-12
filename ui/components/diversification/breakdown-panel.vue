@@ -60,36 +60,25 @@
         :class="{ searching: isSearching }"
         :aria-busy="isSearching"
       />
-      <nav
-        v-if="isHoldings && holdingsPage && holdingsPage.totalPages > 1"
-        class="holdings-pager"
-        aria-label="Holdings pages"
+      <div
+        v-if="isHoldings && view === 'bars' && hasMore"
+        :key="holdings?.length"
+        ref="more"
+        class="holdings-more"
       >
-        <app-button
-          variant="secondary"
-          size="sm"
-          :disabled="isSearching || page === 0"
-          @click="page--"
-        >
-          ‹ Previous
-        </app-button>
-        <span>{{ pageRange }}</span>
-        <app-button
-          variant="secondary"
-          size="sm"
-          :disabled="isSearching || page >= holdingsPage.totalPages - 1"
-          @click="page++"
-        >
-          Next ›
-        </app-button>
-      </nav>
+        <template v-if="moreFailed">
+          <span role="alert">Couldn’t load more holdings</span>
+          <app-button ghost size="sm" @click="loadMore">Retry</app-button>
+        </template>
+        <template v-else>Loading more…</template>
+      </div>
     </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, toRef } from 'vue'
-import { useLocalStorage } from '@vueuse/core'
+import { computed, defineAsyncComponent, toRef, useTemplateRef } from 'vue'
+import { useIntersectionObserver, useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../../constants'
 import AppButton from '../shared/app-button.vue'
 import BreakdownBars from '../shared/breakdown-bars.vue'
@@ -169,35 +158,28 @@ const compared = computed(() => compare.value && props.benchmark !== null)
 const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
 
 const isHoldings = computed(() => currentTab.value.key === 'holdings')
-const {
-  query,
-  page,
-  data: holdingsPage,
-  isSearching,
-  error,
-} = useHoldingsSearch(toRef(props, 'allocations'), isHoldings)
+const { query, holdings, total, hasMore, moreFailed, loadMore, isSearching, error } =
+  useHoldingsSearch(toRef(props, 'allocations'), isHoldings)
+useIntersectionObserver(
+  useTemplateRef<HTMLElement>('more'),
+  entries => {
+    if (entries.some(entry => entry.isIntersecting)) loadMore()
+  },
+  { rootMargin: '0px 0px 100% 0px' }
+)
 const holdingsError = computed(() => (isHoldings.value ? error.value : ''))
 const emptyHoldings = computed(
-  () => isHoldings.value && !isSearching.value && holdingsPage.value?.content.length === 0
+  () => isHoldings.value && !isSearching.value && holdings.value?.length === 0
 )
-const formatCount = (value: number) => value.toLocaleString('en-US')
 const countLabel = computed(() => {
   if (isSearching.value) return 'Searching…'
-  const count = holdingsPage.value?.totalElements ?? 0
   const [one, many] = query.value.trim() ? ['match', 'matches'] : ['holding', 'holdings']
-  return `${formatCount(count)} ${count === 1 ? one : many}`
-})
-const pageRange = computed(() => {
-  const result = holdingsPage.value
-  if (!result) return ''
-  const start = result.number * result.size + 1
-  const end = Math.min((result.number + 1) * result.size, result.totalElements)
-  return `${formatCount(start)}–${formatCount(end)} of ${formatCount(result.totalElements)}`
+  return `${total.value.toLocaleString('en-US')} ${total.value === 1 ? one : many}`
 })
 
 const rows = computed(() => {
   const items = isHoldings.value
-    ? (holdingsPage.value?.content ?? []).map(holding => ({
+    ? (holdings.value ?? []).map(holding => ({
         label: holding.name,
         value: holding.percentage,
       }))
@@ -220,7 +202,7 @@ const rows = computed(() => {
 }
 
 .holdings-count,
-.holdings-pager {
+.holdings-more {
   font-size: var(--text-label);
   color: var(--color-ink-muted);
 }
@@ -238,12 +220,12 @@ const rows = computed(() => {
   opacity: 0.5;
 }
 
-.holdings-pager {
+.holdings-more {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-hairline);
 }
 
 .panel-header {

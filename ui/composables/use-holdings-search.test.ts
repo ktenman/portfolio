@@ -69,7 +69,7 @@ describe('useHoldingsSearch', () => {
     const { search } = setup()
     await flushPromises()
     expect(diversificationService.searchHoldings).toHaveBeenCalledWith(firstPage())
-    expect(search.data.value?.totalElements).toBe(201)
+    expect(search.total.value).toBe(201)
   })
 
   it('waits 300 milliseconds after the last keystroke before requesting a query', async () => {
@@ -94,29 +94,85 @@ describe('useHoldingsSearch', () => {
   it('resets a new query and a cleared query to the first page', async () => {
     const { search, type } = setup()
     await flushPromises()
-    search.page.value = 1
+    search.loadMore()
     await flushPromises()
     await type('nestle')
     expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(firstPage('nestle'))
-    search.page.value = 1
+    search.loadMore()
     await flushPromises()
     await type('')
     expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(firstPage())
   })
 
-  it('keeps the previous rows while the next page is pending', async () => {
+  it('appends the next page below the rows already loaded', async () => {
     const { search } = setup()
     await flushPromises()
     const next = deferred()
     vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(next.promise)
-    search.page.value = 1
+    search.loadMore()
     await flushPromises()
-    expect(search.data.value?.content[0].name).toBe('NVIDIA')
-    expect(search.isSearching.value).toBe(true)
+    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
+      ...firstPage(),
+      page: 1,
+    })
+    expect(search.isSearching.value).toBe(false)
     next.resolve(response('Nestlé', 1))
     await flushPromises()
-    expect(search.data.value?.content[0].name).toBe('Nestlé')
-    expect(search.isSearching.value).toBe(false)
+    expect(search.holdings.value?.map(holding => holding.name)).toEqual(['NVIDIA', 'Nestlé'])
+  })
+
+  it('sends one request when more is asked for twice', async () => {
+    const { search } = setup()
+    await flushPromises()
+    vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(deferred().promise)
+    search.loadMore()
+    search.loadMore()
+    await flushPromises()
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
+  })
+
+  it('stops asking once the last page has arrived', async () => {
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValue({
+      ...response(),
+      totalElements: 1,
+      totalPages: 1,
+    })
+    const { search } = setup()
+    await flushPromises()
+    search.loadMore()
+    await flushPromises()
+    expect(search.hasMore.value).toBe(false)
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the loaded rows when the next page fails and loads it on another attempt', async () => {
+    const { search } = setup()
+    await flushPromises()
+    vi.mocked(diversificationService.searchHoldings).mockRejectedValueOnce(
+      new Error('Search failed')
+    )
+    search.loadMore()
+    await flushPromises()
+    expect(search.moreFailed.value).toBe(true)
+    expect(search.error.value).toBe('')
+    expect(search.holdings.value).toHaveLength(1)
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValueOnce(response('Nestlé', 1))
+    search.loadMore()
+    await flushPromises()
+    expect(search.moreFailed.value).toBe(false)
+    expect(search.holdings.value?.map(holding => holding.name)).toEqual(['NVIDIA', 'Nestlé'])
+  })
+
+  it('does not refetch the loaded pages when Holdings is reopened', async () => {
+    const { search, active } = setup()
+    await flushPromises()
+    search.loadMore()
+    await flushPromises()
+    active.value = false
+    await flushPromises()
+    active.value = true
+    await flushPromises()
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
   })
 
   it('never replaces a newer query result with a slower earlier response', async () => {
@@ -128,10 +184,10 @@ describe('useHoldingsSearch', () => {
       .mockResolvedValueOnce(response('Nestlé'))
     await type('nvda')
     await type('nestle')
-    expect(search.data.value?.content[0].name).toBe('Nestlé')
+    expect(search.holdings.value?.[0].name).toBe('Nestlé')
     earlier.resolve(response('NVIDIA'))
     await flushPromises()
-    expect(search.data.value?.content[0].name).toBe('Nestlé')
+    expect(search.holdings.value?.[0].name).toBe('Nestlé')
   })
 
   it('makes no request on other tabs even when the query or allocations change', async () => {
@@ -157,7 +213,7 @@ describe('useHoldingsSearch', () => {
   it('requests the first page again when the displayed calculation changes', async () => {
     const { search, allocations } = setup()
     await flushPromises()
-    search.page.value = 1
+    search.loadMore()
     await flushPromises()
     allocations.value = [{ instrumentId: 8, percentage: 75 }]
     await flushPromises()
@@ -178,6 +234,6 @@ describe('useHoldingsSearch', () => {
     expect(search.error.value).toBe('Search failed')
     await type('nvda')
     expect(search.error.value).toBe('')
-    expect(search.data.value?.content[0].name).toBe('NVIDIA')
+    expect(search.holdings.value?.[0].name).toBe('NVIDIA')
   })
 })

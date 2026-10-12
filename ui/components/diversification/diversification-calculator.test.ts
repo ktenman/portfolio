@@ -35,6 +35,7 @@ vi.mock('@tanstack/vue-query', async importOriginal => ({
   useQueryClient: vi.fn(() => ({
     invalidateQueries: vi.fn(),
   })),
+  useInfiniteQuery: vi.fn(() => ({})),
 }))
 
 vi.mock('../../services/api', () => ({
@@ -55,6 +56,7 @@ vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
   useNow: vi.fn(() => ({ value: new Date() })),
   watchDebounced: vi.fn(),
+  useIntersectionObserver: vi.fn(),
 }))
 
 vi.mock('../../utils/formatters', () => ({

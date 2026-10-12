@@ -39,6 +39,23 @@ const page = (
 
 enableAutoUnmount(afterEach)
 
+let reachEnd = () => {}
+
+const observeEnd = (stays = false) =>
+  vi.stubGlobal(
+    'IntersectionObserver',
+    vi.fn(function (notify: (entries: { isIntersecting: boolean }[]) => void) {
+      const reach = () => notify([{ isIntersecting: true }])
+      return {
+        observe: () => {
+          reachEnd = reach
+          if (stays) reach()
+        },
+        disconnect: vi.fn(),
+      }
+    })
+  )
+
 const mountPanel = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   return mount(BreakdownPanel, {
@@ -61,6 +78,7 @@ describe('Holdings tab', () => {
   beforeEach(() => {
     localStorage.clear()
     localStorage.setItem('portfolio_diversification_breakdown_tab', 'holdings')
+    observeEnd()
     vi.mocked(diversificationService.searchHoldings)
       .mockReset()
       .mockResolvedValue(
@@ -70,6 +88,7 @@ describe('Holdings tab', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   it('lists a full server page and the total number of holdings', async () => {
@@ -83,34 +102,82 @@ describe('Holdings tab', () => {
     await flushPromises()
     expect(wrapper.findAll('.breakdown-row')).toHaveLength(100)
     expect(wrapper.text()).toContain('3,632 holdings')
-    expect(wrapper.text()).toContain('1–100 of 3,632')
+    expect(wrapper.find('.holdings-more').text()).toBe('Loading more…')
   })
 
-  it('steps forward and backward using the server page size and count', async () => {
+  it('appends the next hundred when the end of the list comes into view', async () => {
     vi.mocked(diversificationService.searchHoldings)
       .mockResolvedValueOnce(page([holding('First', 10)], 201))
       .mockResolvedValueOnce(page([holding('Second', 5)], 201, 1))
     const wrapper = mountPanel()
     await flushPromises()
-    const pager = wrapper.find('nav[aria-label="Holdings pages"]')
-    expect(pager.findAll('button')[0].attributes('disabled')).toBeDefined()
-    await pager.findAll('button')[1].trigger('click')
+    reachEnd()
     await flushPromises()
-    expect(wrapper.text()).toContain('101–200 of 201')
-    expect(wrapper.find('.row-label').text()).toBe('Second')
-    await pager.findAll('button')[0].trigger('click')
-    await flushPromises()
-    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
-      allocations: [{ instrumentId: 7, percentage: 100 }],
-      query: '',
-      page: 0,
-    })
+    expect(wrapper.text()).toContain('201 holdings')
+    expect(wrapper.findAll('.row-label').map(row => row.text())).toEqual(['First', 'Second'])
   })
 
-  it('hides the pager when the matches fit on one page', async () => {
+  it('keeps loading while the end of the list stays in view', async () => {
+    observeEnd(true)
+    vi.mocked(diversificationService.searchHoldings)
+      .mockResolvedValueOnce(page([holding('First', 10)], 201))
+      .mockResolvedValueOnce(page([holding('Second', 5)], 201, 1))
+      .mockResolvedValueOnce(page([holding('Third', 1)], 201, 2))
     const wrapper = mountPanel()
     await flushPromises()
-    expect(wrapper.find('nav[aria-label="Holdings pages"]').exists()).toBe(false)
+    expect(wrapper.findAll('.row-label').map(row => row.text())).toEqual([
+      'First',
+      'Second',
+      'Third',
+    ])
+  })
+
+  it('keeps loading after a new search returns as many rows as were loaded', async () => {
+    vi.useFakeTimers()
+    observeEnd(true)
+    vi.mocked(diversificationService.searchHoldings)
+      .mockResolvedValueOnce(page([holding('First', 10)], 201))
+      .mockReturnValueOnce(new Promise(() => {}))
+      .mockResolvedValueOnce(page([holding('Other', 9)], 201))
+      .mockResolvedValueOnce(page([holding('More', 5)], 201, 1))
+      .mockResolvedValueOnce(page([holding('Last', 1)], 201, 2))
+    const wrapper = mountPanel()
+    await flushPromises()
+    await wrapper.find('input.search-input').setValue('o')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    expect(wrapper.findAll('.row-label').map(row => row.text())).toEqual(['Other', 'More', 'Last'])
+  })
+
+  it('shows no loading line when every match is loaded', async () => {
+    const wrapper = mountPanel()
+    await flushPromises()
+    expect(wrapper.find('.holdings-more').exists()).toBe(false)
+  })
+
+  it('offers another attempt when more holdings cannot be loaded', async () => {
+    vi.mocked(diversificationService.searchHoldings)
+      .mockResolvedValueOnce(page([holding('First', 10)], 201))
+      .mockRejectedValueOnce(new Error('Search failed'))
+      .mockResolvedValueOnce(page([holding('Second', 5)], 201, 1))
+    const wrapper = mountPanel()
+    await flushPromises()
+    reachEnd()
+    await flushPromises()
+    expect(wrapper.find('.holdings-more [role="alert"]').text()).toBe('Couldn’t load more holdings')
+    await wrapper.find('.holdings-more button').trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.row-label').map(row => row.text())).toEqual(['First', 'Second'])
+  })
+
+  it('loads nothing more behind the donut', async () => {
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValue(
+      page([holding('First', 10)], 201)
+    )
+    const wrapper = mountPanel()
+    await flushPromises()
+    await wrapper.findAll('.view-btn')[0].trigger('click')
+    expect(wrapper.find('.holdings-more').exists()).toBe(false)
   })
 
   it('joins benchmark figures by name and omits them for unowned holdings', async () => {
@@ -174,7 +241,7 @@ describe('Holdings tab', () => {
     expect(wrapper.text()).toContain('1 match')
   })
 
-  it('draws the fifteen largest holdings on the current page in the donut', async () => {
+  it('draws the fifteen largest loaded holdings in the donut', async () => {
     const holdings = Array.from({ length: 100 }, (_, index) =>
       holding(`Company ${index}`, 1 - index / 100)
     )
