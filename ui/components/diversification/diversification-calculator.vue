@@ -230,7 +230,6 @@ const {
   applyFirstTimeDefault,
 } = useDiversificationPlatforms({
   allocations,
-  etfs: etfList,
   availablePlatforms,
   onChanged: () => markDirty(),
 })

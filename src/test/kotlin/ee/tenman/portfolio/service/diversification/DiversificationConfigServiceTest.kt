@@ -13,12 +13,12 @@ import ee.tenman.portfolio.domain.DiversificationAllocationData
 import ee.tenman.portfolio.domain.DiversificationConfig
 import ee.tenman.portfolio.domain.DiversificationConfigData
 import ee.tenman.portfolio.domain.InputMode
-import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.DiversificationConfigAllocationDto
 import ee.tenman.portfolio.dto.DiversificationConfigDto
 import ee.tenman.portfolio.repository.DiversificationConfigRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -40,14 +40,7 @@ class DiversificationConfigServiceTest {
 
   @Test
   fun `should reject a configuration that allocates to a synthetic fund`() {
-    val fund =
-      Instrument(
-        symbol = "TREZOR",
-        name = "Trezor Krüptofond",
-        category = "CRYPTO",
-        baseCurrency = "EUR",
-        providerName = ProviderName.SYNTHETIC,
-      ).apply { id = 20L }
+    val fund = createInstrument(symbol = "TREZOR", name = "Trezor Krüptofond", providerName = ProviderName.SYNTHETIC, id = 20L)
     every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns listOf(fund)
     val dto =
       DiversificationConfigDto(

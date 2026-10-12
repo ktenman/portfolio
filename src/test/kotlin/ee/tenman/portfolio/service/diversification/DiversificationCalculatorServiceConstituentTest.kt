@@ -33,7 +33,7 @@ class DiversificationCalculatorServiceConstituentTest {
   fun `should list the constituents of a synthetic fund in place of the fund`() {
     val trezor = fund(20L, "TREZOR", "ETF")
     val etf = instrument(1L, "VWCE", "ETF", ProviderName.LIGHTYEAR)
-    listed(listOf(trezor), trezorPositions(trezor), listOf(bitcoin(), binance()), listOf(etf))
+    listed(trezorPositions(trezor), listOf(bitcoin(), binance()), listOf(etf))
 
     val symbols = service.getAvailableEtfs().map { it.symbol }
 
@@ -44,7 +44,7 @@ class DiversificationCalculatorServiceConstituentTest {
   fun `should name a constituent after its holding and keep its own figures`() {
     val trezor = fund(20L, "TREZOR", "CRYPTO")
     val position = position(trezor, holding("BNBEUR", "Binance Coin", IndustrySector.CRYPTOCURRENCY))
-    listed(listOf(trezor), listOf(position), listOf(binance()))
+    listed(listOf(position), listOf(binance()))
 
     val row = service.getAvailableEtfs().single()
 
@@ -57,7 +57,7 @@ class DiversificationCalculatorServiceConstituentTest {
   fun `should list a cash constituent that is neither an etf nor crypto`() {
     val cash = fund(23L, "CASH", "CASH")
     val euro = instrument(14L, "EUR", "CASH", ProviderName.MANUAL, BigDecimal.ONE)
-    listed(listOf(cash), listOf(position(cash, holding("EUR", "Euro Cash", IndustrySector.FINANCE))), listOf(euro))
+    listed(listOf(position(cash, holding("EUR", "Euro Cash", IndustrySector.FINANCE))), listOf(euro))
 
     val rows = service.getAvailableEtfs().map { it.name to it.currentPrice }
 
@@ -67,7 +67,7 @@ class DiversificationCalculatorServiceConstituentTest {
   @Test
   fun `should leave out a holding whose ticker has no instrument`() {
     val trezor = fund(20L, "TREZOR", "CRYPTO")
-    listed(listOf(trezor), trezorPositions(trezor), listOf(bitcoin()))
+    listed(trezorPositions(trezor), listOf(bitcoin()))
 
     val symbols = service.getAvailableEtfs().map { it.symbol }
 
@@ -77,7 +77,7 @@ class DiversificationCalculatorServiceConstituentTest {
   @Test
   fun `should count an allocation to a constituent as one holding at its full weight`() {
     val trezor = fund(20L, "TREZOR", "CRYPTO")
-    allocated(listOf(bitcoin(), binance()), emptyList(), listOf(trezor), trezorPositions(trezor))
+    allocated(listOf(bitcoin(), binance()), emptyList(), trezorPositions(trezor))
     val request = request(2L to "60", 13L to "40")
 
     val holdings = service.calculate(request).holdings.map { Triple(it.name, it.percentage.toPlainString(), it.inEtfs) }
@@ -88,7 +88,7 @@ class DiversificationCalculatorServiceConstituentTest {
   @Test
   fun `should give an allocation to a synthetic fund no holdings`() {
     val trezor = fund(20L, "TREZOR", "CRYPTO")
-    allocated(listOf(trezor), trezorPositions(trezor), listOf(trezor), trezorPositions(trezor))
+    allocated(listOf(trezor), trezorPositions(trezor), trezorPositions(trezor))
 
     val result = service.calculate(request(20L to "100"))
 
@@ -101,7 +101,7 @@ class DiversificationCalculatorServiceConstituentTest {
     val etf = instrument(1L, "VWCE", "ETF", ProviderName.LIGHTYEAR)
     val own = position(etf, holding("AAPL", "Apple", IndustrySector.DIGITAL_HARDWARE), BigDecimal("100"))
     val wrapped = position(wrapper, holding("VWCE", "Vanguard FTSE All-World", IndustrySector.FINANCE))
-    allocated(listOf(etf), listOf(own), listOf(wrapper), listOf(wrapped))
+    allocated(listOf(etf), listOf(own), listOf(wrapped))
 
     val names = service.calculate(request(1L to "100")).holdings.map { it.name }
 
@@ -109,11 +109,11 @@ class DiversificationCalculatorServiceConstituentTest {
   }
 
   private fun listed(
-    funds: List<Instrument>,
     positions: List<EtfPosition>,
     coins: List<Instrument>,
     etfs: List<Instrument> = emptyList(),
   ) {
+    val funds = positions.map { it.etfInstrument }.distinct()
     val ids = (etfs + funds).map { it.id }
     val tickers = positions.mapNotNull { it.holding.ticker }.toSet()
     every { etfPositionRepository.findDistinctEtfInstrumentIds() } returns ids
@@ -126,10 +126,10 @@ class DiversificationCalculatorServiceConstituentTest {
   private fun allocated(
     instruments: List<Instrument>,
     positions: List<EtfPosition>,
-    funds: List<Instrument>,
     fundPositions: List<EtfPosition>,
   ) {
     val ids = instruments.map { it.id }
+    val funds = fundPositions.map { it.etfInstrument }.distinct()
     every { instrumentRepository.findAllById(ids) } returns instruments
     every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns funds
     every { etfPositionRepository.findLatestPositionsByEtfIds(funds.map { it.id }) } returns fundPositions
