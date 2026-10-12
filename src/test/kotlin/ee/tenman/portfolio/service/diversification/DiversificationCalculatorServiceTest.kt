@@ -37,6 +37,7 @@ class DiversificationCalculatorServiceTest {
 
   @BeforeEach
   fun setup() {
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
     service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository, syntheticEtfCalculationService)
   }
 
@@ -305,18 +306,6 @@ class DiversificationCalculatorServiceTest {
 
     expect(result).toHaveSize(1)
     expect(result[0].symbol).toEqual("VWCE")
-  }
-
-  @Test
-  fun `should include synthetic funds with their constituent symbols in available etfs`() {
-    val fund = createSyntheticFund()
-    every { etfPositionRepository.findDistinctEtfInstrumentIds() } returns listOf(20L)
-    every { instrumentRepository.findAllById(listOf(20L)) } returns listOf(fund)
-    every { etfPositionRepository.findLatestPositionsByEtfIds(listOf(20L)) } returns createTrezorPositions(fund)
-
-    val result = service.getAvailableEtfs()
-
-    expect(result.single().constituentSymbols).toEqual(listOf("BNBEUR", "BTCEUR"))
   }
 
   @Test

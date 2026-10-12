@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.AllocationDto
 import ee.tenman.portfolio.dto.ConcentrationDto
 import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
@@ -64,33 +65,44 @@ class DiversificationCalculatorService(
   @Transactional(readOnly = true)
   @Cacheable(value = [DIVERSIFICATION_ETFS_CACHE], key = "'available-etfs'")
   fun getAvailableEtfs(): List<EtfDetailDto> {
-    val etfIds = etfPositionRepository.findDistinctEtfInstrumentIds()
-    val instruments = instrumentRepository.findAllById(etfIds)
-    val constituents = constituentSymbols(instruments.filter { it.isSynthetic() })
-    return instruments
-      .filter { it.category == ETF_CATEGORY || it.isSynthetic() }
-      .map { instrument ->
-        EtfDetailDto(
-          instrumentId = instrument.id,
-          symbol = instrument.symbol,
-          name = instrument.name,
-          allocation = BigDecimal.ZERO,
-          ter = instrument.ter,
-          annualReturn = instrument.xirrAnnualReturn,
-          currentPrice = instrument.currentPrice,
-          fundCurrency = instrument.fundCurrency,
-          constituentSymbols = constituents[instrument.id].orEmpty(),
-        )
-      }.sortedBy { it.symbol }
+    val etfs =
+      instrumentRepository
+        .findAllById(etfPositionRepository.findDistinctEtfInstrumentIds())
+        .filter { it.category == ETF_CATEGORY && !it.isSynthetic() }
+        .map { detail(it) }
+    return (etfs + constituents()).distinctBy { it.instrumentId }.sortedBy { it.symbol }
   }
 
-  private fun constituentSymbols(funds: List<Instrument>): Map<Long, List<String>> {
+  private fun constituents(): List<EtfDetailDto> {
+    val holdings = syntheticHoldings()
+    if (holdings.isEmpty()) return emptyList()
+    return instrumentRepository.findBySymbolIn(holdings.keys.toList()).map { detail(it, holdings.getValue(it.symbol).name) }
+  }
+
+  private fun syntheticHoldings(): Map<String, EtfHolding> {
+    val funds = instrumentRepository.findByProviderName(ProviderName.SYNTHETIC)
     if (funds.isEmpty()) return emptyMap()
     return etfPositionRepository
       .findLatestPositionsByEtfIds(funds.map { it.id })
-      .groupBy({ it.etfInstrument.id }, { it.holding.ticker })
-      .mapValues { (_, tickers) -> tickers.filterNotNull().sorted() }
+      .mapNotNull { position -> position.holding.ticker?.let { it to position.holding } }
+      .toMap()
   }
+
+  private fun detail(
+    instrument: Instrument,
+    name: String = instrument.name,
+    allocation: BigDecimal = BigDecimal.ZERO,
+  ): EtfDetailDto =
+    EtfDetailDto(
+      instrumentId = instrument.id,
+      symbol = instrument.symbol,
+      name = name,
+      allocation = allocation,
+      ter = instrument.ter,
+      annualReturn = instrument.xirrAnnualReturn,
+      currentPrice = instrument.currentPrice,
+      fundCurrency = instrument.fundCurrency,
+    )
 
   private fun weightedPositions(
     instrument: Instrument,
@@ -130,17 +142,7 @@ class DiversificationCalculatorService(
     instruments: Map<Long, Instrument>,
   ): List<EtfDetailDto> =
     allocations.mapNotNull { allocation ->
-      val instrument = instruments[allocation.instrumentId] ?: return@mapNotNull null
-      EtfDetailDto(
-        instrumentId = instrument.id,
-        symbol = instrument.symbol,
-        name = instrument.name,
-        allocation = allocation.percentage,
-        ter = instrument.ter,
-        annualReturn = instrument.xirrAnnualReturn,
-        currentPrice = instrument.currentPrice,
-        fundCurrency = instrument.fundCurrency,
-      )
+      instruments[allocation.instrumentId]?.let { detail(it, allocation = allocation.percentage) }
     }
 
   private fun calculateWeightedTer(etfDetails: List<EtfDetailDto>): BigDecimal = calculateWeightedValue(etfDetails) { it.ter }
