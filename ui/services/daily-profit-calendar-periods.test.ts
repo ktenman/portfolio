@@ -153,7 +153,7 @@ describe('periods', () => {
     ])
   })
 
-  it('ends the periods where more than six months have no row (Review Focus 5)', () => {
+  it('ends the periods where more than six months have no row', () => {
     const rows = [
       row('2024-12-30', 100),
       row('2024-12-31', 200),
@@ -169,7 +169,7 @@ describe('periods', () => {
     ])
   })
 
-  it('ends the periods at two rows that share a date (Review Focus 5)', () => {
+  it('ends the periods at two rows that share a date', () => {
     const rows = [row('2025-12-29', 1), row('2025-12-29', 2), row('2025-12-31', 3)]
 
     expect(periodLastDays(rows)).toEqual(['2025-12-31'])
