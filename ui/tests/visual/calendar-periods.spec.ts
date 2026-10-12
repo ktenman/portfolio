@@ -4,13 +4,14 @@ import { openRoute, settleAndFreeze } from './settle'
 import { apiRoute } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubEnums } from './enums-fixture'
-import { stubPortfolioSummary, TODAY_SUMMARY } from './summary-fixture'
+import { SERIES_RESPONSE, stubPortfolioSummary, TODAY_SUMMARY } from './summary-fixture'
 
 const PHONE = { width: 375, height: 667 }
 const SMALL_PHONE = { width: 320, height: 568 }
 const SUBPIXEL_PX = 0.5
 const EARLIER_DATES = '27 Jun – 30 Jun 2025'
 const LATEST_DATES = '30 Jun – 31 Dec 2025'
+const LATEST_START = '2025-06-30'
 const TWO_YEAR_DATES = '28 Nov 2025 – 28 May 2026'
 
 const dates = (page: Page) => page.locator('.period-dates').filter({ visible: true })
@@ -74,6 +75,11 @@ test.beforeEach(async ({ page }) => {
   await stubBuildInfo(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
+  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
+    new URL(route.request().url()).searchParams.get('range') === '6M'
+      ? route.fulfill({ json: SERIES_RESPONSE.filter(row => row.date >= LATEST_START) })
+      : route.fallback()
+  )
 })
 
 test('calendar earlier period', async ({ page }, testInfo) => {
