@@ -312,20 +312,19 @@ test.describe('desktop states', () => {
     await expect(page).toHaveScreenshot('summary-benchmark-both.png')
   })
 
-  test('going back to an earlier platform filter selects the best day again', async ({ page }) => {
+  test('going back to an earlier platform filter keeps the picked day', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
     const lhv = page.locator('.platform-buttons .platform-btn:text-is("LHV")')
     const selectedDay = page.locator('.calendar-grid .selected')
-    const bestDay = (await selectedDay.getAttribute('aria-label'))!
     await lhv.click()
     await lhv.click()
-    await page.locator('.calendar-grid .selectable').first().click()
-    await expect(selectedDay).not.toHaveAttribute('aria-label', bestDay)
+    await page.getByRole('button', { name: 'Previous day', exact: true }).click()
+    const pickedDay = (await selectedDay.getAttribute('aria-label'))!
 
     await lhv.click()
 
-    await expect(selectedDay).toHaveAttribute('aria-label', bestDay)
+    await expect(selectedDay).toHaveAttribute('aria-label', pickedDay)
   })
 
   test('the calendar grid draws its keyboard focus on the selected day', async ({ page }) => {
