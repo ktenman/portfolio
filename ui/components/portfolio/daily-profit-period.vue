@@ -54,7 +54,9 @@ const emit = defineEmits<{ earlier: []; later: [] }>()
   }
 
   .period-dates {
-    min-width: auto;
+    min-width: 0;
+    white-space: normal;
+    text-wrap: balance;
   }
 
   .period button:focus-visible {

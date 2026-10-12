@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="arrow-btn size-8 md-down:size-11"
+    class="arrow-btn size-8 shrink-0 md-down:size-11"
     :aria-label="label"
     :title="label"
     :aria-disabled="disabled ? 'true' : undefined"

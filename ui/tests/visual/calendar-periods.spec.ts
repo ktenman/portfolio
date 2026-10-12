@@ -53,6 +53,7 @@ const phoneLayout = (page: Page) =>
     const datesText = document.createRange()
     datesText.selectNodeContents(document.querySelector('.compact-period .period-dates')!)
     const dates = datesText.getBoundingClientRect()
+    const lineWidths = Array.from(datesText.getClientRects(), line => line.width)
     return {
       scrollsSideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       headingLines: Math.round(
@@ -60,7 +61,8 @@ const phoneLayout = (page: Page) =>
           parseFloat(getComputedStyle(document.querySelector('.compact-heading')!).lineHeight)
       ),
       countsBesideHeading: counts.top < heading.bottom && counts.left >= heading.right,
-      datesLines: datesText.getClientRects().length,
+      datesLines: lineWidths.length,
+      datesLinesEven: Math.min(...lineWidths) * 2 > Math.max(...lineWidths),
       datesBetweenArrows:
         earlier.right <= dates.left + subpixel && dates.right <= later.left + subpixel,
       arrowsAtCardEdges:
@@ -135,6 +137,7 @@ test.describe('phone layout', () => {
       headingLines: 1,
       countsBesideHeading: true,
       datesLines: 1,
+      datesLinesEven: true,
       datesBetweenArrows: true,
       arrowsAtCardEdges: true,
       arrowsReach44: true,
@@ -166,10 +169,11 @@ test.describe('phone layout', () => {
 
     const layout = await phoneLayout(page)
 
-    expect([layout.scrollsSideways, layout.datesLines, layout.datesBetweenArrows]).toEqual([
-      false,
-      1,
-      true,
-    ])
+    expect([
+      layout.scrollsSideways,
+      layout.datesBetweenArrows,
+      layout.arrowsReach44,
+      layout.datesLinesEven,
+    ]).toEqual([false, true, true, true])
   })
 })
