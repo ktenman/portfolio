@@ -84,7 +84,9 @@
         :key="selectedPlatforms.join()"
         :rows="dailyCalendarRows"
         :error="calendarError"
+        :history="calendarHistory"
         class="mb-2 md:mb-10"
+        @load-history="loadCalendarHistory"
       />
 
       <data-table
@@ -196,6 +198,8 @@ const {
   benchmarks,
   rangeChange,
   dailyCalendarRows,
+  calendarHistory,
+  loadCalendarHistory,
   reversedSummaries,
   isLoading,
   isRecalculating,
