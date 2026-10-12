@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import DailyProfitCalendar from './daily-profit-calendar.vue'
 import DailyProfitCompact from './daily-profit-compact.vue'
@@ -30,16 +30,20 @@ const announced = (wrapper: Wrapper) => wrapper.find('[role="status"]').text()
 const dayButton = (wrapper: Wrapper, name: string) => wrapper.find(`button[aria-label="${name}"]`)
 
 describe('DailyProfitCalendar', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('should select the best day when the rows arrive, without announcing it', () => {
-    const wrapper = createWrapper()
+  it('should select the latest day when the rows arrive, without announcing it', () => {
+    const wrapper = createWrapper([...createCalendarRows(), createCalendarRow('2025-12-10', 2500)])
 
     expect([selectedName(wrapper), wrapper.find('.day-label').text(), announced(wrapper)]).toEqual([
-      'Tue 9 Dec 2025, +€700.00, +0.70%',
-      'Tue 9 Dec 2025',
+      'Wed 10 Dec 2025, −€80.00, −0.08%',
+      'Wed 10 Dec 2025',
       '',
     ])
   })
@@ -175,6 +179,7 @@ describe('DailyProfitCalendar', () => {
 
   it('should keep the selected day when a refresh makes another day the best', async () => {
     const wrapper = createWrapper(createCalendarRows().slice(0, 7))
+    await clickDay(wrapper, DAY.dec2)
     const before = selectedName(wrapper)
 
     await wrapper.setProps({ rows: createCalendarRows() })
@@ -305,13 +310,13 @@ describe('DailyProfitCalendar', () => {
     ]).toEqual([true, false])
   })
 
-  it('should appear with the best day selected when rows follow a failed request', async () => {
+  it('should appear with the latest day selected when rows follow a failed request', async () => {
     const wrapper = createWrapper([createCalendarRow('2025-12-09', 2580)])
 
-    await wrapper.setProps({ rows: createCalendarRows() })
+    await wrapper.setProps({ rows: createCalendarRows().slice(0, 7) })
 
     expect([selectedName(wrapper), announced(wrapper)]).toEqual([
-      'Tue 9 Dec 2025, +€700.00, +0.70%',
+      'Mon 8 Dec 2025, −€100.00, −0.10%',
       '',
     ])
   })
