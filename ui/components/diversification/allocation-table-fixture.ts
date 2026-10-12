@@ -15,7 +15,6 @@ export const createEtf = (overrides: Partial<EtfDetailDto> = {}): EtfDetailDto =
   annualReturn: 0.12,
   currentPrice: 120.5,
   fundCurrency: null,
-  constituentSymbols: [],
   ...overrides,
 })
 

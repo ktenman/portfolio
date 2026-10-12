@@ -1,12 +1,9 @@
 import { ref, watch, type Ref } from 'vue'
 import { instrumentsService } from '../services/api'
 import type { AllocationInput } from '../components/diversification/types'
-import type { EtfDetailDto } from '../models/generated/domain-models'
-import { etfPortfolioValues } from '../utils/etf-portfolio-value'
 
 interface UseDiversificationPlatformsArgs {
   allocations: Ref<AllocationInput[]>
-  etfs: Ref<EtfDetailDto[]>
   availablePlatforms: Ref<string[]>
   onChanged: () => void
 }
@@ -21,7 +18,7 @@ export function useDiversificationPlatforms(args: UseDiversificationPlatformsArg
   const loadCurrentValues = async (platforms: string[]) => {
     try {
       const response = await instrumentsService.getAll(platforms)
-      const valueMap = etfPortfolioValues(args.etfs.value, response.instruments)
+      const valueMap = new Map(response.instruments.map(i => [i.id, i.currentValue ?? 0]))
       args.allocations.value = args.allocations.value.map(a => ({
         ...a,
         currentValue: valueMap.get(a.instrumentId) ?? 0,
