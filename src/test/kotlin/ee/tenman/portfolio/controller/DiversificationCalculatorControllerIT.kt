@@ -326,7 +326,15 @@ class DiversificationCalculatorControllerIT {
   private fun createTrezorFund(): Pair<Instrument, Instrument> {
     val fund = createAndSaveInstrument("TREZOR", "Trezor Crypto Fund", null, null, null, "CRYPTO", ProviderName.SYNTHETIC)
     val bitcoin =
-      createAndSaveInstrument("BTCEUR", "BTC/EUR", BigDecimal.ZERO, BigDecimal("0.30"), BigDecimal("60000.00"), "CRYPTO", ProviderName.BINANCE)
+      createAndSaveInstrument(
+        "BTCEUR",
+        "BTC/EUR",
+        BigDecimal.ZERO,
+        BigDecimal("0.30"),
+        BigDecimal("60000.00"),
+        "CRYPTO",
+        ProviderName.BINANCE,
+      )
     val binance =
       createAndSaveInstrument(
         "BNBEUR",
