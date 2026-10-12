@@ -68,9 +68,7 @@
 
       <div class="chart-frame">
         <portfolio-chart :key="chartKey" :data="activeChartData" />
-        <div v-if="isRangeLoading" class="chart-veil">
-          <loading-spinner message="Loading chart" />
-        </div>
+        <loading-veil v-if="isRangeLoading" message="Loading chart" />
       </div>
 
       <AlertMessage v-if="rangeError" variant="warning" class="mt-3">
@@ -86,7 +84,9 @@
         :key="selectedPlatforms.join()"
         :rows="dailyCalendarRows"
         :error="calendarError"
+        :history="calendarHistory"
         class="mb-2 md:mb-10"
+        @load-history="loadCalendarHistory"
       />
 
       <data-table
@@ -140,6 +140,7 @@ import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
 import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
+import LoadingVeil from './shared/loading-veil.vue'
 import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
 import AlertMessage from './shared/alert-message.vue'
@@ -197,6 +198,8 @@ const {
   benchmarks,
   rangeChange,
   dailyCalendarRows,
+  calendarHistory,
+  loadCalendarHistory,
   reversedSummaries,
   isLoading,
   isRecalculating,
@@ -406,15 +409,6 @@ const handleRecalculate = async () => {
 .headline-asof {
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
-}
-
-.chart-veil {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
 }
 
 .change-percentage {

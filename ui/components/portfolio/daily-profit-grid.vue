@@ -3,7 +3,7 @@
     ref="grid"
     class="calendar-grid"
     :class="{ compact }"
-    :style="{ '--weeks': calendar.weeks }"
+    :style="{ '--weeks': calendar.weeks, '--columns': Math.max(calendar.weeks, MIN_COLUMNS) }"
     v-bind="gridAttributes"
     @keydown="onKeydown"
     @pointerleave="emit('preview', null)"
@@ -43,6 +43,7 @@
       @click="onClick(day)"
       @pointerenter="onEnter(day, $event)"
     />
+    <loading-veil v-if="busy" delayed message="Loading earlier days" />
   </div>
 </template>
 
@@ -53,6 +54,7 @@ import {
   type CalendarDay,
   type DailyProfitCalendar,
 } from '../../services/daily-profit-calendar'
+import LoadingVeil from '../shared/loading-veil.vue'
 import DailyProfitCell from './daily-profit-cell.vue'
 
 const props = defineProps<{
@@ -60,12 +62,14 @@ const props = defineProps<{
   selected?: string
   previewed?: string | null
   compact?: boolean
+  busy?: boolean
 }>()
 
 const emit = defineEmits<{ select: [date: string]; preview: [date: string | null] }>()
 
 const WEEKDAY_LABELS = ['Mon', 'Wed', 'Fri', 'Sun']
 const FIRST_DAY_ROW = 2
+const MIN_COLUMNS = 27
 const KEY_STEPS = new Map([
   ['ArrowUp', -1],
   ['ArrowDown', 1],
@@ -126,6 +130,7 @@ const onKeydown = (event: KeyboardEvent) => {
 
 <style scoped>
 .calendar-grid {
+  position: relative;
   display: grid;
   grid-template-columns: 30px repeat(var(--weeks), minmax(0, 1fr));
   grid-template-rows: auto repeat(7, var(--cell, 18px));
@@ -142,10 +147,10 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 .calendar-grid.compact {
-  grid-template-columns: repeat(var(--weeks), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
   grid-template-rows: none;
   gap: 2px;
-  max-width: calc(var(--weeks) * 20px - 2px);
+  max-width: calc(var(--columns) * 20px - 2px);
   margin-inline: 0;
 }
 

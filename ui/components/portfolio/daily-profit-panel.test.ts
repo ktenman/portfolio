@@ -88,7 +88,7 @@ describe('DailyProfitPanel', () => {
   })
 
   it('should name the two day buttons and give them a tooltip', () => {
-    const buttons = createWrapper('2025-12-02').findAll('button.day-btn')
+    const buttons = createWrapper('2025-12-02').findAll('button.arrow-btn')
 
     expect(
       buttons.map(button => [
@@ -104,7 +104,7 @@ describe('DailyProfitPanel', () => {
 
   it('should emit the day before and the day after', async () => {
     const wrapper = createWrapper('2025-12-02')
-    const [previous, next] = wrapper.findAll('.day-btn')
+    const [previous, next] = wrapper.findAll('.arrow-btn')
 
     await previous.trigger('click')
     await next.trigger('click')
@@ -114,7 +114,7 @@ describe('DailyProfitPanel', () => {
 
   it('should keep a day button focusable but idle at the end of the period', async () => {
     const wrapper = createWrapper('2025-12-09', { next: null })
-    const [previous, next] = wrapper.findAll('.day-btn')
+    const [previous, next] = wrapper.findAll('.arrow-btn')
 
     await next.trigger('click')
 

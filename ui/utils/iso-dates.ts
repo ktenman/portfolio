@@ -30,3 +30,11 @@ export const formatWeekdayDate = (date: string): string =>
 
 export const formatFullDate = (date: string): string =>
   `${formatWeekdayDate(date)} ${new Date(date).getUTCFullYear()}`
+
+export const formatDayRange = (first: string, last: string): string => {
+  const firstYear = new Date(first).getUTCFullYear()
+  const lastYear = new Date(last).getUTCFullYear()
+  const start =
+    firstYear === lastYear ? formatDayMonth(first) : `${formatDayMonth(first)} ${firstYear}`
+  return `${start} – ${formatDayMonth(last)} ${lastYear}`
+}

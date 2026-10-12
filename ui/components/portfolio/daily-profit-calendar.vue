@@ -2,13 +2,15 @@
   <div v-if="calendar && day" class="daily-profit-calendar card-shell p-0 md:p-6">
     <div class="calendar-body hidden md:flex">
       <div class="calendar-main" :style="{ '--weeks': calendar.weeks }">
-        <h2 class="calendar-heading">
-          Daily profit since {{ formatDayMonth(calendar.days[0].date) }}
-        </h2>
+        <div class="calendar-head">
+          <h2 class="calendar-heading">Daily profit</h2>
+          <daily-profit-period v-bind="period" @earlier="earlier" @later="later" />
+        </div>
         <daily-profit-grid
           :calendar="calendar"
           :selected="day.date"
           :previewed="previewDate"
+          :busy="period.busy"
           @select="select"
           @preview="previewDate = $event"
         />
@@ -25,7 +27,9 @@
         <daily-profit-figures class="calendar-period" :calendar="calendar" @select="select" />
       </div>
     </div>
-    <daily-profit-compact class="md:hidden" :calendar="calendar" />
+    <daily-profit-compact class="md:hidden" :calendar="calendar" :busy="period.busy">
+      <daily-profit-period v-bind="period" @earlier="earlier" @later="later" />
+    </daily-profit-compact>
     <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
   <div v-else-if="!rows" class="daily-profit-calendar card-shell p-0 md:p-6" aria-hidden="true">
@@ -40,7 +44,7 @@
         </div>
       </div>
     </div>
-    <div class="skeleton h-93 md:hidden"></div>
+    <div class="skeleton h-101 md:hidden"></div>
   </div>
   <alert-message v-else-if="error" variant="warning">
     Could not load the daily profit calendar: {{ error }}
@@ -48,52 +52,33 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue'
-import { formatDateToString } from '../../composables/use-quick-dates'
+import {
+  useDailyProfitCalendar,
+  type CalendarHistory,
+} from '../../composables/use-daily-profit-calendar'
 import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
-import { buildDailyProfitCalendar, dayOn, moveDay } from '../../services/daily-profit-calendar'
-import { formatDayMonth } from '../../utils/iso-dates'
+import { moveDay } from '../../services/daily-profit-calendar'
 import AlertMessage from '../shared/alert-message.vue'
 import DailyProfitCompact from './daily-profit-compact.vue'
 import DailyProfitFigures from './daily-profit-figures.vue'
 import DailyProfitGrid from './daily-profit-grid.vue'
 import DailyProfitLegend from './daily-profit-legend.vue'
 import DailyProfitPanel from './daily-profit-panel.vue'
+import DailyProfitPeriod from './daily-profit-period.vue'
 
-const props = defineProps<{ rows: PortfolioSummaryDto[] | undefined; error?: string | null }>()
-
-const selectedDate = ref('')
-const previewDate = ref<string | null>(null)
-const announcement = ref('')
-
-const calendar = computed(() =>
-  props.rows ? buildDailyProfitCalendar(props.rows, formatDateToString(new Date())) : null
+const props = withDefaults(
+  defineProps<{
+    rows: PortfolioSummaryDto[] | undefined
+    error?: string | null
+    history?: CalendarHistory
+  }>(),
+  { history: 'loaded' }
 )
 
-const day = computed(() => calendar.value && dayOn(calendar.value, selectedDate.value))
+const emit = defineEmits<{ loadHistory: [] }>()
 
-const preview = computed(() =>
-  calendar.value && previewDate.value ? dayOn(calendar.value, previewDate.value) : undefined
-)
-
-watch(
-  calendar,
-  current => {
-    announcement.value = ''
-    const isSelectable = day.value && day.value.kind !== 'missing'
-    if (!current || isSelectable) return
-    selectedDate.value = (current.best ?? current.days[current.days.length - 1]).date
-  },
-  { immediate: true }
-)
-
-const select = (date: string) => {
-  previewDate.value = null
-  const target = calendar.value && dayOn(calendar.value, date)
-  if (!target || date === selectedDate.value) return
-  selectedDate.value = date
-  announcement.value = target.note ? `${target.name}. ${target.note}` : target.name
-}
+const { calendar, day, preview, previewDate, announcement, period, select, earlier, later } =
+  useDailyProfitCalendar(props, () => emit('loadHistory'))
 </script>
 
 <style scoped>
@@ -132,9 +117,16 @@ const select = (date: string) => {
   border-top: 1px solid var(--color-hairline);
 }
 
-.calendar-heading {
+.calendar-head {
+  display: flex;
+  align-items: center;
+  column-gap: 16px;
   padding-bottom: 1.25rem;
   margin-bottom: auto;
+}
+
+.calendar-heading {
+  margin: 0;
   font-size: 1.125rem;
 }
 

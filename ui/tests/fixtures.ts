@@ -131,11 +131,24 @@ export const createCalendarRows = (): PortfolioSummaryDto[] => [
   createCalendarRow('2025-12-09', 2580),
 ]
 
+export const createPeriodRows = (): PortfolioSummaryDto[] => [
+  createCalendarRow('2024-12-28', 100),
+  createCalendarRow('2024-12-29', 400),
+  createCalendarRow('2024-12-30', 300),
+  createCalendarRow('2025-06-28', 1000),
+  createCalendarRow('2025-06-29', 900),
+  createCalendarRow('2025-06-30', 1500),
+  createCalendarRow('2025-12-29', 2000),
+  createCalendarRow('2025-12-30', 2600),
+  createCalendarRow('2025-12-31', 2500),
+]
+
 export const createDailyProfitCalendar = (
   rows: PortfolioSummaryDto[] = createCalendarRows(),
-  today = '2030-01-01'
+  today = '2030-01-01',
+  lastDay?: string
 ): DailyProfitCalendar => {
-  const calendar = buildDailyProfitCalendar(rows, today)
+  const calendar = buildDailyProfitCalendar(rows, today, lastDay)
   if (!calendar) throw new Error('expected a calendar')
   return calendar
 }

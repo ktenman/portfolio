@@ -3,6 +3,7 @@ import {
   addDays,
   daysBetween,
   formatDayMonth,
+  formatDayRange,
   formatFullDate,
   formatWeekdayDate,
   mondayIndex,
@@ -74,6 +75,16 @@ describe('date formats', () => {
       formatWeekdayDate(date),
       formatFullDate(date),
     ]).toEqual([month, dayMonth, weekdayDate, full])
+  })
+})
+
+describe('formatDayRange', () => {
+  it.each([
+    ['2026-04-11', '2026-10-11', '11 Apr – 11 Oct 2026'],
+    ['2025-10-11', '2026-04-11', '11 Oct 2025 – 11 Apr 2026'],
+    ['2025-06-27', '2025-06-30', '27 Jun – 30 Jun 2025'],
+  ] as const)('prints %s to %s as %s', (first, last, expected) => {
+    expect(formatDayRange(first, last)).toBe(expected)
   })
 })
 

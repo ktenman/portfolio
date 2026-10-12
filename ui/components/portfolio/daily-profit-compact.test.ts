@@ -19,13 +19,33 @@ const rowsOf = (wrapper: ReturnType<typeof createWrapper>) =>
     )
 
 describe('DailyProfitCompact', () => {
-  it('should head the module with the starting day and the two counts', () => {
+  it('should head the module with its name and the two counts', () => {
     const wrapper = createWrapper()
 
     expect([wrapper.find('h2').text(), wrapper.find('.compact-counts').text()]).toEqual([
-      'Daily profit since 1 Dec',
+      'Daily profit',
       '4 up · 2 down',
     ])
+  })
+
+  it('should put its slot between the heading and the grid', () => {
+    const wrapper = mount(DailyProfitCompact, {
+      props: { calendar: createDailyProfitCalendar() },
+      slots: { default: '<b class="slotted">period</b>' },
+    })
+
+    expect([
+      Array.from(wrapper.find('.compact-head').element.children).map(child => child.classList[0]),
+      wrapper.find('.compact-period .slotted').exists(),
+    ]).toEqual([['compact-title', 'compact-period', 'calendar-grid'], true])
+  })
+
+  it('should pass busy on to its grid', () => {
+    const wrapper = mount(DailyProfitCompact, {
+      props: { calendar: createDailyProfitCalendar(), busy: true },
+    })
+
+    expect(wrapper.findComponent(DailyProfitGrid).props('busy')).toBe(true)
   })
 
   it('should draw the grid in compact mode', () => {

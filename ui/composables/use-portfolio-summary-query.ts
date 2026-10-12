@@ -15,6 +15,7 @@ import {
 import { CALENDAR_RANGE, lacksDayBeforeLatest } from '../services/daily-profit-calendar'
 import { REFETCH_INTERVALS } from '../constants'
 import { useAuthState } from './use-auth-state'
+import type { CalendarHistory } from './use-daily-profit-calendar'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
 import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
 import { type BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
@@ -102,9 +103,48 @@ export function usePortfolioSummaryQuery(
     mergeHistoricalWithCurrent(calendarSeries.value ?? [], currentSummary.value)
   )
 
-  const dailyCalendarRows = computed(() =>
-    isCalendarFetched.value ? mergedCalendarRows.value : undefined
+  const isHistoryRequested = ref(false)
+
+  watch(
+    platformsKey,
+    () => {
+      isHistoryRequested.value = false
+    },
+    { flush: 'sync' }
   )
+
+  const {
+    data: calendarHistoryRows,
+    isLoading: isLoadingCalendarHistory,
+    errorUpdateCount: calendarHistoryFailures,
+  } = useQuery({
+    queryKey: ['portfolio-summary', 'daily-calendar-history', platformsKey],
+    queryFn: () => portfolioSummaryService.getSeries(TimeRange.MAX, activePlatforms.value),
+    enabled: computed(() => isAuthenticated.value && isHistoryRequested.value),
+    staleTime: Infinity,
+    retry: 1,
+  })
+
+  watch(calendarHistoryFailures, () => {
+    isHistoryRequested.value = false
+  })
+
+  const dailyCalendarRows = computed(() => {
+    if (!isCalendarFetched.value) return undefined
+    const rows = mergedCalendarRows.value
+    const earliest = sortSummariesByDateAsc(rows)[0]?.date
+    const older = (calendarHistoryRows.value ?? []).filter(row => !earliest || row.date < earliest)
+    return [...older, ...rows]
+  })
+
+  const calendarHistory = computed<CalendarHistory>(() => {
+    if (calendarHistoryRows.value) return 'loaded'
+    return isLoadingCalendarHistory.value ? 'loading' : 'idle'
+  })
+
+  const loadCalendarHistory = () => {
+    isHistoryRequested.value = true
+  }
 
   watchEffect(() => {
     calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)
@@ -226,6 +266,8 @@ export function usePortfolioSummaryQuery(
     benchmarks,
     rangeChange,
     dailyCalendarRows,
+    calendarHistory,
+    loadCalendarHistory,
     sortedSummaries,
     reversedSummaries,
     isLoading,

@@ -17,20 +17,14 @@
       <p v-if="day.note" class="day-note">{{ day.note }}</p>
     </div>
     <div class="day-buttons">
-      <button
+      <daily-profit-arrow
         v-for="button in buttons"
         :key="button.label"
-        type="button"
-        class="day-btn size-8 md-down:size-11"
-        :aria-label="button.label"
-        :title="button.label"
-        :aria-disabled="button.target ? undefined : 'true'"
-        @click="go(button.target)"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path :d="button.path" />
-        </svg>
-      </button>
+        :label="button.label"
+        :direction="button.direction"
+        :disabled="!button.target"
+        @press="go(button.target)"
+      />
     </div>
   </div>
 </template>
@@ -45,6 +39,7 @@ import {
   splitCents,
 } from '../../utils/formatters'
 import { formatFullDate } from '../../utils/iso-dates'
+import DailyProfitArrow from './daily-profit-arrow.vue'
 
 const props = defineProps<{
   day: CalendarDay
@@ -57,8 +52,8 @@ const emit = defineEmits<{ select: [date: string] }>()
 const amount = computed(() => splitCents(formatCurrencyChange(props.day.change ?? 0)))
 
 const buttons = computed(() => [
-  { label: 'Previous day', target: props.previous, path: 'M10 3.5 5.5 8l4.5 4.5' },
-  { label: 'Next day', target: props.next, path: 'M6 3.5 10.5 8 6 12.5' },
+  { label: 'Previous day', target: props.previous, direction: 'back' as const },
+  { label: 'Next day', target: props.next, direction: 'forward' as const },
 ])
 
 const go = (target: string | null) => {
@@ -126,53 +121,11 @@ const go = (target: string | null) => {
   display: flex;
 }
 
-.day-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--color-ink);
-  cursor: pointer;
-  transition: all var(--transition-chip);
-}
-
-@media (hover: hover) {
-  .day-btn:hover {
-    background: var(--color-surface-hover);
-    border-color: var(--color-hairline-strong);
-  }
-}
-
-.day-btn:active {
-  transform: scale(0.96);
-}
-
-.day-btn[aria-disabled='true'] {
-  color: var(--color-ink-faint);
-  background: transparent;
-  border-color: transparent;
-  cursor: default;
-  transform: none;
-}
-
 @media (max-width: 768px) {
   .day-buttons {
     top: calc((1.35rem - 2.75rem) / 2);
     right: -14px;
   }
-}
-
-.day-btn svg {
-  width: 1rem;
-  height: 1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 @container (min-width: 580px) {

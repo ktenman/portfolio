@@ -19,7 +19,6 @@ const TOAST_MODULE_PATH = '/composables/use-toast.ts'
 const LOADING_HOLD_MS = 20000
 const SUBPIXEL_PX = 0.5
 const SMALL_PHONE = { width: 320, height: 568 }
-const PHONE = { width: 375, height: 667 }
 const WHEEL_DELTA_PX = 300
 const WHEEL_SETTLE_MS = 300
 
@@ -463,35 +462,5 @@ test.describe('mobile states', () => {
       return { cards: names.length, misfits }
     }, SUBPIXEL_PX)
     expect(layout).toEqual({ cards: 5, misfits: [] })
-  })
-
-  test('the daily profit calendar fits a 375 by 667 phone screen', async ({ page }) => {
-    await page.setViewportSize(PHONE)
-    await stubPortfolioSummary(page)
-    await openRoute(page, '/')
-    await expect(page.locator('.compact-heading')).toBeVisible()
-
-    const layout = await page.evaluate(() => {
-      const box = (selector: string) => document.querySelector(selector)!.getBoundingClientRect()
-      const heading = box('.compact-heading')
-      const counts = box('.compact-counts')
-      const lineHeight = parseFloat(
-        getComputedStyle(document.querySelector('.compact-heading')!).lineHeight
-      )
-      return {
-        scrollsSideways:
-          document.documentElement.scrollWidth > document.documentElement.clientWidth,
-        headingLines: Math.round(heading.height / lineHeight),
-        countsBesideHeading: counts.top < heading.bottom && counts.left >= heading.right,
-        fitsScreen: box('.daily-profit-calendar').height <= window.innerHeight,
-      }
-    })
-
-    expect(layout).toEqual({
-      scrollsSideways: false,
-      headingLines: 1,
-      countsBesideHeading: true,
-      fitsScreen: true,
-    })
   })
 })

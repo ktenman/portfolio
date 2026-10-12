@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, type Ref } from 'vue'
-import { flushPromises } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
@@ -15,6 +15,8 @@ vi.mock('./use-auth-state', () => ({
     checkAuth: vi.fn().mockResolvedValue(true),
   }),
 }))
+
+enableAutoUnmount(afterEach)
 
 const ONE_MINUTE = 60 * 1000
 const FIVE_MINUTES = 5 * ONE_MINUTE
@@ -48,6 +50,30 @@ const mockSeries = (...answers: (PortfolioSummaryDto[] | Error)[]) => {
 }
 
 const datesOf = (rows: PortfolioSummaryDto[] | undefined) => rows?.map(summary => summary.date)
+
+const maxCalls = () =>
+  vi.mocked(portfolioSummaryService.getSeries).mock.calls.filter(([range]) => range === 'MAX')
+
+const mockHistory = (...answers: (PortfolioSummaryDto[] | Error)[]) => {
+  let call = 0
+  vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async range => {
+    if (range === '6M') return [row('2023-12-29'), row('2023-12-30')]
+    if (range !== 'MAX') return []
+    const answer = answers[Math.min(call, answers.length - 1)]
+    call += 1
+    if (answer instanceof Error) throw answer
+    return answer
+  })
+}
+
+type SummaryQuery = ReturnType<typeof usePortfolioSummaryQuery>
+
+const press = async (query: SummaryQuery) => {
+  query.loadCalendarHistory()
+  await flushPromises()
+}
+
+const stateOf = (query: SummaryQuery) => [maxCalls().length, query.calendarHistory.value]
 
 describe('usePortfolioSummaryQuery daily calendar rows', () => {
   beforeEach(() => {
@@ -275,5 +301,156 @@ describe('usePortfolioSummaryQuery daily calendar rows', () => {
     await flushPromises()
 
     expect(sixMonthCalls()).toHaveLength(1)
+  })
+
+  it('asks for the older rows once, and only after the first press', async () => {
+    mockHistory([row('2023-06-01')])
+    const { queryResult } = setupQuery()
+    await flushPromises()
+    const before = stateOf(queryResult)
+
+    await press(queryResult)
+    await press(queryResult)
+
+    expect([before, maxCalls(), queryResult.calendarHistory.value]).toEqual([
+      [0, 'idle'],
+      [['MAX', undefined]],
+      'loaded',
+    ])
+  })
+
+  it('puts the older rows before the six-month rows and keeps the six-month row where both answer', async () => {
+    mockHistory([
+      { ...row('2023-12-30'), totalValue: 1 },
+      { ...row('2023-12-29'), totalValue: 1 },
+      row('2023-06-02'),
+      row('2023-06-01'),
+    ])
+    const { queryResult } = setupQuery()
+    await flushPromises()
+
+    await press(queryResult)
+
+    expect(
+      queryResult.dailyCalendarRows.value?.map(({ date, totalValue }) => [date, totalValue])
+    ).toEqual([
+      ['2023-06-02', 10000],
+      ['2023-06-01', 10000],
+      ['2023-12-29', 10000],
+      ['2023-12-30', 10000],
+      ['2023-12-31', 10000],
+    ])
+  })
+
+  it('does not ask for the older rows again when the window regains focus', async () => {
+    mockHistory([row('2023-06-01')])
+    const { queryResult } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+
+    window.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+
+    expect([sixMonthCalls().length, maxCalls().length]).toEqual([2, 1])
+  })
+
+  it('does not ask for the older rows again when the six-month rows are asked again', async () => {
+    mockHistory([row('2023-06-01')])
+    const { queryResult, queryClient } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+
+    await queryClient.invalidateQueries({ queryKey: ['portfolio-summary', 'daily-calendar'] })
+    await flushPromises()
+
+    expect([sixMonthCalls().length, maxCalls().length]).toEqual([2, 1])
+  })
+
+  it('asks a failed request once more, then waits for the next press', async () => {
+    mockHistory(new Error('down'), new Error('down'), [row('2023-06-01')])
+    const { queryResult } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+    const first = stateOf(queryResult)
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    const failed = stateOf(queryResult)
+
+    await press(queryResult)
+
+    expect([first, failed, maxCalls().length, queryResult.calendarHistory.value]).toEqual([
+      [1, 'loading'],
+      [2, 'idle'],
+      3,
+      'loaded',
+    ])
+  })
+
+  it('does not ask on window focus after a failed load', async () => {
+    mockHistory(new Error('down'))
+    const { queryResult } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+
+    window.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+
+    expect(stateOf(queryResult)).toEqual([2, 'idle'])
+  })
+
+  it('reports the older rows as loaded when the answer holds no earlier day', async () => {
+    mockHistory([row('2023-12-29'), row('2023-12-30')])
+    const { queryResult } = setupQuery()
+    await flushPromises()
+
+    await press(queryResult)
+
+    expect([
+      queryResult.calendarHistory.value,
+      datesOf(queryResult.dailyCalendarRows.value),
+    ]).toEqual(['loaded', ['2023-12-29', '2023-12-30', '2023-12-31']])
+  })
+
+  it('asks nothing for a platform selection chosen while the older rows load', async () => {
+    const platforms = ref(['LHV'])
+    const { queryResult } = setupQuery(platforms)
+    await flushPromises()
+    vi.mocked(portfolioSummaryService.getSeries).mockReturnValue(new Promise(() => {}))
+    await press(queryResult)
+
+    platforms.value = ['SWEDBANK']
+    await flushPromises()
+
+    expect([maxCalls(), queryResult.calendarHistory.value]).toEqual([[['MAX', ['LHV']]], 'idle'])
+  })
+
+  it('asks for the older rows again when the summary is recalculated', async () => {
+    mockHistory([row('2023-06-01')])
+    const { queryResult, queryClient } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+
+    await queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    await flushPromises()
+
+    expect(maxCalls()).toHaveLength(2)
+  })
+
+  it('keeps the older rows when asking again fails, and asks on the next press', async () => {
+    mockHistory([row('2023-06-01')], new Error('down'), new Error('down'), [row('2023-06-01')])
+    const { queryResult, queryClient } = setupQuery()
+    await flushPromises()
+    await press(queryResult)
+    queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    await flushPromises()
+    const kept = [...stateOf(queryResult), datesOf(queryResult.dailyCalendarRows.value)?.[0]]
+
+    await press(queryResult)
+
+    expect([kept, maxCalls().length]).toEqual([[3, 'loaded', '2023-06-01'], 4])
   })
 })

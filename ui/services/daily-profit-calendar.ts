@@ -87,11 +87,20 @@ const ORDINAL_SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'r
 
 const roundToCents = (value: number): number => Number(value.toFixed(2)) || 0
 
-const periodRows = (summaries: PortfolioSummaryDto[]): PortfolioSummaryDto[] => {
-  const sorted = sortSummariesByDateAsc(summaries)
+const periodRows = (summaries: PortfolioSummaryDto[], lastDay?: string): PortfolioSummaryDto[] => {
+  const sorted = sortSummariesByDateAsc(summaries).filter(row => !lastDay || row.date <= lastDay)
   if (!sorted.length) return []
   const earliestStart = monthsBefore(sorted[sorted.length - 1].date, PERIOD_MONTHS)
   return sorted.filter(row => row.date >= earliestStart)
+}
+
+const hasCountedDay = (rows: PortfolioSummaryDto[]): boolean =>
+  rows.length > 0 && rows[0].date < rows[rows.length - 1].date
+
+export const periodLastDays = (summaries: PortfolioSummaryDto[], lastDay?: string): string[] => {
+  const rows = periodRows(summaries, lastDay)
+  if (!hasCountedDay(rows)) return []
+  return [rows[rows.length - 1].date, ...periodLastDays(summaries, rows[0].date)]
 }
 
 const rowChanges = (rows: PortfolioSummaryDto[]): RowChange[] =>
@@ -154,7 +163,7 @@ const missingDay = (date: string): UncountedDay => ({
   note: '',
 })
 
-const startingDay = (row: PortfolioSummaryDto): UncountedDay => ({
+const startingDay = (row: PortfolioSummaryDto, isCounted: boolean): UncountedDay => ({
   date: row.date,
   kind: 'starting',
   step: null,
@@ -162,7 +171,9 @@ const startingDay = (row: PortfolioSummaryDto): UncountedDay => ({
   percent: null,
   name: `${formatFullDate(row.date)}, starting day`,
   ...closingTexts(row, '', false),
-  note: 'Starting day, not counted or ranked',
+  note: isCounted
+    ? 'Starting day, counted in the earlier period'
+    : 'Starting day, not counted or ranked',
 })
 
 const countedDay = (rowChange: RowChange, rank: string, isOpen: boolean): CountedDay => {
@@ -235,14 +246,16 @@ const figuresOf = (changes: RowChange[], counted: CountedDay[]) => {
 
 export const buildDailyProfitCalendar = (
   summaries: PortfolioSummaryDto[],
-  today: string
+  today: string,
+  lastDay?: string
 ): DailyProfitCalendar | null => {
-  const rows = periodRows(summaries)
+  const rows = periodRows(summaries, lastDay)
   if (rows.length < 2) return null
   const latest = rows[rows.length - 1]
   const changes = rowChanges(rows)
   const counted = countedDays(changes, latest.date === today ? today : null)
-  const days = everyDay([startingDay(rows[0]), ...counted])
+  const start = startingDay(rows[0], hasCountedDay(periodRows(summaries, rows[0].date)))
+  const days = everyDay([start, ...counted])
   return {
     days,
     ...gridOf(days),

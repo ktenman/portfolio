@@ -3,6 +3,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import DailyProfitCell from './daily-profit-cell.vue'
 import DailyProfitGrid from './daily-profit-grid.vue'
 import DailyProfitLegend from './daily-profit-legend.vue'
+import LoadingVeil from '../shared/loading-veil.vue'
 import type { DailyProfitCalendar } from '../../services/daily-profit-calendar'
 import {
   createCalendarRow,
@@ -18,6 +19,7 @@ const createGrid = (
     selected?: string
     previewed?: string
     compact?: boolean
+    busy?: boolean
   } = {}
 ) =>
   mount(DailyProfitGrid, {
@@ -288,7 +290,30 @@ describe('DailyProfitGrid', () => {
     )
   })
 
+  it('should cover the grid with a delayed veil while it is busy', () => {
+    const veil = createGrid({ busy: true }).findComponent(LoadingVeil)
+
+    expect([veil.classes('delayed'), veil.text()]).toEqual([true, 'Loading earlier days'])
+  })
+
+  it('should draw no veil while it is not busy', () => {
+    const wrapper = createGrid()
+
+    expect(wrapper.findComponent(LoadingVeil).exists()).toBe(false)
+  })
+
   describe('compact', () => {
+    it('should give the grid at least 27 columns', () => {
+      const grids = [
+        createGrid({ compact: true }),
+        createGrid({ compact: true, calendar: { ...createDailyProfitCalendar(), weeks: 28 } }),
+      ]
+
+      expect(
+        grids.map(grid => (grid.element as HTMLElement).style.getPropertyValue('--columns'))
+      ).toEqual(['27', '28'])
+    })
+
     it('should keep the month names and the dots and drop the weekday labels', () => {
       const wrapper = createGrid({ compact: true })
 
