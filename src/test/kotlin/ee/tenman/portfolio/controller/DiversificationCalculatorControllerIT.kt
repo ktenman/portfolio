@@ -27,6 +27,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
@@ -312,6 +313,24 @@ class DiversificationCalculatorControllerIT {
       .andExpect(jsonPath("$.weightedTer").value(0.1))
       .andExpect(jsonPath("$.weightedAnnualReturn").value(0.26))
   }
+
+  @Test
+  fun `should keep the saved configuration when a synthetic fund is saved over it`() {
+    val (bitcoin, _) = createTrezorFund()
+    val fund = instrumentRepository.findByProviderName(ProviderName.SYNTHETIC).single()
+    mockMvc.perform(configuration(bitcoin.id))
+    mockMvc.perform(configuration(fund.id))
+
+    mockMvc
+      .perform(get("/api/diversification/config").cookie(DEFAULT_COOKIE))
+      .andExpect(jsonPath("$.allocations[0].instrumentId").value(bitcoin.id.toInt()))
+  }
+
+  private fun configuration(instrumentId: Long) =
+    put("/api/diversification/config")
+      .cookie(DEFAULT_COOKIE)
+      .contentType(APPLICATION_JSON)
+      .content("""{"allocations":[{"instrumentId":$instrumentId,"value":2.5}],"inputMode":"percentage"}""")
 
   private fun calculation(vararg allocations: Pair<Long, Int>) =
     post("/api/diversification/calculate")

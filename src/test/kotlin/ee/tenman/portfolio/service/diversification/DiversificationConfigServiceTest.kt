@@ -6,15 +6,19 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.ActionDisplayMode
 import ee.tenman.portfolio.domain.DiversificationAllocationData
 import ee.tenman.portfolio.domain.DiversificationConfig
 import ee.tenman.portfolio.domain.DiversificationConfigData
 import ee.tenman.portfolio.domain.InputMode
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.DiversificationConfigAllocationDto
 import ee.tenman.portfolio.dto.DiversificationConfigDto
 import ee.tenman.portfolio.repository.DiversificationConfigRepository
+import ee.tenman.portfolio.repository.InstrumentRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -25,11 +29,33 @@ import java.math.BigDecimal
 
 class DiversificationConfigServiceTest {
   private val repository = mockk<DiversificationConfigRepository>()
+  private val instrumentRepository = mockk<InstrumentRepository>()
   private lateinit var service: DiversificationConfigService
 
   @BeforeEach
   fun setup() {
-    service = DiversificationConfigService(repository)
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
+    service = DiversificationConfigService(repository, instrumentRepository)
+  }
+
+  @Test
+  fun `should reject a configuration that allocates to a synthetic fund`() {
+    val fund =
+      Instrument(
+        symbol = "TREZOR",
+        name = "Trezor Krüptofond",
+        category = "CRYPTO",
+        baseCurrency = "EUR",
+        providerName = ProviderName.SYNTHETIC,
+      ).apply { id = 20L }
+    every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns listOf(fund)
+    val dto =
+      DiversificationConfigDto(
+        allocations = listOf(DiversificationConfigAllocationDto(instrumentId = 20L, value = BigDecimal("2.5"))),
+        inputMode = "percentage",
+      )
+
+    expect { service.saveConfig(dto) }.toThrow<IllegalArgumentException>()
   }
 
   @Test
