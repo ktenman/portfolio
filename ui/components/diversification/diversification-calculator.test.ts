@@ -54,6 +54,7 @@ vi.mock('@vueuse/core', () => ({
   useDebounceFn: vi.fn((fn: () => void) => fn),
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
   useNow: vi.fn(() => ({ value: new Date() })),
+  watchDebounced: vi.fn(),
 }))
 
 vi.mock('../../utils/formatters', () => ({

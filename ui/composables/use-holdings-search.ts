@@ -1,5 +1,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { watchDebounced } from '@vueuse/core'
 import { diversificationService } from '../services/api'
 import { getErrorMessage } from './use-diversification-result'
 import type { AllocationDto } from '../models/generated/domain-models'
@@ -8,16 +9,15 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
   const query = ref('')
   const criteria = ref({ query: '', page: 0 })
   const revision = ref(0)
-  const isDebouncing = ref(false)
+  const isDebouncing = computed(() => query.value !== criteria.value.query)
 
-  watch(query, (value, _, onCleanup) => {
-    isDebouncing.value = true
-    const timer = setTimeout(() => {
+  watchDebounced(
+    query,
+    value => {
       criteria.value = { query: value, page: 0 }
-      isDebouncing.value = false
-    }, 300)
-    onCleanup(() => clearTimeout(timer))
-  })
+    },
+    { debounce: 300 }
+  )
 
   watch(
     allocations,
@@ -37,9 +37,8 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
     ]),
     queryFn: () =>
       diversificationService.searchHoldings({ allocations: allocations.value, ...criteria.value }),
-    enabled: computed(() => active.value && allocations.value.length > 0 && !isDebouncing.value),
+    enabled: computed(() => active.value && allocations.value.length > 0),
     placeholderData: keepPreviousData,
-    staleTime: 0,
     gcTime: 0,
     retry: false,
     refetchOnWindowFocus: false,

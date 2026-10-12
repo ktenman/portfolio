@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import BreakdownPanel from './breakdown-panel.vue'
 import { diversificationService } from '../../services/api'
@@ -37,12 +37,11 @@ const page = (
   totalPages: Math.ceil(totalElements / 100),
 })
 
-const wrappers: VueWrapper[] = []
-const clients: QueryClient[] = []
+enableAutoUnmount(afterEach)
 
 const mountPanel = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
-  const wrapper = mount(BreakdownPanel, {
+  return mount(BreakdownPanel, {
     props: {
       allocations: [{ instrumentId: 7, percentage: 100 }],
       breakdowns: { holdings: [], sectors: [], industries: [], countries: [] },
@@ -56,9 +55,6 @@ const mountPanel = () => {
     },
     global: { plugins: [[VueQueryPlugin, { queryClient: client }]] },
   })
-  wrappers.push(wrapper)
-  clients.push(client)
-  return wrapper
 }
 
 describe('Holdings tab', () => {
@@ -73,8 +69,6 @@ describe('Holdings tab', () => {
   })
 
   afterEach(() => {
-    wrappers.splice(0).forEach(wrapper => wrapper.unmount())
-    clients.splice(0).forEach(client => client.clear())
     vi.useRealTimers()
   })
 

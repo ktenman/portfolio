@@ -65,23 +65,23 @@
         class="holdings-pager"
         aria-label="Holdings pages"
       >
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
+        <app-button
+          variant="secondary"
+          size="sm"
           :disabled="isSearching || page === 0"
           @click="page--"
         >
           ‹ Previous
-        </button>
+        </app-button>
         <span>{{ pageRange }}</span>
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
+        <app-button
+          variant="secondary"
+          size="sm"
           :disabled="isSearching || page >= holdingsPage.totalPages - 1"
           @click="page++"
         >
           Next ›
-        </button>
+        </app-button>
       </nav>
     </template>
   </div>
@@ -91,6 +91,7 @@
 import { computed, defineAsyncComponent, toRef } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../../constants'
+import AppButton from '../shared/app-button.vue'
 import BreakdownBars from '../shared/breakdown-bars.vue'
 import ViewSwitch from '../shared/view-switch.vue'
 import SearchInput from '../shared/search-input.vue'
@@ -145,7 +146,7 @@ const TABS: readonly Tab[] = [
   {
     key: 'holdings',
     label: 'Holdings',
-    options: { topCount: TOP_COUNT, minPercentage: 0, withOther: false },
+    options: { topCount: Infinity, minPercentage: 0, withOther: false },
   },
   {
     key: 'countries',
@@ -183,14 +184,8 @@ const formatCount = (value: number) => value.toLocaleString('en-US')
 const countLabel = computed(() => {
   if (isSearching.value) return 'Searching…'
   const count = holdingsPage.value?.totalElements ?? 0
-  const noun = query.value.trim()
-    ? count === 1
-      ? 'match'
-      : 'matches'
-    : count === 1
-      ? 'holding'
-      : 'holdings'
-  return `${formatCount(count)} ${noun}`
+  const [one, many] = query.value.trim() ? ['match', 'matches'] : ['holding', 'holdings']
+  return `${formatCount(count)} ${count === 1 ? one : many}`
 })
 const pageRange = computed(() => {
   const result = holdingsPage.value
@@ -201,22 +196,18 @@ const pageRange = computed(() => {
 })
 
 const rows = computed(() => {
-  const holdings = isHoldings.value
-    ? (holdingsPage.value?.content.map(holding => ({
+  const items = isHoldings.value
+    ? (holdingsPage.value?.content ?? []).map(holding => ({
         label: holding.name,
         value: holding.percentage,
-      })) ?? [])
-    : []
-  const options = isHoldings.value
-    ? { ...currentTab.value.options, topCount: holdings.length }
-    : currentTab.value.options
+      }))
+    : props.breakdowns[currentTab.value.key]
   const result = compareBreakdown(
-    isHoldings.value ? holdings : props.breakdowns[currentTab.value.key],
+    items,
     compared.value ? (props.benchmark?.[currentTab.value.key] ?? null) : null,
-    optionsForView(options, view.value)
+    optionsForView(currentTab.value.options, view.value)
   )
-  const rows = currentTab.value.key === 'holdings' ? result.map(unlessAbsent) : result
-  return paint(rows)
+  return paint(isHoldings.value ? result.map(unlessAbsent) : result)
 })
 </script>
 

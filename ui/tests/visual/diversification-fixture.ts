@@ -287,7 +287,6 @@ const LONG_FUND_NAME = 'Test Aquila World Equity Index Tracker 6 Pension Fund â€
 const HOLDINGS = [
   ...CALCULATION.holdings,
   { name: 'Nori Small', ticker: 'NORI', percentage: 0.0049, inEtfs: 'TSTWLD' },
-  { name: 'Nikko Rounded', ticker: null, percentage: 0, inEtfs: 'TSTWLD' },
   ...Array.from(
     { length: CALCULATION.totalUniqueHoldings - CALCULATION.holdings.length - 2 },
     (_, index) => ({
@@ -297,10 +296,8 @@ const HOLDINGS = [
       inEtfs: 'TSTWLD',
     })
   ),
+  { name: 'Nikko Rounded', ticker: null, percentage: 0, inEtfs: 'TSTWLD' },
 ]
-
-const normalize = (value: string) =>
-  value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim()
 
 const stubDiversificationWith =
   (etfs: EtfDetailDto[]): RouteStub =>
@@ -318,12 +315,8 @@ const stubDiversificationWith =
     )
     await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/holdings`), route => {
       const { query = '', page = 0 } = route.request().postDataJSON()
-      const holdings = HOLDINGS.filter(
-        holding =>
-          normalize(holding.name).includes(normalize(query)) ||
-          normalize(holding.ticker ?? '').includes(normalize(query))
-      ).sort(
-        (left, right) => right.percentage - left.percentage || left.name.localeCompare(right.name)
+      const holdings = HOLDINGS.filter(holding =>
+        `${holding.name} ${holding.ticker ?? ''}`.toLowerCase().includes(query.toLowerCase())
       )
       return route.fulfill({
         json: {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { useHoldingsSearch } from './use-holdings-search'
 import { diversificationService } from '../services/api'
@@ -8,6 +8,8 @@ import type { DiversificationHoldingDto } from '../models/generated/domain-model
 import type { Page } from '../models/page'
 
 vi.mock('../services/api', () => ({ diversificationService: { searchHoldings: vi.fn() } }))
+
+enableAutoUnmount(afterEach)
 
 const response = (name = 'NVIDIA', number = 0): Page<DiversificationHoldingDto> => ({
   content: [{ name, ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' }],
@@ -17,15 +19,26 @@ const response = (name = 'NVIDIA', number = 0): Page<DiversificationHoldingDto> 
   totalPages: 3,
 })
 
-const wrappers: VueWrapper[] = []
-const clients: QueryClient[] = []
+const firstPage = (query = '', allocations = [{ instrumentId: 7, percentage: 100 }]) => ({
+  allocations,
+  query,
+  page: 0,
+})
+
+function deferred() {
+  let resolve!: (value: Page<DiversificationHoldingDto>) => void
+  const promise = new Promise<Page<DiversificationHoldingDto>>(done => {
+    resolve = done
+  })
+  return { promise, resolve }
+}
 
 function setup(enabled = true) {
   const allocations = ref([{ instrumentId: 7, percentage: 100 }])
   const active = ref(enabled)
   let search!: ReturnType<typeof useHoldingsSearch>
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
-  const wrapper = mount(
+  mount(
     defineComponent({
       setup() {
         search = useHoldingsSearch(allocations, active)
@@ -34,9 +47,12 @@ function setup(enabled = true) {
     }),
     { global: { plugins: [[VueQueryPlugin, { queryClient: client }]] } }
   )
-  wrappers.push(wrapper)
-  clients.push(client)
-  return { search, allocations, active }
+  const type = async (text: string, wait = 300) => {
+    search.query.value = text
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(wait)
+  }
+  return { search, allocations, active, type }
 }
 
 describe('useHoldingsSearch', () => {
@@ -46,125 +62,82 @@ describe('useHoldingsSearch', () => {
   })
 
   afterEach(() => {
-    wrappers.splice(0).forEach(wrapper => wrapper.unmount())
-    clients.splice(0).forEach(client => client.clear())
     vi.useRealTimers()
   })
 
   it('fetches the first unfiltered page when the tab opens', async () => {
     const { search } = setup()
     await flushPromises()
-    expect(diversificationService.searchHoldings).toHaveBeenCalledWith({
-      allocations: [{ instrumentId: 7, percentage: 100 }],
-      query: '',
-      page: 0,
-    })
+    expect(diversificationService.searchHoldings).toHaveBeenCalledWith(firstPage())
     expect(search.data.value?.totalElements).toBe(201)
   })
 
   it('waits 300 milliseconds after the last keystroke before requesting a query', async () => {
-    const { search } = setup()
+    const { type } = setup()
     await flushPromises()
-    search.query.value = 'nv'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(200)
-    search.query.value = 'nvda'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(299)
+    await type('nv', 200)
+    await type('nvda', 299)
     expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(1)
     await vi.advanceTimersByTimeAsync(1)
-    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
-      allocations: [{ instrumentId: 7, percentage: 100 }],
-      query: 'nvda',
-      page: 0,
-    })
+    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(firstPage('nvda'))
   })
 
-  it('keeps the debounce when clearing text before the first query is sent', async () => {
-    const { search } = setup()
+  it('sends no request when the text is cleared before its query is sent', async () => {
+    const { search, type } = setup()
     await flushPromises()
-    search.query.value = 'nv'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(200)
-    search.query.value = ''
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(299)
+    await type('nv', 200)
+    await type('', 1000)
     expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(1)
-    await vi.advanceTimersByTimeAsync(1)
-    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
+    expect(search.isSearching.value).toBe(false)
   })
 
   it('resets a new query and a cleared query to the first page', async () => {
-    const { search } = setup()
+    const { search, type } = setup()
     await flushPromises()
     search.page.value = 1
     await flushPromises()
-    search.query.value = 'nestle'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
-    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
-      allocations: [{ instrumentId: 7, percentage: 100 }],
-      query: 'nestle',
-      page: 0,
-    })
+    await type('nestle')
+    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(firstPage('nestle'))
     search.page.value = 1
     await flushPromises()
-    search.query.value = ''
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
-    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
-      allocations: [{ instrumentId: 7, percentage: 100 }],
-      query: '',
-      page: 0,
-    })
+    await type('')
+    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(firstPage())
   })
 
   it('keeps the previous rows while the next page is pending', async () => {
     const { search } = setup()
     await flushPromises()
-    let resolveNext!: (value: Page<DiversificationHoldingDto>) => void
-    const next = new Promise<Page<DiversificationHoldingDto>>(resolve => {
-      resolveNext = resolve
-    })
-    vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(next)
+    const next = deferred()
+    vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(next.promise)
     search.page.value = 1
     await flushPromises()
     expect(search.data.value?.content[0].name).toBe('NVIDIA')
     expect(search.isSearching.value).toBe(true)
-    resolveNext(response('Nestlé', 1))
+    next.resolve(response('Nestlé', 1))
     await flushPromises()
     expect(search.data.value?.content[0].name).toBe('Nestlé')
     expect(search.isSearching.value).toBe(false)
   })
 
   it('never replaces a newer query result with a slower earlier response', async () => {
-    const { search } = setup()
+    const { search, type } = setup()
     await flushPromises()
-    let resolveEarlier!: (value: Page<DiversificationHoldingDto>) => void
-    const earlier = new Promise<Page<DiversificationHoldingDto>>(resolve => {
-      resolveEarlier = resolve
-    })
+    const earlier = deferred()
     vi.mocked(diversificationService.searchHoldings)
-      .mockReturnValueOnce(earlier)
+      .mockReturnValueOnce(earlier.promise)
       .mockResolvedValueOnce(response('Nestlé'))
-    search.query.value = 'nvda'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
-    search.query.value = 'nestle'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
+    await type('nvda')
+    await type('nestle')
     expect(search.data.value?.content[0].name).toBe('Nestlé')
-    resolveEarlier(response('NVIDIA'))
+    earlier.resolve(response('NVIDIA'))
     await flushPromises()
     expect(search.data.value?.content[0].name).toBe('Nestlé')
   })
 
   it('makes no request on other tabs even when the query or allocations change', async () => {
-    const { search, allocations, active } = setup(false)
-    search.query.value = 'nestle'
+    const { allocations, active, type } = setup(false)
     allocations.value = [{ instrumentId: 8, percentage: 100 }]
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
+    await type('nestle')
     expect(diversificationService.searchHoldings).not.toHaveBeenCalled()
     active.value = true
     await flushPromises()
@@ -188,11 +161,9 @@ describe('useHoldingsSearch', () => {
     await flushPromises()
     allocations.value = [{ instrumentId: 8, percentage: 75 }]
     await flushPromises()
-    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith({
-      allocations: [{ instrumentId: 8, percentage: 75 }],
-      query: '',
-      page: 0,
-    })
+    expect(diversificationService.searchHoldings).toHaveBeenLastCalledWith(
+      firstPage('', [{ instrumentId: 8, percentage: 75 }])
+    )
     allocations.value = [{ instrumentId: 8, percentage: 75 }]
     await flushPromises()
     expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(4)
@@ -202,12 +173,10 @@ describe('useHoldingsSearch', () => {
     vi.mocked(diversificationService.searchHoldings).mockRejectedValueOnce(
       new Error('Search failed')
     )
-    const { search } = setup()
+    const { search, type } = setup()
     await flushPromises()
     expect(search.error.value).toBe('Search failed')
-    search.query.value = 'nvda'
-    await nextTick()
-    await vi.advanceTimersByTimeAsync(300)
+    await type('nvda')
     expect(search.error.value).toBe('')
     expect(search.data.value?.content[0].name).toBe('NVIDIA')
   })
