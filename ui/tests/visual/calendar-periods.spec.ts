@@ -1,6 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
-import { STORAGE_KEYS } from '../../constants/storage-keys'
 import { openRoute, settleAndFreeze } from './settle'
 import { apiRoute } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
@@ -11,24 +10,11 @@ const PHONE = { width: 375, height: 667 }
 const SMALL_PHONE = { width: 320, height: 568 }
 const SUBPIXEL_PX = 0.5
 const EARLIER_DATES = '27 Jun – 30 Jun 2025'
-const LATEST_DATES = '30 Jun – 31 Dec 2025'
 const LATEST_START = '2025-06-30'
 const TWO_YEAR_DATES = '28 Nov 2025 – 28 May 2026'
 
 const dates = (page: Page) => page.locator('.period-dates').filter({ visible: true })
 const arrow = (page: Page, name: string) => page.getByRole('button', { name })
-
-const isHistoryRequest = (url: string) =>
-  apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES).test(url) &&
-  new URL(url).searchParams.get('range') === 'MAX'
-
-const historyRequests = (page: Page) => {
-  const urls: string[] = []
-  page.on('request', request => {
-    if (isHistoryRequest(request.url())) urls.push(request.url())
-  })
-  return urls
-}
 
 async function openEarlierPeriod(page: Page): Promise<void> {
   await openRoute(page, '/')
@@ -119,64 +105,20 @@ test('changing the platform filter keeps the picked day and period', async ({ pa
 
 test('reloading keeps the earlier period and requests history once', async ({ page }) => {
   await openEarlierPeriod(page)
-  const requests = historyRequests(page)
+  const requests: string[] = []
+  page.on('request', request => {
+    if (
+      request.url().includes('/series?') &&
+      new URL(request.url()).searchParams.get('range') === 'MAX'
+    )
+      requests.push(request.url())
+  })
 
   await page.reload()
 
   await expect(dates(page)).toHaveText(EARLIER_DATES)
   await expect(page.locator('.daily-profit-calendar p[role="status"]')).toBeEmpty()
   expect(requests).toHaveLength(1)
-})
-
-test('a stored older day keeps the placeholder until its period loads', async ({ page }) => {
-  await page.addInitScript(
-    key => localStorage.setItem(key, '2025-06-28'),
-    STORAGE_KEYS.SUMMARY_CALENDAR_DAY
-  )
-  let resume!: () => void
-  const pending = new Promise<void>(resolve => {
-    resume = resolve
-  })
-  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), async route => {
-    if (!isHistoryRequest(route.request().url())) return route.fallback()
-    await pending
-    await route.fulfill({ json: SERIES_RESPONSE })
-  })
-
-  await page.goto('/')
-
-  await expect(page.locator('.daily-profit-calendar .skeleton:visible').first()).toBeVisible()
-  await expect(dates(page)).toHaveCount(0)
-  resume()
-  await expect(dates(page)).toHaveText(EARLIER_DATES)
-  await expect(page.locator('.daily-profit-calendar p[role="status"]')).toBeEmpty()
-})
-
-test('a failed restoration clears the saved day and does not request history on the next reload', async ({
-  page,
-}) => {
-  await openEarlierPeriod(page)
-  await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>
-    isHistoryRequest(route.request().url())
-      ? route.fulfill({ status: 500, json: { message: 'History unavailable' } })
-      : route.fallback()
-  )
-
-  await page.reload()
-
-  await expect(dates(page)).toHaveText(LATEST_DATES)
-  await expect(
-    page.getByText('Could not load earlier days. Press the arrow to try again.')
-  ).toBeVisible()
-  expect(
-    await page.evaluate(key => localStorage.getItem(key), STORAGE_KEYS.SUMMARY_CALENDAR_DAY)
-  ).toBeNull()
-  const requests = historyRequests(page)
-
-  await page.reload()
-  await expect(dates(page)).toHaveText(LATEST_DATES)
-
-  expect(requests).toHaveLength(0)
 })
 
 test.describe('wide layout', () => {

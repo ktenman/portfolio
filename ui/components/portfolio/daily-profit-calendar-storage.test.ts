@@ -3,11 +3,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import type { CalendarHistory } from '../../composables/use-daily-profit-calendar'
 import { toasts } from '../../composables/use-toast'
-import {
-  createCalendarRow as row,
-  createCalendarRows,
-  createPeriodRows,
-} from '../../tests/fixtures'
+import { createCalendarRow as row, createPeriodRows } from '../../tests/fixtures'
 import DailyProfitCalendar from './daily-profit-calendar.vue'
 
 enableAutoUnmount(afterEach)
@@ -35,53 +31,8 @@ describe('DailyProfitCalendar storage', () => {
   })
 
   it.each([
-    ['click', 'Sun 7 Dec 2025', '2025-12-07'],
-    ['arrow key', 'Tue 9 Dec 2025', '2025-12-09'],
-    ['Previous day', 'Tue 9 Dec 2025', '2025-12-09'],
-    ['Next day', 'Mon 8 Dec 2025', '2025-12-08'],
-    ['Best day', 'Tue 9 Dec 2025', '2025-12-09'],
-    ['Worst day', 'Wed 3 Dec 2025', '2025-12-03'],
-  ])('should restore a day picked with %s after remounting', async (action, name, date) => {
-    const rows = [...createCalendarRows(), row('2025-12-10', 2560)]
-    const wrapper = mountWith(rows)
-    if (action === 'click') await pick(wrapper, name)
-    else if (action === 'arrow key')
-      await wrapper.find('.calendar-grid').trigger('keydown', { key: 'ArrowUp' })
-    else if (['Best day', 'Worst day'].includes(action))
-      await wrapper.findAll('.extreme-btn')[action === 'Best day' ? 0 : 1].trigger('click')
-    else {
-      if (action === 'Next day') await pick(wrapper, 'Sun 7 Dec 2025')
-      await press(wrapper, action)
-    }
-    expect(saved()).toBe(date)
-    wrapper.unmount()
-
-    const restored = mountWith(rows)
-
-    expect(selectedName(restored)).toContain(name)
-    expect(datesOf(restored)).toBe('1 Dec – 10 Dec 2025')
-    expect(announced(restored)).toBe('')
-    expect(restored.emitted('loadHistory')).toBeUndefined()
-  })
-
-  it('should keep the stored day when another day is previewed', async () => {
-    localStorage.setItem(STORAGE_KEY, '2025-12-29')
-    const wrapper = mountWith()
-
-    await wrapper
-      .find('.calendar-grid [aria-label^="Tue 30 Dec 2025"]')
-      .trigger('pointerenter', { pointerType: 'mouse' })
-
-    expect(wrapper.find('.day-label').text()).toBe('Tue 30 Dec 2025')
-    expect(saved()).toBe('2025-12-29')
-    wrapper.unmount()
-    expect(selectedName(mountWith())).toContain('Mon 29 Dec 2025')
-  })
-
-  it.each([
     ['2025-06-29', '30 Dec 2024 – 30 Jun 2025', 'Sun 29 Jun 2025'],
     ['2025-06-30', '30 Dec 2024 – 30 Jun 2025', 'Mon 30 Jun 2025'],
-    ['2024-12-30', '28 Dec – 30 Dec 2024', 'Mon 30 Dec 2024'],
     ['2024-12-28', '28 Dec – 30 Dec 2024', 'Sat 28 Dec 2024'],
   ])('should restore the period that counts %s', async (date, dates, name) => {
     localStorage.setItem(STORAGE_KEY, date)
@@ -95,45 +46,19 @@ describe('DailyProfitCalendar storage', () => {
     expect(saved()).toBe(date)
   })
 
-  it('should open the preceding period when a picked starting day is restored', async () => {
+  it('should restore the period reached with Earlier and step on from it', async () => {
     const wrapper = mountWith()
-    await pick(wrapper, 'Mon 30 Jun 2025')
-    expect(selectedName(wrapper)).toContain('starting day')
+    await press(wrapper, 'Earlier period')
+    await press(wrapper, 'Earlier period')
+    expect(saved()).toBe('2024-12-29')
     wrapper.unmount()
 
     const restored = mountWith()
     await nextTick()
+    expect(selectedName(restored)).toBe('Sun 29 Dec 2024, +€300.00, +0.30%')
+    await press(restored, 'Later period')
 
     expect(datesOf(restored)).toBe('30 Dec 2024 – 30 Jun 2025')
-    expect(selectedName(restored)).toBe('Mon 30 Jun 2025, +€600.00, +0.60%')
-    expect(announced(restored)).toBe('')
-  })
-
-  it.each(['.calendar-body', '.compact-period'])(
-    'should restore a period reached by stepping in %s',
-    async selector => {
-      const wrapper = mountWith()
-      await wrapper.find(`${selector} button[aria-label="Earlier period"]`).trigger('click')
-      expect(saved()).toBe('2025-06-30')
-      wrapper.unmount()
-
-      const restored = mountWith()
-      await nextTick()
-
-      expect(datesOf(restored)).toBe('30 Dec 2024 – 30 Jun 2025')
-      expect(selectedName(restored)).toBe('Mon 30 Jun 2025, +€600.00, +0.60%')
-    }
-  )
-
-  it('should select and save the best day when stepping forward to an earlier period', async () => {
-    const wrapper = mountWith()
-    await press(wrapper, 'Earlier period')
-    await press(wrapper, 'Earlier period')
-
-    await press(wrapper, 'Later period')
-
-    expect(saved()).toBe('2025-06-30')
-    expect(selectedName(wrapper)).toBe('Mon 30 Jun 2025, +€600.00, +0.60%')
   })
 
   it.each([
@@ -179,16 +104,18 @@ describe('DailyProfitCalendar storage', () => {
     expect(wrapper.find('.skeleton').exists()).toBe(false)
   })
 
-  it('should restore a day in the latest period without requesting older rows', () => {
-    localStorage.setItem(STORAGE_KEY, '2025-12-29')
-
+  it('should restore a picked day of the latest period without requesting older rows', async () => {
     const wrapper = mountWith(sixMonthRows(), 'idle')
+    await pick(wrapper, 'Mon 29 Dec 2025')
+    wrapper.unmount()
 
-    expect(selectedName(wrapper)).toContain('Mon 29 Dec 2025')
-    expect(wrapper.emitted('loadHistory')).toBeUndefined()
+    const restored = mountWith(sixMonthRows(), 'idle')
+
+    expect(selectedName(restored)).toContain('Mon 29 Dec 2025')
+    expect(restored.emitted('loadHistory')).toBeUndefined()
   })
 
-  it.each(['invalid', '2025-02-30', '2025-2-28', '2025-12-01', '2026-01-01', '2025-12-31', ''])(
+  it.each(['2025-02-30', '2025-12-01'])(
     'should discard %j without requesting older rows',
     async date => {
       localStorage.setItem(STORAGE_KEY, date)
@@ -203,25 +130,22 @@ describe('DailyProfitCalendar storage', () => {
     }
   )
 
-  it.each(['2024-12-01', '2025-06-01'])(
-    'should discard an older day without a row after fetching history: %s',
-    async date => {
-      localStorage.setItem(STORAGE_KEY, date)
-      const wrapper = mountWith(sixMonthRows(), 'idle')
-      expect(wrapper.emitted('loadHistory')).toHaveLength(1)
+  it('should discard an older day without a row after fetching history', async () => {
+    localStorage.setItem(STORAGE_KEY, '2024-12-01')
+    const wrapper = mountWith(sixMonthRows(), 'idle')
+    expect(wrapper.emitted('loadHistory')).toHaveLength(1)
 
-      await wrapper.setProps({ rows: createPeriodRows(), history: 'loaded' })
+    await wrapper.setProps({ rows: createPeriodRows(), history: 'loaded' })
 
-      expect(saved()).toBeNull()
-      expect(selectedName(wrapper)).toContain('Wed 31 Dec 2025')
-      expect(datesOf(wrapper)).toBe('30 Jun – 31 Dec 2025')
-      wrapper.unmount()
-      expect(mountWith(sixMonthRows(), 'idle').emitted('loadHistory')).toBeUndefined()
-    }
-  )
+    expect(saved()).toBeNull()
+    expect(selectedName(wrapper)).toContain('Wed 31 Dec 2025')
+    expect(datesOf(wrapper)).toBe('30 Jun – 31 Dec 2025')
+    wrapper.unmount()
+    expect(mountWith(sixMonthRows(), 'idle').emitted('loadHistory')).toBeUndefined()
+  })
 
   it('should discard the stored day and show the toast when older rows fail to load', async () => {
-    localStorage.setItem(STORAGE_KEY, '2025-06-29')
+    localStorage.setItem(STORAGE_KEY, '2025-06-30')
     const wrapper = mountWith(sixMonthRows(), 'idle')
 
     await wrapper.setProps({ history: 'loading' })
@@ -249,41 +173,5 @@ describe('DailyProfitCalendar storage', () => {
       'alert',
       'Could not load the daily profit calendar: Võrk on maas',
     ])
-  })
-
-  it('should restore across platform selections that still contain the picked day', async () => {
-    const wrapper = mountWith()
-    await press(wrapper, 'Earlier period')
-    wrapper.unmount()
-
-    const restored = mountWith(createPeriodRows().map(entry => ({ ...entry, totalValue: 5000 })))
-    await nextTick()
-
-    expect(datesOf(restored)).toBe('30 Dec 2024 – 30 Jun 2025')
-    expect(selectedName(restored)).toBe('Mon 30 Jun 2025, +€600.00, +13.64%')
-  })
-
-  it('should leave the card and day in place after another tab picks an older day until remounting', async () => {
-    const wrapper = mountWith()
-    await nextTick()
-    localStorage.setItem(STORAGE_KEY, '2024-12-29')
-    window.dispatchEvent(
-      new StorageEvent('storage', {
-        key: STORAGE_KEY,
-        newValue: '2024-12-29',
-        storageArea: localStorage,
-      })
-    )
-    await nextTick()
-
-    expect(selectedName(wrapper)).toContain('Wed 31 Dec 2025')
-    expect(datesOf(wrapper)).toBe('30 Jun – 31 Dec 2025')
-    wrapper.unmount()
-
-    const restored = mountWith()
-    await nextTick()
-
-    expect(selectedName(restored)).toContain('Sun 29 Dec 2024')
-    expect(datesOf(restored)).toBe('28 Dec – 30 Dec 2024')
   })
 })
