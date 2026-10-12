@@ -35,7 +35,7 @@ const emit = defineEmits<{ earlier: []; later: [] }>()
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-block: calc((1.35rem - 2rem) / 2);
+  margin-block: -1rem;
 }
 
 .period-dates {
@@ -44,12 +44,6 @@ const emit = defineEmits<{ earlier: []; later: [] }>()
   font-weight: 500;
   text-align: center;
   white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .period {
-    margin-block: calc((1.35rem - 2.75rem) / 2);
-  }
 }
 
 @media (max-width: 767.98px) {
