@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useMonthlyProfitSelection } from './use-monthly-profit-selection'
 import { buildMonthlyProfit, type MonthlyProfit } from '../services/monthly-profit'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
@@ -67,12 +67,22 @@ describe('useMonthlyProfitSelection', () => {
     expect([month.value?.key, announcement.value === announced]).toEqual(['2025-03', true])
   })
 
-  it('stays on the latest month when a refresh adds one and nothing was selected', () => {
+  it('keeps the month it opened on when a refresh adds a newer one', async () => {
     const { monthly, month, announcement } = setup()
 
     monthly.value = model([...ROWS, row('2025-05-31', 40, 1040)])
+    await nextTick()
 
-    expect([month.value?.key, announcement.value]).toEqual(['2025-05', ''])
+    expect([month.value?.key, announcement.value]).toEqual(['2025-04', ''])
+  })
+
+  it('opens on the latest month once the model arrives', async () => {
+    const { monthly, month } = setup(undefined)
+
+    monthly.value = model()
+    await nextTick()
+
+    expect(month.value?.key).toBe('2025-04')
   })
 
   it('falls back to the latest month when a refresh drops the selected one', () => {

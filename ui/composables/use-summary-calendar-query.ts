@@ -67,7 +67,7 @@ export const useSummaryCalendarQuery = ({
 
   const {
     data: calendarHistoryRows,
-    isLoading: isLoadingCalendarHistory,
+    isFetching: isLoadingCalendarHistory,
     isError: isCalendarHistoryError,
     errorUpdateCount: calendarHistoryFailures,
   } = useQuery({
@@ -78,8 +78,8 @@ export const useSummaryCalendarQuery = ({
     retry: 1,
   })
 
-  watch(calendarHistoryFailures, () => {
-    isHistoryRequested.value = false
+  watch([platformsKey, calendarHistoryFailures], ([key, failures], [previousKey, previous]) => {
+    if (key === previousKey && failures > previous) isHistoryRequested.value = false
   })
 
   const dailyCalendarRows = computed(() => {

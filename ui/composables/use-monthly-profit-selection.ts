@@ -1,10 +1,20 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import { monthOn, type MonthlyProfit } from '../services/monthly-profit'
 
 export const useMonthlyProfitSelection = (monthly: Ref<MonthlyProfit | null | undefined>) => {
   const selectedKey = ref('')
   const previewKey = ref<string | null>(null)
   const announcement = ref('')
+
+  watch(
+    monthly,
+    current => {
+      const months = current?.months
+      if (!months?.length || months.some(candidate => candidate.key === selectedKey.value)) return
+      selectedKey.value = months[months.length - 1].key
+    },
+    { immediate: true, flush: 'sync' }
+  )
 
   const month = computed(() => {
     const months = monthly.value?.months

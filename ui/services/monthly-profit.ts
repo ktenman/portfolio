@@ -73,11 +73,13 @@ export interface MonthInterval {
   isLatest: boolean
 }
 
+const numberOf = (value: unknown) => (typeof value === 'number' ? value : Number.NaN)
+
 const factorOf = (row: PortfolioSummaryDto, previous: PortfolioSummaryDto): number | null => {
   const difference = row.totalProfit - previous.totalProfit
   const change = roundToCents(difference)
   const base = row.totalValue - change
-  if (!Number.isFinite(difference) || !(base > 0)) return null
+  if (!Number.isFinite(difference) || !Number.isFinite(base) || !(base > 0)) return null
   const factor = 1 + change / base
   return Number.isFinite(factor) ? factor : null
 }
@@ -99,7 +101,11 @@ const indexesByMonth = (rows: PortfolioSummaryDto[]): Map<string, number[]> =>
   }, new Map<string, number[]>())
 
 const intervalsOf = (summaries: PortfolioSummaryDto[]): MonthInterval[] => {
-  const rows = mergeSummariesByDate(summaries)
+  const rows = mergeSummariesByDate(summaries).map(row => ({
+    ...row,
+    totalProfit: numberOf(row.totalProfit),
+    totalValue: numberOf(row.totalValue),
+  }))
   const groups = [...indexesByMonth(rows)]
   return groups.map(([key, indexes], position) => {
     const opening = rows[indexes[0] - 1]

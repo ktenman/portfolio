@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, type Ref } from 'vue'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
+import { useSummaryInterval } from './use-summary-interval'
+import { toasts } from './use-toast'
 import { portfolioSummaryService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
 import { createPortfolioSummaryDto } from '../tests/fixtures'
@@ -216,5 +218,86 @@ describe('full summary history', () => {
       queryResult.isHistoryStale.value,
       valuesOf(queryResult.monthlyRows.value)?.[0],
     ]).toEqual([['success', true, ['2023-06-01', 1]], false, ['2023-06-01', 9]])
+  })
+
+  describe('with the interval switch', () => {
+    const setupSwitch = (answers: Record<string, (PortfolioSummaryDto[] | Error)[]>) => {
+      const calls: string[] = []
+      vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async (range, platforms) => {
+        if (range !== 'MAX') return []
+        const platform = platforms![0]
+        calls.push(platform)
+        const answer = answers[platform].shift()!
+        if (answer instanceof Error) throw answer
+        return answer
+      })
+      const platforms = ref(['LHV'])
+      let interval: ReturnType<typeof useSummaryInterval> | null = null
+      renderWithProviders({
+        setup() {
+          const query = usePortfolioSummaryQuery(platforms)
+          interval = useSummaryInterval(
+            { status: query.historyStatus, load: query.loadCalendarHistory },
+            platforms
+          )
+          return {}
+        },
+        template: '<div></div>',
+      })
+      return { platforms, calls, interval: interval! }
+    }
+
+    const choose = async (platforms: Ref<string[]>, platform: string) => {
+      platforms.value = [platform]
+      await flushPromises()
+    }
+
+    const pressMonthly = async (interval: ReturnType<typeof useSummaryInterval>) => {
+      interval.select('monthly')
+      await flushPromises()
+    }
+
+    beforeEach(() => {
+      localStorage.clear()
+      toasts.value = []
+    })
+
+    it('loads the next platform after an earlier failure on this one', async () => {
+      const failure = new Error('down')
+      const { platforms, calls, interval } = setupSwitch({
+        LHV: [failure, failure, [row('2023-06-01')]],
+        SWEDBANK: [[row('2023-07-01')]],
+      })
+      await flushPromises()
+      await pressMonthly(interval)
+      await failTwice()
+      await pressMonthly(interval)
+
+      await choose(platforms, 'SWEDBANK')
+
+      expect([interval.view.value, calls]).toEqual(['monthly', ['LHV', 'LHV', 'LHV', 'SWEDBANK']])
+    })
+
+    it('asks again for a platform that failed earlier and returns to Daily when it fails again', async () => {
+      const failure = new Error('down')
+      const { platforms, calls, interval } = setupSwitch({
+        LHV: [failure, failure, failure, failure],
+        SWEDBANK: [[row('2023-07-01')]],
+      })
+      await flushPromises()
+      await pressMonthly(interval)
+      await failTwice()
+      await choose(platforms, 'SWEDBANK')
+      await pressMonthly(interval)
+
+      await choose(platforms, 'LHV')
+      await failTwice()
+
+      expect([
+        interval.interval.value,
+        toasts.value.length,
+        calls.filter(c => c === 'LHV').length,
+      ]).toEqual(['daily', 2, 4])
+    })
   })
 })

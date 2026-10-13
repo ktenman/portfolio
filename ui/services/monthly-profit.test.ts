@@ -150,6 +150,21 @@ describe('euro change and percentage', () => {
     ])
   })
 
+  it.each([
+    ['a missing total value', null, 50],
+    ['an infinite total value', Number.POSITIVE_INFINITY, 50],
+    ['a missing total profit', 1000, null],
+  ])('leaves the percentage unavailable for %s', (_, totalValue, totalProfit) => {
+    const broken = { ...row('2025-02-14'), totalValue, totalProfit } as unknown as ReturnType<
+      typeof row
+    >
+    const [month] = monthsOf(
+      [row('2025-01-31', 100, 1000), broken, row('2025-02-28', 60, 1010)],
+      LATER
+    )
+    expect([month.percent, month.cell]).toEqual([null, '—'])
+  })
+
   it('names a month by its label, coverage, euros and percentage', () => {
     const [month] = monthsOf([row('2025-06-27', 0, 1000), row('2025-06-30', 12.34, 1012.34)], LATER)
     expect(month.name).toBe('June 2025, from 27 Jun, +€12.34, +1.2%')
