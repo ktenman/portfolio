@@ -1,4 +1,5 @@
 import { DONUT_COLORS } from '../constants/chart-colors'
+import { formatPercentage } from '../utils/formatters'
 
 export interface BreakdownItem {
   label: string
@@ -46,9 +47,10 @@ export const unlessAbsent = (row: ComparedRow): ComparedRow =>
 
 export const formatBenchmarkShare = (
   benchmark: number | undefined,
-  ratio: number | undefined
+  ratio: number | undefined,
+  format: (value: number) => string = formatPercentage
 ): string => {
-  const share = `${(benchmark ?? 0).toFixed(2)}%`
+  const share = format(benchmark ?? 0)
   return ratio === undefined ? share : `${share} · ${ratio.toFixed(2)}×`
 }
 
@@ -73,12 +75,10 @@ export function compareBreakdown(
   benchmarkItems: BreakdownItem[] | null,
   options: CompareOptions
 ): ComparedRow[] {
-  const itemsMap = toMap(items)
   const shown = items
     .filter(item => item.value >= options.minPercentage)
     .sort((a, b) => b.value - a.value)
     .slice(0, options.topCount)
-  const shownKeys = new Set(shown.map(item => normaliseLabel(item.label)))
   const benchmarkMap = benchmarkItems === null ? null : toMap(benchmarkItems)
   const rows: ComparedRow[] = shown.map(item => {
     const row: ComparedRow = {
@@ -92,7 +92,8 @@ export function compareBreakdown(
     return { ...row, benchmark: share, ratio: ratioOf(item.value, share) }
   })
   if (!options.withOther) return rows
-  const other = residual(itemsMap, shownKeys)
+  const shownKeys = new Set(shown.map(item => normaliseLabel(item.label)))
+  const other = residual(toMap(items), shownKeys)
   const benchmarkOther = benchmarkMap === null ? 0 : residual(benchmarkMap, shownKeys)
   if (other === 0 && benchmarkOther === 0) return rows
   const otherRow: ComparedRow = { label: 'Other', value: other, isOther: true }

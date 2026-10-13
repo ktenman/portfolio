@@ -5,6 +5,7 @@ import {
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type CachedState } from '../../components/diversification/types'
+import { createHoldingsPage } from '../fixtures'
 import { stubInstruments } from './instruments-fixture'
 import { apiRoute, type RouteStub } from './stub'
 
@@ -284,6 +285,21 @@ const isBenchmarkRequest = (body: { allocations: { instrumentId: number }[] }) =
 
 const LONG_FUND_NAME = 'Test Aquila World Equity Index Tracker 6 Pension Fund – Ålandsbanken Series'
 
+const HOLDINGS = [
+  ...CALCULATION.holdings,
+  { name: 'Nori Small', ticker: 'NORI', percentage: 0.0049, inEtfs: 'TSTWLD' },
+  ...Array.from(
+    { length: CALCULATION.totalUniqueHoldings - CALCULATION.holdings.length - 2 },
+    (_, index) => ({
+      name: `Test asset ${String(index + 1).padStart(4, '0')}`,
+      ticker: null,
+      percentage: 0.0001,
+      inEtfs: 'TSTWLD',
+    })
+  ),
+  { name: 'Nikko Rounded', ticker: null, percentage: 0, inEtfs: 'TSTWLD' },
+]
+
 const stubDiversificationWith =
   (etfs: EtfDetailDto[]): RouteStub =>
   async page => {
@@ -298,6 +314,19 @@ const stubDiversificationWith =
           : CALCULATION,
       })
     )
+    await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/holdings`), route => {
+      const { query = '', page = 0 } = route.request().postDataJSON()
+      const holdings = HOLDINGS.filter(holding =>
+        `${holding.name} ${holding.ticker ?? ''}`.toLowerCase().includes(query.toLowerCase())
+      )
+      return route.fulfill({
+        json: createHoldingsPage(
+          holdings.slice(page * 100, (page + 1) * 100),
+          holdings.length,
+          page
+        ),
+      })
+    })
     await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>
       route.fulfill({ json: CONFIG })
     )
