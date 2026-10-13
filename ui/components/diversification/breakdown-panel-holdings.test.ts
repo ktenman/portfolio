@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { Chart } from 'chart.js'
 import BreakdownPanel from './breakdown-panel.vue'
 import { diversificationService } from '../../services/api'
 import { createHoldingDto as holding, createHoldingsPage as page } from '../../tests/fixtures'
@@ -274,6 +275,35 @@ describe('Holdings tab', () => {
       '4.00%',
       '0.0049%',
       '<0.0001%',
+    ])
+  })
+
+  it('clears the donut while the first holdings page loads and redraws it afterwards', async () => {
+    localStorage.setItem('portfolio_diversification_breakdown_tab', 'sectors')
+    localStorage.setItem('portfolio_diversification_breakdown_view', 'donut')
+    let resolvePending!: (value: Page<DiversificationHoldingDto>) => void
+    const pending = new Promise<Page<DiversificationHoldingDto>>(resolve => {
+      resolvePending = resolve
+    })
+    vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(pending)
+    vi.mocked(Chart).mockClear()
+    const wrapper = mountPanel()
+    await wrapper.setProps({
+      breakdowns: {
+        holdings: [],
+        sectors: [{ label: 'Énergie', value: 30 }],
+        industries: [],
+        countries: [],
+      },
+    })
+    await vi.dynamicImportSettled()
+    await wrapper.findAll('.breakdown-tab')[2].trigger('click')
+    expect(vi.mocked(Chart).mock.results[0].value.destroy).toHaveBeenCalled()
+    resolvePending(page([holding('Nestlé S.A.', 4)]))
+    await flushPromises()
+    expect(vi.mocked(Chart).mock.calls.map(([, config]) => config.data.labels)).toEqual([
+      ['Énergie'],
+      ['Nestlé S.A.'],
     ])
   })
 })

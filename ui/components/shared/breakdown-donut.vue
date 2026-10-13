@@ -85,11 +85,9 @@ const focusSlice = (index: number | null) => {
 const clearSlice = () => focusSlice(null)
 
 const renderChart = () => {
+  chart?.destroy()
+  chart = null
   if (!chartCanvas.value || props.rows.length === 0) return
-
-  if (chart) {
-    chart.destroy()
-  }
 
   const painted = fills(activeIndex.value)
 
