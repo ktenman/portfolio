@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import { addDays, daysBetween } from '../utils/iso-dates'
-import { monthsOf } from './monthly-profit'
+import { buildMonthlyProfit, extremeMonths, monthOn, monthsOf, moveMonth } from './monthly-profit'
 import { cellTextOf, stepOfMonth } from './monthly-profit-texts'
 
 const LATER = '2030-01-15'
@@ -23,7 +23,10 @@ const everyDay = (first: string, last: string): PortfolioSummaryDto[] =>
 
 describe('month boundaries', () => {
   it('starts the next month from a baseline on month-end', () => {
-    const months = monthsOf([row('2025-01-31'), row('2025-02-01', 10), row('2025-02-28', 20)], LATER)
+    const months = monthsOf(
+      [row('2025-01-31'), row('2025-02-01', 10), row('2025-02-28', 20)],
+      LATER
+    )
     expect(months.map(month => [month.key, month.coverage, month.isSingleMonth])).toEqual([
       ['2025-02', '', true],
     ])
@@ -148,10 +151,7 @@ describe('euro change and percentage', () => {
   })
 
   it('names a month by its label, coverage, euros and percentage', () => {
-    const [month] = monthsOf(
-      [row('2025-06-27', 0, 1000), row('2025-06-30', 12.34, 1012.34)],
-      LATER
-    )
+    const [month] = monthsOf([row('2025-06-27', 0, 1000), row('2025-06-30', 12.34, 1012.34)], LATER)
     expect(month.name).toBe('June 2025, from 27 Jun, +€12.34, +1.2%')
   })
 })
@@ -188,6 +188,204 @@ describe('colour steps and cell text', () => {
       '+8.0',
       '+100',
       '—',
+    ])
+  })
+})
+
+describe('monthly model', () => {
+  const sparse = () =>
+    buildMonthlyProfit(
+      [row('2021-06-30'), row('2021-07-31', 100, 1100), row('2021-09-30', 150, 1150)],
+      LATER
+    )!
+
+  it('has no result for zero, one or one repeated observation', () => {
+    expect([
+      buildMonthlyProfit([], LATER),
+      buildMonthlyProfit([row('2025-01-01')], LATER),
+      buildMonthlyProfit([row('2025-01-01'), row('2025-01-01', 5)], LATER),
+    ]).toEqual([null, null, null])
+  })
+
+  it('draws a whole missing month as a named slot and leaves the outside empty', () => {
+    const [year] = sparse().years
+    expect([
+      year.slots.length,
+      year.slots[5],
+      year.slots[7],
+      year.slots[9],
+      sparse().months.map(month => month.key),
+    ]).toEqual([
+      12,
+      null,
+      { kind: 'missing', key: '2021-08', name: 'August 2021, no daily summary' },
+      null,
+      ['2021-07', '2021-09'],
+    ])
+  })
+
+  it('leaves a cross-month interval out of the statistics and says single months', () => {
+    const monthly = sparse()
+    expect([
+      monthly.excluded,
+      monthly.upMonths,
+      monthly.averageMonth,
+      monthly.months.map(month => month.rank),
+    ]).toEqual([1, 1, 100, ['Best of 1 single month', '']])
+  })
+
+  it('divides the unrounded total once for the average', () => {
+    const monthly = buildMonthlyProfit(
+      [
+        row('2025-01-31', 0),
+        row('2025-02-28', 0.006),
+        row('2025-03-31', 0.012),
+        row('2025-04-30', 0.013),
+      ],
+      LATER
+    )!
+    expect([monthly.months.map(month => month.change), monthly.averageMonth]).toEqual([
+      [0.01, 0.01, 0],
+      0,
+    ])
+  })
+
+  it('has no average without a single-month interval', () => {
+    const monthly = buildMonthlyProfit([row('2025-01-15'), row('2025-03-31', 10)], LATER)!
+    expect([monthly.averageMonth, monthly.excluded]).toEqual([null, 1])
+  })
+
+  it('shares a rank between equal changes and takes the later one as best', () => {
+    const monthly = buildMonthlyProfit(
+      [
+        row('2025-01-31', 0),
+        row('2025-02-28', 100, 1100),
+        row('2025-03-31', 200, 1200),
+        row('2025-04-30', 250, 1250),
+      ],
+      LATER
+    )!
+    expect([monthly.months.map(month => month.rank), monthly.best?.key]).toEqual([
+      ['Best of 3 months', 'Best of 3 months', '3rd best of 3 months'],
+      '2025-03',
+    ])
+  })
+
+  it('gives a zero change no rank and no extreme', () => {
+    const monthly = buildMonthlyProfit([row('2025-01-31'), row('2025-02-28')], LATER)!
+    expect([monthly.months[0].rank, extremeMonths(monthly), monthly.flatMonths]).toEqual([
+      '',
+      [],
+      1,
+    ])
+  })
+
+  it('names the best and the worst month for the shortcuts', () => {
+    const monthly = buildMonthlyProfit(
+      [row('2025-01-31', 0), row('2025-02-28', -50, 950), row('2025-03-31', 20, 1020)],
+      LATER
+    )!
+    expect(
+      extremeMonths(monthly).map(({ label, variant, month }) => [label, variant, month.key])
+    ).toEqual([
+      ['Best month', 'gain-4', '2025-03'],
+      ['Worst month', 'loss-4', '2025-02'],
+    ])
+  })
+})
+
+describe('year totals', () => {
+  it('has no result for a year entered without a year-end row and keeps the year before', () => {
+    const { years } = buildMonthlyProfit(
+      [
+        row('2024-11-30', 0),
+        row('2024-12-20', 10, 1010),
+        row('2025-01-31', 30, 1030),
+        row('2025-02-28', 40, 1040),
+      ],
+      LATER
+    )!
+    expect(years.map(year => [year.year, year.change, year.percent === null, year.note])).toEqual([
+      [2025, null, true, 'Year result unavailable: missing year-end summary'],
+      [2024, 10, false, '2024 from 30 Nov to 20 Dec'],
+    ])
+  })
+
+  it('draws a wholly missing year as twelve missing slots without a result', () => {
+    const { years } = buildMonthlyProfit(
+      [row('2021-11-30'), row('2021-12-31', 10, 1010), row('2023-01-31', 20, 1020)],
+      LATER
+    )!
+    expect([
+      years.map(year => year.year),
+      years[1].slots.every(slot => slot?.kind === 'missing'),
+      years[1].change,
+      years[1].percent,
+    ]).toEqual([[2023, 2022, 2021], true, null, null])
+  })
+
+  it('has no year percentage when one month has none and keeps the euros', () => {
+    const [year] = buildMonthlyProfit(
+      [row('2024-12-31', 0, 1000), row('2025-01-31', 10, 10), row('2025-02-28', 20, 1020)],
+      LATER
+    )!.years
+    expect([year.change, year.percent]).toEqual([20, null])
+  })
+
+  it('compounds the unrounded factors of its months', () => {
+    const [year] = buildMonthlyProfit(
+      [row('2024-12-31', 0, 1000), row('2025-01-31', 100, 1100), row('2025-02-28', 210, 1210)],
+      LATER
+    )!.years
+    expect([year.percent?.toFixed(6), year.note, year.name]).toEqual([
+      '21.000000',
+      '2025 to 28 Feb',
+      '2025 to 28 Feb, +€210.00, +21.0%',
+    ])
+  })
+
+  it('labels an unfinished year to its closing date', () => {
+    const [year] = buildMonthlyProfit(
+      [row('2025-12-31'), row('2026-01-31', 10, 1010), row('2026-10-12', 20, 1020)],
+      '2026-10-14'
+    )!.years
+    expect(year.note).toBe('2026 to 12 Oct')
+  })
+})
+
+describe('month navigation', () => {
+  const monthly = buildMonthlyProfit(
+    [
+      row('2019-12-31'),
+      row('2020-01-31', 10, 1010),
+      row('2021-07-31', 20, 1020),
+      row('2021-09-30', 30, 1030),
+      row('2022-01-31', 40, 1040),
+    ],
+    LATER
+  )!
+
+  it('skips missing months in steps of the same size', () => {
+    expect([
+      moveMonth(monthly, '2021-07', 1),
+      moveMonth(monthly, '2021-09', -1),
+      moveMonth(monthly, '2022-01', -12),
+      moveMonth(monthly, '2020-01', 12),
+    ]).toEqual(['2021-09', '2021-07', '2020-01', '2022-01'])
+  })
+
+  it('stays put when no selectable month lies that way', () => {
+    expect([
+      moveMonth(monthly, '2020-01', -12),
+      moveMonth(monthly, '2021-07', 12),
+      moveMonth(monthly, '2022-01', 1),
+    ]).toEqual([null, null, null])
+  })
+
+  it('finds a month by its key', () => {
+    expect([monthOn(monthly, '2021-09')?.key, monthOn(monthly, '2021-08')]).toEqual([
+      '2021-09',
+      undefined,
     ])
   })
 })

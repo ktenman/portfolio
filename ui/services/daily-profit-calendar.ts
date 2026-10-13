@@ -121,14 +121,16 @@ const stepOf = (change: number, percent: number | null): ChangeStep => {
 
 const ordinal = (rank: number): string => `${rank}${ORDINAL_SUFFIXES[ORDINAL_RULES.select(rank)]}`
 
-const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string => {
-  const { change } = rowChange
-  if (!isSingle(rowChange) || change === 0) return ''
+export const rankText = (change: number, singleChanges: number[], unit: string): string => {
+  if (change === 0) return ''
   const side = change > 0 ? 'Best' : 'Worst'
   const ahead = singleChanges.filter(other => (change > 0 ? other > change : other < change)).length
   const place = ahead ? `${ordinal(ahead + 1)} ${side.toLowerCase()}` : side
   return `${place} of ${singleChanges.length} ${unit}${singleChanges.length === 1 ? '' : 's'}`
 }
+
+const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string =>
+  isSingle(rowChange) ? rankText(rowChange.change, singleChanges, unit) : ''
 
 export const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) => {
   const verb = isOpen ? 'Now at' : 'Closed at'

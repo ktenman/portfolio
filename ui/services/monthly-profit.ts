@@ -1,7 +1,7 @@
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
-import { addDays, monthKey } from '../utils/iso-dates'
-import { roundToCents, type ChangeStep } from './daily-profit-calendar'
-import { textsOf } from './monthly-profit-texts'
+import { addDays, addMonths, formatMonthSpan, monthKey } from '../utils/iso-dates'
+import { rankText, roundToCents, type ChangeStep } from './daily-profit-calendar'
+import { missingMonthName, textsOf, yearTextsOf } from './monthly-profit-texts'
 import { mergeSummariesByDate } from './summary-aggregator'
 
 export interface MonthResult {
@@ -21,6 +21,42 @@ export interface MonthResult {
   rank: string
   detail: string
   name: string
+}
+
+export interface MissingMonth {
+  kind: 'missing'
+  key: string
+  name: string
+}
+
+export type MonthSlot = MonthResult | MissingMonth | null
+
+export interface YearResult {
+  year: number
+  slots: MonthSlot[]
+  change: number | null
+  percent: number | null
+  note: string
+  name: string
+}
+
+export interface MonthlyProfit {
+  months: MonthResult[]
+  years: YearResult[]
+  span: string
+  upMonths: number
+  downMonths: number
+  flatMonths: number
+  averageMonth: number | null
+  excluded: number
+  best: MonthResult | null
+  worst: MonthResult | null
+}
+
+interface ExtremeMonth {
+  label: string
+  variant: ChangeStep
+  month: MonthResult
 }
 
 export interface MonthInterval {
@@ -101,3 +137,118 @@ export const monthOf = (interval: MonthInterval, today: string, rank: string): M
 
 export const monthsOf = (summaries: PortfolioSummaryDto[], today: string): MonthResult[] =>
   intervalsOf(summaries).map(interval => monthOf(interval, today, ''))
+
+const MONTHS_IN_YEAR = 12
+
+const rankedMonths = (intervals: MonthInterval[], today: string): MonthResult[] => {
+  const singles = intervals.filter(interval => interval.isSingleMonth)
+  const unit = singles.length === intervals.length ? 'month' : 'single month'
+  const changes = singles.map(interval => interval.change)
+  return intervals.map(interval =>
+    monthOf(interval, today, interval.isSingleMonth ? rankText(interval.change, changes, unit) : '')
+  )
+}
+
+const extremeOf = (singles: MonthResult[], sign: 1 | -1): MonthResult | null =>
+  singles.reduce<MonthResult | null>((extreme, month) => {
+    const amount = month.change * sign
+    return amount > 0 && amount >= (extreme?.change ?? 0) * sign ? month : extreme
+  }, null)
+
+const figuresOf = (intervals: MonthInterval[], months: MonthResult[]) => {
+  const singles = months.filter(month => month.isSingleMonth)
+  const total = intervals
+    .filter(interval => interval.isSingleMonth)
+    .reduce((sum, interval) => sum + interval.rawChange, 0)
+  const countOf = (side: string) => singles.filter(month => month.step.startsWith(side)).length
+  return {
+    upMonths: countOf('gain'),
+    downMonths: countOf('loss'),
+    flatMonths: countOf('flat'),
+    averageMonth: singles.length ? roundToCents(total / singles.length) : null,
+    excluded: months.length - singles.length,
+    best: extremeOf(singles, 1),
+    worst: extremeOf(singles, -1),
+  }
+}
+
+const slotsOf = (year: number, months: MonthResult[]): MonthSlot[] => {
+  const first = months[0].key
+  const last = months[months.length - 1].key
+  return Array.from({ length: MONTHS_IN_YEAR }, (_, index) => {
+    const key = addMonths(`${year}-01`, index)
+    const month = months.find(candidate => candidate.key === key)
+    if (month) return month
+    return key > first && key < last ? { kind: 'missing', key, name: missingMonthName(key) } : null
+  })
+}
+
+const yearOf = (
+  year: number,
+  intervals: MonthInterval[],
+  months: MonthResult[],
+  today: string
+): YearResult => {
+  const own = intervals.filter(interval => interval.key.startsWith(`${year}-`))
+  const slots = slotsOf(year, months)
+  if (!own.length) {
+    return {
+      year,
+      slots,
+      change: null,
+      percent: null,
+      ...yearTextsOf(year, null, null, null, today),
+    }
+  }
+  const opening = own[0].opening
+  const closing = own[own.length - 1].closing
+  const isIsolated = opening.date >= `${year - 1}-12-31`
+  const change = isIsolated ? roundToCents(closing.totalProfit - opening.totalProfit) : null
+  const percent = isIsolated ? percentOf(compound(own.map(interval => interval.factor))) : null
+  return {
+    year,
+    slots,
+    change,
+    percent,
+    ...yearTextsOf(year, { opening, closing, isIsolated }, change, percent, today),
+  }
+}
+
+const yearsOf = (intervals: MonthInterval[], months: MonthResult[], today: string) => {
+  const first = Number(months[0].key.slice(0, 4))
+  const last = Number(months[months.length - 1].key.slice(0, 4))
+  return Array.from({ length: last - first + 1 }, (_, index) =>
+    yearOf(last - index, intervals, months, today)
+  )
+}
+
+export const buildMonthlyProfit = (
+  summaries: PortfolioSummaryDto[],
+  today: string
+): MonthlyProfit | null => {
+  const intervals = intervalsOf(summaries)
+  if (!intervals.length) return null
+  const months = rankedMonths(intervals, today)
+  return {
+    months,
+    years: yearsOf(intervals, months, today),
+    span: formatMonthSpan(months[0].key, months[months.length - 1].key),
+    ...figuresOf(intervals, months),
+  }
+}
+
+export const monthOn = (monthly: MonthlyProfit, key: string): MonthResult | undefined =>
+  monthly.months.find(month => month.key === key)
+
+export const moveMonth = (monthly: MonthlyProfit, key: string, step: number): string | null => {
+  const { months } = monthly
+  const target = addMonths(key, step)
+  if (target < months[0].key || target > months[months.length - 1].key) return null
+  return monthOn(monthly, target) ? target : moveMonth(monthly, target, step)
+}
+
+export const extremeMonths = ({ best, worst }: MonthlyProfit): ExtremeMonth[] =>
+  [
+    { label: 'Best month', variant: 'gain-4' as const, month: best },
+    { label: 'Worst month', variant: 'loss-4' as const, month: worst },
+  ].flatMap(({ label, variant, month }) => (month ? [{ label, variant, month }] : []))

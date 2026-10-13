@@ -11,11 +11,13 @@ import {
   monthsBetween,
 } from '../utils/iso-dates'
 import { closingTexts, gapText, type ChangeStep } from './daily-profit-calendar'
+import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import type { MonthInterval } from './monthly-profit'
 
 export const MONTH_STEPS = [0.3, 1, 2.5, 5]
 export const MONTH_FLAT_HINT = `under ±${MONTH_STEPS[0]}%`
 export const NO_PERCENT = 'Percentage unavailable'
+export const NO_YEAR_RESULT = 'Year result unavailable: missing year-end summary'
 
 const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
 const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
@@ -122,5 +124,38 @@ export const textsOf = (
     name: [label, ...(coverage ? [coverage] : []), formatCurrencyChange(change), percentText].join(
       ', '
     ),
+  }
+}
+
+export const missingMonthName = (key: string): string => `${formatFullMonth(key)}, no daily summary`
+
+interface YearEnds {
+  opening: PortfolioSummaryDto
+  closing: PortfolioSummaryDto
+  isIsolated: boolean
+}
+
+const yearNote = (year: number, { opening, closing, isIsolated }: YearEnds, today: string) => {
+  if (!isIsolated) return NO_YEAR_RESULT
+  const from = opening.date >= `${year}-01-01` ? [`from ${formatDayMonth(opening.date)}`] : []
+  const isPartial = closing.date < `${year}-12-31` || closing.date === today
+  const parts = [...from, ...(isPartial ? [`to ${formatDayMonth(closing.date)}`] : [])]
+  return parts.length ? `${year} ${parts.join(' ')}` : ''
+}
+
+export const yearTextsOf = (
+  year: number,
+  ends: YearEnds | null,
+  change: number | null,
+  percent: number | null,
+  today: string
+) => {
+  if (!ends) return { note: '', name: `${year}, no daily summary` }
+  const note = yearNote(year, ends, today)
+  if (change === null) return { note, name: `${year}, ${note}` }
+  const percentText = percent === null ? NO_PERCENT : formatPercentChange(percent, 1)
+  return {
+    note,
+    name: [note || String(year), formatCurrencyChange(change), percentText].join(', '),
   }
 }
