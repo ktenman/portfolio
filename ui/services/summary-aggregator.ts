@@ -24,6 +24,11 @@ export function sortSummariesByDateAsc<T extends { date: string }>(summaries: T[
   return [...summaries].sort((a, b) => a.date.localeCompare(b.date))
 }
 
+export function mergeSummariesByDate(...sources: PortfolioSummaryDto[][]): PortfolioSummaryDto[] {
+  const byDate = new Map(sources.flat().map(row => [row.date, row]))
+  return sortSummariesByDateAsc([...byDate.values()])
+}
+
 export function sortSummariesByDateDesc(summaries: PortfolioSummaryDto[]): PortfolioSummaryDto[] {
   return sortSummariesByDateAsc(summaries).reverse()
 }

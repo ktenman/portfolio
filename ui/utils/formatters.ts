@@ -97,8 +97,10 @@ const signFor = (value: number): string => (value < 0 ? '−' : '')
 export const formatSignedCurrency = (value: number, currency: string | undefined): string =>
   `${signFor(value)}${formatCurrencyWithSign(value, currency)}`
 
-export const formatSignedPercent = (value: number): string =>
-  `${signFor(value)}${Math.abs(value).toFixed(2)}%`
+export const formatSignedPercent = (value: number, digits: number = 2): string => {
+  const rounded = Number(value.toFixed(digits))
+  return `${signFor(rounded)}${Math.abs(rounded).toFixed(digits)}%`
+}
 
 const plusFor = (value: number): string => (value > 0 ? '+' : '')
 
@@ -112,9 +114,9 @@ export const splitCents = (amount: string): [string, string] => {
   return point < 0 ? [amount, ''] : [amount.slice(0, point), amount.slice(point)]
 }
 
-export const formatPercentChange = (value: number): string => {
-  const rounded = Number(value.toFixed(2))
-  return `${plusFor(rounded)}${formatSignedPercent(rounded)}`
+export const formatPercentChange = (value: number, digits: number = 2): string => {
+  const rounded = Number(value.toFixed(digits))
+  return `${plusFor(rounded)}${formatSignedPercent(rounded, digits)}`
 }
 
 const PRICE_THRESHOLD_NO_DECIMALS = 10000
