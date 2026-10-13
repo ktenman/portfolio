@@ -31,15 +31,27 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile',
+      testIgnore: '**/holdings-search.spec.ts',
       use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 } },
     },
     {
       name: 'tablet',
+      testIgnore: '**/holdings-search.spec.ts',
       use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } },
     },
     {
       name: 'desktop',
+      testIgnore: '**/holdings-search.spec.ts',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
+    ...[
+      { name: 'holdings-mobile', viewport: { width: 390, height: 844 } },
+      { name: 'holdings-desktop', viewport: { width: 1440, height: 900 } },
+    ].map(({ name, viewport }) => ({
+      name,
+      testMatch: '**/holdings-search.spec.ts',
+      snapshotPathTemplate: 'ui/tests/visual/baselines/{arg}-{projectName}{ext}',
+      use: { ...devices['Desktop Chrome'], viewport },
+    })),
   ],
 })

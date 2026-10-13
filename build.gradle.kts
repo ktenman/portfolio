@@ -223,6 +223,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.dto.CalculationResult",
       "ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto",
       "ee.tenman.portfolio.dto.DiversificationCalculatorResponseDto",
+      "ee.tenman.portfolio.dto.DiversificationHoldingSearchRequestDto",
       "ee.tenman.portfolio.dto.EtfDetailDto",
       "ee.tenman.portfolio.dto.FundReportDto",
       "ee.tenman.portfolio.dto.CollectionStatusDto",

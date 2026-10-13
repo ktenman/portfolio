@@ -6,6 +6,7 @@ import { BENCHMARK_SYMBOL } from '../constants/benchmarks'
 import { formatTickerSymbol } from '../utils/ticker-symbol'
 import type { BreakdownItem } from '../services/diversification-chart-service'
 import type {
+  AllocationDto,
   DiversificationCalculatorResponseDto,
   EtfDetailDto,
 } from '../models/generated/domain-models'
@@ -51,6 +52,7 @@ export function useDiversificationResult(
   availableEtfs: Ref<EtfDetailDto[]>
 ) {
   const result = ref<DiversificationCalculatorResponseDto | null>(null)
+  const resultAllocations = ref<AllocationDto[]>([])
   const benchmark = ref<DiversificationCalculatorResponseDto | null>(null)
   const error = ref('')
   const isCalculating = ref(false)
@@ -81,18 +83,20 @@ export function useDiversificationResult(
     const valid = validAllocations()
     if (valid.length < 1) {
       result.value = null
+      resultAllocations.value = []
       return
     }
     loadBenchmark()
     isCalculating.value = true
     error.value = ''
+    const snapshot = valid.map(a => ({ instrumentId: a.instrumentId, percentage: a.value }))
     try {
-      result.value = await diversificationService.calculate(
-        valid.map(a => ({ instrumentId: a.instrumentId, percentage: a.value }))
-      )
+      result.value = await diversificationService.calculate(snapshot)
+      resultAllocations.value = snapshot
     } catch (e) {
       error.value = getErrorMessage(e)
       result.value = null
+      resultAllocations.value = []
     } finally {
       isCalculating.value = false
     }
@@ -117,6 +121,7 @@ export function useDiversificationResult(
 
   return {
     result,
+    resultAllocations,
     error,
     isCalculating,
     debouncedCalculate,

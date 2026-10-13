@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
+import jakarta.validation.constraints.Size
 import java.io.Serializable
 import java.math.BigDecimal
 
@@ -20,6 +21,15 @@ data class AllocationDto(
 data class DiversificationCalculatorRequestDto(
   @field:Valid
   val allocations: List<AllocationDto>,
+)
+
+data class DiversificationHoldingSearchRequestDto(
+  @field:Valid
+  val allocations: List<AllocationDto>,
+  @field:Size(max = 100, message = "Holdings query must not exceed 100 characters")
+  val query: String = "",
+  @field:Min(value = 0, message = "Holdings page must be non-negative")
+  val page: Int = 0,
 )
 
 data class DiversificationCalculatorResponseDto(

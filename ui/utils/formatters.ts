@@ -257,6 +257,11 @@ export const formatPriceChange = (item: InstrumentDto): string => {
 
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`
 
+export const formatHoldingPercentage = (value: number): string => {
+  if (value === 0) return '<0.0001%'
+  return value < 0.01 ? `${value.toFixed(4)}%` : formatPercentage(value)
+}
+
 export const formatTer = (value: number | null, decimals: number = 2): string => {
   if (value === null) return '-'
   return `${value.toFixed(decimals)}%`

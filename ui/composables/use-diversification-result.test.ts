@@ -32,6 +32,24 @@ describe('useDiversificationResult', () => {
     vi.mocked(diversificationService.calculate).mockResolvedValue(response('Finance', 10))
   })
 
+  it('keeps the allocations of the displayed result until the next calculation resolves', async () => {
+    const allocations = ref([{ instrumentId: 1, value: 60 }])
+    const state = useDiversificationResult(allocations, ref([etf(1, 'TSTA:GER:EUR')]))
+    await state.debouncedCalculate()
+    let resolveNext!: (value: DiversificationCalculatorResponseDto) => void
+    const next = new Promise<DiversificationCalculatorResponseDto>(resolve => {
+      resolveNext = resolve
+    })
+    vi.mocked(diversificationService.calculate).mockReturnValueOnce(next)
+    allocations.value[0].value = 90
+    const pending = state.debouncedCalculate()
+    expect(state.resultAllocations.value).toEqual([{ instrumentId: 1, percentage: 60 }])
+    allocations.value[0].value = 95
+    resolveNext(response('Finance', 20))
+    await pending
+    expect(state.resultAllocations.value).toEqual([{ instrumentId: 1, percentage: 90 }])
+  })
+
   it('fetches the benchmark once with a single 100 percent allocation and not again on edits', async () => {
     const allocations = ref([{ instrumentId: 1, value: 60 }])
     const etfs = ref([etf(1, 'TSTA:GER:EUR'), etf(7, 'VGLA:GER:EUR')])

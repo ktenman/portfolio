@@ -180,6 +180,12 @@ export interface DiversificationCalculatorResponseDto extends Serializable {
     concentration: ConcentrationDto;
 }
 
+export interface DiversificationHoldingSearchRequestDto {
+    allocations: AllocationDto[];
+    query: string;
+    page: number;
+}
+
 export interface EtfDetailDto extends Serializable {
     instrumentId: number;
     symbol: string;

@@ -15,13 +15,13 @@
       <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
       <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
       <span class="legend-label">{{ item.label }}</span>
-      <span class="legend-value">{{ formatPercentage(item.value) }}</span>
+      <span class="legend-value">{{ formatValue(item.value) }}</span>
       <span
         v-if="item.benchmark !== undefined"
         class="legend-benchmark"
         :class="{ flagged: isFlagged(item.ratio) }"
       >
-        {{ formatBenchmarkShare(item.benchmark, item.ratio) }}
+        {{ formatBenchmarkShare(item.benchmark, item.ratio, formatValue) }}
       </span>
     </div>
   </div>
@@ -34,11 +34,11 @@ import {
   type BreakdownRow,
 } from '../../services/diversification-chart-service'
 import { countryFlagUrl } from '../../utils/currency-flag'
-import { formatPercentage } from '../../utils/formatters'
 
 const props = defineProps<{
   items: BreakdownRow[]
   activeIndex: number | null
+  formatValue: (value: number) => string
 }>()
 
 const emit = defineEmits<{

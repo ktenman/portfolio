@@ -6,6 +6,8 @@ import {
   type BenchmarkPointDto,
   type CalculationResult,
   type DiversificationCalculatorResponseDto,
+  type DiversificationHoldingDto,
+  type DiversificationHoldingSearchRequestDto,
   type EnumsResponse,
   type EtfDetailDto,
   type EtfHoldingBreakdownDto,
@@ -130,6 +132,12 @@ export const portfolioSummaryService = {
 }
 
 export const diversificationService = {
+  searchHoldings: (request: DiversificationHoldingSearchRequestDto) =>
+    httpClient.post<Page<DiversificationHoldingDto>>(
+      `${API_ENDPOINTS.DIVERSIFICATION}/holdings`,
+      request
+    ),
+
   getAvailableEtfs: () =>
     httpClient.get<EtfDetailDto[]>(`${API_ENDPOINTS.DIVERSIFICATION}/available-etfs`),
 

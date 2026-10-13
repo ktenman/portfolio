@@ -156,6 +156,8 @@ describe('DiversificationCalculator', () => {
     concentration: { top10Percentage: 0, largestPosition: null },
   })
 
+  const withoutPanel = { global: { stubs: { BreakdownPanel: true } } }
+
   const benchmarkCalls = async () => {
     const { diversificationService } = await import('../../services/api')
     return vi
@@ -171,7 +173,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
     wrapper
       .findComponent({ name: 'AllocationTable' })
@@ -189,7 +191,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'BreakdownPanel' }).props('benchmark')).toBeNull()
@@ -221,7 +223,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(20)
