@@ -21,7 +21,7 @@
         class="legend-benchmark"
         :class="{ flagged: isFlagged(item.ratio) }"
       >
-        {{ formatBenchmarkShare(item.benchmark, item.ratio) }}
+        {{ formatBenchmarkShare(item.benchmark, item.ratio, formatValue) }}
       </span>
     </div>
   </div>

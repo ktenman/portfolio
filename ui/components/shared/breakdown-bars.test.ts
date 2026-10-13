@@ -29,6 +29,13 @@ describe('BreakdownBars', () => {
     expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Small 0.0049%')
   })
 
+  it('shows a small benchmark share with four decimals on a holdings row', () => {
+    const rows = paint([{ label: 'Nestlé', value: 0.0031, benchmark: 0.0042, isOther: false }])
+    const wrapper = mountBars({ rows, holdings: true })
+    expect(wrapper.find('.row-benchmark').text()).toBe('0.0042%')
+    expect(wrapper.find('.breakdown-row').attributes('title')).toBe('Nestlé 0.0031% · VGLA 0.0042%')
+  })
+
   it('keeps two decimal places for the other breakdowns', () => {
     const rows = paint([{ label: 'Small', value: 0.0049, isOther: false }])
     expect(mountBars({ rows }).find('.row-value').text()).toBe('0.00%')

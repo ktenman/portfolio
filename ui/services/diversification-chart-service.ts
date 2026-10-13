@@ -1,4 +1,5 @@
 import { DONUT_COLORS } from '../constants/chart-colors'
+import { formatPercentage } from '../utils/formatters'
 
 export interface BreakdownItem {
   label: string
@@ -46,9 +47,10 @@ export const unlessAbsent = (row: ComparedRow): ComparedRow =>
 
 export const formatBenchmarkShare = (
   benchmark: number | undefined,
-  ratio: number | undefined
+  ratio: number | undefined,
+  format: (value: number) => string = formatPercentage
 ): string => {
-  const share = `${(benchmark ?? 0).toFixed(2)}%`
+  const share = format(benchmark ?? 0)
   return ratio === undefined ? share : `${share} · ${ratio.toFixed(2)}×`
 }
 

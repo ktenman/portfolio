@@ -26,7 +26,7 @@
         class="row-benchmark"
         :class="{ flagged: isFlagged(row.ratio) }"
       >
-        {{ formatBenchmarkShare(row.benchmark, row.ratio) }}
+        {{ formatBenchmarkShare(row.benchmark, row.ratio, formatValue) }}
       </span>
     </div>
   </div>
@@ -69,7 +69,7 @@ const barStyle = (row: BreakdownRow) => ({
 const rowTitle = (row: BreakdownRow): string => {
   const own = `${row.label} ${formatValue(row.value)}`
   if (row.benchmark === undefined) return own
-  return `${own} · ${props.benchmarkLabel} ${row.benchmark.toFixed(2)}%`
+  return `${own} · ${props.benchmarkLabel} ${formatValue(row.benchmark)}`
 }
 </script>
 

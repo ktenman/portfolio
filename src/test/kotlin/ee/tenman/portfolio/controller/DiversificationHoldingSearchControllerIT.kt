@@ -1,14 +1,7 @@
 package ee.tenman.portfolio.controller
 
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.equalTo
-import com.github.tomakehurst.wiremock.client.WireMock.stubFor
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import jakarta.annotation.Resource
-import jakarta.servlet.http.Cookie
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -22,16 +15,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class DiversificationHoldingSearchControllerIT {
   @Resource
   private lateinit var mockMvc: MockMvc
-
-  @BeforeEach
-  fun setup() {
-    stubFor(
-      WireMock
-        .get(urlPathEqualTo("/user-by-session"))
-        .withQueryParam("sessionId", equalTo("holdings-search"))
-        .willReturn(aResponse().withHeader("Content-Type", "application/json").withBodyFile("user-details-response.json")),
-    )
-  }
 
   @Test
   fun `should default to the first page with a fixed size`() {
@@ -85,6 +68,5 @@ class DiversificationHoldingSearchControllerIT {
   private fun search(body: String) =
     post("/api/diversification/holdings")
       .contentType(APPLICATION_JSON)
-      .cookie(Cookie("AUTHSESSION", "holdings-search"))
       .content(body)
 }

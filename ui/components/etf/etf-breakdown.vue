@@ -106,7 +106,7 @@
     </div>
 
     <div class="search-container mb-4">
-      <SearchInput
+      <search-input
         v-model="searchQuery"
         placeholder="Search by name, ticker, sector, industry, or country..."
         label="Search ETF holdings"
@@ -130,7 +130,6 @@
 </template>
 
 <script lang="ts" setup>
-import SearchInput from '../shared/search-input.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useLocalStorage, useDebounceFn, refDebounced } from '@vueuse/core'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
@@ -159,6 +158,7 @@ import CurrencyFlag from '../shared/currency-flag.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
 import ViewSwitch from '../shared/view-switch.vue'
+import SearchInput from '../shared/search-input.vue'
 import type { BreakdownView } from '../../services/diversification-chart-service'
 import { STORAGE_KEYS } from '../../constants'
 import { BENCHMARK_SYMBOL } from '../../constants/benchmarks'
