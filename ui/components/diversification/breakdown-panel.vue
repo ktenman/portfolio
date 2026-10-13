@@ -42,7 +42,7 @@
     </div>
     <p v-if="holdingsError" role="alert" class="holdings-message">{{ holdingsError }}</p>
     <p v-else-if="emptyHoldings" class="holdings-message" role="status">
-      {{ query.trim() ? `No holdings match “${query}”` : 'No holdings in this allocation' }}
+      {{ query.trim() ? `No holdings match “${query.trim()}”` : 'No holdings in this allocation' }}
     </p>
     <template v-else>
       <breakdown-bars

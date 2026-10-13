@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, isProxy, nextTick, ref } from 'vue'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { onlineManager, QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { useHoldingsSearch } from './use-holdings-search'
 import { diversificationService } from '../services/api'
 import { createHoldingDto, createHoldingsPage } from '../tests/fixtures'
@@ -54,6 +54,7 @@ function setup(enabled = true) {
 describe('useHoldingsSearch', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    onlineManager.setOnline(true)
     vi.mocked(diversificationService.searchHoldings).mockReset().mockResolvedValue(response())
   })
 
@@ -91,6 +92,22 @@ describe('useHoldingsSearch', () => {
     await type('', 1000)
     expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(1)
     expect(search.isSearching.value).toBe(false)
+  })
+
+  it('sends no request when spaces are added around a query already sent', async () => {
+    const { type } = setup()
+    await flushPromises()
+    await type('nvda')
+    await type(' nvda ')
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps searching while a new query waits for the connection', async () => {
+    const { search, type } = setup()
+    await flushPromises()
+    onlineManager.setOnline(false)
+    await type('nestle')
+    expect(search.isSearching.value).toBe(true)
   })
 
   it('resets a new query and a cleared query to the first page', async () => {

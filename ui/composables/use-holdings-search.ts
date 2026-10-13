@@ -7,9 +7,10 @@ import type { AllocationDto } from '../models/generated/domain-models'
 
 export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref<boolean>) {
   const query = ref('')
-  const term = refDebounced(query, 300)
+  const trimmed = computed(() => query.value.trim())
+  const term = refDebounced(trimmed, 300)
   const revision = ref(0)
-  const isDebouncing = computed(() => query.value !== term.value)
+  const isDebouncing = computed(() => trimmed.value !== term.value)
 
   watch(
     allocations,
@@ -55,7 +56,7 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
     isSearching: computed(
       () =>
         active.value &&
-        ((result.isFetching.value && !result.isFetchingNextPage.value) || isDebouncing.value)
+        (result.isPending.value || result.isPlaceholderData.value || isDebouncing.value)
     ),
     error: computed(() =>
       result.error.value && !result.isFetchNextPageError.value
