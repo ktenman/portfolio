@@ -131,7 +131,7 @@ const MODALS: {
 
 test.describe('modals', () => {
   test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name === 'tablet')
+    test.skip(testInfo.project.name.endsWith('tablet'))
   })
 
   test.beforeEach(async ({ page }) => {
@@ -219,7 +219,7 @@ test('summary chart marks the high and low of total profit when total value is h
 
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop')
+    test.skip(!testInfo.project.name.endsWith('desktop'))
   })
 
   test.beforeEach(async ({ page }) => {

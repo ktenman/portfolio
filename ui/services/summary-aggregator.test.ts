@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   mergeHistoricalWithCurrent,
+  mergeSummaryHistory,
   sortSummariesByDateAsc,
   sortSummariesByDateDesc,
   findSummaryByDate,
@@ -21,6 +22,49 @@ const createSummary = (date: string, totalValue: number = 1000): PortfolioSummar
 })
 
 describe('summary-aggregator', () => {
+  describe('mergeSummaryHistory', () => {
+    it('keeps every unique MAX date and applies recent then current precedence in date order', () => {
+      const max = [
+        createSummary('2024-01-05', 1050),
+        createSummary('2024-01-01', 1000),
+        createSummary('2024-01-03', 1030),
+        createSummary('2024-01-02', 1020),
+      ]
+      const recent = [createSummary('2024-01-04', 2040), createSummary('2024-01-02', 2020)]
+      const current = createSummary('2024-01-04', 3040)
+
+      const merged = mergeSummaryHistory(max, recent, current)
+
+      expect(merged.map(({ date, totalValue }) => [date, totalValue])).toEqual([
+        ['2024-01-01', 1000],
+        ['2024-01-02', 2020],
+        ['2024-01-03', 1030],
+        ['2024-01-04', 3040],
+        ['2024-01-05', 1050],
+      ])
+      expect(max.map(({ date, totalValue }) => [date, totalValue])).toEqual([
+        ['2024-01-05', 1050],
+        ['2024-01-01', 1000],
+        ['2024-01-03', 1030],
+        ['2024-01-02', 1020],
+      ])
+      expect(recent.map(({ date, totalValue }) => [date, totalValue])).toEqual([
+        ['2024-01-04', 2040],
+        ['2024-01-02', 2020],
+      ])
+      expect(merged[0]).toBe(max[1])
+      expect(merged[1]).toBe(recent[1])
+      expect(merged[3]).toBe(current)
+    })
+
+    it('merges successful empty history with current without inventing rows', () => {
+      expect(mergeSummaryHistory([], [], undefined)).toEqual([])
+      expect(mergeSummaryHistory([], [], createSummary('2024-01-04')).map(row => row.date)).toEqual(
+        ['2024-01-04']
+      )
+    })
+  })
+
   describe('mergeHistoricalWithCurrent', () => {
     it('should return historical summaries when current is null', () => {
       const historical = [createSummary('2024-01-01'), createSummary('2024-01-02')]

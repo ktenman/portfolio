@@ -20,6 +20,16 @@ export function mergeHistoricalWithCurrent(
   return result
 }
 
+export function mergeSummaryHistory(
+  max: PortfolioSummaryDto[],
+  recent: PortfolioSummaryDto[],
+  current: PortfolioSummaryDto | null | undefined
+): PortfolioSummaryDto[] {
+  const rows = new Map([...max, ...recent].map(row => [row.date, row]))
+  if (current) rows.set(current.date, current)
+  return sortSummariesByDateAsc([...rows.values()])
+}
+
 export function sortSummariesByDateAsc<T extends { date: string }>(summaries: T[]): T[] {
   return [...summaries].sort((a, b) => a.date.localeCompare(b.date))
 }

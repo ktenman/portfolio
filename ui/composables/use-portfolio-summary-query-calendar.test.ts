@@ -334,11 +334,30 @@ describe('usePortfolioSummaryQuery daily calendar rows', () => {
     expect(
       queryResult.dailyCalendarRows.value?.map(({ date, totalValue }) => [date, totalValue])
     ).toEqual([
-      ['2023-06-02', 10000],
       ['2023-06-01', 10000],
+      ['2023-06-02', 10000],
       ['2023-12-29', 10000],
       ['2023-12-30', 10000],
       ['2023-12-31', 10000],
+    ])
+  })
+
+  it('preserves a MAX row inside the recent date range when recent history omits it', async () => {
+    vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async range => {
+      if (range === TimeRange.MAX) return [row('2023-12-30'), row('2023-06-01')]
+      if (range === TimeRange.SIX_MONTHS) return [row('2023-12-29')]
+      return []
+    })
+    const { queryResult } = setupQuery()
+    await flushPromises()
+
+    await press(queryResult)
+
+    expect(datesOf(queryResult.dailyCalendarRows.value)).toEqual([
+      '2023-06-01',
+      '2023-12-29',
+      '2023-12-30',
+      '2023-12-31',
     ])
   })
 

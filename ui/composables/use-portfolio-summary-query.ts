@@ -1,4 +1,4 @@
-import { computed, ref, watch, watchEffect, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import {
   useQuery,
   useMutation,
@@ -12,10 +12,8 @@ import {
   sortSummariesByDateAsc,
   flattenPages,
 } from '../services/summary-aggregator'
-import { CALENDAR_RANGE, lacksDayBeforeLatest } from '../services/daily-profit-calendar'
-import { REFETCH_INTERVALS } from '../constants'
 import { useAuthState } from './use-auth-state'
-import type { CalendarHistory } from './use-daily-profit-calendar'
+import { useSummaryHistory } from './use-summary-history'
 import { DEFAULT_CHART_RANGE } from './use-time-range'
 import { BENCHMARKS, type ChartBenchmark, type ChartSummary } from './use-portfolio-chart'
 import { type BenchmarkIndex, TimeRange } from '../models/generated/domain-models'
@@ -34,7 +32,8 @@ const MIN_INTRADAY_POINTS = 2
 
 export function usePortfolioSummaryQuery(
   selectedPlatforms?: Ref<string[]>,
-  selectedRange?: Ref<TimeRange>
+  selectedRange?: Ref<TimeRange>,
+  selectedInterval?: Ref<'daily' | 'monthly'>
 ) {
   const queryClient = useQueryClient()
   const recalculationMessage = ref('')
@@ -54,6 +53,7 @@ export function usePortfolioSummaryQuery(
     isFetchingNextPage,
     isLoading: isLoadingHistorical,
     error: historicalError,
+    refetch: refetchHistorical,
   } = useInfiniteQuery({
     queryKey: ['portfolio-summary', 'historical', platformsKey],
     queryFn: ({ pageParam = 0 }) =>
@@ -68,95 +68,18 @@ export function usePortfolioSummaryQuery(
     enabled: isAuthenticated,
   })
 
-  const { data: currentSummary, isLoading: isLoadingCurrent } = useQuery({
-    queryKey: ['portfolio-summary', 'current', platformsKey],
-    queryFn: () => portfolioSummaryService.getCurrent(activePlatforms.value),
+  const currentQuery = useQuery({
+    queryKey: ['portfolio-summary', 'current', platformsKey] as const,
+    queryFn: ({ queryKey }) =>
+      portfolioSummaryService.getCurrent(queryKey[2].length ? queryKey[2] : undefined),
     enabled: isAuthenticated,
   })
-
-  const calendarRefetchInterval = ref<number | false>(false)
-
-  const {
-    data: calendarSeries,
-    isFetched: isCalendarFetched,
-    isSuccess: isCalendarSuccess,
-    error: calendarQueryError,
-    refetch: refetchCalendar,
-  } = useQuery({
-    queryKey: ['portfolio-summary', 'daily-calendar', platformsKey],
-    queryFn: () => portfolioSummaryService.getSeries(CALENDAR_RANGE, activePlatforms.value),
-    refetchInterval: calendarRefetchInterval,
-    enabled: isAuthenticated,
-  })
-
-  const calendarError = ref<string | null>(null)
-
-  watchEffect(() => {
-    if (calendarQueryError.value) {
-      calendarError.value = calendarQueryError.value.message
-      return
-    }
-    if (isCalendarSuccess.value) calendarError.value = null
-  })
-
-  const mergedCalendarRows = computed(() =>
-    mergeHistoricalWithCurrent(calendarSeries.value ?? [], currentSummary.value)
-  )
-
-  const isHistoryRequested = ref(false)
-
-  watch(
+  const { data: currentSummary, isLoading: isLoadingCurrent } = currentQuery
+  const summaryHistory = useSummaryHistory(
     platformsKey,
-    () => {
-      isHistoryRequested.value = false
-    },
-    { flush: 'sync' }
-  )
-
-  const {
-    data: calendarHistoryRows,
-    isLoading: isLoadingCalendarHistory,
-    errorUpdateCount: calendarHistoryFailures,
-  } = useQuery({
-    queryKey: ['portfolio-summary', 'daily-calendar-history', platformsKey],
-    queryFn: () => portfolioSummaryService.getSeries(TimeRange.MAX, activePlatforms.value),
-    enabled: computed(() => isAuthenticated.value && isHistoryRequested.value),
-    staleTime: Infinity,
-    retry: 1,
-  })
-
-  watch(calendarHistoryFailures, () => {
-    isHistoryRequested.value = false
-  })
-
-  const dailyCalendarRows = computed(() => {
-    if (!isCalendarFetched.value) return undefined
-    const rows = mergedCalendarRows.value
-    const earliest = sortSummariesByDateAsc(rows)[0]?.date
-    const older = (calendarHistoryRows.value ?? []).filter(row => !earliest || row.date < earliest)
-    return [...older, ...rows]
-  })
-
-  const calendarHistory = computed<CalendarHistory>(() => {
-    if (calendarHistoryRows.value) return 'loaded'
-    return isLoadingCalendarHistory.value ? 'loading' : 'idle'
-  })
-
-  const loadCalendarHistory = () => {
-    isHistoryRequested.value = true
-  }
-
-  watchEffect(() => {
-    calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)
-      ? REFETCH_INTERVALS.DAILY_CALENDAR
-      : false
-  })
-
-  watch(
-    () => currentSummary.value?.date,
-    (date, previousDate) => {
-      if (date && previousDate) refetchCalendar()
-    }
+    isAuthenticated,
+    currentQuery,
+    selectedInterval
   )
 
   const {
@@ -265,9 +188,13 @@ export function usePortfolioSummaryQuery(
     performanceSummaries,
     benchmarks,
     rangeChange,
-    dailyCalendarRows,
-    calendarHistory,
-    loadCalendarHistory,
+    ...summaryHistory,
+    hasHistoricalData: computed(() => historicalData.value !== undefined),
+    retryCalendarHistory: () =>
+      Promise.all([
+        summaryHistory.retryCalendarHistory(),
+        ...(historicalError.value ? [refetchHistorical()] : []),
+      ]),
     sortedSummaries,
     reversedSummaries,
     isLoading,
@@ -278,10 +205,9 @@ export function usePortfolioSummaryQuery(
     isRecalculating: recalculateMutation.isPending,
     error,
     rangeError,
-    calendarError,
     recalculationMessage,
     hasMoreData: hasNextPage,
-    fetchSummaries: fetchNextPage,
+    fetchSummaries: () => (selectedInterval?.value === 'monthly' ? undefined : fetchNextPage()),
     recalculate: () => recalculateMutation.mutate(),
   }
 }
