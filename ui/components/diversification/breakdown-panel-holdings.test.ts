@@ -56,9 +56,10 @@ const observeEnd = (stays = false) =>
     })
   )
 
-const mountPanel = () => {
+const mountPanel = (attachTo?: HTMLElement) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
   return mount(BreakdownPanel, {
+    attachTo,
     props: {
       allocations: [{ instrumentId: 7, percentage: 100 }],
       breakdowns: { holdings: [], sectors: [], industries: [], countries: [] },
@@ -168,6 +169,33 @@ describe('Holdings tab', () => {
     await wrapper.find('.holdings-more button').trigger('click')
     await flushPromises()
     expect(wrapper.findAll('.row-label').map(row => row.text())).toEqual(['First', 'Second'])
+  })
+
+  it('asks once for more when the load fails while the end of the list stays in view', async () => {
+    observeEnd(true)
+    vi.mocked(diversificationService.searchHoldings)
+      .mockResolvedValueOnce(page([holding('First', 10)], 201))
+      .mockRejectedValue(new Error('Search failed'))
+    mountPanel()
+    await flushPromises()
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps Retry focused and marks it in progress while another attempt runs', async () => {
+    vi.mocked(diversificationService.searchHoldings)
+      .mockResolvedValueOnce(page([holding('First', 10)], 201))
+      .mockRejectedValueOnce(new Error('Search failed'))
+      .mockReturnValueOnce(new Promise(() => {}))
+    const wrapper = mountPanel(document.body)
+    await flushPromises()
+    reachEnd()
+    await flushPromises()
+    const retry = wrapper.find<HTMLButtonElement>('.holdings-more button')
+    retry.element.focus()
+    await retry.trigger('click')
+    await flushPromises()
+    expect(retry.text()).toBe('Retrying…')
+    expect(document.activeElement).toBe(retry.element)
   })
 
   it('loads nothing more behind the donut', async () => {

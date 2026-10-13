@@ -175,6 +175,25 @@ describe('useHoldingsSearch', () => {
     expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps the rows and the retry offer when Holdings is reopened after a failed load', async () => {
+    const { search, active } = setup()
+    await flushPromises()
+    vi.mocked(diversificationService.searchHoldings).mockRejectedValueOnce(
+      new Error('Search failed')
+    )
+    search.loadMore()
+    await flushPromises()
+    active.value = false
+    await flushPromises()
+    vi.mocked(diversificationService.searchHoldings).mockReturnValueOnce(deferred().promise)
+    active.value = true
+    await flushPromises()
+    expect(search.error.value).toBe('')
+    expect(search.moreFailed.value).toBe(true)
+    expect(search.holdings.value).toHaveLength(1)
+    expect(diversificationService.searchHoldings).toHaveBeenCalledTimes(2)
+  })
+
   it('never replaces a newer query result with a slower earlier response', async () => {
     const { search, type } = setup()
     await flushPromises()

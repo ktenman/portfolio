@@ -42,6 +42,7 @@ class DiversificationHoldingSearchControllerIT {
       .andExpect(jsonPath("$.number").value(0))
       .andExpect(jsonPath("$.size").value(100))
       .andExpect(jsonPath("$.totalElements").value(0))
+      .andExpect(jsonPath("$.totalPages").value(0))
   }
 
   @Test

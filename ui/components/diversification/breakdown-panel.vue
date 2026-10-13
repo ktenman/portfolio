@@ -68,7 +68,9 @@
       >
         <template v-if="moreFailed">
           <span role="alert">Couldn’t load more holdings</span>
-          <app-button ghost size="sm" @click="loadMore">Retry</app-button>
+          <app-button ghost size="sm" @click="loadMore">
+            {{ loadingMore ? 'Retrying…' : 'Retry' }}
+          </app-button>
         </template>
         <template v-else>Loading more…</template>
       </div>
@@ -158,7 +160,7 @@ const compared = computed(() => compare.value && props.benchmark !== null)
 const currentTab = computed(() => TABS.find(t => t.key === activeTab.value) ?? TABS[1])
 
 const isHoldings = computed(() => currentTab.value.key === 'holdings')
-const { query, holdings, total, hasMore, moreFailed, loadMore, isSearching, error } =
+const { query, holdings, total, hasMore, moreFailed, loadingMore, loadMore, isSearching, error } =
   useHoldingsSearch(toRef(props, 'allocations'), isHoldings)
 useIntersectionObserver(
   useTemplateRef<HTMLElement>('more'),

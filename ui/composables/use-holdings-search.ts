@@ -44,7 +44,7 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
     getNextPageParam: last => (last.number + 1 < last.totalPages ? last.number + 1 : undefined),
     enabled: computed(() => active.value && allocations.value.length > 0),
     placeholderData: keepPreviousData,
-    staleTime: Infinity,
+    staleTime: 'static',
     gcTime: 0,
     retry: false,
     refetchOnWindowFocus: false,
@@ -56,7 +56,8 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
     holdings: computed(() => result.data.value?.pages.flatMap(page => page.content)),
     total: computed(() => result.data.value?.pages[0]?.totalElements ?? 0),
     hasMore: result.hasNextPage,
-    moreFailed: computed(() => result.isFetchNextPageError.value && !result.isFetching.value),
+    moreFailed: result.isFetchNextPageError,
+    loadingMore: result.isFetchingNextPage,
     loadMore: () => {
       if (result.hasNextPage.value) result.fetchNextPage({ cancelRefetch: false })
     },
