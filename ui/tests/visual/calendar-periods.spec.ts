@@ -10,7 +10,6 @@ const PHONE = { width: 375, height: 667 }
 const SMALL_PHONE = { width: 320, height: 568 }
 const SUBPIXEL_PX = 0.5
 const EARLIER_DATES = '27 Jun – 30 Jun 2025'
-const LATEST_DATES = '30 Jun – 31 Dec 2025'
 const LATEST_START = '2025-06-30'
 const TWO_YEAR_DATES = '28 Nov 2025 – 28 May 2026'
 
@@ -94,13 +93,32 @@ test('calendar earlier period', async ({ page }, testInfo) => {
   )
 })
 
-test('changing the platform filter opens the latest period', async ({ page }, testInfo) => {
+test('changing the platform filter keeps the picked day and period', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await openEarlierPeriod(page)
 
   await page.locator('.platform-buttons .platform-btn:text-is("LHV")').click()
 
-  await expect(dates(page)).toHaveText(LATEST_DATES)
+  await expect(dates(page)).toHaveText(EARLIER_DATES)
+  await expect(page.locator('.day-label')).toHaveText('Sat 28 Jun 2025')
+})
+
+test('reloading keeps the earlier period and requests history once', async ({ page }) => {
+  await openEarlierPeriod(page)
+  const requests: string[] = []
+  page.on('request', request => {
+    if (
+      request.url().includes('/series?') &&
+      new URL(request.url()).searchParams.get('range') === 'MAX'
+    )
+      requests.push(request.url())
+  })
+
+  await page.reload()
+
+  await expect(dates(page)).toHaveText(EARLIER_DATES)
+  await expect(page.locator('.daily-profit-calendar p[role="status"]')).toBeEmpty()
+  expect(requests).toHaveLength(1)
 })
 
 test.describe('wide layout', () => {

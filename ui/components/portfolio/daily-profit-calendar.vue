@@ -32,7 +32,11 @@
     </daily-profit-compact>
     <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
-  <div v-else-if="!rows" class="daily-profit-calendar card-shell p-0 md:p-6" aria-hidden="true">
+  <div
+    v-else-if="!rows || calendar"
+    class="daily-profit-calendar card-shell p-0 md:p-6"
+    aria-hidden="true"
+  >
     <div class="calendar-body hidden md:flex">
       <div class="calendar-main skeleton min-h-[calc(133px+7*var(--cell))]"></div>
       <div class="calendar-side">

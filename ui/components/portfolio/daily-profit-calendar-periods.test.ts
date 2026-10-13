@@ -26,6 +26,7 @@ const veilsOf = (wrapper: Wrapper) => wrapper.findAllComponents(LoadingVeil).len
 
 describe('DailyProfitCalendar periods', () => {
   beforeEach(() => {
+    localStorage.clear()
     toasts.value = []
   })
 
@@ -79,10 +80,10 @@ describe('DailyProfitCalendar periods', () => {
 
       await press(wrapper, 'Later period')
 
-      expect(wrapper.find('.day-label').text()).toBe('Tue 30 Dec 2025')
+      expect(wrapper.find('.day-label').text()).toBe('Wed 31 Dec 2025')
     })
 
-    it('should return to the latest period and its best day after a step back and a step forward', async () => {
+    it('should return to the latest period and its latest day after a step back and a step forward', async () => {
       const wrapper = mountWith()
 
       await press(wrapper, 'Earlier period')
@@ -90,7 +91,7 @@ describe('DailyProfitCalendar periods', () => {
 
       expect(stateOf(wrapper)).toEqual([
         '30 Jun – 31 Dec 2025',
-        'Tue 30 Dec 2025, +€600.00, +0.60%',
+        'Wed 31 Dec 2025, −€100.00, −0.10%',
         'Daily profit 30 Jun – 31 Dec 2025',
       ])
     })
@@ -276,7 +277,7 @@ describe('DailyProfitCalendar periods', () => {
         arrow(wrapper, 'Earlier period').attributes('aria-busy'),
       ]).toEqual([
         '30 Jun – 31 Dec 2025',
-        'Tue 30 Dec 2025, +€600.00, +0.60%',
+        'Wed 31 Dec 2025, −€100.00, −0.10%',
         '',
         'true',
         undefined,
