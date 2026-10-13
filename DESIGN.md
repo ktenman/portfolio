@@ -285,7 +285,7 @@ destructive-button hovers — `.remove-btn:hover` at `allocation-card.vue:312` a
 
 Fills of the daily profit calendar's cells and of its legend, one per size of a day's change. The fourth and
 darkest step of each side is `--color-gain` or `--color-loss` itself. `--color-change-flat` has the value of
-`--color-gray-200` under a name that says what it marks. No text is set on a step.
+`--color-gray-200` under a name that says what it marks. The monthly calendar sets `--color-ink` on the flat fill and on steps one to three and `--color-surface` on the fourth step, pairs the theme contrast test asserts.
 
 | token                 | oklch                   | hex       | on surface | on paper |
 | --------------------- | ----------------------- | --------- | ---------- | -------- |
