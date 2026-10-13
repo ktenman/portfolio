@@ -5,6 +5,7 @@ import {
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type CachedState } from '../../components/diversification/types'
+import { createHoldingsPage } from '../fixtures'
 import { stubInstruments } from './instruments-fixture'
 import { apiRoute, type RouteStub } from './stub'
 
@@ -319,13 +320,11 @@ const stubDiversificationWith =
         `${holding.name} ${holding.ticker ?? ''}`.toLowerCase().includes(query.toLowerCase())
       )
       return route.fulfill({
-        json: {
-          content: holdings.slice(page * 100, (page + 1) * 100),
-          totalElements: holdings.length,
-          totalPages: Math.ceil(holdings.length / 100),
-          size: 100,
-          number: page,
-        },
+        json: createHoldingsPage(
+          holdings.slice(page * 100, (page + 1) * 100),
+          holdings.length,
+          page
+        ),
       })
     })
     await page.route(apiRoute(`${API_ENDPOINTS.DIVERSIFICATION}/config`), route =>

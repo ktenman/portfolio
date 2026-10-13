@@ -3,6 +3,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import BreakdownPanel from './breakdown-panel.vue'
 import { diversificationService } from '../../services/api'
+import { createHoldingDto as holding, createHoldingsPage as page } from '../../tests/fixtures'
 import type { DiversificationHoldingDto } from '../../models/generated/domain-models'
 import type { Page } from '../../models/page'
 
@@ -17,25 +18,6 @@ vi.mock('chart.js', () => ({
   DoughnutController: vi.fn(),
   ArcElement: vi.fn(),
 }))
-
-const holding = (name: string, percentage: number): DiversificationHoldingDto => ({
-  name,
-  percentage,
-  ticker: null,
-  inEtfs: 'VWCE',
-})
-
-const page = (
-  content: DiversificationHoldingDto[],
-  totalElements = content.length,
-  number = 0
-): Page<DiversificationHoldingDto> => ({
-  content,
-  totalElements,
-  number,
-  size: 100,
-  totalPages: Math.ceil(totalElements / 100),
-})
 
 enableAutoUnmount(afterEach)
 
@@ -273,7 +255,7 @@ describe('Holdings tab', () => {
     const holdings = Array.from({ length: 100 }, (_, index) =>
       holding(`Company ${index}`, 1 - index / 100)
     )
-    vi.mocked(diversificationService.searchHoldings).mockResolvedValue(page(holdings, 200, 1))
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValue(page(holdings, 200))
     const wrapper = mountPanel()
     await flushPromises()
     await wrapper.findAll('.view-btn')[0].trigger('click')

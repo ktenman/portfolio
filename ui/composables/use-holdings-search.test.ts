@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, nextTick, ref } from 'vue'
+import { defineComponent, isProxy, nextTick, ref } from 'vue'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { useHoldingsSearch } from './use-holdings-search'
 import { diversificationService } from '../services/api'
+import { createHoldingDto, createHoldingsPage } from '../tests/fixtures'
 import type { DiversificationHoldingDto } from '../models/generated/domain-models'
 import type { Page } from '../models/page'
 
@@ -11,13 +12,8 @@ vi.mock('../services/api', () => ({ diversificationService: { searchHoldings: vi
 
 enableAutoUnmount(afterEach)
 
-const response = (name = 'NVIDIA', number = 0): Page<DiversificationHoldingDto> => ({
-  content: [{ name, ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' }],
-  number,
-  size: 100,
-  totalElements: 201,
-  totalPages: 3,
-})
+const response = (name = 'NVIDIA', number = 0) =>
+  createHoldingsPage([createHoldingDto(name, 4)], 201, number)
 
 const firstPage = (query = '', allocations = [{ instrumentId: 7, percentage: 100 }]) => ({
   allocations,
@@ -70,6 +66,12 @@ describe('useHoldingsSearch', () => {
     await flushPromises()
     expect(diversificationService.searchHoldings).toHaveBeenCalledWith(firstPage())
     expect(search.total.value).toBe(201)
+  })
+
+  it('returns the loaded holdings as plain objects instead of reactive proxies', async () => {
+    const { search } = setup()
+    await flushPromises()
+    expect(search.holdings.value?.map(isProxy)).toEqual([false])
   })
 
   it('waits 300 milliseconds after the last keystroke before requesting a query', async () => {

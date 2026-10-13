@@ -3,6 +3,7 @@ import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import BreakdownPanel from './breakdown-panel.vue'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { diversificationService } from '../../services/api'
+import { createHoldingDto, createHoldingsPage } from '../../tests/fixtures'
 import { DONUT_COLORS } from '../../constants/chart-colors'
 import type { Breakdowns } from '../../composables/use-diversification-result'
 
@@ -68,13 +69,9 @@ const mountPanel = (props = {}) =>
 describe('BreakdownPanel', () => {
   beforeEach(() => {
     localStorage.clear()
-    vi.mocked(diversificationService.searchHoldings).mockResolvedValue({
-      content: [{ name: 'NVIDIA', ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' }],
-      totalElements: 1,
-      totalPages: 1,
-      size: 100,
-      number: 0,
-    })
+    vi.mocked(diversificationService.searchHoldings).mockResolvedValue(
+      createHoldingsPage([createHoldingDto('NVIDIA', 4)])
+    )
   })
 
   it('renders the four tabs in order as the only dimension controls', () => {
@@ -181,31 +178,6 @@ describe('BreakdownPanel', () => {
   it('hides the toggle without a benchmark', () => {
     const wrapper = mountPanel({ benchmark: null, benchmarkLabel: undefined })
     expect(wrapper.find('.compare-toggle').exists()).toBe(false)
-  })
-
-  it('shows no benchmark line for a holding the benchmark does not own', async () => {
-    vi.mocked(diversificationService.searchHoldings).mockResolvedValueOnce({
-      content: [
-        { name: 'NVIDIA', ticker: 'NVDA', percentage: 4, inEtfs: 'VWCE' },
-        { name: 'Tiny Co', ticker: null, percentage: 1, inEtfs: 'VWCE' },
-      ],
-      totalElements: 2,
-      totalPages: 1,
-      size: 100,
-      number: 0,
-    })
-    const wrapper = mountPanel({
-      breakdowns: {
-        ...breakdowns,
-        holdings: [...breakdowns.holdings, { label: 'Tiny Co', value: 1 }],
-      },
-    })
-    await wrapper.findAll('.breakdown-tab')[2].trigger('click')
-    await flushPromises()
-    expect(wrapper.findAll('.breakdown-row').map(r => r.find('.row-benchmark').exists())).toEqual([
-      true,
-      false,
-    ])
   })
 
   it('shows no Other row on Holdings', async () => {

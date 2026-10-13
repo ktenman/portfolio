@@ -4,8 +4,7 @@ import { ref } from 'vue'
 import DiversificationCalculator from './diversification-calculator.vue'
 import type { InstrumentDto } from '../../models/generated/domain-models'
 
-vi.mock('@tanstack/vue-query', async importOriginal => ({
-  ...(await importOriginal<typeof import('@tanstack/vue-query')>()),
+vi.mock('@tanstack/vue-query', () => ({
   useQuery: vi.fn(() => ({
     data: ref([
       {
@@ -28,14 +27,11 @@ vi.mock('@tanstack/vue-query', async importOriginal => ({
       },
     ]),
     isLoading: ref(false),
-    isFetching: ref(false),
-    error: ref(null),
     dataUpdatedAt: ref(Date.now()),
   })),
   useQueryClient: vi.fn(() => ({
     invalidateQueries: vi.fn(),
   })),
-  useInfiniteQuery: vi.fn(() => ({})),
 }))
 
 vi.mock('../../services/api', () => ({
@@ -55,8 +51,6 @@ vi.mock('@vueuse/core', () => ({
   useDebounceFn: vi.fn((fn: () => void) => fn),
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
   useNow: vi.fn(() => ({ value: new Date() })),
-  watchDebounced: vi.fn(),
-  useIntersectionObserver: vi.fn(),
 }))
 
 vi.mock('../../utils/formatters', () => ({
@@ -67,7 +61,6 @@ vi.mock('../../utils/formatters', () => ({
   ),
   formatCurrencyWithSymbol: vi.fn((value?: number | null) => `€${(value ?? 0).toFixed(2)}`),
   formatPercentage: vi.fn((value: number) => `${value.toFixed(2)}%`),
-  formatHoldingPercentage: vi.fn((value: number) => `${value.toFixed(4)}%`),
 }))
 
 describe('DiversificationCalculator', () => {
@@ -163,6 +156,8 @@ describe('DiversificationCalculator', () => {
     concentration: { top10Percentage: 0, largestPosition: null },
   })
 
+  const withoutPanel = { global: { stubs: { BreakdownPanel: true } } }
+
   const benchmarkCalls = async () => {
     const { diversificationService } = await import('../../services/api')
     return vi
@@ -178,7 +173,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
     wrapper
       .findComponent({ name: 'AllocationTable' })
@@ -196,7 +191,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'BreakdownPanel' }).props('benchmark')).toBeNull()
@@ -228,7 +223,7 @@ describe('DiversificationCalculator', () => {
       inputMode: 'percentage',
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
 
     expect(wrapper.findComponent({ name: 'DiversificationStats' }).props('activeShare')).toBe(20)

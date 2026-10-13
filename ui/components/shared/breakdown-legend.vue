@@ -34,16 +34,12 @@ import {
   type BreakdownRow,
 } from '../../services/diversification-chart-service'
 import { countryFlagUrl } from '../../utils/currency-flag'
-import { formatPercentage } from '../../utils/formatters'
 
-const props = withDefaults(
-  defineProps<{
-    items: BreakdownRow[]
-    activeIndex: number | null
-    formatValue?: (value: number) => string
-  }>(),
-  { formatValue: formatPercentage }
-)
+const props = defineProps<{
+  items: BreakdownRow[]
+  activeIndex: number | null
+  formatValue: (value: number) => string
+}>()
 
 const emit = defineEmits<{
   hover: [index: number]

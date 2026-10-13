@@ -1,23 +1,15 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/vue-query'
-import { watchDebounced } from '@vueuse/core'
+import { refDebounced } from '@vueuse/core'
 import { diversificationService } from '../services/api'
 import { getErrorMessage } from './use-diversification-result'
 import type { AllocationDto } from '../models/generated/domain-models'
 
 export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref<boolean>) {
   const query = ref('')
-  const term = ref('')
+  const term = refDebounced(query, 300)
   const revision = ref(0)
   const isDebouncing = computed(() => query.value !== term.value)
-
-  watchDebounced(
-    query,
-    value => {
-      term.value = value
-    },
-    { debounce: 300 }
-  )
 
   watch(
     allocations,
@@ -47,8 +39,7 @@ export function useHoldingsSearch(allocations: Ref<AllocationDto[]>, active: Ref
     staleTime: 'static',
     gcTime: 0,
     retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    shallow: true,
   })
 
   return {

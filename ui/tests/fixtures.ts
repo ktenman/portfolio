@@ -1,4 +1,5 @@
 import {
+  DiversificationHoldingDto,
   InstrumentDto,
   TransactionResponseDto,
   PortfolioSummaryDto,
@@ -10,6 +11,7 @@ import {
   buildDailyProfitCalendar,
   type DailyProfitCalendar,
 } from '../services/daily-profit-calendar'
+import type { Page } from '../models/page'
 
 export const mockPlatforms = [
   { name: 'AVIVA', displayName: 'Aviva' },
@@ -152,6 +154,25 @@ export const createDailyProfitCalendar = (
   if (!calendar) throw new Error('expected a calendar')
   return calendar
 }
+
+export const createHoldingDto = (name: string, percentage: number): DiversificationHoldingDto => ({
+  name,
+  percentage,
+  ticker: null,
+  inEtfs: 'VWCE',
+})
+
+export const createHoldingsPage = (
+  content: DiversificationHoldingDto[],
+  totalElements = content.length,
+  number = 0
+): Page<DiversificationHoldingDto> => ({
+  content,
+  totalElements,
+  number,
+  size: 100,
+  totalPages: Math.ceil(totalElements / 100),
+})
 
 export class FakeEventSource extends EventTarget {
   static readonly CLOSED = 2
