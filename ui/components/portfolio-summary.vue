@@ -75,23 +75,53 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <div class="mt-3 mb-6 flex flex-wrap items-center gap-3 md:mb-10">
+      <div class="mt-3 mb-4 flex flex-wrap items-center gap-3 md:mb-6">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
 
-      <daily-profit-calendar
-        :key="selectedPlatforms.join()"
-        :rows="dailyCalendarRows"
-        :error="calendarError"
-        :history="calendarHistory"
-        class="mb-2 md:mb-10"
-        @load-history="loadCalendarHistory"
-      />
+      <summary-interval-toggle class="mb-3" :selected="interval" @select="selectInterval" />
 
-      <summary-history-table :days="reversedSummaries" :months="null" />
+      <div class="relative" :aria-busy="isLoadingMonths || undefined">
+        <template v-if="view === 'daily'">
+          <daily-profit-calendar
+            :key="selectedPlatforms.join()"
+            :rows="dailyCalendarRows"
+            :error="calendarError"
+            :history="calendarHistory"
+            class="mb-2 md:mb-10"
+            @load-history="loadCalendarHistory"
+          />
+          <summary-history-table :days="reversedSummaries" :months="null" />
+          <loading-veil v-if="isLoadingMonths" delayed message="Loading months" />
+        </template>
+        <template v-else-if="view === 'monthly'">
+          <AlertMessage v-if="isHistoryStale" variant="warning" class="stale-notice mb-3">
+            Could not refresh the monthly history. Showing months as of {{ monthsAsOf }}.
+            <button type="button" class="platform-btn ml-2" @click="loadCalendarHistory">
+              Retry
+            </button>
+          </AlertMessage>
+          <monthly-profit-calendar
+            :key="selectedPlatforms.join()"
+            :monthly="monthly"
+            class="mb-2 md:mb-10"
+          />
+          <summary-history-table
+            v-if="monthly"
+            :days="reversedSummaries"
+            :months="monthly.months"
+          />
+        </template>
+        <template v-else>
+          <monthly-profit-calendar :monthly="undefined" class="mb-2 md:mb-10" />
+          <skeleton-loader type="table" :rows="10" :columns="5" />
+        </template>
+      </div>
 
-      <div v-if="isFetching" class="mt-4 text-center">
+      <p class="interval-status sr-only" role="status">{{ intervalAnnouncement }}</p>
+
+      <div v-if="isFetching && interval === 'daily'" class="mt-4 text-center">
         <skeleton-loader type="text" :lines="2" />
       </div>
     </template>
@@ -115,6 +145,7 @@ import { usePlatformFilter } from '../composables/use-platform-filter'
 import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
 import { formatDateToString } from '../composables/use-quick-dates'
+import { useSummaryInterval } from '../composables/use-summary-interval'
 import { useNumberTransition } from '../composables/use-number-transition'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
@@ -122,6 +153,8 @@ import ChartRangeFilter from './portfolio/chart-range-filter.vue'
 import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
+import MonthlyProfitCalendar from './portfolio/monthly-profit-calendar.vue'
+import SummaryIntervalToggle from './portfolio/summary-interval-toggle.vue'
 import SummaryHistoryTable from './portfolio/summary-history-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
@@ -130,6 +163,7 @@ import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
 import AlertMessage from './shared/alert-message.vue'
 import { transactionsService } from '../services/api'
+import { buildMonthlyProfit } from '../services/monthly-profit'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
 import { formatCurrencyWithSymbol, formatDate, splitCents } from '../utils/formatters'
@@ -184,11 +218,22 @@ const {
   error,
   rangeError,
   calendarError,
+  historyStatus,
+  monthlyRows,
+  isHistoryStale,
   recalculationMessage,
   recalculate,
   fetchSummaries,
   hasMoreData,
 } = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
+
+const {
+  interval,
+  view,
+  isLoadingMonths,
+  isUserSwitch,
+  select: selectInterval,
+} = useSummaryInterval({ status: historyStatus, load: loadCalendarHistory }, selectedPlatforms)
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
@@ -249,6 +294,27 @@ const headlineAmount = computed(() =>
 
 const today = () => formatDateToString(new Date())
 
+const monthly = computed(() =>
+  monthlyRows.value ? buildMonthlyProfit(monthlyRows.value, today()) : undefined
+)
+
+const monthsAsOf = computed(() => {
+  const rows = monthlyRows.value
+  return rows?.length ? formatDate(rows[rows.length - 1].date) : ''
+})
+
+const intervalAnnouncement = ref('')
+
+watch(view, current => {
+  if (current === 'daily') intervalAnnouncement.value = ''
+  if (current !== 'monthly' || !isUserSwitch.value) return
+  isUserSwitch.value = false
+  intervalAnnouncement.value = [
+    'Monthly profit',
+    ...(monthly.value ? [monthly.value.span] : []),
+  ].join(' ')
+})
+
 const staleAsOf = computed(() => {
   const date = latestSummary.value?.date
   if (!date || date === today()) return null
@@ -258,7 +324,7 @@ const staleAsOf = computed(() => {
 useInfiniteScroll(
   window,
   async () => {
-    if (isFetching.value || !hasMoreData?.value) return
+    if (interval.value !== 'daily' || isFetching.value || !hasMoreData?.value) return
     await fetchSummaries()
   },
   { distance: 100 }

@@ -211,7 +211,10 @@ describe('full summary history', () => {
 
     await press(queryResult)
 
-    expect([kept, queryResult.isHistoryStale.value, valuesOf(queryResult.monthlyRows.value)?.[0]])
-      .toEqual([['success', true, ['2023-06-01', 1]], false, ['2023-06-01', 9]])
+    expect([
+      kept,
+      queryResult.isHistoryStale.value,
+      valuesOf(queryResult.monthlyRows.value)?.[0],
+    ]).toEqual([['success', true, ['2023-06-01', 1]], false, ['2023-06-01', 9]])
   })
 })

@@ -82,13 +82,13 @@ const factorOf = (row: PortfolioSummaryDto, previous: PortfolioSummaryDto): numb
   return Number.isFinite(factor) ? factor : null
 }
 
-export const compound = (factors: Array<number | null>): number | null =>
+const compound = (factors: Array<number | null>): number | null =>
   factors.reduce<number | null>(
     (product, factor) => (product === null || factor === null ? null : product * factor),
     1
   )
 
-export const percentOf = (factor: number | null): number | null =>
+const percentOf = (factor: number | null): number | null =>
   factor === null ? null : (factor - 1) * 100
 
 const indexesByMonth = (rows: PortfolioSummaryDto[]): Map<string, number[]> =>
@@ -98,7 +98,7 @@ const indexesByMonth = (rows: PortfolioSummaryDto[]): Map<string, number[]> =>
     return groups
   }, new Map<string, number[]>())
 
-export const intervalsOf = (summaries: PortfolioSummaryDto[]): MonthInterval[] => {
+const intervalsOf = (summaries: PortfolioSummaryDto[]): MonthInterval[] => {
   const rows = mergeSummariesByDate(summaries)
   const groups = [...indexesByMonth(rows)]
   return groups.map(([key, indexes], position) => {
@@ -120,7 +120,7 @@ export const intervalsOf = (summaries: PortfolioSummaryDto[]): MonthInterval[] =
   })
 }
 
-export const monthOf = (interval: MonthInterval, today: string, rank: string): MonthResult => {
+const monthOf = (interval: MonthInterval, today: string, rank: string): MonthResult => {
   const percent = percentOf(interval.factor)
   return {
     kind: 'observed',

@@ -16,8 +16,8 @@ import type { MonthInterval } from './monthly-profit'
 
 export const MONTH_STEPS = [0.3, 1, 2.5, 5]
 export const MONTH_FLAT_HINT = `under ±${MONTH_STEPS[0]}%`
-export const NO_PERCENT = 'Percentage unavailable'
-export const NO_YEAR_RESULT = 'Year result unavailable: missing year-end summary'
+const NO_PERCENT = 'Percentage unavailable'
+const NO_YEAR_RESULT = 'Year result unavailable: missing year-end summary'
 
 const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
 const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
