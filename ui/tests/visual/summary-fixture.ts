@@ -255,6 +255,26 @@ const PLATFORMS = [
 
 export const SERIES_RESPONSE = HISTORICAL_ROWS.map(toSummary)
 
+const DAY_MS = 86_400_000
+const HISTORY_END = Date.UTC(2025, 11, 31)
+const cents = (value: number) => Math.round(value * 100) / 100
+
+export const longHistory = (years: number, gaps: string[] = []): PortfolioSummaryDto[] =>
+  Array.from({ length: years * 365 }, (_, index) => {
+    const profit = cents(38 * index + 7000 * Math.sin(index / 41) + 2600 * Math.sin(index / 13))
+    return {
+      date: new Date(HISTORY_END - (years * 365 - 1 - index) * DAY_MS).toISOString().slice(0, 10),
+      totalValue: cents(60000 + 55 * index + profit),
+      xirrAnnualReturn: cents(0.08 + 0.05 * Math.sin(index / 97)),
+      realizedProfit: cents(profit * 0.2),
+      unrealizedProfit: cents(profit * 0.8),
+      totalProfit: profit,
+      earningsPerDay: cents(profit / 365),
+      earningsPerMonth: cents(profit / 12),
+      totalProfitChange24h: null,
+    }
+  }).filter(row => !gaps.some(gap => row.date.startsWith(gap)))
+
 const HISTORICAL_RESPONSE = {
   content: SERIES_RESPONSE,
   totalPages: 1,

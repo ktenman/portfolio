@@ -10,13 +10,8 @@
       @keydown="onKeydown"
       @pointerleave="emit('preview', null)"
     >
-      <span
-        v-for="(label, index) in COLUMN_LABELS"
-        :key="label"
-        class="month-label"
-        :style="{ gridColumn: index + FIRST_MONTH_COLUMN }"
-        aria-hidden="true"
-      >
+      <span aria-hidden="true"></span>
+      <span v-for="label in COLUMN_LABELS" :key="label" class="month-label" aria-hidden="true">
         {{ label }}
       </span>
       <template v-for="year in monthly.years" :key="year.year">
@@ -63,7 +58,6 @@ const props = defineProps<{
 const emit = defineEmits<{ select: [key: string]; preview: [key: string | null] }>()
 
 const COLUMN_LABELS = [...MONTHS, 'Year']
-const FIRST_MONTH_COLUMN = 2
 const KEY_STEPS = new Map([
   ['ArrowLeft', -1],
   ['ArrowRight', 1],
@@ -158,13 +152,11 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 .month-label {
-  grid-row: 1;
   padding-bottom: 3px;
   text-align: center;
 }
 
 .year-label {
-  grid-column: 1;
   align-self: center;
   padding-right: 6px;
   font-variant-numeric: tabular-nums;

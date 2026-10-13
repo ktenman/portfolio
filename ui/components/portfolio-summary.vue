@@ -93,7 +93,12 @@
             @load-history="loadCalendarHistory"
           />
           <summary-history-table :days="reversedSummaries" :months="null" />
-          <loading-veil v-if="isLoadingMonths" delayed message="Loading months" />
+          <loading-veil
+            v-if="isLoadingMonths"
+            class="items-start! pt-24"
+            delayed
+            message="Loading months"
+          />
         </template>
         <template v-else-if="view === 'monthly'">
           <AlertMessage v-if="isHistoryStale" variant="warning" class="stale-notice mb-3">

@@ -9,14 +9,9 @@
       </div>
       <p class="compact-span">{{ monthly.span }}</p>
       <div class="dot-block" aria-hidden="true">
-        <span
-          v-for="(letter, index) in LETTERS"
-          :key="index"
-          class="dot-letter"
-          :style="{ gridColumn: index + FIRST_DOT_COLUMN }"
-        >
-          {{ letter }}
-        </span>
+        <span></span>
+        <span v-for="(letter, index) in LETTERS" :key="index" class="dot-letter">{{ letter }}</span>
+        <span></span>
         <template v-for="year in monthly.years" :key="year.year">
           <span class="dot-year">{{ year.year }}</span>
           <span v-for="(slot, index) in year.slots" :key="index" class="dot-place">
@@ -87,7 +82,6 @@ import DailyProfitCell from './daily-profit-cell.vue'
 const props = defineProps<{ monthly: MonthlyProfit }>()
 
 const LETTERS = MONTHS.map(month => month[0])
-const FIRST_DOT_COLUMN = 2
 
 const average = computed(() =>
   props.monthly.averageMonth === null
@@ -147,7 +141,6 @@ const notes = computed(() => [
 }
 
 .dot-letter {
-  grid-row: 1;
   text-align: center;
 }
 
