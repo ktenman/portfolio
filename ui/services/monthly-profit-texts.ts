@@ -99,6 +99,11 @@ const gapNotes = (interval: MonthInterval): string[] => {
   return [`No daily summary for ${named}`]
 }
 
+const closingLines = ({ closing, detail }: { closing: string; detail: string }) => ({
+  closingText: closing,
+  detail,
+})
+
 export const textsOf = (
   interval: MonthInterval,
   percent: number | null,
@@ -120,7 +125,7 @@ export const textsOf = (
       ...gapNotes(interval),
       ...(percent === null ? [NO_PERCENT] : []),
     ],
-    detail: closingTexts(closing, rank, closing.date === today).detail,
+    ...closingLines(closingTexts(closing, rank, closing.date === today)),
     name: [label, ...(coverage ? [coverage] : []), formatCurrencyChange(change), percentText].join(
       ', '
     ),
@@ -159,3 +164,8 @@ export const yearTextsOf = (
     name: [note || String(year), formatCurrencyChange(change), percentText].join(', '),
   }
 }
+
+export const excludedNoteOf = (excluded: number): string =>
+  excluded === 1
+    ? '1 month excluded: it covers more than one month'
+    : `${excluded} months excluded: they cover more than one month`

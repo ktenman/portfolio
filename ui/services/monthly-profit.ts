@@ -19,6 +19,7 @@ export interface MonthResult {
   coverage: string
   notes: string[]
   rank: string
+  closingText: string
   detail: string
   name: string
 }

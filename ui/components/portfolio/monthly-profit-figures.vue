@@ -46,14 +46,14 @@
         </span>
       </button>
     </div>
-    <p v-if="monthly.excluded" class="figures-note">{{ excludedNote }}</p>
+    <p v-if="monthly.excluded" class="figures-note">{{ excludedNoteOf(monthly.excluded) }}</p>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { extremeMonths, type MonthlyProfit } from '../../services/monthly-profit'
-import { MONTH_FLAT_HINT } from '../../services/monthly-profit-texts'
+import { excludedNoteOf, MONTH_FLAT_HINT } from '../../services/monthly-profit-texts'
 import { formatCurrencyChange, getGainLossClass, splitCents } from '../../utils/formatters'
 import { formatMonthYear } from '../../utils/iso-dates'
 import DailyProfitCell from './daily-profit-cell.vue'
@@ -69,12 +69,6 @@ const average = computed(() =>
 )
 
 const extremes = computed(() => extremeMonths(props.monthly))
-
-const excludedNote = computed(() =>
-  props.monthly.excluded === 1
-    ? '1 month excluded: it covers more than one month'
-    : `${props.monthly.excluded} months excluded: they cover more than one month`
-)
 </script>
 
 <style scoped>

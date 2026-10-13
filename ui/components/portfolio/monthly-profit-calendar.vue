@@ -25,6 +25,7 @@
         <monthly-profit-figures class="calendar-period" :monthly="monthly" @select="select" />
       </div>
     </div>
+    <monthly-profit-compact class="md:hidden" :monthly="monthly" />
     <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
   <div
@@ -53,6 +54,7 @@ import { moveMonth, type MonthlyProfit } from '../../services/monthly-profit'
 import { MONTH_STEPS } from '../../services/monthly-profit-texts'
 import AlertMessage from '../shared/alert-message.vue'
 import DailyProfitLegend from './daily-profit-legend.vue'
+import MonthlyProfitCompact from './monthly-profit-compact.vue'
 import MonthlyProfitFigures from './monthly-profit-figures.vue'
 import MonthlyProfitGrid from './monthly-profit-grid.vue'
 import MonthlyProfitPanel from './monthly-profit-panel.vue'
