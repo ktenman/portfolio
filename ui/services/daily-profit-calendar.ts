@@ -85,7 +85,7 @@ const SEPARATOR = ' · '
 const ORDINAL_RULES = new Intl.PluralRules('en-US', { type: 'ordinal' })
 const ORDINAL_SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' }
 
-const roundToCents = (value: number): number => Number(value.toFixed(2)) || 0
+export const roundToCents = (value: number): number => Number(value.toFixed(2)) || 0
 
 const periodRows = (summaries: PortfolioSummaryDto[], lastDay?: string): PortfolioSummaryDto[] => {
   const sorted = sortSummariesByDateAsc(summaries).filter(row => !lastDay || row.date <= lastDay)
@@ -121,16 +121,18 @@ const stepOf = (change: number, percent: number | null): ChangeStep => {
 
 const ordinal = (rank: number): string => `${rank}${ORDINAL_SUFFIXES[ORDINAL_RULES.select(rank)]}`
 
-const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string => {
-  const { change } = rowChange
-  if (!isSingle(rowChange) || change === 0) return ''
+export const rankText = (change: number, singleChanges: number[], unit: string): string => {
+  if (change === 0) return ''
   const side = change > 0 ? 'Best' : 'Worst'
   const ahead = singleChanges.filter(other => (change > 0 ? other > change : other < change)).length
   const place = ahead ? `${ordinal(ahead + 1)} ${side.toLowerCase()}` : side
   return `${place} of ${singleChanges.length} ${unit}${singleChanges.length === 1 ? '' : 's'}`
 }
 
-const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) => {
+const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string =>
+  isSingle(rowChange) ? rankText(rowChange.change, singleChanges, unit) : ''
+
+export const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) => {
   const verb = isOpen ? 'Now at' : 'Closed at'
   const value = formatCurrencyWithSymbol(row.totalValue)
   const closing = `${verb} ${value}`
@@ -139,7 +141,7 @@ const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) =
   return { closing, detail: `${lead}${SEPARATOR}XIRR ${xirr}` }
 }
 
-const gapText = (first: string, last: string): string => {
+export const gapText = (first: string, last: string): string => {
   if (first === last) return formatDayMonth(last)
   const sameMonth = first.slice(0, 7) === last.slice(0, 7)
   return `${sameMonth ? Number(first.slice(8)) : formatDayMonth(first)} to ${formatDayMonth(last)}`

@@ -4,7 +4,7 @@
       <span class="legend-text legend-loss">Loss</span>
       <span v-for="swatch in SWATCHES" :key="swatch" class="legend-swatch" :class="swatch" />
       <span
-        v-for="tick in TICKS"
+        v-for="tick in ticks"
         :key="tick.column"
         class="legend-text legend-tick"
         :style="{ gridColumn: tick.column }"
@@ -21,10 +21,11 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { CHANGE_STEPS } from '../../services/daily-profit-calendar'
 import DailyProfitCell from './daily-profit-cell.vue'
 
-defineProps<{ missing: boolean }>()
+const props = defineProps<{ missing: boolean; steps?: number[] }>()
 
 const SWATCHES = [
   'rounded-l-control bg-loss',
@@ -39,15 +40,18 @@ const SWATCHES = [
 ]
 const FIRST_COLUMN = 2
 const FLAT_COLUMN = 6
-const [FLAT, ...UPPER] = CHANGE_STEPS.map(String)
-const TICKS = [
-  ...[...UPPER].reverse().map((text, index) => ({
-    text,
-    column: `${FIRST_COLUMN + index} / span 2`,
-  })),
-  { text: `±${FLAT}%`, column: `${FLAT_COLUMN}` },
-  ...UPPER.map((text, index) => ({ text, column: `${FLAT_COLUMN + 1 + index} / span 2` })),
-]
+
+const ticks = computed(() => {
+  const [flat, ...upper] = (props.steps ?? CHANGE_STEPS).map(String)
+  return [
+    ...[...upper].reverse().map((text, index) => ({
+      text,
+      column: `${FIRST_COLUMN + index} / span 2`,
+    })),
+    { text: `±${flat}%`, column: `${FLAT_COLUMN}` },
+    ...upper.map((text, index) => ({ text, column: `${FLAT_COLUMN + 1 + index} / span 2` })),
+  ]
+})
 </script>
 
 <style scoped>

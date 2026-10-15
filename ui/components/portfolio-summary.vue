@@ -75,37 +75,58 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <div class="mt-3 mb-6 flex flex-wrap items-center gap-3 md:mb-10">
+      <div class="mt-3 mb-4 flex flex-wrap items-center gap-3 md:mb-6">
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
 
-      <daily-profit-calendar
-        :key="selectedPlatforms.join()"
-        :rows="dailyCalendarRows"
-        :error="calendarError"
-        :history="calendarHistory"
-        class="mb-2 md:mb-10"
-        @load-history="loadCalendarHistory"
-      />
+      <summary-interval-toggle class="mb-3" :selected="interval" @select="selectInterval" />
 
-      <data-table
-        :items="sortedItems"
-        :columns="summaryColumns"
-        :row-class="getSummaryRowClass"
-        :sortable="true"
-        :sort-state="sortState"
-        :on-sort="toggleSort"
-      >
-        <template #cell-totalProfitChange24h="{ value, item }">
-          <span v-if="value && Math.abs(value) > 0.01" :class="getGainLossClass(value)">
-            {{ format24hChange(item.totalProfitChange24h) }}
-            <span class="change-percentage">{{ format24hChangePercentage(item) }}</span>
-          </span>
+      <div class="relative" :aria-busy="isLoadingMonths || undefined">
+        <template v-if="view === 'daily'">
+          <daily-profit-calendar
+            :key="selectedPlatforms.join()"
+            :rows="dailyCalendarRows"
+            :error="calendarError"
+            :history="calendarHistory"
+            class="mb-2 md:mb-10"
+            @load-history="loadCalendarHistory"
+          />
+          <summary-history-table :days="reversedSummaries" :months="null" />
+          <loading-veil
+            v-if="isLoadingMonths"
+            class="items-start! pt-24"
+            delayed
+            message="Loading months"
+          />
         </template>
-      </data-table>
+        <template v-else-if="view === 'monthly'">
+          <AlertMessage v-if="isHistoryStale" variant="warning" class="stale-notice mb-3">
+            Could not refresh the monthly history. Showing months as of {{ monthsAsOf }}.
+            <button type="button" class="platform-btn ml-2" @click="loadCalendarHistory">
+              Retry
+            </button>
+          </AlertMessage>
+          <monthly-profit-calendar
+            :key="selectedPlatforms.join()"
+            :monthly="monthly"
+            class="mb-2 md:mb-10"
+          />
+          <summary-history-table
+            v-if="monthly"
+            :days="reversedSummaries"
+            :months="monthly.months"
+          />
+        </template>
+        <template v-else>
+          <monthly-profit-calendar :monthly="undefined" class="mb-2 md:mb-10" />
+          <skeleton-loader type="table" :rows="10" :columns="5" />
+        </template>
+      </div>
 
-      <div v-if="isFetching" class="mt-4 text-center">
+      <p class="interval-status sr-only" role="status">{{ intervalAnnouncement }}</p>
+
+      <div v-if="isFetching && interval === 'daily'" class="mt-4 text-center">
         <skeleton-loader type="text" :lines="2" />
       </div>
     </template>
@@ -125,11 +146,11 @@ import {
   type ChartBenchmark,
 } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
-import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
 import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
 import { formatDateToString } from '../composables/use-quick-dates'
+import { useSummaryInterval } from '../composables/use-summary-interval'
 import { useNumberTransition } from '../composables/use-number-transition'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
@@ -137,7 +158,9 @@ import ChartRangeFilter from './portfolio/chart-range-filter.vue'
 import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
-import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
+import MonthlyProfitCalendar from './portfolio/monthly-profit-calendar.vue'
+import SummaryIntervalToggle from './portfolio/summary-interval-toggle.vue'
+import SummaryHistoryTable from './portfolio/summary-history-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import LoadingVeil from './shared/loading-veil.vue'
@@ -145,18 +168,10 @@ import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
 import AlertMessage from './shared/alert-message.vue'
 import { transactionsService } from '../services/api'
-import { percentOfPreviousValue } from '../services/summary-aggregator'
+import { buildMonthlyProfit } from '../services/monthly-profit'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
-import {
-  formatCurrencyWithSymbol,
-  formatDate,
-  formatPercentageFromDecimal,
-  formatSignedPercent,
-  getGainLossClass,
-  splitCents,
-} from '../utils/formatters'
-import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { formatCurrencyWithSymbol, formatDate, splitCents } from '../utils/formatters'
 
 const PortfolioChart = defineAsyncComponent({
   loader: () => import('./portfolio/portfolio-chart.vue'),
@@ -208,13 +223,22 @@ const {
   error,
   rangeError,
   calendarError,
+  historyStatus,
+  monthlyRows,
+  isHistoryStale,
   recalculationMessage,
   recalculate,
   fetchSummaries,
   hasMoreData,
 } = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
 
-const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
+const {
+  interval,
+  view,
+  isLoadingMonths,
+  isUserSwitch,
+  select: selectInterval,
+} = useSummaryInterval({ status: historyStatus, load: loadCalendarHistory }, selectedPlatforms)
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
@@ -275,87 +299,37 @@ const headlineAmount = computed(() =>
 
 const today = () => formatDateToString(new Date())
 
+const monthly = computed(() =>
+  monthlyRows.value ? buildMonthlyProfit(monthlyRows.value, today()) : undefined
+)
+
+const monthsAsOf = computed(() => {
+  const rows = monthlyRows.value
+  return rows?.length ? formatDate(rows[rows.length - 1].date) : ''
+})
+
+const intervalAnnouncement = ref('')
+
+watch(view, current => {
+  if (current === 'daily') intervalAnnouncement.value = ''
+  if (current !== 'monthly' || !isUserSwitch.value) return
+  isUserSwitch.value = false
+  intervalAnnouncement.value = [
+    'Monthly profit',
+    ...(monthly.value ? [monthly.value.span] : []),
+  ].join(' ')
+})
+
 const staleAsOf = computed(() => {
   const date = latestSummary.value?.date
   if (!date || date === today()) return null
   return formatDate(date)
 })
 
-const format24hChange = (value: number | null) => {
-  if (value === null || value === 0 || Math.abs(value) <= 0.01) {
-    return ''
-  }
-  return formatCurrencyWithSymbol(value)
-}
-
-const format24hChangePercentage = (summary: PortfolioSummaryDto) => {
-  const change = summary.totalProfitChange24h
-  if (change === null || Math.abs(change) <= 0.01) {
-    return ''
-  }
-  const percent = percentOfPreviousValue(summary.totalValue, change)
-  if (percent === null) {
-    return ''
-  }
-  return `(${formatSignedPercent(percent)})`
-}
-
-const summaryColumns: ColumnDefinition[] = [
-  { key: 'date', label: 'Date', formatter: formatDate },
-  {
-    key: 'xirrAnnualReturn',
-    label: 'XIRR Annual Return',
-    formatter: formatPercentageFromDecimal,
-    class: 'text-right!',
-  },
-  {
-    key: 'earningsPerDay',
-    label: 'Earnings Per Day',
-    formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell! text-right!',
-    hideOnMobile: true,
-  },
-  {
-    key: 'earningsPerMonth',
-    label: 'Earnings Per Month',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-  {
-    key: 'unrealizedProfit',
-    label: 'Unrealized Profit',
-    formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell! text-right!',
-    hideOnMobile: true,
-  },
-  {
-    key: 'totalProfit',
-    label: 'Total Profit',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-  {
-    key: 'totalProfitChange24h',
-    label: '24h Change',
-    formatter: format24hChange,
-    class: 'text-right!',
-  },
-  {
-    key: 'totalValue',
-    label: 'Total Value',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-]
-
-const getSummaryRowClass = (summary: any, index: number) => ({
-  'font-weight-bold': index === 0 && summary.date === today(),
-})
-
 useInfiniteScroll(
   window,
   async () => {
-    if (isFetching.value || !hasMoreData?.value) return
+    if (interval.value !== 'daily' || isFetching.value || !hasMoreData?.value) return
     await fetchSummaries()
   },
   { distance: 100 }
@@ -409,11 +383,6 @@ const handleRecalculate = async () => {
 .headline-asof {
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
-}
-
-.change-percentage {
-  margin-left: 0.25rem;
-  font-size: 0.85em;
 }
 
 @media (max-width: 575px) {

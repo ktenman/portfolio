@@ -294,6 +294,15 @@ describe('formatPercentChange', () => {
   ])('formats %s as %s', (value, expected) => {
     expect(formatPercentChange(value)).toBe(expected)
   })
+
+  it('prints the asked number of decimals without a sign on a rounded zero', () => {
+    expect([
+      formatPercentChange(1.24, 1),
+      formatPercentChange(-3.04, 1),
+      formatSignedPercent(-0.04, 1),
+      formatSignedPercent(-8.46, 1),
+    ]).toEqual(['+1.2%', '−3.0%', '0.0%', '−8.5%'])
+  })
 })
 
 describe('formatDate', () => {

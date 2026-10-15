@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   mergeHistoricalWithCurrent,
+  mergeSummariesByDate,
   sortSummariesByDateAsc,
   sortSummariesByDateDesc,
   findSummaryByDate,
@@ -171,6 +172,29 @@ describe('summary-aggregator', () => {
       ]
       const result = flattenPages(pages)
       expect(result).toHaveLength(1)
+    })
+  })
+
+  describe('mergeSummariesByDate', () => {
+    it('keeps the last row of each date across unsorted sources and sorts ascending', () => {
+      const first = [
+        createSummary('2025-01-02', 1),
+        createSummary('2025-01-01', 1),
+        createSummary('2025-01-02', 2),
+      ]
+      const merged = mergeSummariesByDate(
+        first,
+        [createSummary('2025-01-03', 3)],
+        [createSummary('2025-01-03', 4)]
+      )
+      expect([merged.map(row => [row.date, row.totalValue]), first[0].date]).toEqual([
+        [
+          ['2025-01-01', 1],
+          ['2025-01-02', 2],
+          ['2025-01-03', 4],
+        ],
+        '2025-01-02',
+      ])
     })
   })
 })

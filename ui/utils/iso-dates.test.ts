@@ -1,14 +1,21 @@
 import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest'
 import {
   addDays,
+  addMonths,
   daysBetween,
   formatDayMonth,
   formatDayRange,
   formatFullDate,
+  formatFullMonth,
+  formatMonthSpan,
+  formatMonthYear,
   formatWeekdayDate,
+  lastDayOfMonth,
   mondayIndex,
+  monthKey,
   monthName,
   monthsBefore,
+  monthsBetween,
 } from './iso-dates'
 
 describe('addDays', () => {
@@ -106,5 +113,43 @@ describe('in a time zone west of UTC', () => {
       monthName('2025-12-01'),
       monthsBefore('2026-01-01', 6),
     ]).toEqual([31, 'Thu 1 Jan 2026', '1 Dec', 0, 'Dec', '2025-07-01'])
+  })
+})
+
+describe('month keys', () => {
+  it('takes the month of a date and steps across year boundaries', () => {
+    expect([monthKey('2024-02-29'), addMonths('2025-12', 1), addMonths('2025-01', -12)]).toEqual([
+      '2024-02',
+      '2026-01',
+      '2024-01',
+    ])
+  })
+
+  it('counts the months from one key to another', () => {
+    expect([monthsBetween('2021-08', '2021-09'), monthsBetween('2025-12', '2025-12')]).toEqual([
+      1, 0,
+    ])
+  })
+
+  it('finds the last day of a leap and a common February', () => {
+    expect([lastDayOfMonth('2024-02'), lastDayOfMonth('2025-02')]).toEqual([
+      '2024-02-29',
+      '2025-02-28',
+    ])
+  })
+
+  it('names a month in its short and its full form', () => {
+    expect([formatMonthYear('2026-10'), formatFullMonth('2026-10')]).toEqual([
+      'Oct 2026',
+      'October 2026',
+    ])
+  })
+
+  it('prints a span of months with the year once when it is shared', () => {
+    expect([
+      formatMonthSpan('2020-01', '2026-10'),
+      formatMonthSpan('2025-06', '2025-12'),
+      formatMonthSpan('2025-12', '2025-12'),
+    ]).toEqual(['Jan 2020 – Oct 2026', 'Jun – Dec 2025', 'Dec 2025'])
   })
 })
