@@ -254,9 +254,15 @@ jobs:
       cloudflare-bypass-proxy: ${{ steps.filter.outputs.cloudflare-bypass-proxy }}
     steps:
       - uses: actions/checkout@v7
+      - name: Find last deployed commit
+        id: deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "sha=$(gh run list --workflow ci.yml --branch main --event push --status success --limit 1 --json headSha --jq '.[0].headSha // empty')" >> "$GITHUB_OUTPUT"
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
+          base: ${{ steps.deployed.outputs.sha }}
           filters: |
             backend:
               - 'src/**'
