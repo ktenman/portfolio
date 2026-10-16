@@ -47,6 +47,13 @@ class VanguardHoldingsServiceIT {
   }
 
   @Test
+  fun `should request security descriptions from Vanguard`() {
+    stubBothPages()
+    vanguardHoldingsService.fetchHoldings(PORT_ID)
+    wireMockServer.verify(postRequestedFor(urlPathEqualTo(GRAPHQL_PATH)).withRequestBody(containing("securityLongDescription")))
+  }
+
+  @Test
   fun `should send the key of the previous page back to Vanguard`() {
     stubBothPages()
 
@@ -80,6 +87,28 @@ class VanguardHoldingsServiceIT {
     val snapshot = vanguardHoldingsService.fetchHoldings(PORT_ID)
 
     expect(snapshot.holdings.first { it.name == "Alphabet Inc" }.industry).toEqual(GicsIndustry.INTERACTIVE_MEDIA_AND_SERVICES)
+  }
+
+  @Test
+  fun `should retain a weighted holding with only a security description`() {
+    val item =
+      """
+      {
+        "issuerName": null,
+        "securityLongDescription": " NOK Group Corp ",
+        "ticker": null,
+        "marketValuePercentage": 0.00446,
+        "gicsIndustryDescription": null,
+        "bloombergIsoCountry": null,
+        "securityType": "EQ.STOCK",
+        "effectiveDate": "2026-09-30"
+      }
+      """.trimIndent()
+    val remainder = SECOND_PAGE_ITEM.replace("97.06459", "99.99554").replace("2026-08-31", "2026-09-30")
+    stubPage(Scenario.STARTED, null, pageBody("$item,$remainder", "null"))
+    val holding = vanguardHoldingsService.fetchHoldings(PORT_ID).holdings.first { it.name == "NOK Group Corp" }
+    expect(holding.weight).toEqualNumerically(BigDecimal("0.00446"))
+    expect(holding.ticker).toEqual(null)
   }
 
   @Test
