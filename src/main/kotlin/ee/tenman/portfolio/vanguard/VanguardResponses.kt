@@ -40,6 +40,7 @@ data class VanguardHoldingsPage(
 
 data class VanguardHoldingItem(
   val issuerName: String? = null,
+  val securityLongDescription: String? = null,
   val ticker: String? = null,
   val marketValuePercentage: BigDecimal? = null,
   val gicsIndustryDescription: String? = null,

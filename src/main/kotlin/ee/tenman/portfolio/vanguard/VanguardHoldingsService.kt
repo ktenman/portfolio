@@ -61,7 +61,7 @@ class VanguardHoldingsService(
     items: List<VanguardHoldingItem>,
   ): List<VanguardHolding> =
     items.map { item ->
-      val name = item.issuerName?.trim()
+      val name = item.issuerName?.trim()?.takeIf { it.isNotEmpty() } ?: item.securityLongDescription?.trim()
       check(!name.isNullOrEmpty()) { "Vanguard fund $portId returned a holding without an issuer name" }
       val weight = item.marketValuePercentage ?: error("Vanguard fund $portId returned holding '$name' without a weight")
       val effectiveDate = item.effectiveDate ?: error("Vanguard fund $portId returned holding '$name' without an effective date")
@@ -171,7 +171,9 @@ class VanguardHoldingsService(
       query FundHoldings(${'$'}portIds: [String!], ${'$'}securityTypes: [String!], ${'$'}lastItemKey: String) {
         borHoldings(portIds: ${'$'}portIds) {
           holdings(limit: $PAGE_LIMIT, securityTypes: ${'$'}securityTypes, lastItemKey: ${'$'}lastItemKey) {
-            items { issuerName ticker marketValuePercentage gicsIndustryDescription bloombergIsoCountry effectiveDate }
+            items {
+              issuerName securityLongDescription ticker marketValuePercentage gicsIndustryDescription bloombergIsoCountry effectiveDate
+            }
             lastItemKey
           }
         }
