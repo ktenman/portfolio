@@ -280,7 +280,7 @@ class TransactionServiceTest : TransactionServiceTestBase() {
   fun `should report full coverage when the selection contains every platform holding transactions`() {
     every { portfolioTransactionRepository.findDistinctPlatforms() } returns listOf(Platform.LHV, Platform.SWEDBANK)
 
-    expect(transactionService.coversEveryPlatform(listOf(Platform.SWEDBANK, Platform.LHV, Platform.BINANCE))).toEqual(true)
+    expect(transactionService.coversEveryPlatform(listOf(Platform.SWEDBANK, Platform.LHV, Platform.TREZOR))).toEqual(true)
   }
 
   @Test

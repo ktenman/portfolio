@@ -181,13 +181,13 @@ class PriceUpdateProcessorTest {
 
     expect {
       processor.processPriceUpdates(
-        platform = Platform.BINANCE,
+        platform = Platform.TREZOR,
         log = log,
         fetchPrices = { prices },
         processSymbol = { _, _, _, _ -> error("Price persistence failed") },
       )
     }.toThrow<PriceRefreshException>()
-      .messageToContain("BINANCE price refresh incomplete: requested=3, fetched=3, persisted=0, failed=3")
+      .messageToContain("TREZOR price refresh incomplete: requested=3, fetched=3, persisted=0, failed=3")
   }
 
   @Test

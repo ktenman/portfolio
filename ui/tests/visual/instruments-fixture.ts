@@ -253,7 +253,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     realizedProfit: 0,
     unrealizedProfit: 378.65,
     xirr: 0.4471,
-    platforms: ['BINANCE'],
+    platforms: ['TREZOR'],
     priceChangeAmount: -52.31,
     priceChangePercent: -1.24,
     ter: 0,

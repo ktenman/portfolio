@@ -1,5 +1,5 @@
 /* tslint:disable */
-/* eslint-disable */
+ 
 // Generated using typescript-generator (timestamp removed to prevent git churn)
 
 /**
@@ -324,14 +324,15 @@ export enum Currency {
 
 export enum Platform {
     AVIVA = "AVIVA",
-    BINANCE = "BINANCE",
     COINBASE = "COINBASE",
     IBKR = "IBKR",
     LHV = "LHV",
     LIGHTYEAR = "LIGHTYEAR",
     LIGHTYEAR_BUSINESS = "LIGHTYEAR_BUSINESS",
+    REVOLUT_X = "REVOLUT_X",
     SWEDBANK = "SWEDBANK",
     TRADING212 = "TRADING212",
+    TREZOR = "TREZOR",
     TULEVA = "TULEVA",
     UNKNOWN = "UNKNOWN",
 }
