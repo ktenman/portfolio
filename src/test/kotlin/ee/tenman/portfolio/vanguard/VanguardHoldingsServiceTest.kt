@@ -297,8 +297,24 @@ class VanguardHoldingsServiceTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = ["   "])
-  fun `should throw when a weighted holding has no issuer name`(name: String?) {
-    stubSinglePage(listOf(item(name, "AAPL", "100")))
+  fun `should use the security description when the issuer name is blank`(name: String?) {
+    stubSinglePage(listOf(item(name, null, "100").copy(securityLongDescription = "  Tundmatu Ühistu OÜ  ")))
+    val holding = service.fetchHoldings(VGLA_PORT_ID).holdings.single()
+    expect(holding.name).toEqual("Tundmatu Ühistu OÜ")
+  }
+
+  @Test
+  fun `should prefer a trimmed issuer name over the security description`() {
+    stubSinglePage(listOf(item("  Nestlé SA  ", "NESN", "100").copy(securityLongDescription = "Other security")))
+    val holding = service.fetchHoldings(VGLA_PORT_ID).holdings.single()
+    expect(holding.name).toEqual("Nestlé SA")
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = ["   "])
+  fun `should throw when neither holding name is usable`(name: String?) {
+    stubSinglePage(listOf(item(name, "AAPL", "100").copy(securityLongDescription = name)))
 
     expect {
       service.fetchHoldings(VGLA_PORT_ID)
