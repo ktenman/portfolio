@@ -334,7 +334,7 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
         PortfolioTransaction(
           instrument = instrument,
@@ -350,18 +350,18 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("5"),
           price = BigDecimal("150"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
       ),
     )
 
     mockMvc
-      .perform(get("/api/transactions?platforms=BINANCE").cookie(DEFAULT_COOKIE))
+      .perform(get("/api/transactions?platforms=TREZOR").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.transactions").isArray)
       .andExpect(jsonPath("$.transactions.length()").value(2))
-      .andExpect(jsonPath("$.transactions[0].platform").value("BINANCE"))
-      .andExpect(jsonPath("$.transactions[1].platform").value("BINANCE"))
+      .andExpect(jsonPath("$.transactions[0].platform").value("TREZOR"))
+      .andExpect(jsonPath("$.transactions[1].platform").value("TREZOR"))
       .andExpect(jsonPath("$.summary").exists())
       .andExpect(jsonPath("$.summary.totalRealizedProfit").exists())
       .andExpect(jsonPath("$.summary.totalUnrealizedProfit").exists())
@@ -380,7 +380,7 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
         PortfolioTransaction(
           instrument = instrument,
@@ -410,11 +410,11 @@ class PortfolioTransactionControllerIT {
     )
 
     mockMvc
-      .perform(get("/api/transactions?platforms=BINANCE,TRADING212").cookie(DEFAULT_COOKIE))
+      .perform(get("/api/transactions?platforms=TREZOR,TRADING212").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.transactions").isArray)
       .andExpect(jsonPath("$.transactions.length()").value(2))
-      .andExpect(jsonPath("$.transactions[?(@.platform == 'BINANCE')]").exists())
+      .andExpect(jsonPath("$.transactions[?(@.platform == 'TREZOR')]").exists())
       .andExpect(jsonPath("$.transactions[?(@.platform == 'TRADING212')]").exists())
       .andExpect(jsonPath("$.transactions[?(@.platform == 'LIGHTYEAR')]").doesNotExist())
       .andExpect(jsonPath("$.transactions[?(@.platform == 'SWEDBANK')]").doesNotExist())
@@ -435,7 +435,7 @@ class PortfolioTransactionControllerIT {
         quantity = BigDecimal("10"),
         price = BigDecimal("100"),
         transactionDate = testDate,
-        platform = Platform.BINANCE,
+        platform = Platform.TREZOR,
       ),
     )
 
@@ -463,7 +463,7 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
         PortfolioTransaction(
           instrument = instrument,
@@ -506,7 +506,7 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("10"),
           price = BigDecimal("100"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
         PortfolioTransaction(
           instrument = instrument,
@@ -522,7 +522,7 @@ class PortfolioTransactionControllerIT {
           quantity = BigDecimal("3"),
           price = BigDecimal("60"),
           transactionDate = testDate,
-          platform = Platform.BINANCE,
+          platform = Platform.TREZOR,
         ),
       ),
     )
@@ -531,8 +531,8 @@ class PortfolioTransactionControllerIT {
       .perform(get("/api/transactions/platforms").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.length()").value(2))
-      .andExpect(jsonPath("$[0]").value("BINANCE"))
-      .andExpect(jsonPath("$[1]").value("LHV"))
+      .andExpect(jsonPath("$[0]").value("LHV"))
+      .andExpect(jsonPath("$[1]").value("TREZOR"))
   }
 
   @Test

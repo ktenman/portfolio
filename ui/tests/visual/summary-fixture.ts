@@ -245,12 +245,12 @@ const RANGE_CHANGE = {
 
 const PLATFORMS = [
   'AVIVA',
-  'BINANCE',
   'LHV',
   'LIGHTYEAR',
   'LIGHTYEAR_BUSINESS',
   'SWEDBANK',
   'TRADING212',
+  'TREZOR',
 ]
 
 export const SERIES_RESPONSE = HISTORICAL_ROWS.map(toSummary)
