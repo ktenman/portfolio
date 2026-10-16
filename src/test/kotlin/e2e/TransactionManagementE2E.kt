@@ -142,12 +142,12 @@ class TransactionManagementE2E {
     Thread.sleep(500)
 
     val platformButtons = elements(className("platform-btn"))
-    val binanceButton = platformButtons.findBy(text("Binance"))
-    val initialActiveState = binanceButton.getAttribute("class")?.contains("active") ?: false
-    binanceButton.click()
+    val trezorButton = platformButtons.findBy(text("Trezor"))
+    val initialActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
+    trezorButton.click()
     Thread.sleep(500)
 
-    val newActiveState = binanceButton.getAttribute("class")?.contains("active") ?: false
+    val newActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
     expect(newActiveState).toEqual(!initialActiveState)
   }
 
