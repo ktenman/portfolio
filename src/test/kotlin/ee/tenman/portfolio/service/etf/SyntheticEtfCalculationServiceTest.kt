@@ -80,8 +80,8 @@ class SyntheticEtfCalculationServiceTest {
           instrument.id to
             InstrumentTransactionData(
               netQuantity = BigDecimal("10"),
-              platforms = setOf(Platform.BINANCE),
-              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+              platforms = setOf(Platform.TREZOR),
+              quantityByPlatform = mapOf(Platform.TREZOR to BigDecimal("10")),
             ),
         )
 
@@ -124,8 +124,8 @@ class SyntheticEtfCalculationServiceTest {
           instrument.id to
             InstrumentTransactionData(
               netQuantity = BigDecimal("10"),
-              platforms = setOf(Platform.BINANCE),
-              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+              platforms = setOf(Platform.TREZOR),
+              quantityByPlatform = mapOf(Platform.TREZOR to BigDecimal("10")),
             ),
         )
 
@@ -146,12 +146,12 @@ class SyntheticEtfCalculationServiceTest {
           instrument.id to
             InstrumentTransactionData(
               netQuantity = BigDecimal("10"),
-              platforms = setOf(Platform.BINANCE),
-              quantityByPlatform = mapOf(Platform.BINANCE to BigDecimal("10")),
+              platforms = setOf(Platform.TREZOR),
+              quantityByPlatform = mapOf(Platform.TREZOR to BigDecimal("10")),
             ),
         )
 
-      val result = service.hasActiveHoldings(1L, setOf(Platform.BINANCE))
+      val result = service.hasActiveHoldings(1L, setOf(Platform.TREZOR))
 
       expect(result).toEqual(true)
     }

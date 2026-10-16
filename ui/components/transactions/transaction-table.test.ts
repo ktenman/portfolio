@@ -118,7 +118,7 @@ describe('TransactionTable', () => {
           transactionType: TransactionType.BUY,
           quantity: 10,
           price: 100,
-          platform: Platform.BINANCE,
+          platform: Platform.TREZOR,
         }),
         createTransactionDto({
           id: 50,
@@ -128,7 +128,7 @@ describe('TransactionTable', () => {
           transactionType: TransactionType.SELL,
           quantity: 5,
           price: 200,
-          platform: Platform.BINANCE,
+          platform: Platform.TREZOR,
         }),
         createTransactionDto({
           id: 200,
@@ -138,7 +138,7 @@ describe('TransactionTable', () => {
           transactionType: TransactionType.BUY,
           quantity: 15,
           price: 95,
-          platform: Platform.BINANCE,
+          platform: Platform.TREZOR,
         }),
         createTransactionDto({
           id: 75,
@@ -148,7 +148,7 @@ describe('TransactionTable', () => {
           transactionType: TransactionType.BUY,
           quantity: 20,
           price: 150,
-          platform: Platform.BINANCE,
+          platform: Platform.TREZOR,
         }),
       ]
 

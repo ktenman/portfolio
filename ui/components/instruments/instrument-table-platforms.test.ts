@@ -22,7 +22,7 @@ describe('InstrumentTable', () => {
 
       const badges = secondRow.findAll('.badge')
 
-      expect(badges.map(badge => badge.text())).toEqual(['Binance', 'Coinbase'])
+      expect(badges.map(badge => badge.text())).toEqual(['Trezor', 'Coinbase'])
     })
 
     it('should format platform names correctly', () => {
@@ -43,7 +43,7 @@ describe('InstrumentTable', () => {
       const mobileCards = wrapper.findAll('.mobile-instrument-card')
 
       const badges = mobileCards[1].findAll('.platform-tags .badge')
-      expect(badges.map(badge => badge.text())).toEqual(['Binance', 'Coinbase'])
+      expect(badges.map(badge => badge.text())).toEqual(['Trezor', 'Coinbase'])
     })
 
     it.each([

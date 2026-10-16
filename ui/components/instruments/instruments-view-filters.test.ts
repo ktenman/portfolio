@@ -43,7 +43,7 @@ describe('InstrumentsView', () => {
       const platformTexts = platformLabels(wrapper)
 
       expect(platformTexts).toContain('Trading 212')
-      expect(platformTexts).toContain('Binance')
+      expect(platformTexts).toContain('Trezor')
       expect(platformTexts).toContain('Coinbase')
     })
 
@@ -85,7 +85,7 @@ describe('InstrumentsView', () => {
       const platformButton = (name: string) =>
         wrapper.findAll('.platform-btn').find(btn => btn.text() === name)!
 
-      await platformButton('Binance').trigger('click')
+      await platformButton('Trezor').trigger('click')
       await flushPromises()
       await platformButton('Coinbase').trigger('click')
       await flushPromises()

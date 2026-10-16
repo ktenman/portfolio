@@ -46,7 +46,7 @@ class SummaryCacheTest {
   @Resource
   private lateinit var clock: Clock
 
-  private val platforms = listOf(Platform.TRADING212, Platform.BINANCE)
+  private val platforms = listOf(Platform.TRADING212, Platform.TREZOR)
 
   @BeforeEach
   fun setup() {
@@ -148,8 +148,8 @@ class PlatformSummaryCacheServiceTest {
   @Test
   fun `should platformKey sort platforms alphabetically`() {
     val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
-    val key = service.platformKey(listOf(Platform.TRADING212, Platform.BINANCE, Platform.LIGHTYEAR))
-    expect(key).toEqual("BINANCE,LIGHTYEAR,TRADING212")
+    val key = service.platformKey(listOf(Platform.TRADING212, Platform.TREZOR, Platform.LIGHTYEAR))
+    expect(key).toEqual("LIGHTYEAR,TRADING212,TREZOR")
   }
 
   @Test

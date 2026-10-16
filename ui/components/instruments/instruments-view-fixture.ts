@@ -87,7 +87,7 @@ export const mockInstruments = [
     name: 'Bitcoin',
     providerName: ProviderName.BINANCE,
     category: 'CRYPTO',
-    platforms: ['BINANCE', 'COINBASE'],
+    platforms: ['TREZOR', 'COINBASE'],
     totalInvestment: 5000,
     quantity: 0.5,
   }),

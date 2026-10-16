@@ -78,7 +78,7 @@ class CurrentDaySummaryRefreshJobTest {
 
   @Test
   fun `should reuse the unfiltered summary for every known platform so it cannot be computed twice`() {
-    val platforms = listOf(Platform.TRADING212, Platform.BINANCE)
+    val platforms = listOf(Platform.TRADING212, Platform.TREZOR)
     val summary = summaryOn(LocalDate.of(2024, 3, 11))
     every { currentDayCache.refreshCurrentDaySummary() } returns summary
     every { transactionService.getDistinctPlatforms() } returns platforms
@@ -119,13 +119,13 @@ class CurrentDaySummaryRefreshJobTest {
   fun `should record the second platform when the first platform summary throws`() {
     val binance = summaryOn(LocalDate.of(2024, 3, 13))
     every { currentDayCache.refreshCurrentDaySummary() } returns summaryOn(LocalDate.of(2024, 3, 11))
-    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.BINANCE)
+    every { transactionService.getDistinctPlatforms() } returns listOf(Platform.LHV, Platform.TREZOR)
     every {
       platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.LHV))
     } throws RuntimeException("price provider unavailable")
-    every { platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.BINANCE)) } returns binance
+    every { platformCache.refreshCurrentDaySummaryForPlatforms(listOf(Platform.TREZOR)) } returns binance
     job.refresh()
-    verify { intradaySummaryService.record(binance, Platform.BINANCE) }
+    verify { intradaySummaryService.record(binance, Platform.TREZOR) }
   }
 
   @Test

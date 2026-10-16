@@ -15,14 +15,15 @@ import type { Page } from '../models/page'
 
 export const mockPlatforms = [
   { name: 'AVIVA', displayName: 'Aviva' },
-  { name: 'BINANCE', displayName: 'Binance' },
   { name: 'COINBASE', displayName: 'Coinbase' },
   { name: 'IBKR', displayName: 'IBKR' },
   { name: 'LHV', displayName: 'LHV' },
   { name: 'LIGHTYEAR', displayName: 'Lightyear' },
   { name: 'LIGHTYEAR_BUSINESS', displayName: 'Lightyear Business' },
+  { name: 'REVOLUT_X', displayName: 'Revolut X' },
   { name: 'SWEDBANK', displayName: 'Swedbank' },
   { name: 'TRADING212', displayName: 'Trading 212' },
+  { name: 'TREZOR', displayName: 'Trezor' },
   { name: 'UNKNOWN', displayName: 'Unknown' },
 ]
 

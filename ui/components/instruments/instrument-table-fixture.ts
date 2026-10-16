@@ -32,7 +32,7 @@ const mockInstruments = [
     currentValue: 18000,
     profit: -2000,
     baseCurrency: 'EUR',
-    platforms: ['BINANCE', 'COINBASE'],
+    platforms: ['TREZOR', 'COINBASE'],
   }),
   createInstrumentDto({
     id: 3,
@@ -44,7 +44,7 @@ const mockInstruments = [
     currentValue: 5000,
     profit: 0,
     baseCurrency: 'USD',
-    platforms: ['BINANCE'],
+    platforms: ['TREZOR'],
   }),
   createInstrumentDto({
     id: 4,

@@ -129,14 +129,15 @@ enum class Platform(
   val displayName: String,
 ) {
   AVIVA("Aviva"),
-  BINANCE("Binance"),
   COINBASE("Coinbase"),
   IBKR("IBKR"),
   LHV("LHV"),
   LIGHTYEAR("Lightyear"),
   LIGHTYEAR_BUSINESS("Lightyear Business"),
+  REVOLUT_X("Revolut X"),
   SWEDBANK("Swedbank"),
   TRADING212("Trading 212"),
+  TREZOR("Trezor"),
   TULEVA("Tuleva"),
   UNKNOWN("Unknown"),
   ;
