@@ -1,6 +1,7 @@
 import json
 import math
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -25,14 +26,17 @@ def pause_before(window: np.ndarray, start: float) -> float:
     return start + (int(np.argmin(means)) + width / 2) / 100
 
 
-def transcribe(directory: Path, model: Any, name: str, chunk_seconds: float = 300) -> None:
+def transcribe(directory: Path, model: Any, name: str, chunk_seconds: float = 300, recording: Callable[[], bool] = lambda: True) -> None:
     if (directory / "transcript.json").exists():
         return
     session = Session(directory, model, chunk_seconds)
     index = 0
     while True:
+        alive = recording()
         status = read_status(directory)
         over = status["state"] != "recording"
+        if not (over or alive):
+            raise RuntimeError(f"The recorder stopped while {directory / 'status.json'} still says recording")
         if index == len(status["parts"]) and over:
             break
         if index < len(status["parts"]) and session.advance(status["parts"], index, over):
@@ -83,7 +87,9 @@ def load(path: Path) -> list[dict]:
             chunks.append(json.loads(line))
         except json.JSONDecodeError:
             break
-    path.write_text("".join(json.dumps(chunk, ensure_ascii=False) + "\n" for chunk in chunks), encoding="utf-8")
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.write_text("".join(json.dumps(chunk, ensure_ascii=False) + "\n" for chunk in chunks), encoding="utf-8")
+    temporary.replace(path)
     return chunks
 
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 KUKU = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000"
 STATES = ("recording", "captured", "partial", "failed")
-START = re.compile(rb"start: (\d+\.\d+)")
+START = re.compile(rb"start: (-?\d+\.\d+)")
 WRAP = 2**33 / 90000
 POLL_SECONDS = 0.5
 RETRY_SECONDS = 2

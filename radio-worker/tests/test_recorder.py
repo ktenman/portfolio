@@ -4,16 +4,17 @@ import shutil
 import socket
 import subprocess
 import threading
+from pathlib import Path
 
 import pytest
 from pytest import approx
 from support import broadcast, first_silence, tone, wait
 
-from radio_worker.recorder import KUKU, prepare, read_status, record
+from radio_worker.recorder import KUKU, prepare, read_status, record, register
 
 
 @pytest.fixture(scope="module")
-def recorded(tmp_path_factory):
+def recorded(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = tmp_path_factory.mktemp("recorded")
     with broadcast(root) as url:
         prepare(root / "keskpäevatund", url, 12)
@@ -21,18 +22,19 @@ def recorded(tmp_path_factory):
     return root / "keskpäevatund"
 
 
-def probe(path):
+def probe(path: Path) -> dict:
     command = ["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(path)]
     return json.loads(subprocess.run(command, capture_output=True, text=True, check=True).stdout)
 
 
-def sha256(path):
+def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def dropped(directory, playlist):
+def caught_up(directory: Path, playlist: Path) -> bool:
     pcm = directory / "raw.pcm"
-    return pcm.exists() and pcm.stat().st_size >= 5 * 32000 and "seg_00002.ts" in playlist.read_text()
+    listed = playlist.read_text().count(".ts") if playlist.exists() else 0
+    return listed >= 4 and pcm.exists() and pcm.stat().st_size / 32000 >= 6 * listed - 6.5
 
 
 def test_recorder_copies_the_stream_without_reencoding(recorded):
@@ -78,15 +80,25 @@ def test_recorder_carries_on_into_a_new_part_after_a_restart(tmp_path):
 
 def test_recorder_places_a_part_after_a_drop_at_its_place_in_the_stream(tmp_path):
     directory = tmp_path / "rec"
-    with broadcast(tmp_path, seconds=40) as url:
-        prepare(directory, url, 30)
+    with broadcast(tmp_path, seconds=60) as url:
+        prepare(directory, url, 40)
         recording = threading.Thread(target=record, args=(directory,))
         recording.start()
-        wait(lambda: dropped(directory, tmp_path / "hls" / "stream.m3u8"))
+        wait(lambda: caught_up(directory, tmp_path / "hls" / "stream.m3u8"))
         subprocess.run(["pkill", "-KILL", "-f", str(directory / "raw.mp3")], check=True)
         recording.join(40)
-    part = read_status(directory)["parts"][1]
-    assert (part["offsetSeconds"] + first_silence(directory / "raw-part-002.pcm", after=0.5)) % 10 == approx(7.0, abs=0.1)
+    first, second = read_status(directory)["parts"][:2]
+    silence = second["offsetSeconds"] + first_silence(directory / "raw-part-002.pcm", after=0.5)
+    assert (second["offsetSeconds"] < first["durationSeconds"], silence % 10) == (True, approx(7.0, abs=0.1))
+
+
+def test_recorder_places_parts_across_the_timestamp_wrap(tmp_path):
+    status = {"parts": []}
+    for stem, start in [("raw", "-30.023022"), ("raw-part-002", "5.976978")]:
+        (tmp_path / f"{stem}.mp3").write_bytes(b"")
+        (tmp_path / f"{stem}.log").write_text(f"  Duration: N/A, start: {start}, bitrate: N/A\n")
+        register(tmp_path, status, stem)
+    assert [part["offsetSeconds"] for part in status["parts"]] == [0.0, 36.0]
 
 
 def test_recorder_refuses_a_directory_that_is_not_its_own(tmp_path):

@@ -1,5 +1,8 @@
 import hashlib
 import json
+import os
+import signal
+import threading
 
 import pytest
 from support import Stub, broadcast, wait
@@ -35,6 +38,25 @@ def test_run_stops_the_recording_when_interrupted(tmp_path):
         run(directory, url, 30, interrupt, "stub", 60)
     status = read_status(directory)
     assert (status["state"], status["parts"][0]["durationSeconds"] < 20) == ("recording", True)
+
+
+def test_run_stops_the_recording_when_interrupted_after_a_transcriber_error(tmp_path):
+    directory = tmp_path / "rec"
+    def broken():
+        wait(lambda: (directory / "raw.mp3").exists())
+        threading.Timer(0.5, os.kill, (os.getpid(), signal.SIGINT)).start()
+        raise RuntimeError("model files are damaged")
+    with broadcast(tmp_path, seconds=40) as url, pytest.raises(KeyboardInterrupt):
+        run(directory, url, 30, broken, "stub", 60)
+    status = read_status(directory)
+    assert (status["state"], status["parts"][0]["durationSeconds"] < 20) == ("recording", True)
+
+
+def test_station_command_stops_cleanly_on_sigterm(tmp_path):
+    (tmp_path / "in.mp3").write_bytes(b"")
+    signal.signal(signal.SIGTERM, lambda *_: pytest.fail("SIGTERM did not take the Ctrl-C path"))
+    threading.Timer(1, os.kill, (os.getpid(), signal.SIGTERM)).start()
+    assert main(["station", str(tmp_path / "in.mp3"), "--port", "0"]) == 0
 
 
 def test_run_command_refuses_a_directory_that_is_not_a_recording(tmp_path, capsys):

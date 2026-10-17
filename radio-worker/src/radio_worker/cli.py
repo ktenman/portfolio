@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import functools
+import signal
 import sys
 import tempfile
 import threading
@@ -14,6 +15,7 @@ from radio_worker.transcriber import transcribe
 
 
 def main(argv: list[str] | None = None) -> int:
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
     parser = build()
     args = parser.parse_args(argv)
     if args.command == "station" and not args.recording.is_file():
@@ -70,13 +72,22 @@ def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], n
     recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
     recording.start()
     try:
-        transcribe(directory, load(), name, chunk_seconds)
+        transcribe(directory, load(), name, chunk_seconds, recording.is_alive)
     except KeyboardInterrupt:
         stop.set()
         raise
     finally:
-        recording.join()
+        join(recording, stop)
     return read_status(directory)["state"]
+
+
+def join(recording: threading.Thread, stop: threading.Event) -> None:
+    try:
+        recording.join()
+    except KeyboardInterrupt:
+        stop.set()
+        recording.join()
+        raise
 
 
 def load_whisper(model: Path, threads: int) -> Any:

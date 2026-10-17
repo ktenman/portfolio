@@ -20,7 +20,7 @@ uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 dire
 - `src/radio_worker/recorder.py` - Records the stream into parts and owns `status.json`
 - `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM
 - `src/radio_worker/cli.py` - The `station` and `run` commands
-- `tests/support.py` - Generated tone and station helpers shared by the tests
+- `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
 
 ## Rules
 

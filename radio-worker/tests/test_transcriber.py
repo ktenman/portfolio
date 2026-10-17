@@ -1,5 +1,6 @@
 import json
 import threading
+from pathlib import Path
 
 import pytest
 from pytest import approx
@@ -9,15 +10,15 @@ from radio_worker.recorder import read_status, write_status
 from radio_worker.transcriber import pause_before, transcribe
 
 
-def transcript(directory):
+def transcript(directory: Path) -> dict:
     return json.loads((directory / "transcript.json").read_text())
 
 
-def spans(directory):
+def spans(directory: Path) -> list[float]:
     return [value for chunk in transcript(directory)["chunks"] for value in (chunk["start"], chunk["end"])]
 
 
-def starts(directory):
+def starts(directory: Path) -> list[float]:
     return [word["start"] for word in transcript(directory)["words"]]
 
 
@@ -89,6 +90,12 @@ def test_transcriber_transcribes_while_the_recording_is_still_running(tmp_path):
     write_status(tmp_path, status | {"state": "captured"})
     running.join(10)
     assert (first["to"], running.is_alive(), spans(tmp_path)[-1]) == (approx(50.15, abs=0.01), False, 70.0)
+
+
+def test_transcriber_fails_when_the_recorder_dies_without_a_verdict(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(10, []), False)], "recording")
+    with pytest.raises(RuntimeError, match="still says recording"):
+        transcribe(tmp_path, Stub(), "stub", 60, lambda: False)
 
 
 def test_transcriber_writes_srt_cues(tmp_path):
