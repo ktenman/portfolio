@@ -12,6 +12,7 @@ import {
 } from '../utils/iso-dates'
 import {
   closingTexts,
+  countOf,
   extremeOf,
   GAIN_STEPS,
   gapText,
@@ -198,9 +199,6 @@ const rankedMonths = (figures: MonthFigures[]): ObservedMonth[] => {
     observedMonth(month, month.isSingle ? rankText(month.change, changes, unit) : '')
   )
 }
-
-const countOf = (months: ObservedMonth[], side: 'gain' | 'loss' | 'flat'): number =>
-  months.filter(month => month.step.startsWith(side)).length
 
 const excludedText = (count: number): string =>
   count

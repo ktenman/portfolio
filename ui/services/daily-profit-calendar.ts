@@ -226,7 +226,7 @@ const gridOf = (days: CalendarDay[]) => {
   return { offset, weeks: Math.ceil((offset + days.length) / 7), months: monthsOf(days, offset) }
 }
 
-const countOf = (counted: CountedDay[], side: 'gain' | 'loss' | 'flat'): number =>
+export const countOf = (counted: { step: ChangeStep }[], side: 'gain' | 'loss' | 'flat'): number =>
   counted.filter(day => day.step.startsWith(side)).length
 
 export const extremeOf = <T extends { change: number }>(items: T[], sign: 1 | -1): T | null =>
