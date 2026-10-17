@@ -1,0 +1,220 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { nextTick, ref, watch, type WritableComputedRef } from 'vue'
+import { enableAutoUnmount } from '@vue/test-utils'
+import { renderWithProviders } from '../tests/test-utils'
+import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
+import {
+  buildMonthlyProfit,
+  NOT_ENOUGH_HISTORY,
+  type MonthlyProfit,
+} from '../services/monthly-profit'
+import { mergeHistoricalWithCurrent } from '../services/summary-aggregator'
+import type { HistoryStatus } from './use-summary-calendar-query'
+import { toasts } from './use-toast'
+import { useStoredInterval, useSummaryInterval, type SummaryInterval } from './use-summary-interval'
+
+enableAutoUnmount(afterEach)
+
+const KEY = 'portfolio_summary_interval'
+const FAILED = 'Could not load the monthly history. Press Monthly to try again.'
+
+const fixtureModel = () =>
+  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
+
+const setup = (model?: MonthlyProfit | null, status: HistoryStatus = 'idle') => {
+  const source = {
+    model: ref<MonthlyProfit | null | undefined>(model),
+    status: ref<HistoryStatus>(status),
+    platforms: ref(['LHV']),
+  }
+  let state!: ReturnType<typeof useSummaryInterval> & {
+    interval: WritableComputedRef<SummaryInterval>
+  }
+  renderWithProviders({
+    setup() {
+      const interval = useStoredInterval()
+      state = { ...useSummaryInterval(interval, source), interval }
+      return {}
+    },
+    template: '<div></div>',
+  })
+  const spoken: string[] = []
+  watch(state.announcement, value => value && spoken.push(value), { flush: 'sync' })
+  return { ...state, source, spoken }
+}
+
+const toastsShown = () => toasts.value.map(toast => [toast.message, toast.type])
+
+const pendingSwitch = async () => {
+  const state = setup()
+  state.choose('monthly')
+  await nextTick()
+  return state
+}
+
+describe('useSummaryInterval', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    toasts.value = []
+  })
+
+  it('opens Daily when nothing is stored', () => {
+    const { interval, view } = setup()
+
+    expect([interval.value, view.value]).toEqual(['daily', 'daily'])
+  })
+
+  it.each(['Monthly', '"monthly"', '', 'weekly'])('opens Daily for the stored value %j', value => {
+    localStorage.setItem(KEY, value)
+
+    expect(setup().interval.value).toBe('daily')
+  })
+
+  it('restores a stored Monthly silently', async () => {
+    localStorage.setItem(KEY, 'monthly')
+    const { view, source, spoken } = setup()
+    const restored = view.value
+
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    expect([restored, spoken]).toEqual(['monthly', []])
+  })
+
+  it('switches to cached months at once and announces the span', async () => {
+    const { view, choose, spoken } = setup(fixtureModel())
+
+    choose('monthly')
+    await nextTick()
+
+    expect([view.value, spoken, localStorage.getItem(KEY)]).toEqual([
+      'monthly',
+      ['Monthly profit Jun – Dec 2025'],
+      'monthly',
+    ])
+  })
+
+  it('keeps Daily while the first Monthly request is pending', async () => {
+    const { view, source, spoken } = await pendingSwitch()
+    const pending = view.value
+
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    expect([pending, view.value, spoken.length]).toEqual(['pending', 'monthly', 1])
+  })
+
+  it('announces once despite refreshed months', async () => {
+    const { source, spoken } = await pendingSwitch()
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    expect(spoken).toHaveLength(1)
+  })
+
+  it('announces when there is not enough history', async () => {
+    const { source, spoken } = await pendingSwitch()
+
+    source.model.value = null
+    await nextTick()
+
+    expect(spoken).toEqual([NOT_ENOUGH_HISTORY])
+  })
+
+  it('returns to Daily with one toast when the first history load fails', async () => {
+    const { interval, source } = await pendingSwitch()
+
+    source.status.value = 'error'
+    await nextTick()
+
+    expect([interval.value, localStorage.getItem(KEY), toastsShown()]).toEqual([
+      'daily',
+      'daily',
+      [[FAILED, 'error']],
+    ])
+  })
+
+  it('shows the toast again for a new failed attempt', async () => {
+    const { choose, source } = await pendingSwitch()
+    source.status.value = 'error'
+    await nextTick()
+
+    choose('monthly')
+    source.status.value = 'loading'
+    await nextTick()
+    source.status.value = 'error'
+    await nextTick()
+
+    expect(toasts.value).toHaveLength(2)
+  })
+
+  it('ignores a failure after returning to Daily', async () => {
+    const { interval, choose, source } = await pendingSwitch()
+    choose('daily')
+
+    source.status.value = 'error'
+    await nextTick()
+
+    expect([interval.value, toasts.value]).toEqual(['daily', []])
+  })
+
+  it('does not announce months that arrive after returning to Daily', async () => {
+    const { choose, source, spoken } = await pendingSwitch()
+    choose('daily')
+
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    expect(spoken).toEqual([])
+  })
+
+  it('keeps Monthly when a refresh fails with months shown', async () => {
+    localStorage.setItem(KEY, 'monthly')
+    const { interval, source } = setup(fixtureModel(), 'success')
+
+    source.status.value = 'error'
+    await nextTick()
+
+    expect([interval.value, toasts.value]).toEqual(['monthly', []])
+  })
+
+  it('cancels a pending switch when platforms change', async () => {
+    const { view, source, spoken } = await pendingSwitch()
+    source.platforms.value = ['IBKR']
+    await nextTick()
+    const afterChange = view.value
+
+    source.model.value = fixtureModel()
+    await nextTick()
+
+    expect([afterChange, spoken]).toEqual(['monthly', []])
+  })
+
+  it('ignores pressing the selected interval again', async () => {
+    const { choose, spoken } = setup(fixtureModel())
+
+    choose('monthly')
+    choose('monthly')
+    await nextTick()
+
+    expect(spoken).toHaveLength(1)
+  })
+
+  it('keeps Monthly when pressed while the previous failure is still reported', async () => {
+    const { view, choose, source } = setup(undefined, 'error')
+    choose('monthly')
+    await nextTick()
+    const pressed = view.value
+
+    source.status.value = 'loading'
+    await nextTick()
+    source.model.value = fixtureModel()
+    source.status.value = 'success'
+    await nextTick()
+
+    expect([pressed, view.value, toasts.value]).toEqual(['pending', 'monthly', []])
+  })
+})
