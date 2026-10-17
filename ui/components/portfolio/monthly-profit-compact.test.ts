@@ -31,7 +31,7 @@ describe('MonthlyProfitCompact', () => {
       'Monthly profit',
       '7 up · 0 down',
       'Jun – Dec 2025',
-      '+37.6%',
+      '37.6%',
       '2025, from 27 Jun, +€44,343.78, +37.6%',
     ])
   })

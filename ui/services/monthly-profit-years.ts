@@ -1,4 +1,4 @@
-import { formatCurrencyChange, formatPercentChange } from '../utils/formatters'
+import { formatCurrencyChange, formatPercentChange, formatSignedPercent } from '../utils/formatters'
 import { addMonths, formatDayMonth, formatFullMonth } from '../utils/iso-dates'
 import { roundToCents } from './daily-profit-calendar'
 import { monthOn, type MonthlyProfit, type ObservedMonth } from './monthly-profit'
@@ -82,7 +82,7 @@ const resultOf = (year: string, slots: MonthSlot[], months: ObservedMonth[]): Mo
     slots,
     change,
     percent,
-    text: percent === null ? '—' : percentText,
+    text: percent === null ? '—' : formatSignedPercent(Number(percent.toFixed(1)), 1),
     coverage,
     note: percent === null ? 'Percentage unavailable' : '',
     name: [

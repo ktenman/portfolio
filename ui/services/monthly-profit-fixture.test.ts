@@ -63,7 +63,7 @@ describe('monthly profit of the visual fixture', () => {
 
   it('totals 2025 at +€44,343.78 and +37.6% from 27 Jun', () =>
     expect(years.map(year => [year.year, year.text, year.coverage, year.name])).toEqual([
-      ['2025', '+37.6%', 'from 27 Jun', '2025, from 27 Jun, +€44,343.78, +37.6%'],
+      ['2025', '37.6%', 'from 27 Jun', '2025, from 27 Jun, +€44,343.78, +37.6%'],
     ]))
 
   it('places June to December in their calendar slots', () =>

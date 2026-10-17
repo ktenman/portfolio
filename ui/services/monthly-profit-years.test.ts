@@ -16,7 +16,7 @@ describe('monthly years', () => {
     expect([years[0].slots[7], years[0].change, years[0].text, hasMissingMonth(years)]).toEqual([
       { kind: 'missing', key: '2021-08', name: 'August 2021, no daily summary' },
       200,
-      '+0.2%',
+      '0.2%',
       true,
     ])
   })
@@ -70,7 +70,7 @@ describe('monthly years', () => {
     expect([
       model.months.map(month => formatMonthCell(month.percent)),
       monthlyYears(model)[0].text,
-    ]).toEqual([['0.0', '0.0'], '+0.1%'])
+    ]).toEqual([['0.0', '0.0'], '0.1%'])
   })
 
   it('leaves the year percentage unavailable when a month percentage is', () => {

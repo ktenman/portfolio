@@ -15,6 +15,7 @@ const NARROWEST_WIDE = { width: 769, height: 1024 }
 const MAX_CAPTURE_HEIGHT = 12000
 const TOUCH_PX = 44
 const COMPACT_MAX_WIDTH = 768
+const PHONE_MAX_WIDTH = 575
 const SERIES_ROWS = 184
 const HISTORICAL_ROWS = 30
 const START_VALUE = 100000
@@ -138,7 +139,7 @@ const nextFrame = (page: Page) =>
 
 const layoutProblems = (page: Page, viewport: { width: number; height: number }) =>
   page.evaluate(
-    ({ touch, isCompact }) => {
+    ({ touch, isCompact, isPhone }) => {
       const root = document.documentElement
       const sideways =
         root.scrollWidth > root.clientWidth
@@ -152,17 +153,43 @@ const layoutProblems = (page: Page, viewport: { width: number; height: number })
           '[aria-label="Interval"] button, .monthly-profit-calendar .month-buttons button'
         )
       ).filter(target => target.getClientRects().length > 0)
+      const tapHeight = (target: Element) =>
+        Math.max(
+          target.getBoundingClientRect().height,
+          parseFloat(getComputedStyle(target, '::before').height) || 0
+        )
       const short = isCompact
         ? targets
-            .filter(target => target.getBoundingClientRect().height < touch)
+            .filter(target => tapHeight(target) < touch)
             .map(
               target =>
-                `${target.getAttribute('aria-label') ?? target.textContent?.trim()} is ${target.getBoundingClientRect().height}px tall`
+                `${target.getAttribute('aria-label') ?? target.textContent?.trim()} is ${tapHeight(target)}px tall to tap`
             )
         : []
-      return [...sideways, ...clipped, ...short]
+      const segments = Array.from(
+        document.querySelectorAll('[aria-label="Interval"] button'),
+        segment => segment.getBoundingClientRect()
+      )
+      const card = document
+        .querySelector('.monthly-profit-calendar:not([aria-hidden])')!
+        .getBoundingClientRect()
+      const uneven =
+        isPhone &&
+        (Math.abs(segments[0].left - card.left) > 1 ||
+          Math.abs(segments[1].right - card.right) > 1 ||
+          Math.abs(segments[0].width - segments[1].width) > 1)
+      const split = uneven
+        ? [
+            `Interval segments span ${segments.map(({ left, right }) => `${left}–${right}`).join(' and ')} over a ${card.left}–${card.right} card`,
+          ]
+        : []
+      return [...sideways, ...clipped, ...short, ...split]
     },
-    { touch: TOUCH_PX, isCompact: viewport.width <= COMPACT_MAX_WIDTH }
+    {
+      touch: TOUCH_PX,
+      isCompact: viewport.width <= COMPACT_MAX_WIDTH,
+      isPhone: viewport.width <= PHONE_MAX_WIDTH,
+    }
   )
 
 test('the monthly summary shows the calendar and month rows', async ({ page }) => {

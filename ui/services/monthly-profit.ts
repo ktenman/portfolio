@@ -1,5 +1,10 @@
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
-import { formatCurrencyChange, formatPercentChange, getGainLossClass } from '../utils/formatters'
+import {
+  formatCurrencyChange,
+  formatPercentChange,
+  formatSignedPercent,
+  getGainLossClass,
+} from '../utils/formatters'
 import {
   addDays,
   addMonths,
@@ -260,7 +265,7 @@ export const extremeMonths = ({ best, worst }: MonthlyProfit): ExtremeMonth[] =>
 export const formatMonthCell = (percent: number | null): string => {
   if (percent === null) return '—'
   const rounded = Number(percent.toFixed(1)) || 0
-  return formatPercentChange(rounded, Math.abs(rounded) >= 100 ? 0 : 1).replace('%', '')
+  return formatSignedPercent(rounded, Math.abs(rounded) >= 100 ? 0 : 1).replace('%', '')
 }
 
 export const percentClass = (percent: number | null): string =>

@@ -8,7 +8,7 @@ const mountSwitch = (announcement = '') =>
   mount(SummaryIntervalSwitch, { props: { selected: 'daily', announcement } })
 
 describe('SummaryIntervalSwitch', () => {
-  it('groups the chips under Interval with pressed states', () => {
+  it('groups the segments under Interval with pressed states', () => {
     const group = mountSwitch().find('[role="group"]')
 
     expect([
@@ -35,10 +35,13 @@ describe('SummaryIntervalSwitch', () => {
       )
     ).toEqual(['', 'Monthly profit Jun – Dec 2025']))
 
-  it('meets the touch height on phones', () =>
+  it('meets the touch height on phones without growing the segments', () =>
     expect(
       mountSwitch()
         .findAll('button')
-        .map(button => button.classes('md-down:min-h-11'))
-    ).toEqual([true, true]))
+        .map(button => [button.classes('md-down:min-h-11'), button.classes('md-down:before:h-11')])
+    ).toEqual([
+      [false, true],
+      [false, true],
+    ]))
 })

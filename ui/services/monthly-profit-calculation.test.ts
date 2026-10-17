@@ -145,12 +145,12 @@ describe('colour steps', () => {
 describe('grid cells', () => {
   it('formats grid cells', () =>
     expect([5.43, -3.04, -0.04, 0, 99.96, 150, -60, null].map(formatMonthCell)).toEqual([
-      '+5.4',
+      '5.4',
       '−3.0',
       '0.0',
       '0.0',
-      '+100',
-      '+150',
+      '100',
+      '150',
       '−60.0',
       '—',
     ]))
