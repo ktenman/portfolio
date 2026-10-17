@@ -103,6 +103,8 @@ jobs:
             name: Cloudflare Bypass Proxy Tests
           - type: monitoring
             name: Monitoring Rule and Delivery Tests
+          - type: radio
+            name: Radio Worker Tests
           - type: e2e
             name: E2E Tests
       fail-fast: false
@@ -145,6 +147,17 @@ jobs:
       - name: Run monitoring tests
         if: matrix.type == 'monitoring'
         run: python3 monitoring/test-monitoring.py
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        if: matrix.type == 'radio'
+        with:
+          version: '0.13.1'
+      - name: Install FFmpeg
+        if: matrix.type == 'radio'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Run radio worker tests
+        if: matrix.type == 'radio'
+        run: uv run --locked pytest
+        working-directory: radio-worker
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'
         run: |
