@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
 import { formatCurrencyChange, formatPercentChange } from '../utils/formatters'
 import { buildMonthlyProfit, extremeMonths, monthOn, moveMonth } from './monthly-profit'
+import { hasMissingMonth, monthlyYears } from './monthly-profit-years'
 import { mergeHistoricalWithCurrent } from './summary-aggregator'
 
 describe('monthly profit of the visual fixture', () => {
@@ -10,6 +11,7 @@ describe('monthly profit of the visual fixture', () => {
     '2026-01-15'
   )!
   const december = monthOn(model, '2025-12')!
+  const years = monthlyYears(model)
 
   it('builds the seven reference months', () =>
     expect(
@@ -58,4 +60,27 @@ describe('monthly profit of the visual fixture', () => {
     expect([moveMonth(model, '2025-06', -1), moveMonth(model, '2025-12', 1)]).toEqual([null, null]))
 
   it('spans Jun – Dec 2025', () => expect(model.span).toBe('Jun – Dec 2025'))
+
+  it('totals 2025 at +€44,343.78 and +37.6% from 27 Jun', () =>
+    expect(years.map(year => [year.year, year.text, year.coverage, year.name])).toEqual([
+      ['2025', '+37.6%', 'from 27 Jun', '2025, from 27 Jun, +€44,343.78, +37.6%'],
+    ]))
+
+  it('places June to December in their calendar slots', () =>
+    expect(years[0].slots.map(slot => slot?.key ?? null)).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+      '2025-06',
+      '2025-07',
+      '2025-08',
+      '2025-09',
+      '2025-10',
+      '2025-11',
+      '2025-12',
+    ]))
+
+  it('has no missing month', () => expect(hasMissingMonth(years)).toBe(false))
 })
