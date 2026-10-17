@@ -63,6 +63,5 @@ def test_run_command_refuses_a_directory_that_is_not_a_recording(tmp_path, capsy
     (tmp_path / "model").mkdir()
     (tmp_path / "model" / "model.bin").write_bytes(b"")
     (tmp_path / "status.json").write_text('{"state": "captured_needs_review"}')
-    with pytest.raises(SystemExit):
-        main(["run", "--duration", "4200", "--out", str(tmp_path), "--model", str(tmp_path / "model")])
-    assert "holds no recording made by this worker" in capsys.readouterr().err
+    code = main(["run", "--duration", "4200", "--out", str(tmp_path), "--model", str(tmp_path / "model")])
+    assert (code, "holds no recording made by this worker" in capsys.readouterr().err) == (2, True)

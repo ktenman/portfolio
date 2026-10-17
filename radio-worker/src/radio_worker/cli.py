@@ -30,7 +30,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         state = run(args.out, args.source, args.duration, load, str(args.model), args.chunk_seconds)
     except FileExistsError as error:
-        parser.error(str(error))
+        print(f"{parser.prog}: error: {error}", file=sys.stderr)
+        return 2
     except KeyboardInterrupt:
         print(f"Stopped; run again with --out {args.out} to resume", file=sys.stderr)
         return 130
