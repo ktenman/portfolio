@@ -44,6 +44,11 @@ const pendingSwitch = async () => {
   return state
 }
 
+const storedSwitch = async () => {
+  localStorage.setItem(KEY, 'monthly')
+  return setup()
+}
+
 describe('useSummaryInterval', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -71,20 +76,6 @@ describe('useSummaryInterval', () => {
     await nextTick()
 
     expect([restored, spoken]).toEqual(['monthly', []])
-  })
-
-  it('returns a stored Monthly to Daily with one toast when its first load fails', async () => {
-    localStorage.setItem(KEY, 'monthly')
-    const { interval, source } = setup()
-
-    source.error.value = new Error('down')
-    await nextTick()
-
-    expect([interval.value, localStorage.getItem(KEY), toastsShown()]).toEqual([
-      'daily',
-      'daily',
-      [[FAILED, 'error']],
-    ])
   })
 
   it('switches to cached months at once and announces the span', async () => {
@@ -130,8 +121,11 @@ describe('useSummaryInterval', () => {
     expect(spoken).toEqual([NOT_ENOUGH_HISTORY])
   })
 
-  it('returns to Daily with one toast when the first history load fails', async () => {
-    const { interval, source } = await pendingSwitch()
+  it.each([
+    ['a stored', storedSwitch],
+    ['a pressed', pendingSwitch],
+  ])('returns %s Monthly to Daily with one toast when its first load fails', async (_, start) => {
+    const { interval, source } = await start()
 
     source.error.value = new Error('down')
     await nextTick()

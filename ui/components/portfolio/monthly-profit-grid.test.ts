@@ -103,20 +103,14 @@ describe('MonthlyProfitGrid', () => {
     expect(selections(wrapper)).toEqual(['2024-12', '2025-01'])
   })
 
-  it('moves twelve months later with Up and skips missing months', () => {
+  it('moves twelve months with Up and Down and skips the missing month', async () => {
     const wrapper = mountGrid(monthEnds('2023-02', 26, '2024-03'), '2023-03')
 
     pressKey(wrapper, { key: 'ArrowUp' })
-
-    expect(selections(wrapper)).toEqual(['2025-03'])
-  })
-
-  it('moves twelve months with Down and skips missing months in steps of twelve', () => {
-    const wrapper = mountGrid(monthEnds('2023-02', 26, '2024-03'), '2025-03')
-
+    await wrapper.setProps({ selected: '2025-03' })
     pressKey(wrapper, { key: 'ArrowDown' })
 
-    expect(selections(wrapper)).toEqual(['2023-03'])
+    expect(selections(wrapper)).toEqual(['2025-03', '2023-03'])
   })
 
   it('stays put at the ends', () => {

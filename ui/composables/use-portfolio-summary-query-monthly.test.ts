@@ -47,6 +47,17 @@ const failHistory = async () => {
   return setup
 }
 
+const failRefresh = async () => {
+  history.mockResolvedValueOnce(MAX_ROWS).mockRejectedValue(new Error('down'))
+  const setup = setupQuery(ref(['LHV']), ref(true))
+  await flushPromises()
+  setup.queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+  await flushPromises()
+  await vi.advanceTimersByTimeAsync(1000)
+  await flushPromises()
+  return setup
+}
+
 describe('usePortfolioSummaryQuery monthly rows', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -141,19 +152,24 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
   })
 
   it('keeps the last MAX rows when a refresh fails', async () => {
-    history.mockResolvedValueOnce(MAX_ROWS).mockRejectedValue(new Error('down'))
-    const { queryResult, queryClient } = setupQuery(ref(['LHV']), ref(true))
-    await flushPromises()
-
-    queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
-    await flushPromises()
-    await vi.advanceTimersByTimeAsync(1000)
-    await flushPromises()
+    const { queryResult } = await failRefresh()
 
     expect([
       queryResult.historyError.value?.message,
       datesOf(queryResult.monthlyRows.value),
     ]).toEqual(['down', ['2025-11-29', '2025-11-30', '2025-12-01', '2025-12-02']])
+  })
+
+  it('joins a running MAX retry instead of starting another', async () => {
+    const { queryResult } = await failRefresh()
+    history.mockReturnValue(new Promise(() => {}))
+    const failed = history.mock.calls.length
+
+    queryResult.retryHistory()
+    queryResult.retryHistory()
+    await flushPromises()
+
+    expect(history.mock.calls.length - failed).toBe(1)
   })
 
   it('refetches MAX history on recalculation only while Monthly is on', async () => {

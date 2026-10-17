@@ -75,8 +75,8 @@
         </span>
       </template>
     </div>
-    <div class="year-notes">
-      <p v-for="note in notes" :key="note">{{ note }}</p>
+    <div class="year-notes mt-2.5 text-label leading-[1.4] text-ink-soft">
+      <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
     </div>
   </div>
 </template>
@@ -206,17 +206,6 @@ const onKeydown = (event: KeyboardEvent) => {
   justify-self: end;
   padding-left: 12px;
   white-space: nowrap;
-}
-
-.year-notes {
-  margin-top: 10px;
-  font-size: var(--text-label);
-  line-height: 1.4;
-  color: var(--color-ink-soft);
-}
-
-.year-notes p {
-  margin: 0;
 }
 
 .selectable {

@@ -29,7 +29,9 @@
             </dd>
           </div>
         </dl>
-        <p v-if="model.excluded" class="figures-excluded">{{ model.excluded }}</p>
+        <p v-if="model.excluded" class="figures-excluded figure-hint mt-2.5 mb-0">
+          {{ model.excluded }}
+        </p>
       </div>
       <div v-if="extremes.length" class="extreme-buttons">
         <button
@@ -76,12 +78,3 @@ const extremes = computed(() => extremeMonths(props.model))
 </script>
 
 <style scoped src="./profit-figures.css"></style>
-
-<style scoped>
-.figures-excluded {
-  margin: 10px 0 0;
-  font-size: var(--text-2xs);
-  font-weight: 400;
-  color: var(--color-ink-soft);
-}
-</style>

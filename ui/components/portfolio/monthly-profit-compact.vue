@@ -22,8 +22,12 @@
           <span class="dot-total" :class="percentClass(year.percent)">{{ year.text }}</span>
         </template>
       </div>
-      <div v-if="notes.length" class="year-notes" aria-hidden="true">
-        <p v-for="note in notes" :key="note">{{ note }}</p>
+      <div
+        v-if="notes.length"
+        class="year-notes mt-2.5 text-center text-label leading-[1.4] text-ink-soft"
+        aria-hidden="true"
+      >
+        <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
       </div>
       <span v-for="year in years" :key="year.year" class="sr-only">{{ year.name }}</span>
     </div>
@@ -143,17 +147,5 @@ const extremes = computed(() =>
   justify-self: end;
   padding-left: 8px;
   white-space: nowrap;
-}
-
-.year-notes {
-  margin-top: 10px;
-  font-size: var(--text-label);
-  line-height: 1.4;
-  color: var(--color-ink-soft);
-  text-align: center;
-}
-
-.year-notes p {
-  margin: 0;
 }
 </style>

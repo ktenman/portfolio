@@ -72,7 +72,7 @@ export function useSummaryCalendarQuery({
     error: calendarHistoryError,
     errorUpdateCount: calendarHistoryFailures,
     isFetching: isFetchingHistory,
-    refetch: retryHistory,
+    refetch: refetchHistory,
   } = useQuery({
     queryKey: ['portfolio-summary', 'daily-calendar-history', platformsKey],
     queryFn: () => portfolioSummaryService.getSeries(TimeRange.MAX, activePlatforms.value),
@@ -105,15 +105,11 @@ export function useSummaryCalendarQuery({
     isHistoryRequested.value = true
   }
 
-  const monthlyRows = computed(() => {
-    if (!calendarHistoryRows.value) return undefined
-    const current = currentSummary.value
-    return mergeSummariesByDate(
-      calendarHistoryRows.value,
-      calendarSeries.value ?? [],
-      current ? [current] : []
-    )
-  })
+  const monthlyRows = computed(
+    () =>
+      calendarHistoryRows.value &&
+      mergeSummariesByDate(calendarHistoryRows.value, mergedCalendarRows.value)
+  )
 
   watchEffect(() => {
     calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)
@@ -136,6 +132,6 @@ export function useSummaryCalendarQuery({
     monthlyRows,
     historyError: calendarHistoryError,
     isFetchingHistory,
-    retryHistory,
+    retryHistory: () => refetchHistory({ cancelRefetch: false }),
   }
 }
