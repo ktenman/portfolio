@@ -2,7 +2,7 @@ import hashlib
 import json
 
 import pytest
-from support import Stub, broadcast
+from support import Stub, broadcast, wait
 
 from radio_worker.cli import main, run
 from radio_worker.recorder import read_status
@@ -24,6 +24,17 @@ def test_run_only_finishes_the_transcript_of_an_ended_recording(tmp_path):
     run(directory, url, 12, Stub, "stub", 60)
     after = hashlib.sha256((directory / "raw.mp3").read_bytes()).hexdigest()
     assert ([part["file"] for part in read_status(directory)["parts"]], after, (directory / "transcript.json").exists()) == (["raw.mp3"], before, True)
+
+
+def test_run_stops_the_recording_when_interrupted(tmp_path):
+    directory = tmp_path / "rec"
+    def interrupt():
+        wait(lambda: (directory / "raw.mp3").exists())
+        raise KeyboardInterrupt
+    with broadcast(tmp_path, seconds=40) as url, pytest.raises(KeyboardInterrupt):
+        run(directory, url, 30, interrupt, "stub", 60)
+    status = read_status(directory)
+    assert (status["state"], status["parts"][0]["durationSeconds"] < 20) == ("recording", True)
 
 
 def test_run_command_refuses_a_directory_that_is_not_a_recording(tmp_path, capsys):

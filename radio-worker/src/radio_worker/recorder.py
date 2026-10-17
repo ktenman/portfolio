@@ -4,6 +4,7 @@ import itertools
 import json
 import re
 import subprocess
+import threading
 import time
 from pathlib import Path
 
@@ -43,7 +44,8 @@ def write_status(directory: Path, status: dict) -> None:
     temporary.replace(directory / "status.json")
 
 
-def record(directory: Path) -> None:
+def record(directory: Path, stop: threading.Event | None = None) -> None:
+    stop = stop or threading.Event()
     status = read_status(directory)
     if status["state"] != "recording":
         return
@@ -51,32 +53,35 @@ def record(directory: Path) -> None:
         for part in status["parts"]:
             if "durationSeconds" not in part:
                 finish(directory, status, part, None)
-        capture(directory, status)
+        capture(directory, status, stop)
     except BaseException:
         status["state"] = "failed"
         write_status(directory, status)
         raise
+    if stop.is_set():
+        return
     status["state"] = verdict(status)
     write_status(directory, status)
 
 
-def capture(directory: Path, status: dict) -> None:
-    while (remaining := status["endsAt"] - time.time()) > 0:
-        part = attempt(directory, status, remaining)
+def capture(directory: Path, status: dict, stop: threading.Event) -> None:
+    while (remaining := status["endsAt"] - time.time()) > 0 and not stop.is_set():
+        part = attempt(directory, status, remaining, stop)
         if part is not None and part["durationSeconds"] >= remaining - 1:
             return
-        time.sleep(RETRY_SECONDS)
+        stop.wait(RETRY_SECONDS)
 
 
-def attempt(directory: Path, status: dict, remaining: float) -> dict | None:
+def attempt(directory: Path, status: dict, remaining: float, stop: threading.Event) -> dict | None:
     stem = next_stem(directory)
     with (directory / f"{stem}.log").open("ab") as log:
         process = subprocess.Popen(command(status["source"], remaining, directory / stem), stderr=log)
     part = None
-    while part is None and process.poll() is None:
-        time.sleep(POLL_SECONDS)
-        part = register(directory, status, stem)
-    process.wait()
+    while process.poll() is None:
+        if stop.wait(POLL_SECONDS):
+            process.kill()
+            process.wait()
+        part = part or register(directory, status, stem)
     part = part or register(directory, status, stem)
     if part is None and (directory / f"{stem}.mp3").exists():
         raise RuntimeError(f"FFmpeg wrote {stem}.mp3 but {stem}.log does not say where the stream starts")

@@ -1,6 +1,7 @@
 import argparse
 import contextlib
 import functools
+import sys
 import tempfile
 import threading
 from collections.abc import Callable
@@ -28,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
         state = run(args.out, args.source, args.duration, load, str(args.model), args.chunk_seconds)
     except FileExistsError as error:
         parser.error(str(error))
+    except KeyboardInterrupt:
+        print(f"Stopped; run again with --out {args.out} to resume", file=sys.stderr)
+        return 130
     print(f"{state}: {args.out / 'transcript.json'}", flush=True)
     return 1 if state == "failed" else 0
 
@@ -62,14 +66,16 @@ def broadcast(recording: Path, port: int, start: float, speed: float) -> int:
 
 def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float) -> str:
     prepare(directory, source, seconds)
-    recording = threading.Thread(target=record, args=(directory,), daemon=True)
+    stop = threading.Event()
+    recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
     recording.start()
     try:
         transcribe(directory, load(), name, chunk_seconds)
-    except Exception:
-        recording.join()
+    except KeyboardInterrupt:
+        stop.set()
         raise
-    recording.join()
+    finally:
+        recording.join()
     return read_status(directory)["state"]
 
 
