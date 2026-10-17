@@ -1,12 +1,38 @@
 import argparse
 import contextlib
+import functools
 import tempfile
+import threading
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
+from radio_worker.recorder import KUKU, prepare, read_status, record
 from radio_worker.station import station
+from radio_worker.transcriber import transcribe
 
 
 def main(argv: list[str] | None = None) -> int:
+    parser = build()
+    args = parser.parse_args(argv)
+    if args.command == "station" and not args.recording.is_file():
+        parser.error(f"{args.recording} is not a file")
+    if args.command == "station":
+        return broadcast(args.recording, args.port, args.start, args.speed)
+    if args.chunk_seconds < 60:
+        parser.error("--chunk-seconds must be at least 60")
+    if not (args.model / "model.bin").is_file():
+        parser.error(f"{args.model} holds no CTranslate2 model.bin")
+    load = functools.partial(load_whisper, args.model, args.threads)
+    try:
+        state = run(args.out, args.source, args.duration, load, str(args.model), args.chunk_seconds)
+    except FileExistsError as error:
+        parser.error(str(error))
+    print(f"{state}: {args.out / 'transcript.json'}", flush=True)
+    return 1 if state == "failed" else 0
+
+
+def build() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="radio-worker")
     commands = parser.add_subparsers(dest="command", required=True)
     replay = commands.add_parser("station", help="replay a recording as a live HLS stream")
@@ -14,10 +40,14 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("--port", type=int, default=8770)
     replay.add_argument("--from", dest="start", type=float, default=0.0, metavar="SECONDS")
     replay.add_argument("--speed", type=float, default=1.0, metavar="FACTOR")
-    args = parser.parse_args(argv)
-    if not args.recording.is_file():
-        parser.error(f"{args.recording} is not a file")
-    return broadcast(args.recording, args.port, args.start, args.speed)
+    live = commands.add_parser("run", help="record a stream and transcribe it while it records")
+    live.add_argument("--source", default=KUKU)
+    live.add_argument("--duration", type=float, required=True, metavar="SECONDS")
+    live.add_argument("--out", type=Path, required=True, metavar="DIRECTORY")
+    live.add_argument("--model", type=Path, required=True, metavar="CT2_DIRECTORY")
+    live.add_argument("--threads", type=int, default=2)
+    live.add_argument("--chunk-seconds", type=float, default=300, metavar="SECONDS")
+    return parser
 
 
 def broadcast(recording: Path, port: int, start: float, speed: float) -> int:
@@ -28,3 +58,21 @@ def broadcast(recording: Path, port: int, start: float, speed: float) -> int:
             server.serve_forever()
         server.server_close()
     return 0
+
+
+def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float) -> str:
+    prepare(directory, source, seconds)
+    recording = threading.Thread(target=record, args=(directory,), daemon=True)
+    recording.start()
+    try:
+        transcribe(directory, load(), name, chunk_seconds)
+    except Exception:
+        recording.join()
+        raise
+    recording.join()
+    return read_status(directory)["state"]
+
+
+def load_whisper(model: Path, threads: int) -> Any:
+    from faster_whisper import WhisperModel
+    return WhisperModel(str(model), device="cpu", compute_type="int8", cpu_threads=threads, num_workers=1)
