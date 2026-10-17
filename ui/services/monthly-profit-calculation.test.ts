@@ -10,6 +10,7 @@ import {
   MONTH_STEPS,
   monthOn,
   monthStepOf,
+  percentClass,
   type ObservedMonth,
 } from './monthly-profit'
 
@@ -152,6 +153,15 @@ describe('grid cells', () => {
       '+150',
       '−60.0',
       '—',
+    ]))
+
+  it('colours a percentage as it prints with one decimal', () =>
+    expect([0.04, -0.04, 0.06, -0.06, null].map(percentClass)).toEqual([
+      '',
+      '',
+      'text-gain',
+      'text-loss',
+      '',
     ]))
 })
 

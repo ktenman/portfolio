@@ -67,7 +67,7 @@
         </template>
         <span
           class="year-total"
-          :class="totalClass(year.percent)"
+          :class="percentClass(year.percent)"
           :style="{ gridRow: row + FIRST_YEAR_ROW, gridColumn: TOTAL_COLUMN }"
           role="img"
           :aria-label="year.name"
@@ -87,9 +87,13 @@
 <script lang="ts" setup>
 import { computed, ref, useId } from 'vue'
 import { SEPARATOR, type ChangeStep } from '../../services/daily-profit-calendar'
-import { formatMonthCell, moveMonth, type MonthlyProfit } from '../../services/monthly-profit'
+import {
+  formatMonthCell,
+  moveMonth,
+  percentClass,
+  type MonthlyProfit,
+} from '../../services/monthly-profit'
 import type { MonthlyYear } from '../../services/monthly-profit-years'
-import { getGainLossClass } from '../../utils/formatters'
 import { MONTHS } from '../../utils/iso-dates'
 
 const props = defineProps<{
@@ -134,9 +138,6 @@ const placeOf = (row: number, index: number) => ({
 
 const currentOf = (key: string) =>
   key === props.selected ? { id: selectedId, 'aria-current': 'true' as const } : {}
-
-const totalClass = (percent: number | null) =>
-  getGainLossClass(percent === null ? null : Number(percent.toFixed(1)))
 
 const onClick = (key: string) => {
   grid.value?.focus()
