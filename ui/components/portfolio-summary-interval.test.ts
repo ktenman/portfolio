@@ -8,6 +8,7 @@ import SkeletonLoader from './shared/skeleton-loader.vue'
 import { portfolioSummaryService, transactionsService } from '../services/api'
 import { toasts } from '../composables/use-toast'
 import { STORAGE_KEYS } from '../constants'
+import { deferred } from '../tests/test-utils'
 import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
@@ -43,8 +44,6 @@ vi.mock('@vueuse/core', async importOriginal => ({
 
 enableAutoUnmount(afterEach)
 
-type Answer = PortfolioSummaryDto[] | Error | Promise<PortfolioSummaryDto[]>
-
 const PLATFORMS = ['LHV', 'TRADING212']
 const LOAD_FAILED = 'Could not load the monthly history. Press Monthly to try again.'
 
@@ -56,30 +55,7 @@ const historicalPage = (totalPages: number) => ({
   number: 0,
 })
 
-const answerMax = (...answers: Answer[]) => {
-  let call = 0
-  vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async range => {
-    if (range !== 'MAX') return SERIES_RESPONSE
-    const answer = answers[Math.min(call, answers.length - 1)]
-    call += 1
-    if (answer instanceof Error) throw answer
-    return answer
-  })
-}
-
-const deferred = () => {
-  let resolve: (rows: PortfolioSummaryDto[]) => void = () => {}
-  let reject: (error: Error) => void = () => {}
-  const promise = new Promise<PortfolioSummaryDto[]>((done, fail) => {
-    resolve = done
-    reject = fail
-  })
-  return { promise, resolve, reject }
-}
-
-const maxCalls = () =>
-  vi.mocked(portfolioSummaryService.getSeries).mock.calls.filter(([range]) => range === 'MAX')
-    .length
+const history = vi.fn<() => Promise<PortfolioSummaryDto[]>>()
 
 const mountPage = () =>
   mount(PortfolioSummary, {
@@ -163,7 +139,10 @@ describe('PortfolioSummary interval', () => {
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
     vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue([])
     vi.mocked(transactionsService.getPlatforms).mockResolvedValue(PLATFORMS)
-    answerMax(SERIES_RESPONSE)
+    history.mockReset().mockResolvedValue(SERIES_RESPONSE)
+    vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async range =>
+      range === 'MAX' ? history() : SERIES_RESPONSE
+    )
   })
 
   it('opens Daily by default', async () => {
@@ -180,8 +159,8 @@ describe('PortfolioSummary interval', () => {
 
   it('opens a stored Monthly with placeholders and never renders Daily first', async () => {
     localStorage.setItem(STORAGE_KEYS.SUMMARY_INTERVAL, 'monthly')
-    const max = deferred()
-    answerMax(max.promise)
+    const max = deferred<PortfolioSummaryDto[]>()
+    history.mockReturnValue(max.promise)
     const wrapper = mountPage()
     const daily = recordDaily(wrapper)
     await settle()
@@ -198,8 +177,8 @@ describe('PortfolioSummary interval', () => {
   })
 
   it('keeps Daily busy behind the delayed veil while Monthly first loads', async () => {
-    const max = deferred()
-    answerMax(max.promise)
+    const max = deferred<PortfolioSummaryDto[]>()
+    history.mockReturnValue(max.promise)
     const wrapper = mountPage()
     await settle()
     const monthly = chip(wrapper, 'Monthly')
@@ -249,14 +228,14 @@ describe('PortfolioSummary interval', () => {
   })
 
   it('returns to Daily with a toast when MAX history fails', async () => {
-    answerMax(new Error('down'))
+    history.mockRejectedValue(new Error('down'))
     const wrapper = mountPage()
     await settle()
 
     await showMonthly(wrapper)
 
     expect([
-      maxCalls(),
+      history.mock.calls.length,
       pressed(wrapper),
       localStorage.getItem(STORAGE_KEYS.SUMMARY_INTERVAL),
       toasts.value.map(toast => toast.message),
@@ -264,8 +243,8 @@ describe('PortfolioSummary interval', () => {
   })
 
   it('ignores a late MAX failure after switching back to Daily', async () => {
-    const max = deferred()
-    answerMax(max.promise, new Error('down'))
+    const max = deferred<PortfolioSummaryDto[]>()
+    history.mockReturnValueOnce(max.promise).mockRejectedValue(new Error('down'))
     const wrapper = mountPage()
     await settle()
     await showMonthly(wrapper)
@@ -274,12 +253,12 @@ describe('PortfolioSummary interval', () => {
     max.reject(new Error('down'))
     await settle()
 
-    expect([maxCalls(), pressed(wrapper), toasts.value]).toEqual([2, ['Daily'], []])
+    expect([history.mock.calls.length, pressed(wrapper), toasts.value]).toEqual([2, ['Daily'], []])
   })
 
   it('shows placeholders, not old months, after a platform change', async () => {
     localStorage.setItem(STORAGE_KEYS.SUMMARY_INTERVAL, 'monthly')
-    answerMax(SERIES_RESPONSE, new Promise(() => {}))
+    history.mockResolvedValueOnce(SERIES_RESPONSE).mockReturnValue(new Promise(() => {}))
     const wrapper = mountPage()
     await settle()
     const before = has(wrapper, '.monthly-profit-calendar .calendar-grid')

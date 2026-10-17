@@ -12,6 +12,9 @@ import {
   type DailyProfitCalendar,
 } from '../services/daily-profit-calendar'
 import type { Page } from '../models/page'
+import { buildMonthlyProfit, type MonthlyProfit } from '../services/monthly-profit'
+import { mergeHistoricalWithCurrent } from '../services/summary-aggregator'
+import { SERIES_RESPONSE, TODAY_SUMMARY } from './visual/summary-fixture'
 
 export const mockPlatforms = [
   { name: 'AVIVA', displayName: 'Aviva' },
@@ -155,6 +158,21 @@ export const createDailyProfitCalendar = (
   if (!calendar) throw new Error('expected a calendar')
   return calendar
 }
+
+export const createMonthlyProfit = (
+  rows: PortfolioSummaryDto[] = mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY),
+  today = '2026-01-15'
+): MonthlyProfit => {
+  const model = buildMonthlyProfit(rows, today)
+  if (!model) throw new Error('expected a monthly profit')
+  return model
+}
+
+export const createMissingMonthRows = (): PortfolioSummaryDto[] => [
+  createCalendarRow('2021-06-30', 0),
+  createCalendarRow('2021-07-31', 100),
+  createCalendarRow('2021-09-30', 200),
+]
 
 export const createHoldingDto = (name: string, percentage: number): DiversificationHoldingDto => ({
   name,

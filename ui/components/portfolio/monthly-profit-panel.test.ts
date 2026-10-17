@@ -1,20 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
-import { createCalendarRow as row } from '../../tests/fixtures'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../../tests/visual/summary-fixture'
-import { buildMonthlyProfit, monthOn, type ObservedMonth } from '../../services/monthly-profit'
-import { mergeHistoricalWithCurrent } from '../../services/summary-aggregator'
+import { createCalendarRow as row, createMonthlyProfit } from '../../tests/fixtures'
+import { monthOn, type ObservedMonth } from '../../services/monthly-profit'
 import MonthlyProfitPanel from './monthly-profit-panel.vue'
 
-const fixtureMonth = (key: string) =>
-  monthOn(
-    buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!,
-    key
-  )!
+const fixtureMonth = (key: string) => monthOn(createMonthlyProfit(), key)!
 
 const february = (rows: PortfolioSummaryDto[]) =>
-  monthOn(buildMonthlyProfit(rows, '2030-01-01')!, '2025-02')!
+  monthOn(createMonthlyProfit(rows, '2030-01-01'), '2025-02')!
 
 const mountPanel = (
   month: ObservedMonth,

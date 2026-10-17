@@ -86,7 +86,7 @@
         <monthly-profit-calendar
           :key="selectedPlatforms.join()"
           :model="monthly"
-          :status="historyStatus"
+          :error="historyError"
           class="mb-2 md:mb-10"
           @retry="retryHistory"
         />
@@ -208,7 +208,7 @@ const {
   rangeError,
   calendarError,
   monthlyRows,
-  historyStatus,
+  historyError,
   retryHistory,
   recalculationMessage,
   recalculate,
@@ -285,7 +285,7 @@ const monthly = computed(() => monthlyRows.value && buildMonthlyProfit(monthlyRo
 
 const { view, announcement, choose } = useSummaryInterval(interval, {
   model: monthly,
-  status: historyStatus,
+  error: historyError,
   platforms: selectedPlatforms,
 })
 

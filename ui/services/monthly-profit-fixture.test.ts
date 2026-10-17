@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
+import { createMonthlyProfit } from '../tests/fixtures'
+import { TODAY_SUMMARY } from '../tests/visual/summary-fixture'
 import { formatCurrencyChange, formatPercentChange } from '../utils/formatters'
-import { buildMonthlyProfit, extremeMonths, monthOn, moveMonth } from './monthly-profit'
+import { extremeMonths, monthOn, moveMonth } from './monthly-profit'
 import { hasMissingMonth, monthlyYears } from './monthly-profit-years'
-import { mergeHistoricalWithCurrent } from './summary-aggregator'
 
 describe('monthly profit of the visual fixture', () => {
-  const model = buildMonthlyProfit(
-    mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY),
-    '2026-01-15'
-  )!
+  const model = createMonthlyProfit()
   const december = monthOn(model, '2025-12')!
   const years = monthlyYears(model)
 

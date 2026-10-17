@@ -2,29 +2,21 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { computed, nextTick, ref, watch, type WritableComputedRef } from 'vue'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { renderWithProviders } from '../tests/test-utils'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
-import {
-  buildMonthlyProfit,
-  NOT_ENOUGH_HISTORY,
-  type MonthlyProfit,
-} from '../services/monthly-profit'
-import { mergeHistoricalWithCurrent } from '../services/summary-aggregator'
-import type { HistoryStatus } from './use-summary-calendar-query'
+import { createMonthlyProfit } from '../tests/fixtures'
+import { STORAGE_KEYS } from '../constants'
+import { NOT_ENOUGH_HISTORY, type MonthlyProfit } from '../services/monthly-profit'
 import { toasts } from './use-toast'
 import { useStoredInterval, useSummaryInterval, type SummaryInterval } from './use-summary-interval'
 
 enableAutoUnmount(afterEach)
 
-const KEY = 'portfolio_summary_interval'
+const KEY = STORAGE_KEYS.SUMMARY_INTERVAL
 const FAILED = 'Could not load the monthly history. Press Monthly to try again.'
 
-const fixtureModel = () =>
-  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
-
-const setup = (model?: MonthlyProfit | null, status: HistoryStatus = 'idle') => {
+const setup = (model?: MonthlyProfit | null, error: Error | null = null) => {
   const source = {
     model: ref<MonthlyProfit | null | undefined>(model),
-    status: ref<HistoryStatus>(status),
+    error: ref<Error | null>(error),
     platforms: ref(['LHV']),
   }
   let state!: ReturnType<typeof useSummaryInterval> & {
@@ -75,14 +67,14 @@ describe('useSummaryInterval', () => {
     const { view, source, spoken } = setup()
     const restored = view.value
 
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect([restored, spoken]).toEqual(['monthly', []])
   })
 
   it('switches to cached months at once and announces the span', async () => {
-    const { view, choose, spoken } = setup(fixtureModel())
+    const { view, choose, spoken } = setup(createMonthlyProfit())
 
     choose('monthly')
     await nextTick()
@@ -98,7 +90,7 @@ describe('useSummaryInterval', () => {
     const { view, source, spoken } = await pendingSwitch()
     const pending = view.value
 
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect([pending, view.value, spoken.length]).toEqual(['pending', 'monthly', 1])
@@ -106,10 +98,10 @@ describe('useSummaryInterval', () => {
 
   it('announces once despite refreshed months', async () => {
     const { source, spoken } = await pendingSwitch()
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect(spoken).toHaveLength(1)
@@ -127,7 +119,7 @@ describe('useSummaryInterval', () => {
   it('returns to Daily with one toast when the first history load fails', async () => {
     const { interval, source } = await pendingSwitch()
 
-    source.status.value = 'error'
+    source.error.value = new Error('down')
     await nextTick()
 
     expect([interval.value, localStorage.getItem(KEY), toastsShown()]).toEqual([
@@ -139,13 +131,13 @@ describe('useSummaryInterval', () => {
 
   it('shows the toast again for a new failed attempt', async () => {
     const { choose, source } = await pendingSwitch()
-    source.status.value = 'error'
+    source.error.value = new Error('down')
     await nextTick()
 
     choose('monthly')
-    source.status.value = 'loading'
+    source.error.value = null
     await nextTick()
-    source.status.value = 'error'
+    source.error.value = new Error('down')
     await nextTick()
 
     expect(toasts.value).toHaveLength(2)
@@ -155,7 +147,7 @@ describe('useSummaryInterval', () => {
     const { interval, choose, source } = await pendingSwitch()
     choose('daily')
 
-    source.status.value = 'error'
+    source.error.value = new Error('down')
     await nextTick()
 
     expect([interval.value, toasts.value]).toEqual(['daily', []])
@@ -165,7 +157,7 @@ describe('useSummaryInterval', () => {
     const { choose, source, spoken } = await pendingSwitch()
     choose('daily')
 
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect(spoken).toEqual([])
@@ -173,9 +165,9 @@ describe('useSummaryInterval', () => {
 
   it('keeps Monthly when a refresh fails with months shown', async () => {
     localStorage.setItem(KEY, 'monthly')
-    const { interval, source } = setup(fixtureModel(), 'success')
+    const { interval, source } = setup(createMonthlyProfit())
 
-    source.status.value = 'error'
+    source.error.value = new Error('down')
     await nextTick()
 
     expect([interval.value, toasts.value]).toEqual(['monthly', []])
@@ -187,14 +179,14 @@ describe('useSummaryInterval', () => {
     await nextTick()
     const afterChange = view.value
 
-    source.model.value = fixtureModel()
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect([afterChange, spoken]).toEqual(['monthly', []])
   })
 
   it('ignores pressing the selected interval again', async () => {
-    const { choose, spoken } = setup(fixtureModel())
+    const { choose, spoken } = setup(createMonthlyProfit())
 
     choose('monthly')
     choose('monthly')
@@ -204,15 +196,14 @@ describe('useSummaryInterval', () => {
   })
 
   it('keeps Monthly when pressed while the previous failure is still reported', async () => {
-    const { view, choose, source } = setup(undefined, 'error')
+    const { view, choose, source } = setup(undefined, new Error('down'))
     choose('monthly')
     await nextTick()
     const pressed = view.value
 
-    source.status.value = 'loading'
+    source.error.value = null
     await nextTick()
-    source.model.value = fixtureModel()
-    source.status.value = 'success'
+    source.model.value = createMonthlyProfit()
     await nextTick()
 
     expect([pressed, view.value, toasts.value]).toEqual(['pending', 'monthly', []])
@@ -223,13 +214,13 @@ describe('useSummaryInterval', () => {
     let builds = 0
     const model = computed(() => {
       builds += 1
-      return tick.value >= 0 ? fixtureModel() : null
+      return tick.value >= 0 ? createMonthlyProfit() : null
     })
     renderWithProviders({
       setup() {
         useSummaryInterval(useStoredInterval(), {
           model,
-          status: ref<HistoryStatus>('success'),
+          error: ref(null),
           platforms: ref(['LHV']),
         })
         return {}

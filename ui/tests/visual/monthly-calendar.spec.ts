@@ -1,6 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
+import { STORAGE_KEYS } from '../../constants/storage-keys'
 import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
+import { addDays, daysBetween } from '../../utils/iso-dates'
 import { freeze, openRoute } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
@@ -19,7 +21,6 @@ const PHONE_MAX_WIDTH = 575
 const SERIES_ROWS = 184
 const HISTORICAL_ROWS = 30
 const START_VALUE = 100000
-const DAY_MS = 86_400_000
 const CYCLE = [0.1, 0.6, 1.7, 3.7, 7.5, -0.1, -0.6, -1.7, -3.7, -7.5]
 const LONG_HISTORY_TARGETS: Record<string, number> = { '2009-03': 150, '2009-04': -60 }
 
@@ -38,9 +39,7 @@ const LAYOUT_VIEWPORTS = [
 ].map(([width, height]) => ({ width, height }))
 
 const datesBetween = (from: string, to: string) =>
-  Array.from({ length: Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS) + 1 }, (_, index) =>
-    new Date(Date.parse(from) + index * DAY_MS).toISOString().slice(0, 10)
-  )
+  Array.from({ length: daysBetween(from, to) + 1 }, (_, index) => addDays(from, index))
 
 const cycleTarget = (month: string) =>
   CYCLE[(Number(month.slice(0, 4)) * 12 + Number(month.slice(5, 7)) - 1) % CYCLE.length]
@@ -132,7 +131,10 @@ async function openMonthly(page: Page, today: string, stub?: RouteStub): Promise
   await stubPortfolioSummary(page)
   await stub?.(page)
   await page.clock.setFixedTime(today)
-  await page.addInitScript(() => localStorage.setItem('portfolio_summary_interval', 'monthly'))
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: STORAGE_KEYS.SUMMARY_INTERVAL,
+    value: 'monthly',
+  })
   await openRoute(page, '/')
   await expect(page.locator('.monthly-profit-calendar:not([aria-hidden])')).toBeVisible()
   await page.mouse.move(0, 0)

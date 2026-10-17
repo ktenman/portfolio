@@ -55,7 +55,7 @@
           <span class="compact-cents">{{ extreme.amount[1] }}</span>
         </span>
         <span class="compact-percent" :class="percentClass(extreme.month.percent)">
-          {{ extreme.month.percent === null ? '—' : formatPercentChange(extreme.month.percent, 1) }}
+          {{ formatMonthChange(extreme.month.percent) }}
         </span>
       </div>
     </div>
@@ -66,17 +66,13 @@
 import { computed } from 'vue'
 import {
   extremeMonths,
+  formatMonthChange,
   MONTH_FLAT_HINT,
   percentClass,
   type MonthlyProfit,
 } from '../../services/monthly-profit'
 import type { MonthlyYear } from '../../services/monthly-profit-years'
-import {
-  formatCurrencyChange,
-  formatPercentChange,
-  getGainLossClass,
-  splitCents,
-} from '../../utils/formatters'
+import { formatCurrencyChange, getGainLossClass, splitCents } from '../../utils/formatters'
 import { MONTHS } from '../../utils/iso-dates'
 import DailyProfitCell from './daily-profit-cell.vue'
 

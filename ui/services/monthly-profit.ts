@@ -104,14 +104,20 @@ const factorOf = (previous: PortfolioSummaryDto, row: PortfolioSummaryDto): numb
   return Number.isFinite(base) && base > 0 ? 1 + change / base : null
 }
 
+export const productOf = (factors: (number | null)[]): number | null =>
+  factors.reduce<number | null>(
+    (product, factor) => (product === null || factor === null ? null : product * factor),
+    1
+  )
+
+export const percentOf = (factor: number | null): number | null =>
+  factor === null ? null : 100 * (factor - 1)
+
 const compoundFactor = (chain: PortfolioSummaryDto[]): number | null =>
-  chain.slice(1).reduce<number | null>((product, row, index) => {
-    const factor = factorOf(chain[index], row)
-    return product === null || factor === null ? null : product * factor
-  }, 1)
+  productOf(chain.slice(1).map((row, index) => factorOf(chain[index], row)))
 
 export const monthStepOf = (change: number, percent: number | null): ChangeStep => {
-  if (percent !== null) return stepFor(percent, percent, MONTH_STEPS, 1)
+  if (percent !== null) return stepFor(percent, MONTH_STEPS, 1)
   if (change === 0) return 'flat'
   return change > 0 ? 'gain-1' : 'loss-1'
 }
@@ -121,10 +127,16 @@ const openingText = (date: string, key: string): string =>
     ? formatDayMonth(date)
     : `${formatDayMonth(date)} ${date.slice(0, 4)}`
 
-const coverageOf = (key: string, opening: string, closing: string, isOpen: boolean): string => {
+export const coverageOf = (
+  first: string,
+  last: string,
+  opening: string,
+  closing: string,
+  isOpen: boolean
+): string => {
   const from =
-    opening === lastDayOfMonth(addMonths(key, -1)) ? '' : `from ${openingText(opening, key)}`
-  const to = closing === lastDayOfMonth(key) && !isOpen ? '' : `to ${formatDayMonth(closing)}`
+    opening === lastDayOfMonth(addMonths(first, -1)) ? '' : `from ${openingText(opening, first)}`
+  const to = closing === lastDayOfMonth(last) && !isOpen ? '' : `to ${formatDayMonth(closing)}`
   return [from, to].filter(Boolean).join(' ')
 }
 
@@ -160,7 +172,7 @@ const figuresOf = (group: MonthRows, isLatest: boolean, today: string): MonthFig
   const { key, opening, rows } = group
   const row = rows[rows.length - 1]
   const factor = compoundFactor([opening, ...rows])
-  const percent = factor === null ? null : 100 * (factor - 1)
+  const percent = percentOf(factor)
   const change = roundToCents(row.totalProfit - opening.totalProfit)
   const isSingle = opening.date >= lastDayOfMonth(addMonths(key, -1))
   const isOpen = row.date === today
@@ -177,7 +189,7 @@ const figuresOf = (group: MonthRows, isLatest: boolean, today: string): MonthFig
     isOpen,
     label: formatMonth(key),
     title: formatFullMonth(key),
-    coverage: coverageOf(key, opening.date, row.date, isOpen),
+    coverage: coverageOf(key, key, opening.date, row.date, isOpen),
     note: noteOf(group, isSingle, isLatest, percent),
   }
 }
@@ -188,7 +200,7 @@ const observedMonth = (figures: MonthFigures, rank: string): ObservedMonth => {
     title,
     coverage,
     formatCurrencyChange(change),
-    percent === null ? 'percentage unavailable' : formatPercentChange(percent, 1),
+    formatMonthChange(percent, 'percentage unavailable'),
     rank && `${rank}, ranked by euro profit`,
   ]
   return { ...figures, name: name.filter(Boolean).join(', '), ...closingTexts(row, rank, isOpen) }
@@ -269,6 +281,9 @@ export const formatMonthCell = (percent: number | null): string => {
 
 export const formatMonthPercent = (percent: number): string =>
   formatSignedPercent(printed(percent), 1)
+
+export const formatMonthChange = (percent: number | null, missing = '—'): string =>
+  percent === null ? missing : formatPercentChange(percent, 1)
 
 export const percentClass = (percent: number | null): string =>
   getGainLossClass(percent === null ? null : printed(percent))

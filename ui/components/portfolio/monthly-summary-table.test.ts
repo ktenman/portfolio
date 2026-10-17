@@ -1,19 +1,14 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
-import { buildMonthlyProfit, type MonthlyProfit } from '../../services/monthly-profit'
-import { mergeHistoricalWithCurrent } from '../../services/summary-aggregator'
-import { createCalendarRow as row } from '../../tests/fixtures'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../../tests/visual/summary-fixture'
+import type { MonthlyProfit } from '../../services/monthly-profit'
+import { createCalendarRow as row, createMonthlyProfit } from '../../tests/fixtures'
 import SkeletonLoader from '../shared/skeleton-loader.vue'
 import MonthlySummaryTable from './monthly-summary-table.vue'
 
 enableAutoUnmount(afterEach)
 
-const fixture = () =>
-  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
-
-const february = (rows: PortfolioSummaryDto[]) => buildMonthlyProfit(rows, '2030-01-01')!
+const february = (rows: PortfolioSummaryDto[]) => createMonthlyProfit(rows, '2030-01-01')
 
 const mountTable = (model: MonthlyProfit | undefined) =>
   mount(MonthlySummaryTable, { props: { model } })
@@ -36,7 +31,7 @@ const header = (wrapper: Wrapper, label: string) =>
 
 describe('MonthlySummaryTable', () => {
   it('lists one row per month, newest first', () => {
-    const wrapper = mountTable(fixture())
+    const wrapper = mountTable(createMonthlyProfit())
 
     expect([
       monthOrder(wrapper),
@@ -49,7 +44,7 @@ describe('MonthlySummaryTable', () => {
 
   it('renames the date and change columns', () =>
     expect(
-      mountTable(fixture())
+      mountTable(createMonthlyProfit())
         .findAll('thead th')
         .map(th => th.text().replace(/[▲▼]/g, '').trim())
     ).toEqual([
@@ -64,7 +59,7 @@ describe('MonthlySummaryTable', () => {
     ]))
 
   it('shows the closing snapshot unchanged', () => {
-    const wrapper = mountTable(fixture())
+    const wrapper = mountTable(createMonthlyProfit())
 
     expect([
       cellsOf(wrapper, 'Total Value')[0].text(),
@@ -79,7 +74,10 @@ describe('MonthlySummaryTable', () => {
       row('2025-02-02', 60, 10100),
     ])
 
-    expect([firstChange(mountTable(fixture())), firstChange(mountTable(opposite))]).toEqual([
+    expect([
+      firstChange(mountTable(createMonthlyProfit())),
+      firstChange(mountTable(opposite)),
+    ]).toEqual([
       [
         ['€9,110.23', ['text-gain']],
         ['(5.4%)', ['text-gain']],
@@ -121,7 +119,7 @@ describe('MonthlySummaryTable', () => {
   })
 
   it('sorts months by key and month change by number', async () => {
-    const wrapper = mountTable(fixture())
+    const wrapper = mountTable(createMonthlyProfit())
 
     await header(wrapper, 'Month').trigger('click')
     const byMonth = monthOrder(wrapper)[0]
@@ -144,7 +142,7 @@ describe('MonthlySummaryTable', () => {
 
   it('keeps the six mobile card fields', () =>
     expect(
-      mountTable(fixture())
+      mountTable(createMonthlyProfit())
         .find('.mobile-card')
         .findAll('.label')
         .map(label => label.text())

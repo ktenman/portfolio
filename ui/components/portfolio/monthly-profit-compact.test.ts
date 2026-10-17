@@ -1,17 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createCalendarRow as row } from '../../tests/fixtures'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../../tests/visual/summary-fixture'
-import { buildMonthlyProfit, type MonthlyProfit } from '../../services/monthly-profit'
+import { createMissingMonthRows, createMonthlyProfit } from '../../tests/fixtures'
+import type { MonthlyProfit } from '../../services/monthly-profit'
 import { monthlyYears } from '../../services/monthly-profit-years'
-import { mergeHistoricalWithCurrent } from '../../services/summary-aggregator'
 import DailyProfitCell from './daily-profit-cell.vue'
 import MonthlyProfitCompact from './monthly-profit-compact.vue'
 
-const fixtureModel = () =>
-  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
-
-const mountCompact = (model: MonthlyProfit = fixtureModel()) =>
+const mountCompact = (model: MonthlyProfit = createMonthlyProfit()) =>
   mount(MonthlyProfitCompact, { props: { model, years: monthlyYears(model) } })
 
 const variantsOf = (wrapper: ReturnType<typeof mountCompact>) =>
@@ -47,14 +42,7 @@ describe('MonthlyProfitCompact', () => {
 
   it('draws a missing month as a dashed dot', () =>
     expect(
-      variantsOf(
-        mountCompact(
-          buildMonthlyProfit(
-            [row('2021-06-30', 0), row('2021-07-31', 100), row('2021-09-30', 200)],
-            '2030-01-01'
-          )!
-        )
-      )
+      variantsOf(mountCompact(createMonthlyProfit(createMissingMonthRows(), '2030-01-01')))
     ).toEqual(['flat', 'missing', 'flat']))
 
   it('hides the dots from assistive technology and ignores taps', () => {

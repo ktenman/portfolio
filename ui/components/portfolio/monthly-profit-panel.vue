@@ -7,7 +7,7 @@
         <span class="month-cents">{{ amount[1] }}</span>
       </span>
       <span class="month-percent" :class="percentClass(month.percent)">
-        {{ month.percent === null ? '—' : formatPercentChange(month.percent, 1) }}
+        {{ formatMonthChange(month.percent) }}
       </span>
     </p>
     <div class="month-texts">
@@ -30,13 +30,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { SEPARATOR } from '../../services/daily-profit-calendar'
-import { percentClass, type ObservedMonth } from '../../services/monthly-profit'
-import {
-  formatCurrencyChange,
-  formatPercentChange,
-  getGainLossClass,
-  splitCents,
-} from '../../utils/formatters'
+import { formatMonthChange, percentClass, type ObservedMonth } from '../../services/monthly-profit'
+import { formatCurrencyChange, getGainLossClass, splitCents } from '../../utils/formatters'
 import DailyProfitArrow from './daily-profit-arrow.vue'
 
 const props = defineProps<{

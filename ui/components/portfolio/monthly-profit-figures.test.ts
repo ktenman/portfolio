@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createCalendarRow as row } from '../../tests/fixtures'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../../tests/visual/summary-fixture'
-import { buildMonthlyProfit, type MonthlyProfit } from '../../services/monthly-profit'
-import { mergeHistoricalWithCurrent } from '../../services/summary-aggregator'
+import { createCalendarRow as row, createMonthlyProfit } from '../../tests/fixtures'
+import type { MonthlyProfit } from '../../services/monthly-profit'
 import MonthlyProfitFigures from './monthly-profit-figures.vue'
 
-const fixtureModel = () =>
-  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
-
-const mountFigures = (model: MonthlyProfit = fixtureModel()) =>
+const mountFigures = (model: MonthlyProfit = createMonthlyProfit()) =>
   mount(MonthlyProfitFigures, { props: { model } })
 
 const normalised = (text: string) => text.replace(/\s+/g, ' ').trim()
@@ -41,7 +36,7 @@ describe('MonthlyProfitFigures', () => {
 
   it('shows a dash average and the excluded count without single months', () => {
     const wrapper = mountFigures(
-      buildMonthlyProfit([row('2025-01-15', 0), row('2025-03-31', 100)], '2030-01-01')!
+      createMonthlyProfit([row('2025-01-15', 0), row('2025-03-31', 100)], '2030-01-01')
     )
 
     expect([

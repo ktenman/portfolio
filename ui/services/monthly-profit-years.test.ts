@@ -1,18 +1,22 @@
 import { describe, it, expect } from 'vitest'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
-import { createCalendarRow as row } from '../tests/fixtures'
-import { buildMonthlyProfit, formatMonthCell } from './monthly-profit'
+import {
+  createCalendarRow as row,
+  createMissingMonthRows,
+  createMonthlyProfit,
+} from '../tests/fixtures'
+import { formatMonthCell } from './monthly-profit'
 import { hasMissingMonth, monthlyYears } from './monthly-profit-years'
 
 const TODAY = '2030-01-01'
 const UNAVAILABLE = 'Year result unavailable: missing year-end summary'
 
 const yearsOf = (rows: PortfolioSummaryDto[], today = TODAY) =>
-  monthlyYears(buildMonthlyProfit(rows, today)!)
+  monthlyYears(createMonthlyProfit(rows, today))
 
 describe('monthly years', () => {
   it('draws a missing month inside a year', () => {
-    const years = yearsOf([row('2021-06-30', 0), row('2021-07-31', 100), row('2021-09-30', 200)])
+    const years = yearsOf(createMissingMonthRows())
     expect([years[0].slots[7], years[0].name, years[0].text, hasMissingMonth(years)]).toEqual([
       { kind: 'missing', key: '2021-08', name: 'August 2021, no daily summary' },
       '2021, from 30 Jun to 30 Sep, +€200.00, +0.2%',
@@ -61,10 +65,10 @@ describe('monthly years', () => {
   })
 
   it('compounds unrounded month factors', () => {
-    const model = buildMonthlyProfit(
+    const model = createMonthlyProfit(
       [row('2024-12-31', 0, 10000), row('2025-01-31', 4, 10004), row('2025-02-28', 8, 10008)],
       TODAY
-    )!
+    )
     expect([
       model.months.map(month => formatMonthCell(month.percent)),
       monthlyYears(model)[0].text,

@@ -4,7 +4,7 @@ import { focusManager } from '@tanstack/vue-query'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { usePortfolioSummaryQuery } from './use-portfolio-summary-query'
 import { portfolioSummaryService } from '../services/api'
-import { renderWithProviders } from '../tests/test-utils'
+import { deferred, renderWithProviders } from '../tests/test-utils'
 import { createCalendarRow as row } from '../tests/fixtures'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 
@@ -19,9 +19,10 @@ vi.mock('./use-auth-state', () => ({
 
 enableAutoUnmount(afterEach)
 
-type Answer = PortfolioSummaryDto[] | Error | Promise<PortfolioSummaryDto[]>
-
 const MAX_ROWS = [row('2025-11-29', 1), row('2025-11-30', 2), row('2025-12-01', 3)]
+const SIX_MONTHS = [row('2025-11-29', 10), row('2025-12-01', 30)]
+
+const history = vi.fn<(range: string, platforms?: string[]) => Promise<PortfolioSummaryDto[]>>()
 
 const setupQuery = (platforms: Ref<string[]>, isMonthly: Ref<boolean>) => {
   let queryResult: ReturnType<typeof usePortfolioSummaryQuery> | null = null
@@ -35,36 +36,10 @@ const setupQuery = (platforms: Ref<string[]>, isMonthly: Ref<boolean>) => {
   return { queryResult: queryResult!, queryClient: wrapper.queryClient }
 }
 
-const maxCalls = () =>
-  vi.mocked(portfolioSummaryService.getSeries).mock.calls.filter(([range]) => range === 'MAX')
-
-const mockSeries = (sixMonths: PortfolioSummaryDto[], ...history: Answer[]) => {
-  let call = 0
-  vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async range => {
-    if (range === '6M') return sixMonths
-    if (range !== 'MAX') return []
-    const answer = history[Math.min(call, history.length - 1)]
-    call += 1
-    if (answer instanceof Error) throw answer
-    return answer
-  })
-}
-
-const mockHistory = (...history: Answer[]) =>
-  mockSeries([row('2025-11-29', 10), row('2025-12-01', 30)], ...history)
-
-const deferred = () => {
-  let resolve: (rows: PortfolioSummaryDto[]) => void = () => {}
-  const promise = new Promise<PortfolioSummaryDto[]>(done => {
-    resolve = done
-  })
-  return { promise, resolve }
-}
-
 const datesOf = (rows: PortfolioSummaryDto[] | undefined) => rows?.map(summary => summary.date)
 
 const failHistory = async () => {
-  mockHistory(new Error('down'), new Error('down'), MAX_ROWS)
+  history.mockRejectedValueOnce(new Error('down')).mockRejectedValueOnce(new Error('down'))
   const setup = setupQuery(ref(['LHV']), ref(true))
   await flushPromises()
   await vi.advanceTimersByTimeAsync(1000)
@@ -90,7 +65,11 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     })
     vi.mocked(portfolioSummaryService.getBenchmark).mockResolvedValue([])
     vi.mocked(portfolioSummaryService.getIntraday).mockResolvedValue([])
-    mockHistory(MAX_ROWS)
+    history.mockReset().mockResolvedValue(MAX_ROWS)
+    vi.mocked(portfolioSummaryService.getSeries).mockImplementation(async (range, platforms) => {
+      if (range === 'MAX') return history(range, platforms)
+      return range === '6M' ? SIX_MONTHS : []
+    })
   })
 
   afterEach(() => {
@@ -102,7 +81,7 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     setupQuery(ref(['LHV']), ref(false))
     await flushPromises()
 
-    expect(maxCalls()).toHaveLength(0)
+    expect(history).not.toHaveBeenCalled()
   })
 
   it('requests MAX history once when Monthly is on', async () => {
@@ -113,16 +92,16 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     isMonthly.value = true
     await flushPromises()
 
-    expect([maxCalls().length, queryResult.historyStatus.value]).toEqual([1, 'success'])
+    expect([history.mock.calls.length, queryResult.historyError.value]).toEqual([1, null])
   })
 
-  it('reports loading until MAX history arrives', async () => {
-    mockHistory(new Promise(() => {}))
+  it('has no monthly rows until MAX history arrives', async () => {
+    history.mockReturnValue(new Promise(() => {}))
     const { queryResult } = setupQuery(ref(['LHV']), ref(true))
     await flushPromises()
 
-    expect([queryResult.historyStatus.value, queryResult.monthlyRows.value]).toEqual([
-      'loading',
+    expect([queryResult.historyError.value, queryResult.monthlyRows.value]).toEqual([
+      null,
       undefined,
     ])
   })
@@ -142,10 +121,10 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     const { queryResult } = await failHistory()
 
     expect([
-      queryResult.historyStatus.value,
+      queryResult.historyError.value?.message,
       queryResult.monthlyRows.value,
-      maxCalls().length,
-    ]).toEqual(['error', undefined, 2])
+      history.mock.calls.length,
+    ]).toEqual(['down', undefined, 2])
   })
 
   it('retries MAX history only when asked', async () => {
@@ -153,16 +132,16 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     focusManager.setFocused(false)
     focusManager.setFocused(true)
     await flushPromises()
-    const afterFocus = maxCalls().length
+    const afterFocus = history.mock.calls.length
 
     queryResult.retryHistory()
     await flushPromises()
 
-    expect([afterFocus, maxCalls().length]).toEqual([2, 3])
+    expect([afterFocus, history.mock.calls.length]).toEqual([2, 3])
   })
 
   it('keeps the last MAX rows when a refresh fails', async () => {
-    mockHistory(MAX_ROWS, new Error('down'), new Error('down'))
+    history.mockResolvedValueOnce(MAX_ROWS).mockRejectedValue(new Error('down'))
     const { queryResult, queryClient } = setupQuery(ref(['LHV']), ref(true))
     await flushPromises()
 
@@ -171,10 +150,10 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     await vi.advanceTimersByTimeAsync(1000)
     await flushPromises()
 
-    expect([queryResult.historyStatus.value, datesOf(queryResult.monthlyRows.value)]).toEqual([
-      'error',
-      ['2025-11-29', '2025-11-30', '2025-12-01', '2025-12-02'],
-    ])
+    expect([
+      queryResult.historyError.value?.message,
+      datesOf(queryResult.monthlyRows.value),
+    ]).toEqual(['down', ['2025-11-29', '2025-11-30', '2025-12-01', '2025-12-02']])
   })
 
   it('refetches MAX history on recalculation only while Monthly is on', async () => {
@@ -183,14 +162,14 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     await flushPromises()
     await queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
     await flushPromises()
-    const whileMonthly = maxCalls().length
+    const whileMonthly = history.mock.calls.length
 
     isMonthly.value = false
     await flushPromises()
     await queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
     await flushPromises()
 
-    expect([whileMonthly, maxCalls().length]).toEqual([2, 2])
+    expect([whileMonthly, history.mock.calls.length]).toEqual([2, 2])
   })
 
   it('reuses cached MAX history when Monthly is turned on again', async () => {
@@ -203,13 +182,13 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     isMonthly.value = true
     await flushPromises()
 
-    expect(maxCalls()).toHaveLength(1)
+    expect(history).toHaveBeenCalledTimes(1)
   })
 
   it('ignores a late MAX response for the previous platform selection', async () => {
-    const lhv = deferred()
-    const ibkr = deferred()
-    mockHistory(lhv.promise, ibkr.promise)
+    const lhv = deferred<PortfolioSummaryDto[]>()
+    const ibkr = deferred<PortfolioSummaryDto[]>()
+    history.mockReturnValueOnce(lhv.promise).mockReturnValue(ibkr.promise)
     const platforms = ref(['LHV'])
     const { queryResult } = setupQuery(platforms, ref(true))
     await flushPromises()
@@ -222,7 +201,7 @@ describe('usePortfolioSummaryQuery monthly rows', () => {
     lhv.resolve(MAX_ROWS)
     await flushPromises()
 
-    expect([pending, datesOf(queryResult.monthlyRows.value), maxCalls()]).toEqual([
+    expect([pending, datesOf(queryResult.monthlyRows.value), history.mock.calls]).toEqual([
       undefined,
       ['2025-11-29', '2025-11-30', '2025-12-01', '2025-12-02'],
       [

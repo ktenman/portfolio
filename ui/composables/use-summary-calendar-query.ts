@@ -11,8 +11,6 @@ import { REFETCH_INTERVALS } from '../constants'
 import type { CalendarHistory } from './use-daily-profit-calendar'
 import { TimeRange, type PortfolioSummaryDto } from '../models/generated/domain-models'
 
-export type HistoryStatus = 'idle' | 'loading' | 'success' | 'error'
-
 interface SummaryCalendarOptions {
   platformsKey: Readonly<Ref<string[]>>
   activePlatforms: Readonly<Ref<string[] | undefined>>
@@ -71,7 +69,6 @@ export function useSummaryCalendarQuery({
   const {
     data: calendarHistoryRows,
     isLoading: isLoadingCalendarHistory,
-    isFetching: isFetchingCalendarHistory,
     error: calendarHistoryError,
     errorUpdateCount: calendarHistoryFailures,
     refetch: retryHistory,
@@ -117,12 +114,6 @@ export function useSummaryCalendarQuery({
     )
   })
 
-  const historyStatus = computed<HistoryStatus>(() => {
-    if (calendarHistoryError.value) return 'error'
-    if (calendarHistoryRows.value) return 'success'
-    return isFetchingCalendarHistory.value ? 'loading' : 'idle'
-  })
-
   watchEffect(() => {
     calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)
       ? REFETCH_INTERVALS.DAILY_CALENDAR
@@ -142,7 +133,7 @@ export function useSummaryCalendarQuery({
     loadCalendarHistory,
     calendarError,
     monthlyRows,
-    historyStatus,
+    historyError: calendarHistoryError,
     retryHistory,
   }
 }

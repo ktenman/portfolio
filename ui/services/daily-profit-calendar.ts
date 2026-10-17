@@ -112,20 +112,15 @@ const rowChanges = (rows: PortfolioSummaryDto[]): RowChange[] =>
 
 const isSingle = ({ covered }: RowChange): boolean => covered === 1
 
-export const stepFor = (
-  side: number,
-  percent: number,
-  steps: number[],
-  decimals: number
-): ChangeStep => {
+export const stepFor = (percent: number, steps: number[], decimals: number): ChangeStep => {
   const printed = Number(Math.abs(percent).toFixed(decimals))
   const reached = steps.filter(step => printed >= step).length
-  return (side > 0 ? GAIN_STEPS : LOSS_STEPS)[reached]
+  return (percent > 0 ? GAIN_STEPS : LOSS_STEPS)[reached]
 }
 
 const stepOf = (change: number, percent: number | null): ChangeStep => {
   if (percent === null) return change === 0 ? 'flat' : 'gain-1'
-  return stepFor(change, percent, CHANGE_STEPS, 2)
+  return stepFor(percent, CHANGE_STEPS, 2)
 }
 
 const ordinal = (rank: number): string => `${rank}${ORDINAL_SUFFIXES[ORDINAL_RULES.select(rank)]}`

@@ -1,6 +1,6 @@
 <template>
   <div v-if="model && month" class="monthly-profit-calendar card-shell p-0 md:p-6">
-    <alert-message v-if="status === 'error'" variant="warning" class="m-3.5 md:mx-0 md:mt-0">
+    <alert-message v-if="error" variant="warning" class="m-3.5 md:mx-0 md:mt-0">
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span>Could not refresh the monthly history. Showing data as of {{ asOf }}.</span>
         <app-button size="sm" @click="emit('retry')">Try again</app-button>
@@ -56,7 +56,6 @@
 <script lang="ts" setup>
 import { computed, toRef } from 'vue'
 import { useMonthlyProfit } from '../../composables/use-monthly-profit'
-import type { HistoryStatus } from '../../composables/use-summary-calendar-query'
 import {
   moveMonth,
   MONTH_STEPS,
@@ -73,7 +72,7 @@ import MonthlyProfitFigures from './monthly-profit-figures.vue'
 import MonthlyProfitGrid from './monthly-profit-grid.vue'
 import MonthlyProfitPanel from './monthly-profit-panel.vue'
 
-const props = defineProps<{ model: MonthlyProfit | null | undefined; status: HistoryStatus }>()
+const props = defineProps<{ model: MonthlyProfit | null | undefined; error: Error | null }>()
 
 const emit = defineEmits<{ retry: [] }>()
 

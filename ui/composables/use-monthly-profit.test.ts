@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import { ref, watch } from 'vue'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
-import { buildMonthlyProfit, type MonthlyProfit } from '../services/monthly-profit'
+import type { MonthlyProfit } from '../services/monthly-profit'
 import { mergeHistoricalWithCurrent } from '../services/summary-aggregator'
-import { createCalendarRow } from '../tests/fixtures'
+import { createCalendarRow, createMonthlyProfit } from '../tests/fixtures'
 import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
 import { useMonthlyProfit } from './use-monthly-profit'
 
 const ROWS = mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY)
 const NOVEMBER = 'November 2025, +€12,307.39, +8.3%, Best of 7 months, ranked by euro profit'
 
-const build = (rows: PortfolioSummaryDto[] = ROWS) => buildMonthlyProfit(rows, '2026-02-15')!
+const build = (rows: PortfolioSummaryDto[] = ROWS) => createMonthlyProfit(rows, '2026-02-15')
 
 const without = (key: string) => build(ROWS.filter(row => !row.date.startsWith(key)))
 

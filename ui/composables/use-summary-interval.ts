@@ -2,15 +2,14 @@ import { computed, ref, watch, type Ref, type WritableComputedRef } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../constants'
 import { NOT_ENOUGH_HISTORY, type MonthlyProfit } from '../services/monthly-profit'
-import type { HistoryStatus } from './use-summary-calendar-query'
 import { useToast } from './use-toast'
 
 export type SummaryInterval = 'daily' | 'monthly'
-export type IntervalView = 'daily' | 'pending' | 'monthly'
+type IntervalView = 'daily' | 'pending' | 'monthly'
 
 interface IntervalSource {
   model: Readonly<Ref<MonthlyProfit | null | undefined>>
-  status: Readonly<Ref<HistoryStatus>>
+  error: Readonly<Ref<Error | null>>
   platforms: Readonly<Ref<string[]>>
 }
 
@@ -30,7 +29,7 @@ export const useStoredInterval = (): WritableComputedRef<SummaryInterval> => {
 
 export const useSummaryInterval = (
   interval: WritableComputedRef<SummaryInterval>,
-  { model, status, platforms }: IntervalSource
+  { model, error, platforms }: IntervalSource
 ) => {
   const toast = useToast()
   const isPending = ref(false)
@@ -41,16 +40,11 @@ export const useSummaryInterval = (
     return isPending.value ? 'pending' : 'monthly'
   })
 
-  const announce = (months: MonthlyProfit | null) => {
-    announcement.value = months ? `Monthly profit ${months.span}` : NOT_ENOUGH_HISTORY
-  }
-
   const choose = (next: SummaryInterval) => {
     if (next === interval.value) return
     announcement.value = ''
     interval.value = next
-    isPending.value = next === 'monthly' && model.value === undefined
-    if (next === 'monthly' && model.value !== undefined) announce(model.value)
+    isPending.value = next === 'monthly'
   }
 
   watch(
@@ -58,7 +52,7 @@ export const useSummaryInterval = (
     months => {
       if (months === undefined) return
       isPending.value = false
-      announce(months)
+      announcement.value = months ? `Monthly profit ${months.span}` : NOT_ENOUGH_HISTORY
     }
   )
 
@@ -66,8 +60,8 @@ export const useSummaryInterval = (
     isPending.value = false
   })
 
-  watch(status, current => {
-    if (current !== 'error' || interval.value === 'daily' || model.value !== undefined) return
+  watch(error, current => {
+    if (!current || interval.value === 'daily' || model.value !== undefined) return
     isPending.value = false
     interval.value = 'daily'
     toast.error(LOAD_FAILED)

@@ -1,27 +1,26 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
-import { createCalendarRow as row } from '../../tests/fixtures'
-import { SERIES_RESPONSE, TODAY_SUMMARY } from '../../tests/visual/summary-fixture'
-import { buildMonthlyProfit, type MonthlyProfit } from '../../services/monthly-profit'
+import {
+  createCalendarRow as row,
+  createMissingMonthRows,
+  createMonthlyProfit,
+} from '../../tests/fixtures'
+import type { MonthlyProfit } from '../../services/monthly-profit'
 import { monthlyYears } from '../../services/monthly-profit-years'
-import { mergeHistoricalWithCurrent } from '../../services/summary-aggregator'
 import { addMonths, lastDayOfMonth } from '../../utils/iso-dates'
 import MonthlyProfitGrid from './monthly-profit-grid.vue'
 
 enableAutoUnmount(afterEach)
 
-const fixtureModel = () =>
-  buildMonthlyProfit(mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY), '2026-01-15')!
-
 const monthEnds = (first: string, count: number, skipped: string) =>
-  buildMonthlyProfit(
+  createMonthlyProfit(
     Array.from({ length: count }, (_, index) => addMonths(first, index))
       .filter(key => key !== skipped)
       .map((key, index) => row(lastDayOfMonth(key), index * 100)),
     '2030-01-01'
-  )!
+  )
 
-const mountGrid = (model: MonthlyProfit = fixtureModel(), selected = '2025-12') =>
+const mountGrid = (model: MonthlyProfit = createMonthlyProfit(), selected = '2025-12') =>
   mount(MonthlyProfitGrid, {
     props: { model, years: monthlyYears(model), selected, previewed: null },
     attachTo: document.body,
@@ -85,10 +84,7 @@ describe('MonthlyProfitGrid', () => {
   })
 
   it('draws a missing month as a named dashed slot that cannot be selected', async () => {
-    const model = buildMonthlyProfit(
-      [row('2021-06-30', 0), row('2021-07-31', 100), row('2021-09-30', 200)],
-      '2030-01-01'
-    )!
+    const model = createMonthlyProfit(createMissingMonthRows(), '2030-01-01')
     const wrapper = mountGrid(model, '2021-07')
     const august = wrapper.find('[aria-label="August 2021, no daily summary"]')
 
@@ -117,7 +113,7 @@ describe('MonthlyProfitGrid', () => {
     const last = mountGrid()
     pressKey(last, { key: 'ArrowRight' })
     pressKey(last, { key: 'ArrowUp' })
-    const first = mountGrid(fixtureModel(), '2025-06')
+    const first = mountGrid(createMonthlyProfit(), '2025-06')
 
     pressKey(first, { key: 'ArrowLeft' })
 
