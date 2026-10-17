@@ -57,21 +57,13 @@ const historicalPage = (totalPages: number) => ({
 
 const history = vi.fn<() => Promise<PortfolioSummaryDto[]>>()
 
-const mountPage = () =>
+const createQueryClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } })
+
+const mountPage = (queryClient = createQueryClient()) =>
   mount(PortfolioSummary, {
     attachTo: document.body,
-    global: {
-      plugins: [
-        [
-          VueQueryPlugin,
-          {
-            queryClient: new QueryClient({
-              defaultOptions: { queries: { retry: false, retryDelay: 0 } },
-            }),
-          },
-        ],
-      ],
-    },
+    global: { plugins: [[VueQueryPlugin, { queryClient }]] },
   })
 
 type Wrapper = ReturnType<typeof mountPage>
@@ -101,6 +93,12 @@ const monthCell = (wrapper: Wrapper, title: string) =>
 
 const monthLabel = (wrapper: Wrapper) =>
   wrapper.find('.monthly-profit-calendar .month-label').text()
+
+const platform = (wrapper: Wrapper, name: string) =>
+  wrapper.findAll('.platform-buttons button').find(button => button.text() === name)!
+
+const retryButton = (wrapper: Wrapper) =>
+  wrapper.find('.monthly-profit-calendar .alert-warning button')
 
 const nextPageSkeleton = (wrapper: Wrapper) =>
   wrapper.findAllComponents(SkeletonLoader).some(loader => loader.props('type') === 'text')
@@ -207,6 +205,29 @@ describe('PortfolioSummary interval', () => {
     ])
   })
 
+  it('takes the veiled Daily out of the keyboard order while Monthly first loads', async () => {
+    history.mockReturnValue(new Promise(() => {}))
+    const wrapper = mountPage()
+    await settle()
+    const daily = wrapper.findAll('[inert]').length
+
+    await showMonthly(wrapper)
+
+    expect([daily, wrapper.findAll('[aria-busy="true"] > [inert]').length]).toEqual([0, 2])
+  })
+
+  it('stops daily paging as soon as Monthly is pressed', async () => {
+    vi.mocked(portfolioSummaryService.getHistorical).mockResolvedValue(historicalPage(3))
+    history.mockReturnValue(new Promise(() => {}))
+    const wrapper = mountPage()
+    await settle()
+    const daily = scroll.canLoadMore()
+
+    await showMonthly(wrapper)
+
+    expect([daily, scroll.canLoadMore()]).toEqual([true, false])
+  })
+
   it('never asks for another daily page in Monthly', async () => {
     localStorage.setItem(STORAGE_KEYS.SUMMARY_INTERVAL, 'monthly')
     vi.mocked(portfolioSummaryService.getHistorical)
@@ -263,10 +284,7 @@ describe('PortfolioSummary interval', () => {
     await settle()
     const before = has(wrapper, '.monthly-profit-calendar .calendar-grid')
 
-    await wrapper
-      .findAll('.platform-buttons button')
-      .find(button => button.text() === 'LHV')!
-      .trigger('click')
+    await platform(wrapper, 'LHV').trigger('click')
     await settle()
 
     expect([
@@ -274,6 +292,49 @@ describe('PortfolioSummary interval', () => {
       has(wrapper, '.monthly-profit-calendar[aria-hidden="true"]'),
       wrapper.findAll('tbody tr').length,
     ]).toEqual([true, true, 0])
+  })
+
+  it('retries a failed MAX refresh from the notice', async () => {
+    localStorage.setItem(STORAGE_KEYS.SUMMARY_INTERVAL, 'monthly')
+    const retried = deferred<PortfolioSummaryDto[]>()
+    history
+      .mockResolvedValueOnce(SERIES_RESPONSE)
+      .mockRejectedValueOnce(new Error('down'))
+      .mockRejectedValueOnce(new Error('down'))
+      .mockReturnValueOnce(retried.promise)
+    const queryClient = createQueryClient()
+    const wrapper = mountPage(queryClient)
+    await settle()
+    await queryClient.invalidateQueries({ queryKey: ['portfolio-summary'] })
+    await settle()
+    const failed = retryButton(wrapper).text()
+    await retryButton(wrapper).trigger('click')
+    await settle()
+    const retrying = retryButton(wrapper).text()
+
+    retried.resolve(SERIES_RESPONSE)
+    await settle()
+
+    expect([failed, retrying, retryButton(wrapper).exists()]).toEqual([
+      'Try again',
+      'Retrying…',
+      false,
+    ])
+  })
+
+  it('selects the latest month after switching to cached platforms', async () => {
+    localStorage.setItem(STORAGE_KEYS.SUMMARY_INTERVAL, 'monthly')
+    const wrapper = mountPage()
+    await settle()
+    await platform(wrapper, 'TRADING212').trigger('click')
+    await settle()
+    await monthCell(wrapper, 'November 2025').trigger('click')
+    const chosen = monthLabel(wrapper)
+
+    await platform(wrapper, 'TRADING212').trigger('click')
+    await settle()
+
+    expect([chosen, monthLabel(wrapper)]).toEqual(['November 2025', 'December 2025'])
   })
 
   it("restores Daily's stored day after visiting Monthly", async () => {

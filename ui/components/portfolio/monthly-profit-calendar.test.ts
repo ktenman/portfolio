@@ -11,8 +11,11 @@ enableAutoUnmount(afterEach)
 const ROWS = mergeHistoricalWithCurrent(SERIES_RESPONSE, TODAY_SUMMARY)
 const NOVEMBER = 'November 2025, +€12,307.39, +8.3%, Best of 7 months, ranked by euro profit'
 
-const mountCalendar = (model: MonthlyProfit | null | undefined, error: Error | null = null) =>
-  mount(MonthlyProfitCalendar, { props: { model, error }, attachTo: document.body })
+const mountCalendar = (
+  model: MonthlyProfit | null | undefined,
+  error: Error | null = null,
+  refreshing = false
+) => mount(MonthlyProfitCalendar, { props: { model, error, refreshing }, attachTo: document.body })
 
 type Wrapper = ReturnType<typeof mountCalendar>
 
@@ -37,6 +40,9 @@ describe('MonthlyProfitCalendar', () => {
 
     expect(wrapper.text()).toBe(NOT_ENOUGH_HISTORY)
   })
+
+  it('leaves announcing too little history to the interval switch', () =>
+    expect(mountCalendar(null).find('[role="alert"]').exists()).toBe(false))
 
   it('shows the fixture with December selected', () => {
     const wrapper = mountCalendar(createMonthlyProfit())
@@ -109,6 +115,32 @@ describe('MonthlyProfitCalendar', () => {
       [[]],
       true,
     ])
+  })
+
+  it('labels the retry as running while the history refreshes', () =>
+    expect(
+      mountCalendar(createMonthlyProfit(), new Error('down'), true)
+        .find('.alert-warning button')
+        .text()
+    ).toBe('Retrying…'))
+
+  it('moves focus to the card when a retry succeeds', async () => {
+    const wrapper = mountCalendar(createMonthlyProfit(), new Error('down'))
+    wrapper.find<HTMLButtonElement>('.alert-warning button').element.focus()
+
+    await wrapper.setProps({ error: null })
+
+    expect(document.activeElement).toBe(wrapper.element)
+  })
+
+  it('keeps focus on the grid when a background refresh recovers', async () => {
+    const wrapper = mountCalendar(createMonthlyProfit(), new Error('down'))
+    const grid = wrapper.find<HTMLElement>('[role="application"]').element
+    grid.focus()
+
+    await wrapper.setProps({ error: null })
+
+    expect(document.activeElement).toBe(grid)
   })
 
   it("shows the legend's missing key only when a month is missing", () => {

@@ -76,23 +76,21 @@
       </template>
     </div>
     <div class="year-notes">
-      <p v-for="year in notedYears" :key="year.year">
-        {{ year.year }}: {{ [year.coverage, year.note].filter(Boolean).join(SEPARATOR) }}
-      </p>
+      <p v-for="note in notes" :key="note">{{ note }}</p>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref, useId } from 'vue'
-import { SEPARATOR, type ChangeStep } from '../../services/daily-profit-calendar'
+import type { ChangeStep } from '../../services/daily-profit-calendar'
 import {
   formatMonthCell,
   moveMonth,
   percentClass,
   type MonthlyProfit,
 } from '../../services/monthly-profit'
-import type { MonthlyYear } from '../../services/monthly-profit-years'
+import { yearNotes, type MonthlyYear } from '../../services/monthly-profit-years'
 import { MONTHS } from '../../utils/iso-dates'
 
 const props = defineProps<{
@@ -128,7 +126,7 @@ const STEP_CLASSES: Record<ChangeStep, string> = {
 const grid = ref<HTMLElement | null>(null)
 const selectedId = useId()
 
-const notedYears = computed(() => props.years.filter(year => year.coverage || year.note))
+const notes = computed(() => yearNotes(props.years))
 
 const placeOf = (row: number, index: number) => ({
   gridRow: row + FIRST_YEAR_ROW,

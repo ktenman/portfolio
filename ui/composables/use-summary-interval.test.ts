@@ -73,6 +73,20 @@ describe('useSummaryInterval', () => {
     expect([restored, spoken]).toEqual(['monthly', []])
   })
 
+  it('returns a stored Monthly to Daily with one toast when its first load fails', async () => {
+    localStorage.setItem(KEY, 'monthly')
+    const { interval, source } = setup()
+
+    source.error.value = new Error('down')
+    await nextTick()
+
+    expect([interval.value, localStorage.getItem(KEY), toastsShown()]).toEqual([
+      'daily',
+      'daily',
+      [[FAILED, 'error']],
+    ])
+  })
+
   it('switches to cached months at once and announces the span', async () => {
     const { view, choose, spoken } = setup(createMonthlyProfit())
 
@@ -189,10 +203,11 @@ describe('useSummaryInterval', () => {
     const { choose, spoken } = setup(createMonthlyProfit())
 
     choose('monthly')
+    await nextTick()
     choose('monthly')
     await nextTick()
 
-    expect(spoken).toHaveLength(1)
+    expect(spoken).toEqual(['Monthly profit Jun – Dec 2025'])
   })
 
   it('keeps Monthly when pressed while the previous failure is still reported', async () => {

@@ -31,6 +31,20 @@ describe('MonthlyProfitCompact', () => {
     ])
   })
 
+  it('shows partial-year coverage under the dots without repeating it to screen readers', () => {
+    const wrapper = mountCompact()
+
+    expect([
+      wrapper.findAll('.year-notes p').map(note => note.text()),
+      wrapper.find('.year-notes').attributes('aria-hidden'),
+    ]).toEqual([['2025: from 27 Jun'], 'true'])
+  })
+
+  it('tells screen readers the best month is ranked by euro profit', () =>
+    expect(mountCompact().find('.compact-extreme .compact-label').text()).toBe(
+      'Best month by euro profit · Nov 2025'
+    ))
+
   it('paints a dot per month in its step and keeps empty slots in their columns', () => {
     const wrapper = mountCompact()
 

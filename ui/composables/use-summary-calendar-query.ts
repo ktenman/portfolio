@@ -71,6 +71,7 @@ export function useSummaryCalendarQuery({
     isLoading: isLoadingCalendarHistory,
     error: calendarHistoryError,
     errorUpdateCount: calendarHistoryFailures,
+    isFetching: isFetchingHistory,
     refetch: retryHistory,
   } = useQuery({
     queryKey: ['portfolio-summary', 'daily-calendar-history', platformsKey],
@@ -134,6 +135,7 @@ export function useSummaryCalendarQuery({
     calendarError,
     monthlyRows,
     historyError: calendarHistoryError,
+    isFetchingHistory,
     retryHistory,
   }
 }

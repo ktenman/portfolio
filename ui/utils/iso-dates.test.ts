@@ -163,13 +163,16 @@ describe('month helpers', () => {
       formatMonthSpan('2025-12', '2025-12'),
     ]).toEqual(['Jan 2020 – Oct 2026', 'Jun – Dec 2025', 'Dec 2025']))
 
-  it('formats months identically in a time zone behind UTC', () => {
+  it('formats months identically in a time zone behind UTC', async () => {
     vi.stubEnv('TZ', 'America/Los_Angeles')
+    vi.resetModules()
+    const months = await import('./iso-dates')
+
     expect([
-      addMonths('2025-12', 1),
-      lastDayOfMonth('2025-07'),
-      formatMonth('2025-07'),
-      formatFullMonth('2025-07'),
+      months.addMonths('2025-12', 1),
+      months.lastDayOfMonth('2025-07'),
+      months.formatMonth('2025-07'),
+      months.formatFullMonth('2025-07'),
     ]).toEqual(['2026-01', '2025-07-31', 'Jul 2025', 'July 2025'])
   })
 })

@@ -22,6 +22,9 @@
           <span class="dot-total" :class="percentClass(year.percent)">{{ year.text }}</span>
         </template>
       </div>
+      <div v-if="notes.length" class="year-notes" aria-hidden="true">
+        <p v-for="note in notes" :key="note">{{ note }}</p>
+      </div>
       <span v-for="year in years" :key="year.year" class="sr-only">{{ year.name }}</span>
     </div>
     <div class="compact-row">
@@ -46,7 +49,12 @@
     </div>
     <div v-for="extreme in extremes" :key="extreme.label" class="compact-row compact-extreme">
       <div>
-        <p class="compact-label">{{ extreme.label }} · {{ extreme.month.label }}</p>
+        <p class="compact-label">
+          {{ extreme.label }}
+          <span class="sr-only">by euro profit</span>
+          ·
+          {{ extreme.month.label }}
+        </p>
         <p class="compact-sub">{{ extreme.month.closing }}</p>
       </div>
       <div class="compact-change">
@@ -71,7 +79,7 @@ import {
   percentClass,
   type MonthlyProfit,
 } from '../../services/monthly-profit'
-import type { MonthlyYear } from '../../services/monthly-profit-years'
+import { yearNotes, type MonthlyYear } from '../../services/monthly-profit-years'
 import { formatCurrencyChange, getGainLossClass, splitCents } from '../../utils/formatters'
 import { MONTHS } from '../../utils/iso-dates'
 import DailyProfitCell from './daily-profit-cell.vue'
@@ -79,6 +87,8 @@ import DailyProfitCell from './daily-profit-cell.vue'
 const props = defineProps<{ model: MonthlyProfit; years: MonthlyYear[] }>()
 
 const LETTERS = MONTHS.map(month => month[0])
+
+const notes = computed(() => yearNotes(props.years))
 
 const average = computed(() =>
   props.model.averageMonth === null
@@ -133,5 +143,17 @@ const extremes = computed(() =>
   justify-self: end;
   padding-left: 8px;
   white-space: nowrap;
+}
+
+.year-notes {
+  margin-top: 10px;
+  font-size: var(--text-label);
+  line-height: 1.4;
+  color: var(--color-ink-soft);
+  text-align: center;
+}
+
+.year-notes p {
+  margin: 0;
 }
 </style>

@@ -1,9 +1,16 @@
 <template>
-  <div v-if="model && month" class="monthly-profit-calendar card-shell p-0 md:p-6">
+  <div
+    v-if="model && month"
+    ref="card"
+    class="monthly-profit-calendar card-shell p-0 outline-none md:p-6"
+    tabindex="-1"
+  >
     <alert-message v-if="error" variant="warning" class="m-3.5 md:mx-0 md:mt-0">
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div ref="notice" class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span>Could not refresh the monthly history. Showing data as of {{ asOf }}.</span>
-        <app-button size="sm" @click="emit('retry')">Try again</app-button>
+        <app-button size="sm" @click="emit('retry')">
+          {{ refreshing ? 'Retrying…' : 'Try again' }}
+        </app-button>
       </div>
     </alert-message>
     <div class="calendar-body hidden md:flex">
@@ -36,7 +43,9 @@
     <monthly-profit-compact class="md:hidden" :model="model" :years="years" />
     <p class="sr-only" role="status">{{ announcement }}</p>
   </div>
-  <alert-message v-else-if="model === null" variant="info">{{ NOT_ENOUGH_HISTORY }}</alert-message>
+  <alert-message v-else-if="model === null" variant="info" role="none">
+    {{ NOT_ENOUGH_HISTORY }}
+  </alert-message>
   <div v-else class="monthly-profit-calendar card-shell p-0 md:p-6" aria-hidden="true">
     <div class="calendar-body hidden md:flex">
       <div class="calendar-main skeleton min-h-75"></div>
@@ -54,7 +63,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, toRef } from 'vue'
+import { computed, ref, toRef, watch } from 'vue'
 import { useMonthlyProfit } from '../../composables/use-monthly-profit'
 import {
   moveMonth,
@@ -72,7 +81,11 @@ import MonthlyProfitFigures from './monthly-profit-figures.vue'
 import MonthlyProfitGrid from './monthly-profit-grid.vue'
 import MonthlyProfitPanel from './monthly-profit-panel.vue'
 
-const props = defineProps<{ model: MonthlyProfit | null | undefined; error: Error | null }>()
+const props = defineProps<{
+  model: MonthlyProfit | null | undefined
+  error: Error | null
+  refreshing: boolean
+}>()
 
 const emit = defineEmits<{ retry: [] }>()
 
@@ -80,10 +93,20 @@ const { month, preview, previewKey, announcement, select } = useMonthlyProfit(
   toRef(() => props.model)
 )
 
+const card = ref<HTMLElement | null>(null)
+const notice = ref<HTMLElement | null>(null)
+
 const years = computed(() => (props.model ? monthlyYears(props.model) : []))
 
 const asOf = computed(() =>
   props.model ? formatFullDate(props.model.months[props.model.months.length - 1].row.date) : ''
+)
+
+watch(
+  () => props.error,
+  error => {
+    if (!error && notice.value?.contains(document.activeElement)) card.value?.focus()
+  }
 )
 </script>
 

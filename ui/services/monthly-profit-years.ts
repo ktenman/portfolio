@@ -1,6 +1,6 @@
 import { formatCurrencyChange } from '../utils/formatters'
 import { addMonths, formatFullMonth } from '../utils/iso-dates'
-import { roundToCents } from './daily-profit-calendar'
+import { roundToCents, SEPARATOR } from './daily-profit-calendar'
 import {
   coverageOf,
   formatMonthChange,
@@ -98,3 +98,8 @@ export const monthlyYears = (model: MonthlyProfit): MonthlyYear[] => {
 
 export const hasMissingMonth = (years: MonthlyYear[]): boolean =>
   years.some(({ slots }) => slots.some(slot => slot?.kind === 'missing'))
+
+export const yearNotes = (years: MonthlyYear[]): string[] =>
+  years.flatMap(({ year, coverage, note }) =>
+    coverage || note ? [`${year}: ${[coverage, note].filter(Boolean).join(SEPARATOR)}`] : []
+  )

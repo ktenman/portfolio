@@ -87,6 +87,7 @@
           :key="selectedPlatforms.join()"
           :model="monthly"
           :error="historyError"
+          :refreshing="isFetchingHistory"
           class="mb-2 md:mb-10"
           @retry="retryHistory"
         />
@@ -99,10 +100,11 @@
           :rows="dailyCalendarRows"
           :error="calendarError"
           :history="calendarHistory"
+          :inert="view === 'pending'"
           class="mb-2 md:mb-10"
           @load-history="loadCalendarHistory"
         />
-        <daily-summary-table :summaries="reversedSummaries" />
+        <daily-summary-table :summaries="reversedSummaries" :inert="view === 'pending'" />
         <loading-veil v-if="view === 'pending'" delayed message="Loading months" />
       </div>
 
@@ -209,6 +211,7 @@ const {
   calendarError,
   monthlyRows,
   historyError,
+  isFetchingHistory,
   retryHistory,
   recalculationMessage,
   recalculate,
