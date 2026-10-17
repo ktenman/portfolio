@@ -19,8 +19,8 @@ import { percentOfPreviousValue, sortSummariesByDateAsc } from './summary-aggreg
 export const CHANGE_STEPS = [0.05, 0.3, 0.75, 1.5]
 export const FLAT_HINT = `under ±${CHANGE_STEPS[0]}%`
 
-const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
-const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
+export const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
+export const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
 
 export type ChangeStep = (typeof GAIN_STEPS)[number] | (typeof LOSS_STEPS)[number]
 
@@ -81,11 +81,11 @@ interface RowChange {
 const PERIOD_MONTHS = 6
 export const CALENDAR_RANGE = TimeRange.SIX_MONTHS
 const MONTH_NAME_COLUMNS = 3
-const SEPARATOR = ' · '
+export const SEPARATOR = ' · '
 const ORDINAL_RULES = new Intl.PluralRules('en-US', { type: 'ordinal' })
 const ORDINAL_SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', other: 'th' }
 
-const roundToCents = (value: number): number => Number(value.toFixed(2)) || 0
+export const roundToCents = (value: number): number => Number(value.toFixed(2)) || 0
 
 const periodRows = (summaries: PortfolioSummaryDto[], lastDay?: string): PortfolioSummaryDto[] => {
   const sorted = sortSummariesByDateAsc(summaries).filter(row => !lastDay || row.date <= lastDay)
@@ -121,16 +121,18 @@ const stepOf = (change: number, percent: number | null): ChangeStep => {
 
 const ordinal = (rank: number): string => `${rank}${ORDINAL_SUFFIXES[ORDINAL_RULES.select(rank)]}`
 
-const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string => {
-  const { change } = rowChange
-  if (!isSingle(rowChange) || change === 0) return ''
+export const rankText = (change: number, changes: number[], unit: string): string => {
+  if (change === 0) return ''
   const side = change > 0 ? 'Best' : 'Worst'
-  const ahead = singleChanges.filter(other => (change > 0 ? other > change : other < change)).length
+  const ahead = changes.filter(other => (change > 0 ? other > change : other < change)).length
   const place = ahead ? `${ordinal(ahead + 1)} ${side.toLowerCase()}` : side
-  return `${place} of ${singleChanges.length} ${unit}${singleChanges.length === 1 ? '' : 's'}`
+  return `${place} of ${changes.length} ${unit}${changes.length === 1 ? '' : 's'}`
 }
 
-const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) => {
+const rankOf = (rowChange: RowChange, singleChanges: number[], unit: string): string =>
+  isSingle(rowChange) ? rankText(rowChange.change, singleChanges, unit) : ''
+
+export const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) => {
   const verb = isOpen ? 'Now at' : 'Closed at'
   const value = formatCurrencyWithSymbol(row.totalValue)
   const closing = `${verb} ${value}`
@@ -139,7 +141,7 @@ const closingTexts = (row: PortfolioSummaryDto, rank: string, isOpen: boolean) =
   return { closing, detail: `${lead}${SEPARATOR}XIRR ${xirr}` }
 }
 
-const gapText = (first: string, last: string): string => {
+export const gapText = (first: string, last: string): string => {
   if (first === last) return formatDayMonth(last)
   const sameMonth = first.slice(0, 7) === last.slice(0, 7)
   return `${sameMonth ? Number(first.slice(8)) : formatDayMonth(first)} to ${formatDayMonth(last)}`
@@ -227,10 +229,10 @@ const gridOf = (days: CalendarDay[]) => {
 const countOf = (counted: CountedDay[], side: 'gain' | 'loss' | 'flat'): number =>
   counted.filter(day => day.step.startsWith(side)).length
 
-const extremeOf = (singles: CountedDay[], sign: 1 | -1): CountedDay | null =>
-  singles.reduce<CountedDay | null>((extreme, day) => {
-    const amount = day.change * sign
-    return amount > 0 && amount >= (extreme?.change ?? 0) * sign ? day : extreme
+export const extremeOf = <T extends { change: number }>(items: T[], sign: 1 | -1): T | null =>
+  items.reduce<T | null>((extreme, item) => {
+    const amount = item.change * sign
+    return amount > 0 && amount >= (extreme?.change ?? 0) * sign ? item : extreme
   }, null)
 
 const figuresOf = (changes: RowChange[], counted: CountedDay[]) => {
