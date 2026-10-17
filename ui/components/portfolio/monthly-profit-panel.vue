@@ -73,6 +73,7 @@ const go = (target: string | null) => {
 
 .month-label {
   margin: 0;
+  padding-right: calc(4rem - 8px);
   font-size: var(--text-label);
   font-weight: 500;
   line-height: 1.35rem;
@@ -126,6 +127,10 @@ const go = (target: string | null) => {
 }
 
 @media (max-width: 768px) {
+  .month-label {
+    padding-right: calc(5.5rem - 14px);
+  }
+
   .month-buttons {
     top: calc((1.35rem - 2.75rem) / 2);
     right: -14px;

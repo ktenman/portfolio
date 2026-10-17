@@ -26,6 +26,7 @@ const LONG_HISTORY_TARGETS: Record<string, number> = { '2009-03': 150, '2009-04'
 const LAYOUT_VIEWPORTS = [
   [1440, 900],
   [1280, 800],
+  [1180, 820],
   [1100, 800],
   [1024, 768],
   [900, 1024],
@@ -116,6 +117,11 @@ const HISTORIES = [
   { name: 'one year', today: FIXTURE_TODAY },
   { name: 'seven years', today: SYNTHETIC_TODAY, stub: stubHistory(SEVEN_YEARS) },
   { name: 'long history', today: SYNTHETIC_TODAY, stub: stubHistory(LONG_HISTORY) },
+  {
+    name: 'open month after a gap',
+    today: SYNTHETIC_TODAY,
+    stub: stubHistory(SEVEN_YEARS.filter(row => row.date !== '2026-09-30')),
+  },
 ]
 
 const calendar = (page: Page) => page.locator('.monthly-profit-calendar')
@@ -183,7 +189,24 @@ const layoutProblems = (page: Page, viewport: { width: number; height: number })
             `Interval segments span ${segments.map(({ left, right }) => `${left}–${right}`).join(' and ')} over a ${card.left}–${card.right} card`,
           ]
         : []
-      return [...sideways, ...clipped, ...short, ...split]
+      const overlaps = (a: DOMRect, b: DOMRect) =>
+        a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+      const crowded = Array.from(document.querySelectorAll('.month-panel'))
+        .filter(panel => panel.getClientRects().length > 0)
+        .flatMap(panel => {
+          const label = panel.querySelector('.month-label')!
+          const range = document.createRange()
+          range.selectNodeContents(label)
+          const arrows = Array.from(panel.querySelectorAll('.month-buttons button'), arrow =>
+            arrow.getBoundingClientRect()
+          )
+          return Array.from(range.getClientRects()).some(line =>
+            arrows.some(arrow => overlaps(line, arrow))
+          )
+            ? [`${label.textContent} runs under the month arrows`]
+            : []
+        })
+      return [...sideways, ...clipped, ...short, ...split, ...crowded]
     },
     {
       touch: TOUCH_PX,
