@@ -19,8 +19,8 @@ import { percentOfPreviousValue, sortSummariesByDateAsc } from './summary-aggreg
 export const CHANGE_STEPS = [0.05, 0.3, 0.75, 1.5]
 export const FLAT_HINT = `under ±${CHANGE_STEPS[0]}%`
 
-export const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
-export const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
+const GAIN_STEPS = ['flat', 'gain-1', 'gain-2', 'gain-3', 'gain-4'] as const
+const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
 
 export type ChangeStep = (typeof GAIN_STEPS)[number] | (typeof LOSS_STEPS)[number]
 
@@ -112,11 +112,20 @@ const rowChanges = (rows: PortfolioSummaryDto[]): RowChange[] =>
 
 const isSingle = ({ covered }: RowChange): boolean => covered === 1
 
+export const stepFor = (
+  side: number,
+  percent: number,
+  steps: number[],
+  decimals: number
+): ChangeStep => {
+  const printed = Number(Math.abs(percent).toFixed(decimals))
+  const reached = steps.filter(step => printed >= step).length
+  return (side > 0 ? GAIN_STEPS : LOSS_STEPS)[reached]
+}
+
 const stepOf = (change: number, percent: number | null): ChangeStep => {
   if (percent === null) return change === 0 ? 'flat' : 'gain-1'
-  const printed = Number(Math.abs(percent).toFixed(2))
-  const reached = CHANGE_STEPS.filter(step => printed >= step).length
-  return (change > 0 ? GAIN_STEPS : LOSS_STEPS)[reached]
+  return stepFor(change, percent, CHANGE_STEPS, 2)
 }
 
 const ordinal = (rank: number): string => `${rank}${ORDINAL_SUFFIXES[ORDINAL_RULES.select(rank)]}`

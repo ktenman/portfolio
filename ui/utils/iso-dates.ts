@@ -15,6 +15,12 @@ export const MONTHS = [
   'Dec',
 ]
 
+const FULL_MONTH = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
 const toIsoDate = (utcMs: number): string => new Date(utcMs).toISOString().slice(0, 10)
 
 export const addDays = (date: string, days: number): string =>
@@ -62,8 +68,7 @@ export const formatDayRange = (first: string, last: string): string => {
 export const formatMonth = (month: string): string =>
   `${monthName(month)} ${new Date(month).getUTCFullYear()}`
 
-export const formatFullMonth = (month: string): string =>
-  new Date(month).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+export const formatFullMonth = (month: string): string => FULL_MONTH.format(new Date(month))
 
 export const formatMonthSpan = (first: string, last: string): string => {
   if (first === last) return formatMonth(last)

@@ -97,8 +97,11 @@ const signFor = (value: number): string => (value < 0 ? '−' : '')
 export const formatSignedCurrency = (value: number, currency: string | undefined): string =>
   `${signFor(value)}${formatCurrencyWithSign(value, currency)}`
 
+export const formatSignedNumber = (value: number, decimals: number): string =>
+  `${signFor(value)}${Math.abs(value).toFixed(decimals)}`
+
 export const formatSignedPercent = (value: number, decimals: number = 2): string =>
-  `${signFor(value)}${Math.abs(value).toFixed(decimals)}%`
+  `${formatSignedNumber(value, decimals)}%`
 
 const plusFor = (value: number): string => (value > 0 ? '+' : '')
 

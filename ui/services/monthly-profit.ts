@@ -2,6 +2,7 @@ import type { PortfolioSummaryDto } from '../models/generated/domain-models'
 import {
   formatCurrencyChange,
   formatPercentChange,
+  formatSignedNumber,
   formatSignedPercent,
   getGainLossClass,
 } from '../utils/formatters'
@@ -19,12 +20,11 @@ import {
   closingTexts,
   countOf,
   extremeOf,
-  GAIN_STEPS,
   gapText,
-  LOSS_STEPS,
   rankText,
   roundToCents,
   SEPARATOR,
+  stepFor,
   type ChangeStep,
 } from './daily-profit-calendar'
 import { mergeSummariesByDate } from './summary-aggregator'
@@ -110,13 +110,10 @@ const compoundFactor = (chain: PortfolioSummaryDto[]): number | null =>
     return product === null || factor === null ? null : product * factor
   }, 1)
 
-const sideOf = (value: number) => (value > 0 ? GAIN_STEPS : LOSS_STEPS)
-
 export const monthStepOf = (change: number, percent: number | null): ChangeStep => {
-  if (percent === null) return change === 0 ? 'flat' : sideOf(change)[1]
-  const rounded = Number(Math.abs(percent).toFixed(1))
-  const reached = MONTH_STEPS.filter(step => rounded >= step).length
-  return sideOf(percent)[reached]
+  if (percent !== null) return stepFor(percent, percent, MONTH_STEPS, 1)
+  if (change === 0) return 'flat'
+  return change > 0 ? 'gain-1' : 'loss-1'
 }
 
 const openingText = (date: string, key: string): string =>
@@ -262,11 +259,16 @@ export const extremeMonths = ({ best, worst }: MonthlyProfit): ExtremeMonth[] =>
     { label: 'Worst month', variant: 'loss-4' as const, month: worst },
   ].flatMap(({ label, variant, month }) => (month ? [{ label, variant, month }] : []))
 
+const printed = (percent: number): number => Number(percent.toFixed(1))
+
 export const formatMonthCell = (percent: number | null): string => {
   if (percent === null) return '—'
-  const rounded = Number(percent.toFixed(1)) || 0
-  return formatSignedPercent(rounded, Math.abs(rounded) >= 100 ? 0 : 1).replace('%', '')
+  const rounded = printed(percent)
+  return formatSignedNumber(rounded, Math.abs(rounded) >= 100 ? 0 : 1)
 }
 
+export const formatMonthPercent = (percent: number): string =>
+  formatSignedPercent(printed(percent), 1)
+
 export const percentClass = (percent: number | null): string =>
-  getGainLossClass(percent === null ? null : Number(percent.toFixed(1)))
+  getGainLossClass(percent === null ? null : printed(percent))

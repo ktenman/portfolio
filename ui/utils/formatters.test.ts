@@ -4,6 +4,7 @@ import {
   formatCurrency,
   formatCurrencyWithSign,
   formatSignedCurrency,
+  formatSignedNumber,
   formatSignedPercent,
   formatCurrencyChange,
   formatPercentChange,
@@ -299,6 +300,9 @@ describe('formatPercentChange', () => {
 describe('percent decimals', () => {
   it('formats a signed percent with one decimal', () =>
     expect([formatSignedPercent(5.43, 1), formatSignedPercent(-3, 1)]).toEqual(['5.4%', '−3.0%']))
+
+  it('formats a signed number without the percent sign', () =>
+    expect([formatSignedNumber(5.43, 1), formatSignedNumber(-150, 0)]).toEqual(['5.4', '−150']))
 
   it('formats a percent change with one decimal and normalises negative zero', () =>
     expect([

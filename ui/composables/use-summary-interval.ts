@@ -53,11 +53,14 @@ export const useSummaryInterval = (
     if (next === 'monthly' && model.value !== undefined) announce(model.value)
   }
 
-  watch(model, months => {
-    if (!isPending.value || months === undefined) return
-    isPending.value = false
-    announce(months)
-  })
+  watch(
+    () => (isPending.value ? model.value : undefined),
+    months => {
+      if (months === undefined) return
+      isPending.value = false
+      announce(months)
+    }
+  )
 
   watch(platforms, () => {
     isPending.value = false

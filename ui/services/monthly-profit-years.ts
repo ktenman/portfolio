@@ -1,7 +1,12 @@
-import { formatCurrencyChange, formatPercentChange, formatSignedPercent } from '../utils/formatters'
+import { formatCurrencyChange, formatPercentChange } from '../utils/formatters'
 import { addMonths, formatDayMonth, formatFullMonth } from '../utils/iso-dates'
 import { roundToCents } from './daily-profit-calendar'
-import { monthOn, type MonthlyProfit, type ObservedMonth } from './monthly-profit'
+import {
+  formatMonthPercent,
+  monthOn,
+  type MonthlyProfit,
+  type ObservedMonth,
+} from './monthly-profit'
 
 export interface MissingMonth {
   kind: 'missing'
@@ -14,7 +19,6 @@ export type MonthSlot = ObservedMonth | MissingMonth | null
 export interface MonthlyYear {
   year: string
   slots: MonthSlot[]
-  change: number | null
   percent: number | null
   text: string
   coverage: string
@@ -46,7 +50,6 @@ const withoutResult = (
 ): MonthlyYear => ({
   year,
   slots,
-  change: null,
   percent: null,
   text: '—',
   coverage: '',
@@ -80,9 +83,8 @@ const resultOf = (year: string, slots: MonthSlot[], months: ObservedMonth[]): Mo
   return {
     year,
     slots,
-    change,
     percent,
-    text: percent === null ? '—' : formatSignedPercent(Number(percent.toFixed(1)), 1),
+    text: percent === null ? '—' : formatMonthPercent(percent),
     coverage,
     note: percent === null ? 'Percentage unavailable' : '',
     name: [

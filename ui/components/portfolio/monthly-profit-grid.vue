@@ -37,13 +37,12 @@
         <template v-for="(slot, index) in year.slots" :key="index">
           <span
             v-if="slot?.kind === 'observed'"
-            class="month-cell rounded-control"
+            class="month-cell selectable rounded-control"
             :class="[
               STEP_CLASSES[slot.step],
               {
                 selected: slot.key === selected,
                 previewed: slot.key === previewed && slot.key !== selected,
-                selectable: true,
               },
             ]"
             :style="placeOf(row, index)"

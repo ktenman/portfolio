@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { nextTick, ref, watch, type WritableComputedRef } from 'vue'
+import { computed, nextTick, ref, watch, type WritableComputedRef } from 'vue'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { renderWithProviders } from '../tests/test-utils'
 import { SERIES_RESPONSE, TODAY_SUMMARY } from '../tests/visual/summary-fixture'
@@ -216,5 +216,30 @@ describe('useSummaryInterval', () => {
     await nextTick()
 
     expect([pressed, view.value, toasts.value]).toEqual(['pending', 'monthly', []])
+  })
+
+  it('leaves the monthly model unbuilt while Daily is shown', async () => {
+    const tick = ref(0)
+    let builds = 0
+    const model = computed(() => {
+      builds += 1
+      return tick.value >= 0 ? fixtureModel() : null
+    })
+    renderWithProviders({
+      setup() {
+        useSummaryInterval(useStoredInterval(), {
+          model,
+          status: ref<HistoryStatus>('success'),
+          platforms: ref(['LHV']),
+        })
+        return {}
+      },
+      template: '<div></div>',
+    })
+
+    tick.value += 1
+    await nextTick()
+
+    expect(builds).toBe(0)
   })
 })

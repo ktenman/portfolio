@@ -13,9 +13,9 @@ const yearsOf = (rows: PortfolioSummaryDto[], today = TODAY) =>
 describe('monthly years', () => {
   it('draws a missing month inside a year', () => {
     const years = yearsOf([row('2021-06-30', 0), row('2021-07-31', 100), row('2021-09-30', 200)])
-    expect([years[0].slots[7], years[0].change, years[0].text, hasMissingMonth(years)]).toEqual([
+    expect([years[0].slots[7], years[0].name, years[0].text, hasMissingMonth(years)]).toEqual([
       { kind: 'missing', key: '2021-08', name: 'August 2021, no daily summary' },
-      200,
+      '2021, from 30 Jun to 30 Sep, +€200.00, +0.2%',
       '0.2%',
       true,
     ])
@@ -57,9 +57,7 @@ describe('monthly years', () => {
 
   it('starts a year from a 31 December baseline', () => {
     const years = yearsOf([row('2024-12-31', 0), row('2025-01-31', 100)])
-    expect(years.map(year => [year.year, year.change, year.coverage])).toEqual([
-      ['2025', 100, 'to 31 Jan'],
-    ])
+    expect(years.map(year => year.name)).toEqual(['2025, to 31 Jan, +€100.00, +0.1%'])
   })
 
   it('compounds unrounded month factors', () => {

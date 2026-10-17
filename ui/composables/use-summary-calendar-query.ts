@@ -41,6 +41,7 @@ export function useSummaryCalendarQuery({
     queryFn: () => portfolioSummaryService.getSeries(CALENDAR_RANGE, activePlatforms.value),
     refetchInterval: calendarRefetchInterval,
     enabled: isAuthenticated,
+    shallow: true,
   })
 
   const calendarError = ref<string | null>(null)
@@ -73,7 +74,7 @@ export function useSummaryCalendarQuery({
     isFetching: isFetchingCalendarHistory,
     error: calendarHistoryError,
     errorUpdateCount: calendarHistoryFailures,
-    refetch: refetchCalendarHistory,
+    refetch: retryHistory,
   } = useQuery({
     queryKey: ['portfolio-summary', 'daily-calendar-history', platformsKey],
     queryFn: () => portfolioSummaryService.getSeries(TimeRange.MAX, activePlatforms.value),
@@ -82,6 +83,7 @@ export function useSummaryCalendarQuery({
     retry: 1,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    shallow: true,
   })
 
   watch(calendarHistoryFailures, () => {
@@ -120,10 +122,6 @@ export function useSummaryCalendarQuery({
     if (calendarHistoryRows.value) return 'success'
     return isFetchingCalendarHistory.value ? 'loading' : 'idle'
   })
-
-  const retryHistory = () => {
-    refetchCalendarHistory()
-  }
 
   watchEffect(() => {
     calendarRefetchInterval.value = lacksDayBeforeLatest(mergedCalendarRows.value)

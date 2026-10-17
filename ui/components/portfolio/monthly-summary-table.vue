@@ -22,7 +22,7 @@
         <span class="sr-only">percentage unavailable</span>
       </template>
       <span v-else class="change-percentage" :class="percentClass(item.monthPercent)">
-        ({{ formatSignedPercent(Number(item.monthPercent.toFixed(1)) || 0, 1) }})
+        ({{ formatMonthPercent(item.monthPercent) }})
       </span>
     </template>
   </data-table>
@@ -32,12 +32,8 @@
 import { computed } from 'vue'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { summaryValueColumns, totalValueColumn } from '../../config/table-columns'
-import { percentClass, type MonthlyProfit } from '../../services/monthly-profit'
-import {
-  formatCurrencyWithSymbol,
-  formatSignedPercent,
-  getGainLossClass,
-} from '../../utils/formatters'
+import { formatMonthPercent, percentClass, type MonthlyProfit } from '../../services/monthly-profit'
+import { formatCurrencyWithSymbol, getGainLossClass } from '../../utils/formatters'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 
 const props = defineProps<{ model: MonthlyProfit | undefined }>()

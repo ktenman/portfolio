@@ -292,7 +292,7 @@ const { view, announcement, choose } = useSummaryInterval(interval, {
 useInfiniteScroll(
   window,
   async () => {
-    if (isFetching.value || !hasMoreData?.value) return
+    if (isFetching.value) return
     await fetchSummaries()
   },
   { distance: 100, canLoadMore: () => !isMonthly.value && !!hasMoreData?.value }
