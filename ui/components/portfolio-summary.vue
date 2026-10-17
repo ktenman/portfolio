@@ -89,21 +89,7 @@
         @load-history="loadCalendarHistory"
       />
 
-      <data-table
-        :items="sortedItems"
-        :columns="summaryColumns"
-        :row-class="getSummaryRowClass"
-        :sortable="true"
-        :sort-state="sortState"
-        :on-sort="toggleSort"
-      >
-        <template #cell-totalProfitChange24h="{ value, item }">
-          <span v-if="value && Math.abs(value) > 0.01" :class="getGainLossClass(value)">
-            {{ format24hChange(item.totalProfitChange24h) }}
-            <span class="change-percentage">{{ format24hChangePercentage(item) }}</span>
-          </span>
-        </template>
-      </data-table>
+      <daily-summary-table :summaries="reversedSummaries" />
 
       <div v-if="isFetching" class="mt-4 text-center">
         <skeleton-loader type="text" :lines="2" />
@@ -125,7 +111,6 @@ import {
   type ChartBenchmark,
 } from '../composables/use-portfolio-chart'
 import { useConfirm } from '../composables/use-confirm'
-import { useSortableTable } from '../composables/use-sortable-table'
 import { usePlatformFilter } from '../composables/use-platform-filter'
 import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
@@ -137,7 +122,7 @@ import ChartRangeFilter from './portfolio/chart-range-filter.vue'
 import ChartModeToggle from './portfolio/chart-mode-toggle.vue'
 import RangeChangeHeader from './portfolio/range-change-header.vue'
 import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
-import DataTable, { type ColumnDefinition } from './shared/data-table.vue'
+import DailySummaryTable from './portfolio/daily-summary-table.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import LoadingVeil from './shared/loading-veil.vue'
@@ -145,18 +130,9 @@ import PlatformFilter from './shared/platform-filter.vue'
 import FilterToggle from './shared/filter-toggle.vue'
 import AlertMessage from './shared/alert-message.vue'
 import { transactionsService } from '../services/api'
-import { percentOfPreviousValue } from '../services/summary-aggregator'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
-import {
-  formatCurrencyWithSymbol,
-  formatDate,
-  formatPercentageFromDecimal,
-  formatSignedPercent,
-  getGainLossClass,
-  splitCents,
-} from '../utils/formatters'
-import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { formatCurrencyWithSymbol, formatDate, splitCents } from '../utils/formatters'
 
 const PortfolioChart = defineAsyncComponent({
   loader: () => import('./portfolio/portfolio-chart.vue'),
@@ -213,8 +189,6 @@ const {
   fetchSummaries,
   hasMoreData,
 } = usePortfolioSummaryQuery(selectedPlatforms, selectedRange)
-
-const { sortedItems, sortState, toggleSort } = useSortableTable(reversedSummaries, 'date', 'desc')
 
 const { processedChartData } = usePortfolioChart(chartSummaries)
 
@@ -281,77 +255,6 @@ const staleAsOf = computed(() => {
   return formatDate(date)
 })
 
-const format24hChange = (value: number | null) => {
-  if (value === null || value === 0 || Math.abs(value) <= 0.01) {
-    return ''
-  }
-  return formatCurrencyWithSymbol(value)
-}
-
-const format24hChangePercentage = (summary: PortfolioSummaryDto) => {
-  const change = summary.totalProfitChange24h
-  if (change === null || Math.abs(change) <= 0.01) {
-    return ''
-  }
-  const percent = percentOfPreviousValue(summary.totalValue, change)
-  if (percent === null) {
-    return ''
-  }
-  return `(${formatSignedPercent(percent)})`
-}
-
-const summaryColumns: ColumnDefinition[] = [
-  { key: 'date', label: 'Date', formatter: formatDate },
-  {
-    key: 'xirrAnnualReturn',
-    label: 'XIRR Annual Return',
-    formatter: formatPercentageFromDecimal,
-    class: 'text-right!',
-  },
-  {
-    key: 'earningsPerDay',
-    label: 'Earnings Per Day',
-    formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell! text-right!',
-    hideOnMobile: true,
-  },
-  {
-    key: 'earningsPerMonth',
-    label: 'Earnings Per Month',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-  {
-    key: 'unrealizedProfit',
-    label: 'Unrealized Profit',
-    formatter: formatCurrencyWithSymbol,
-    class: 'hidden! md:table-cell! text-right!',
-    hideOnMobile: true,
-  },
-  {
-    key: 'totalProfit',
-    label: 'Total Profit',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-  {
-    key: 'totalProfitChange24h',
-    label: '24h Change',
-    formatter: format24hChange,
-    class: 'text-right!',
-  },
-  {
-    key: 'totalValue',
-    label: 'Total Value',
-    formatter: formatCurrencyWithSymbol,
-    class: 'text-right!',
-  },
-]
-
-const getSummaryRowClass = (summary: any, index: number) => ({
-  'font-weight-bold': index === 0 && summary.date === today(),
-})
-
 useInfiniteScroll(
   window,
   async () => {
@@ -409,20 +312,5 @@ const handleRecalculate = async () => {
 .headline-asof {
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
-}
-
-.change-percentage {
-  margin-left: 0.25rem;
-  font-size: 0.85em;
-}
-
-@media (max-width: 575px) {
-  :deep(.table) {
-    font-size: 12px;
-  }
-
-  :deep(.hide-on-mobile) {
-    display: none;
-  }
 }
 </style>
