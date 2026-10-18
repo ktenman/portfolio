@@ -121,7 +121,7 @@ class RadioArchiveService(
       name = directory.fileName.toString(),
       programme = status.title(),
       status = status,
-      sizeBytes = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 },
+      sizeBytes = sizeOf(directory, status),
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
@@ -133,6 +133,11 @@ class RadioArchiveService(
       format = formatOf(directory, status),
     )
   }
+
+  private fun sizeOf(
+    directory: Path,
+    status: RecordingStatus,
+  ): Long = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 }
 
   private fun formatOf(
     directory: Path,
