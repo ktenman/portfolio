@@ -47,6 +47,7 @@ watch(
   () => route.path,
   async () => {
     await nextTick()
+    await document.fonts?.ready
     list.value
       ?.querySelector('.nav-link.active')
       ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
