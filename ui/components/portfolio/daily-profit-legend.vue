@@ -17,14 +17,18 @@
       <daily-profit-cell variant="missing" class="legend-key" />
       <span class="legend-text">No daily summary</span>
     </span>
+    <slot />
   </div>
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { CHANGE_STEPS } from '../../services/daily-profit-calendar'
 import DailyProfitCell from './daily-profit-cell.vue'
 
-defineProps<{ missing: boolean }>()
+const props = withDefaults(defineProps<{ missing: boolean; steps?: number[] }>(), {
+  steps: () => CHANGE_STEPS,
+})
 
 const SWATCHES = [
   'rounded-l-control bg-loss',
@@ -39,15 +43,17 @@ const SWATCHES = [
 ]
 const FIRST_COLUMN = 2
 const FLAT_COLUMN = 6
-const [FLAT, ...UPPER] = CHANGE_STEPS.map(String)
-const TICKS = [
-  ...[...UPPER].reverse().map((text, index) => ({
-    text,
-    column: `${FIRST_COLUMN + index} / span 2`,
-  })),
-  { text: `±${FLAT}%`, column: `${FLAT_COLUMN}` },
-  ...UPPER.map((text, index) => ({ text, column: `${FLAT_COLUMN + 1 + index} / span 2` })),
-]
+const TICKS = computed(() => {
+  const [flat, ...upper] = props.steps.map(String)
+  return [
+    ...[...upper].reverse().map((text, index) => ({
+      text,
+      column: `${FIRST_COLUMN + index} / span 2`,
+    })),
+    { text: `±${flat}%`, column: `${FLAT_COLUMN}` },
+    ...upper.map((text, index) => ({ text, column: `${FLAT_COLUMN + 1 + index} / span 2` })),
+  ]
+})
 </script>
 
 <style scoped>

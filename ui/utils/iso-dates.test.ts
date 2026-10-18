@@ -1,11 +1,16 @@
 import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest'
 import {
   addDays,
+  addMonths,
   daysBetween,
   formatDayMonth,
   formatDayRange,
   formatFullDate,
+  formatFullMonth,
+  formatMonth,
+  formatMonthSpan,
   formatWeekdayDate,
+  lastDayOfMonth,
   mondayIndex,
   monthName,
   monthsBefore,
@@ -107,4 +112,45 @@ describe('in a time zone west of UTC', () => {
       monthsBefore('2026-01-01', 6),
     ]).toEqual([31, 'Thu 1 Jan 2026', '1 Dec', 0, 'Dec', '2025-07-01'])
   })
+
+  it('formats months identically in a time zone behind UTC', async () => {
+    vi.resetModules()
+    const months = await import('./iso-dates')
+
+    expect([
+      months.addMonths('2025-12', 1),
+      months.lastDayOfMonth('2025-07'),
+      months.formatMonth('2025-07'),
+      months.formatFullMonth('2025-07'),
+    ]).toEqual(['2026-01', '2025-07-31', 'Jul 2025', 'July 2025'])
+  })
+})
+
+describe('month helpers', () => {
+  it('adds months across year boundaries', () =>
+    expect([addMonths('2025-12', 1), addMonths('2026-01', -13), addMonths('2025-06', 12)]).toEqual([
+      '2026-01',
+      '2024-12',
+      '2026-06',
+    ]))
+
+  it('finds the last day of a month including leap February', () =>
+    expect(['2024-02', '2025-02', '2025-12'].map(lastDayOfMonth)).toEqual([
+      '2024-02-29',
+      '2025-02-28',
+      '2025-12-31',
+    ]))
+
+  it('formats short and full month names', () =>
+    expect([formatMonth('2025-12'), formatFullMonth('2021-08')]).toEqual([
+      'Dec 2025',
+      'August 2021',
+    ]))
+
+  it('formats month spans', () =>
+    expect([
+      formatMonthSpan('2020-01', '2026-10'),
+      formatMonthSpan('2025-06', '2025-12'),
+      formatMonthSpan('2025-12', '2025-12'),
+    ]).toEqual(['Jan 2020 – Oct 2026', 'Jun – Dec 2025', 'Dec 2025']))
 })

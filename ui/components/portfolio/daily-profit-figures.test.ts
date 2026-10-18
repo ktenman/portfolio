@@ -14,7 +14,7 @@ const createWrapper = (rows = createCalendarRows()) =>
 const buttonTexts = (wrapper: ReturnType<typeof createWrapper>) =>
   wrapper
     .findAll('button')
-    .map(button => button.findAll('.extreme-content > span').map(span => span.text()))
+    .map(button => button.findAll('.extreme-label, .extreme-value > span').map(span => span.text()))
 
 describe('DailyProfitFigures', () => {
   it('should show the four figures of the period', () => {
@@ -51,12 +51,12 @@ describe('DailyProfitFigures', () => {
     ])
   })
 
-  it('should offer the best and the worst day with a swatch, the amount and the date', () => {
+  it('should offer the best and the worst day with a swatch, a label and the amount and date beneath', () => {
     const wrapper = createWrapper()
 
     expect(buttonTexts(wrapper)).toEqual([
-      ['', 'Best day', '+€700.00', '9 Dec'],
-      ['', 'Worst day', '−€600.00', '3 Dec'],
+      ['Best day', '+€700.00', '9 Dec'],
+      ['Worst day', '−€600.00', '3 Dec'],
     ])
     expect(wrapper.findAllComponents(DailyProfitCell).map(cell => cell.props('variant'))).toEqual([
       'gain-4',
@@ -91,13 +91,13 @@ describe('DailyProfitFigures', () => {
   it('should leave out the Worst day button when no single day has a loss', () => {
     const wrapper = createWrapper(createCalendarRows().slice(0, 2))
 
-    expect(buttonTexts(wrapper)).toEqual([['', 'Best day', '+€300.00', '2 Dec']])
+    expect(buttonTexts(wrapper)).toEqual([['Best day', '+€300.00', '2 Dec']])
   })
 
   it('should leave out the Best day button when no single day has a gain', () => {
     const wrapper = createWrapper(createCalendarRows().slice(1, 3))
 
-    expect(buttonTexts(wrapper)).toEqual([['', 'Worst day', '−€600.00', '3 Dec']])
+    expect(buttonTexts(wrapper)).toEqual([['Worst day', '−€600.00', '3 Dec']])
   })
 
   it('should leave out both buttons when the period has no single day', () => {

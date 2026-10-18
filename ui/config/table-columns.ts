@@ -1,5 +1,11 @@
 import type { ColumnDefinition } from '../components/shared/data-table.vue'
-import { formatCurrency, formatDate, formatQuantity } from '../utils/formatters'
+import {
+  formatCurrency,
+  formatCurrencyWithSymbol,
+  formatDate,
+  formatPercentageFromDecimal,
+  formatQuantity,
+} from '../utils/formatters'
 
 export const instrumentColumns: ColumnDefinition[] = [
   { key: 'instrument', label: 'Instrument', sortKey: 'name' },
@@ -40,3 +46,45 @@ export const transactionColumns: ColumnDefinition[] = [
     class: 'hidden! sm:table-cell! text-right!',
   },
 ]
+
+export const summaryValueColumns: ColumnDefinition[] = [
+  {
+    key: 'xirrAnnualReturn',
+    label: 'XIRR Annual Return',
+    formatter: formatPercentageFromDecimal,
+    class: 'text-right!',
+  },
+  {
+    key: 'earningsPerDay',
+    label: 'Earnings Per Day',
+    formatter: formatCurrencyWithSymbol,
+    class: 'hidden! md:table-cell! text-right!',
+    hideOnMobile: true,
+  },
+  {
+    key: 'earningsPerMonth',
+    label: 'Earnings Per Month',
+    formatter: formatCurrencyWithSymbol,
+    class: 'text-right!',
+  },
+  {
+    key: 'unrealizedProfit',
+    label: 'Unrealized Profit',
+    formatter: formatCurrencyWithSymbol,
+    class: 'hidden! md:table-cell! text-right!',
+    hideOnMobile: true,
+  },
+  {
+    key: 'totalProfit',
+    label: 'Total Profit',
+    formatter: formatCurrencyWithSymbol,
+    class: 'text-right!',
+  },
+]
+
+export const totalValueColumn: ColumnDefinition = {
+  key: 'totalValue',
+  label: 'Total Value',
+  formatter: formatCurrencyWithSymbol,
+  class: 'text-right!',
+}

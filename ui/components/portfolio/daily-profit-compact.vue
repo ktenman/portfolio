@@ -68,98 +68,14 @@ const extremes = computed(() =>
 )
 </script>
 
+<style scoped src="./profit-compact.css"></style>
+
 <style scoped>
 .compact-head {
   padding: 14px 14px 10px;
 }
 
-.compact-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  column-gap: 8px;
-}
-
 .compact-period {
   margin-inline: -14px;
-}
-
-.compact-heading {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.compact-counts {
-  font-size: var(--text-label);
-  color: var(--color-ink-soft);
-}
-
-.compact-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.compact-extreme {
-  padding-block: 12px;
-}
-
-.compact-flat {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.compact-label,
-.compact-sub {
-  margin: 0;
-}
-
-.compact-label {
-  font-size: var(--text-label);
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-ink-soft);
-}
-
-.compact-sub {
-  font-size: var(--text-2xs);
-  color: var(--color-ink-soft);
-}
-
-.compact-value,
-.compact-change {
-  white-space: nowrap;
-}
-
-.compact-value {
-  font-size: var(--text-base);
-  font-weight: 550;
-}
-
-.compact-change {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.compact-amount {
-  font-size: var(--text-heading);
-  font-weight: 550;
-  line-height: 1.2;
-}
-
-.compact-cents,
-.compact-percent {
-  font-size: var(--text-label);
-}
-
-.compact-cents {
-  font-weight: 500;
 }
 </style>
