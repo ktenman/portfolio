@@ -30,6 +30,9 @@ tuleva:
 kuku:
   url: http://localhost:${wiremock.server.port}
 
+radio:
+  recordings: ${java.io.tmpdir}/radio-it
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 

@@ -16,7 +16,6 @@ import org.springframework.http.HttpHeaders.CONTENT_RANGE
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.HttpHeaders.RANGE
 import org.springframework.http.MediaType.APPLICATION_JSON
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -27,7 +26,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get a
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put as mvcPut
 
 @IntegrationTest
-@TestPropertySource(properties = ["radio.recordings=\${java.io.tmpdir}/radio-controller-it"])
 class RadioControllerIT {
   @Resource
   private lateinit var mockMvc: MockMvc

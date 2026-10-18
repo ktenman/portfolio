@@ -26,7 +26,6 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType.APPLICATION_JSON
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -41,7 +40,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get a
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put as mvcPut
 
 @IntegrationTest
-@TestPropertySource(properties = ["radio.recordings=\${java.io.tmpdir}/radio-schedule-it"])
 class RadioScheduleJobIT {
   @Resource
   private lateinit var kukuScheduleClient: KukuScheduleClient
