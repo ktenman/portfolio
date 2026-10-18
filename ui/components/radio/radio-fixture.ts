@@ -79,6 +79,11 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     { start: 3400, end: 3837, title: 'President Ülle Madise', cut: false },
     { start: 3837, end: 4200, title: 'Pärast saadet', cut: true },
   ],
+  audible: [
+    { start: 761.5, end: 2120 },
+    { start: 2255, end: 3025 },
+    { start: 3137, end: 3837 },
+  ],
   ...overrides,
 })
 

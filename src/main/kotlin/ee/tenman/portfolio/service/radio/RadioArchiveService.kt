@@ -104,7 +104,17 @@ class RadioArchiveService(
       episodeBytes = size(directory.resolve(EPISODE)),
       cuts = cuts(edit, status.seconds),
       timeline = timeline(edit, status.seconds),
+      audible = audibleOf(directory, status, edit),
     )
+  }
+
+  private fun audibleOf(
+    directory: Path,
+    status: RecordingStatus,
+    edit: EditList?,
+  ): List<KeptSpan> {
+    val keep = edit?.keep ?: return emptyList()
+    return audible(coverage(directory, status.parts), keep.map { it.start to it.end }).map { KeptSpan(it.first, it.second) }
   }
 
   private fun cutsOf(directory: Path): List<Cut> = cuts(read(directory.resolve(EDIT_LIST)), readStatus(directory).seconds)

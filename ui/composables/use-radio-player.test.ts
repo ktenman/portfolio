@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { useRadioPlayer } from './use-radio-player'
 import { recording } from '../components/radio/radio-fixture'
 import { RecordingState } from '../models/generated/domain-models'
@@ -28,6 +29,7 @@ describe('useRadioPlayer', () => {
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     vi.spyOn(audio, 'pause').mockImplementation(() => {})
+    player.rate.value = 1
     player.attach(audio)
   })
 
@@ -99,6 +101,48 @@ describe('useRadioPlayer', () => {
     tick(2120.1)
     tick(2260.2)
     expect(audio.pause).toHaveBeenCalled()
+  })
+
+  it('should continue in the next part where the finished part ended', () => {
+    player.load(split())
+    Object.defineProperty(audio, 'duration', { value: 2010, configurable: true })
+    audio.dispatchEvent(new Event('ended'))
+    expect([audio.src.split('/').pop(), audio.currentTime]).toEqual(['raw-part-002.mp3', 10])
+  })
+
+  it('should show the player as stopped after switching version while playing', () => {
+    player.load(recording())
+    audio.dispatchEvent(new Event('play'))
+    player.load(recording(), 'episode')
+    expect(player.playing.value).toBe(false)
+  })
+
+  it('should keep the chosen speed when the source changes', async () => {
+    player.rate.value = 1.5
+    await nextTick()
+    player.load(recording())
+    expect(audio.defaultPlaybackRate).toBe(1.5)
+  })
+
+  it('should load a recording asked for before the audio element was attached', () => {
+    player.detach()
+    player.load(recording(), 'episode')
+    player.attach(audio)
+    expect(audio.src).toContain('episode.m4a')
+  })
+
+  it('should map the episode position over a gap between parts onto the recording', () => {
+    player.load(
+      recording({
+        audible: [
+          { start: 762, end: 1500 },
+          { start: 1530, end: 2120 },
+        ],
+      }),
+      'episode'
+    )
+    tick(800)
+    expect(player.recordingSeconds.value).toBe(1592)
   })
 
   it('should play the raw recording from a moment chosen in the episode version', () => {

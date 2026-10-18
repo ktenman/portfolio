@@ -15,7 +15,7 @@ class RadioRenderService {
     title: String,
     target: Path,
   ) {
-    val found = pieces(timeline, keep)
+    val found = pieces(timeline.spans, keep)
     val chapters = Files.createTempFile(target.parent, "chapters", ".txt")
     val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
     runCatching {

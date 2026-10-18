@@ -15,6 +15,7 @@ const current = ref(0)
 const playing = ref(false)
 const rate = ref(1)
 let loaded = ''
+let wanted: Version = 'raw'
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
 const parts = computed(() =>
@@ -24,10 +25,11 @@ const offset = computed(() => parts.value[part.value]?.offsetSeconds ?? 0)
 const seconds = computed(() =>
   version.value === 'raw' ? offset.value + current.value : current.value
 )
-const recordingSeconds = computed(() => {
-  const keep = recording.value?.editList?.keep ?? []
-  return version.value === 'raw' ? seconds.value : recordingTime(keep, seconds.value)
-})
+const recordingSeconds = computed(() =>
+  version.value === 'raw'
+    ? seconds.value
+    : recordingTime(recording.value?.audible ?? [], seconds.value)
+)
 const total = computed(() =>
   version.value === 'raw'
     ? (recording.value?.status.seconds ?? 0)
@@ -66,19 +68,26 @@ const seek = (to: number) => {
   current.value = audio.currentTime
 }
 
-const load = (target: RecordingSummary, wanted: Version = 'raw') => {
+const open = () => {
   const audio = element.value
-  if (!audio) return
+  const target = recording.value
+  if (!audio || !target) return
   const key = `${target.name}|${wanted}|${wanted === 'episode' ? target.editList?.renderedAt : ''}`
-  recording.value = target
   if (key === loaded) return
   loaded = key
   version.value = wanted
   current.value = 0
+  playing.value = false
   plan = null
   if (wanted === 'raw') return source(0)
   const edit = target.editList
   audio.src = `${url(target, 'episode.m4a')}?v=${encodeURIComponent(edit?.renderedAt ?? '')}`
+}
+
+const load = (target: RecordingSummary, version: Version = 'raw') => {
+  recording.value = target
+  wanted = version
+  open()
 }
 
 const play = () => element.value?.play()
@@ -120,18 +129,25 @@ const listeners: Record<string, () => void> = {
   play: () => (playing.value = true),
   pause: () => (playing.value = false),
   ended: () => {
-    if (version.value === 'raw' && part.value < parts.value.length - 1) {
-      source(part.value + 1)
+    const next = parts.value[part.value + 1]
+    if (version.value === 'raw' && next) {
+      seek(Math.max(offset.value + (element.value?.duration || 0), next.offsetSeconds))
       return play()
     }
     playing.value = false
   },
 }
 
+const speed = (audio: HTMLAudioElement, value: number) => {
+  audio.defaultPlaybackRate = value
+  audio.playbackRate = value
+}
+
 const attach = (audio: HTMLAudioElement) => {
   element.value = audio
   Object.entries(listeners).forEach(([name, listener]) => audio.addEventListener(name, listener))
-  audio.playbackRate = rate.value
+  speed(audio, rate.value)
+  open()
 }
 
 const detach = () => {
@@ -144,6 +160,7 @@ const detach = () => {
   }
   element.value = null
   loaded = ''
+  wanted = 'raw'
   recording.value = null
   version.value = 'raw'
   part.value = 0
@@ -153,7 +170,7 @@ const detach = () => {
 }
 
 watch(rate, value => {
-  if (element.value) element.value.playbackRate = value
+  if (element.value) speed(element.value, value)
 })
 
 export const useRadioPlayer = () => ({

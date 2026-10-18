@@ -256,6 +256,7 @@ export interface RecordingSummary {
     episodeBytes: number | null;
     cuts: Cut[];
     timeline: TimelineEntry[];
+    audible: KeptSpan[];
 }
 
 export interface TranscriptLine {
@@ -365,6 +366,11 @@ export interface TimelineEntry {
     cut: boolean;
 }
 
+export interface KeptSpan {
+    start: number;
+    end: number;
+}
+
 export interface TranscriptWord {
     start: number;
     end: number;
@@ -380,11 +386,6 @@ export interface RecordingPart {
     file: string;
     offsetSeconds: number;
     sha256: string | null;
-}
-
-export interface KeptSpan {
-    start: number;
-    end: number;
 }
 
 export interface Boundary {

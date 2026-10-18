@@ -107,6 +107,7 @@ data class RecordingSummary(
   val episodeBytes: Long?,
   val cuts: List<Cut>,
   val timeline: List<TimelineEntry>,
+  val audible: List<KeptSpan>,
 )
 
 data class TranscriptCheck(

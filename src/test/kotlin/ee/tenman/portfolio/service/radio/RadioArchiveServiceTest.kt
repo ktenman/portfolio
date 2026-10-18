@@ -222,14 +222,28 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should serve the kept audio without the gap between the parts`() {
+    val directory = Files.createDirectories(recordings.resolve("2026-10-17"))
+    writeRecording(
+      directory,
+      listOf(FixturePart("raw.mp3", 0.0, constant(10.0, 0)), FixturePart("raw-part-002.mp3", 15.0, constant(10.0, 0))),
+    )
+    edited(directory, listOf(KeptSpan(2.0, 22.0)))
+    expect(service.recordings().single().audible).toEqual(listOf(KeptSpan(2.0, 10.0), KeptSpan(15.0, 22.0)))
+  }
+
+  @Test
   fun `should find no review for an unknown recording`() {
     expect(service.review("2026-10-31", CutReview(emptyList()))).toEqual(null)
   }
 
-  private fun edited(directory: Path) {
+  private fun edited(
+    directory: Path,
+    keep: List<KeptSpan> = listOf(KeptSpan(761.5, 4200.0)),
+  ) {
     val edit =
       EditList(
-        keep = listOf(KeptSpan(761.5, 4200.0)),
+        keep = keep,
         durationSeconds = 3438.5,
         parts = listOf(RecordingPart("raw.mp3", 0.0)),
         boundaries = listOf(Boundary("show starts", 761.5, "digital silence", false)),

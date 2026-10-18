@@ -54,20 +54,20 @@ fun metadata(
 }
 
 fun pieces(
-  timeline: Timeline,
+  spans: List<Span>,
   keep: List<Pair<Double, Double>>,
 ): List<Piece> =
   keep.flatMap { (a, b) ->
-    timeline.spans.mapIndexedNotNull { index, span ->
+    spans.mapIndexedNotNull { index, span ->
       Piece(index, max(a, span.start), min(b, span.end), span.offset).takeIf { it.end - it.start >= 2 * FADE }
     }
   }
 
 fun audible(
-  timeline: Timeline,
+  spans: List<Span>,
   keep: List<Pair<Double, Double>>,
 ): List<Pair<Double, Double>> =
-  pieces(timeline, keep).fold(emptyList()) { merged, piece ->
+  pieces(spans, keep).fold(emptyList()) { merged, piece ->
     val last = merged.lastOrNull()
     val touching = last != null && abs(last.second - piece.start) < 1e-6
     if (touching) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
