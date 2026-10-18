@@ -30,10 +30,15 @@ class RadioEpisodeService(
     return runCatching { render(directory) }.getOrElse { fail(directory, it) }
   }
 
-  private fun pending(directory: Path): Boolean =
-    listOf(EPISODE, FAILED).none { Files.exists(directory.resolve(it)) } &&
-      listOf(STATUS, TRANSCRIPT_FILE).all { Files.exists(directory.resolve(it)) } &&
-      readStatus(directory).state in READY
+  private fun pending(directory: Path): Boolean {
+    val ready =
+      listOf(EPISODE, FAILED).none { Files.exists(directory.resolve(it)) } &&
+        listOf(STATUS, TRANSCRIPT_FILE).all { Files.exists(directory.resolve(it)) } &&
+        readStatus(directory).state in READY
+    if (!ready || Files.isWritable(directory)) return ready
+    log.warn("Cannot write the radio episode into $directory")
+    return false
+  }
 
   private fun render(directory: Path): Path {
     val status = readStatus(directory)
@@ -49,7 +54,7 @@ class RadioEpisodeService(
     val kept = audible(timeline, keep)
     val marks = chapters(kept, agreed.chapters)
     val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(TALLINN).format(DAY)
-    val temporary = directory.resolve("episode.tmp.m4a")
+    val temporary = directory.resolve(TEMPORARY)
     radioRenderService.render(timeline, keep, marks, "Keskpäevatund $day", temporary)
     val summary = OutlineSummary(model, reads.size, matched.size, agreed.voters)
     save(directory.resolve(EDIT_LIST), editList(status, placed, keep, kept, marks, agreed, summary))
@@ -94,6 +99,7 @@ class RadioEpisodeService(
     failure: Throwable,
   ): Path? {
     log.error("Radio episode for $directory failed", failure)
+    Files.deleteIfExists(directory.resolve(TEMPORARY))
     save(directory.resolve(FAILED), EpisodeFailure(failure.message ?: failure.javaClass.simpleName, now()))
     return null
   }
@@ -113,6 +119,7 @@ class RadioEpisodeService(
 
   companion object {
     private const val EPISODE = "episode.m4a"
+    private const val TEMPORARY = "episode.tmp.m4a"
     private const val FAILED = "episode-failed.json"
     private const val STATUS = "status.json"
     private const val TRANSCRIPT_FILE = "transcript.json"

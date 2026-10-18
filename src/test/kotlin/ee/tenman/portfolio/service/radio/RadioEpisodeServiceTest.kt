@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir
 import tools.jackson.module.kotlin.readValue
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -137,5 +138,38 @@ class RadioEpisodeServiceTest {
     val last = found["chapters"].toList().last()
     val end = last["end_time"].asString().toDouble()
     expect((abs(edit().durationSeconds - duration) <= 0.1) to (abs(end - duration) <= 0.1)).toEqual(true to true)
+  }
+
+  @Test
+  fun `should skip a recording whose transcript is not finished`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), "captured")
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should leave a recording marked failed alone`() {
+    show()
+    Files.writeString(directory.resolve("episode-failed.json"), "{}")
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should ask for no reads when it cannot write into the recording`() {
+    show()
+    Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should remove a partial episode when the render fails`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    Files.writeString(directory.resolve("raw.mp3"), "katkine")
+    Files.writeString(directory.resolve("episode.tmp.m4a"), "pooleli")
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode.tmp.m4a"))).toEqual(false)
   }
 }

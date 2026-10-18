@@ -132,4 +132,10 @@ class RadioOutlineTest {
         ),
       )
   }
+
+  @Test
+  fun `should print a level with no audio around it as nan`() {
+    val events = listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, Double.NaN))
+    expect("after    nan dB" in describe(RecordingStatus("partial", 0.0, 67.36), emptyList(), events)).toEqual(true)
+  }
 }

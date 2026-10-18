@@ -74,7 +74,7 @@ fun lines(transcript: Transcript): List<TranscriptLine> {
 private fun fixed(
   value: Double,
   digits: Int,
-): String = BigDecimal(value).setScale(digits, RoundingMode.HALF_EVEN).toPlainString()
+): String = if (value.isNaN()) "nan" else BigDecimal(value).setScale(digits, RoundingMode.HALF_EVEN).toPlainString()
 
 fun describe(
   status: RecordingStatus,
