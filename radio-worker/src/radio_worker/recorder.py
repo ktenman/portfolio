@@ -4,6 +4,7 @@ import fcntl
 import hashlib
 import itertools
 import json
+import math
 import os
 import re
 import subprocess
@@ -146,7 +147,7 @@ def register(directory: Path, status: dict, stem: str) -> dict | None:
         return None
     start = float(starts[-1])
     origin = status["parts"][0]["streamStart"] if status["parts"] else start
-    part = {"file": f"{stem}.mp3", "streamStart": start, "offsetSeconds": round((start - origin + WRAP / 2) % WRAP - WRAP / 2, 3)}
+    part = {"file": f"{stem}.mp3", "streamStart": start, "offsetSeconds": round(math.remainder(start - origin, WRAP), 3)}
     status["parts"].append(part)
     write_status(directory, status)
     event(directory, f"{part['file']} started at {part['offsetSeconds']} s")

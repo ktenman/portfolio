@@ -101,17 +101,15 @@ def test_recorder_places_a_part_that_starts_before_the_first_one(tmp_path):
 
 def test_recorder_adopts_a_part_it_never_registered(tmp_path):
     directory = tmp_path / "rec"
-    with broadcast(tmp_path) as url:
-        prepare(directory, url, 4)
-        shutil.copy(tone(tmp_path / "old.mp3", 3), directory / "raw.mp3")
-        (directory / "raw.log").write_text("  Duration: N/A, start: 1.400000, bitrate: N/A\n")
-        record(directory, threading.Event())
-    assert [part["file"] for part in read_status(directory)["parts"]] == ["raw.mp3", "raw-part-002.mp3"]
+    prepare(directory, KUKU, 0)
+    (directory / "raw.mp3").write_bytes(b"")
+    (directory / "raw.log").write_text("  Duration: N/A, start: 1.400000, bitrate: N/A\n")
+    record(directory, threading.Event())
+    assert [part["file"] for part in read_status(directory)["parts"]] == ["raw.mp3"]
 
 
 def test_recorder_refuses_a_directory_another_worker_holds(tmp_path):
-    prepare(tmp_path / "rec", KUKU, 4200)
-    with hold(tmp_path / "rec"), pytest.raises(FileExistsError, match="another worker"), hold(tmp_path / "rec"):
+    with hold(tmp_path), pytest.raises(FileExistsError, match="another worker"), hold(tmp_path):
         pass
 
 

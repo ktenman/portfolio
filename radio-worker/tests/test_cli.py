@@ -40,33 +40,28 @@ def test_run_stops_the_recording_when_interrupted(tmp_path):
     assert (status["state"], status["parts"][0]["durationSeconds"] < 20) == ("recording", True)
 
 
-def test_run_stops_the_recording_when_interrupted_after_a_transcriber_error(tmp_path):
+def test_run_stops_the_recording_when_interrupted_after_a_transcriber_error(tmp_path, request):
     directory = tmp_path / "rec"
     signal.signal(signal.SIGINT, signal.default_int_handler)
     timer = threading.Timer(0.5, os.kill, (os.getpid(), signal.SIGINT))
+    request.addfinalizer(timer.cancel)
     def broken():
         wait(lambda: (directory / "raw.mp3").exists())
         timer.start()
         raise RuntimeError("model files are damaged")
-    try:
-        with broadcast(tmp_path, seconds=40) as url, pytest.raises(KeyboardInterrupt):
-            run(directory, url, 30, broken, "stub", 60)
-    finally:
-        timer.cancel()
+    with broadcast(tmp_path, seconds=40) as url, pytest.raises(KeyboardInterrupt):
+        run(directory, url, 30, broken, "stub", 60)
     status = read_status(directory)
     assert (status["state"], status["parts"][0]["durationSeconds"] < 20) == ("recording", True)
 
 
-def test_station_command_stops_cleanly_on_sigterm(tmp_path):
+def test_station_command_stops_cleanly_on_sigterm(tmp_path, request):
     (tmp_path / "in.mp3").write_bytes(b"")
     signal.signal(signal.SIGTERM, lambda *_: pytest.fail("SIGTERM did not take the Ctrl-C path"))
     timer = threading.Timer(1, os.kill, (os.getpid(), signal.SIGTERM))
+    request.addfinalizer(timer.cancel)
     timer.start()
-    try:
-        code = main(["station", str(tmp_path / "in.mp3"), "--port", "0"])
-    finally:
-        timer.cancel()
-    assert code == 0
+    assert main(["station", str(tmp_path / "in.mp3"), "--port", "0"]) == 0
 
 
 def test_run_command_refuses_a_directory_that_is_not_a_recording(tmp_path, capsys):
