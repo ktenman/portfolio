@@ -50,6 +50,7 @@ data class RecordingStatus(
   val parts: List<RecordingPart> = emptyList(),
   val programmes: List<String> = listOf(PROGRAMME),
   val lostSeconds: Long = 0,
+  val continuous: Boolean = false,
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")

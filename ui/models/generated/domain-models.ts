@@ -333,6 +333,10 @@ export interface AiringChoice {
     record: boolean;
 }
 
+export interface ContinuousChoice {
+    on: boolean;
+}
+
 export interface CutChoice {
     programme: string;
 }
@@ -391,6 +395,7 @@ export interface RecordingStatus {
     parts: RecordingPart[];
     programmes: string[];
     lostSeconds: number;
+    continuous: boolean;
 }
 
 export interface EditList {
@@ -478,6 +483,7 @@ export interface LastRecording {
 }
 
 export interface ContinuousRecording {
+    on: boolean;
     dayBytes: number;
     weekBytes: number;
 }

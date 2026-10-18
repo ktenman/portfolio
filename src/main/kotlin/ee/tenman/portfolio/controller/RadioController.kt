@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.service.radio.AiringChoice
+import ee.tenman.portfolio.service.radio.ContinuousChoice
 import ee.tenman.portfolio.service.radio.CutChoice
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
@@ -69,6 +70,11 @@ class RadioController(
     @PathVariable id: Long,
     @RequestBody choice: AiringChoice,
   ): ResponseEntity<Void> = done(radioScheduleService.record(id, choice))
+
+  @PutMapping("/continuous")
+  fun putContinuous(
+    @RequestBody choice: ContinuousChoice,
+  ): ResponseEntity<Void> = done(radioScheduleService.continuous(choice))
 
   @PutMapping("/programmes/{id}")
   fun putProgramme(
