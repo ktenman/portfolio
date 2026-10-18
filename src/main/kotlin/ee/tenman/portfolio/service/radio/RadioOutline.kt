@@ -8,11 +8,40 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.round
 
 private val TALLINN: ZoneId = ZoneId.of("Europe/Tallinn")
 private val DAY = DateTimeFormatter.ofPattern("EEEE dd.MM.yyyy", Locale.ENGLISH)
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss")
+private val AIR = DateTimeFormatter.ofPattern("HH:mm")
+private const val MARGIN = 180.0
+
+data class Slot(
+  val start: Long,
+  val end: Long,
+)
+
+data class Show(
+  val name: String,
+  val slot: Slot?,
+  val from: Double,
+  val to: Double,
+) {
+  val minutes: Int
+    get() = round((to - from) / 60).toInt()
+}
+
+fun show(
+  status: RecordingStatus,
+  name: String,
+  slot: Slot?,
+): Show {
+  if (slot == null || status.programmes.size < 2) return Show(name, slot, 0.0, status.seconds)
+  val from = max(0.0, slot.start - status.startedAt - MARGIN)
+  return Show(name, slot, from, min(status.seconds, slot.end - status.startedAt + MARGIN))
+}
 
 data class OutlineRead(
   val hosts: List<String>,
@@ -106,18 +135,27 @@ private fun fixed(
   digits: Int,
 ): String = if (value.isNaN()) "nan" else BigDecimal(value).setScale(digits, RoundingMode.HALF_EVEN).toPlainString()
 
+private fun air(slot: Slot?): String {
+  if (slot == null) return ""
+  val time = { seconds: Long -> Instant.ofEpochSecond(seconds).atZone(TALLINN).format(AIR) }
+  return " for ${time(slot.start)}-${time(slot.end)}"
+}
+
 fun describe(
   status: RecordingStatus,
+  show: Show,
   lines: List<TranscriptLine>,
   events: List<AudioEvent>,
 ): String {
   val started = Instant.ofEpochSecond(0, (status.startedAt * 1e9).toLong()).atZone(TALLINN)
-  val clock = { seconds: Double -> started.plusNanos((seconds * 1e9).toLong()).format(CLOCK) }
+  val at = { seconds: Double -> started.plusNanos((seconds * 1e9).toLong()) }
+  val clock = { seconds: Double -> at(seconds).format(CLOCK) }
+  val inside = { seconds: Double -> seconds in show.from..show.to }
   val header =
     listOf(
-      "Recording: Kuku Raadio live internet stream, ${started.format(DAY)}, ${round(status.seconds / 60).toInt()} minutes, " +
-        "stream clock ${clock(0.0)}-${clock(status.seconds)}.",
-      "The published schedule lists the talk show \"Keskpäevatund\" for 12:00-13:00. The stream lags the broadcast by about 20 s.",
+      "Recording: Kuku Raadio live internet stream, ${at(show.from).format(DAY)}, ${show.minutes} minutes, " +
+        "stream clock ${clock(show.from)}-${clock(show.to)}.",
+      "The published schedule lists the talk show \"${show.name}\"${air(show.slot)}. The stream lags the broadcast by about 20 s.",
       "",
       "## Audio events from the loudness analysis",
       "Stretches of digital silence (below -75 dB for at least 30 ms) or quiet (below -50 dB for at least 0.3 s).",
@@ -125,7 +163,7 @@ fun describe(
       "",
     )
   val found =
-    events.map {
+    events.filter { inside(it.start) }.map {
       "${fixed(it.start, 2).padStart(7)}-${fixed(it.end, 2).padStart(7)} s (${clock(it.start)})  ${it.kind.padEnd(15)}  " +
         "before ${fixed(it.before, 1).padStart(6)} dB  after ${fixed(it.after, 1).padStart(6)} dB"
     }
@@ -136,7 +174,10 @@ fun describe(
       "Each line: start-end in seconds from the start of the file, the stream clock at the start, the text.",
       "",
     )
-  val spoken = lines.map { "${fixed(it.start, 1).padStart(7)}-${fixed(it.end, 1).padStart(7)} s (${clock(it.start)})  ${it.text}" }
+  val spoken =
+    lines
+      .filter { inside(it.start) }
+      .map { "${fixed(it.start, 1).padStart(7)}-${fixed(it.end, 1).padStart(7)} s (${clock(it.start)})  ${it.text}" }
   return (header + found + legend + spoken).joinToString("\n") + "\n"
 }
 

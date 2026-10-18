@@ -31,9 +31,10 @@ class RadioArchiveServiceTest {
   private fun recording(
     name: String,
     state: RecordingState = RecordingState.CAPTURED,
+    programmes: List<String> = listOf(PROGRAMME),
   ): Path {
     val directory = Files.createDirectories(recordings.resolve(name))
-    val status = RecordingStatus(state, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
+    val status = RecordingStatus(state, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), programmes)
     Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
     Files.write(directory.resolve("raw.mp3"), ByteArray(1500))
     return directory
@@ -46,6 +47,56 @@ class RadioArchiveServiceTest {
         listOf(TranscriptWord(1.0, 1.4, " Tere,"), TranscriptWord(1.5, 2.5, " Keskpäevatund!")),
       )
     Files.writeString(directory.resolve(TRANSCRIPT_FILE), JsonMapperFactory.instance.writeValueAsString(transcript))
+  }
+
+  private val shared = listOf(PROGRAMME, "Tarkade klubi")
+
+  @Test
+  fun `should ask for the cuts of a programme in a recording`() {
+    val directory = recording("2026-10-24-1155-keskpaevatund-tarkade-klubi", programmes = shared)
+    service.find(directory.fileName.toString(), CutChoice("Tarkade klubi"))
+    expect(read<CutRequest>(directory.resolve(CUT_REQUEST))).toEqual(CutRequest(listOf("Tarkade klubi")))
+  }
+
+  @Test
+  fun `should refuse the cuts of a programme the recording does not hold`() {
+    recording("2026-10-24-1155-keskpaevatund")
+    expect { service.find("2026-10-24-1155-keskpaevatund", CutChoice("Tarkade klubi")) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should find no recording to ask cuts of under an unknown name`() {
+    expect(service.find("2026-10-24-1155-keskpaevatund", CutChoice(PROGRAMME))).toEqual(false)
+  }
+
+  @Test
+  fun `should try a failed recording again when its cuts are asked for`() {
+    val directory = recording("2026-10-24-1155-keskpaevatund-tarkade-klubi", programmes = shared)
+    Files.writeString(directory.resolve("episode-failed.json"), """{"reason":"Katki","failedAt":"2026-10-24T11:10:00Z"}""")
+    service.find(directory.fileName.toString(), CutChoice("Tarkade klubi"))
+    expect(Files.exists(directory.resolve("episode-failed.json"))).toEqual(false)
+  }
+
+  @Test
+  fun `should show which programmes of a recording have their cuts looked for`() {
+    val directory = recording("2026-10-24-1155-keskpaevatund-tarkade-klubi-ilmaparandaja", programmes = shared + "Ilmaparandaja")
+    service.find(directory.fileName.toString(), CutChoice("Ilmaparandaja"))
+    expect(
+      service
+      .recordings()
+      .single()
+      .programmeCuts
+      .map { it.state },
+        ).toEqual(
+      listOf(ProgrammeCutState.FINDING, ProgrammeCutState.NONE, ProgrammeCutState.FINDING),
+    )
+  }
+
+  @Test
+  fun `should offer to look for the cuts of a failed recording again`() {
+    val directory = recording("2026-10-24-1155-keskpaevatund")
+    Files.writeString(directory.resolve("episode-failed.json"), """{"reason":"Katki","failedAt":"2026-10-24T11:10:00Z"}""")
+    expect(service.recordings().single().programmeCuts).toEqual(listOf(ProgrammeCuts(PROGRAMME, ProgrammeCutState.NONE)))
   }
 
   @Test
