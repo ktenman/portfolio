@@ -50,6 +50,10 @@ describe('RadioListen', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
 
+  it('should show the checksum of each recorded part', () => {
+    expect(render().text()).toContain('SHA-256ab12')
+  })
+
   it('should give the position on the station clock', () => {
     const wrapper = render()
     audio.currentTime = 761.5

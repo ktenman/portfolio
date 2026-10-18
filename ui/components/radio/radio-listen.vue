@@ -209,6 +209,10 @@ const recordingFacts = computed<[string, string][]>(() => [
   ['Aeg', `${day(props.recording.status.startedAt)} · ${span(props.recording)}`],
   ['Kestus', position(props.recording.status.seconds)],
   ['Suurus', megabytes(props.recording.sizeBytes)],
+  ...props.recording.status.parts.map((part, i, parts): [string, string] => [
+    parts.length > 1 ? `Osa ${i + 1} SHA-256` : 'SHA-256',
+    part.sha256?.slice(0, 12) ?? '—',
+  ]),
 ])
 
 const workFacts = computed<[string, string][]>(() => [

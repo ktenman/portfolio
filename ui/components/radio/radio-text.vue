@@ -1,83 +1,86 @@
 <template>
-  <div class="grid gap-4">
-    <div class="flex flex-wrap items-center gap-2">
-      <input
-        v-model="search"
-        type="search"
-        placeholder="Otsi tekstist"
-        aria-label="Otsi tekstist"
-        class="min-w-48 grow rounded-container border border-control-border bg-surface px-3 py-1.5 text-ink shadow-control focus-visible:outline-2 focus-visible:outline-brass-deep"
-      />
-      <app-button
-        :disabled="Boolean(recording.transcriptCheckedAt)"
-        :loading="checking"
-        @click="check"
-      >
-        <radio-icon name="check" class="me-1.5 inline align-[-0.125em]" />
-        Märgi kontrollituks
-      </app-button>
-      <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">
-        <radio-icon name="download" />
-        {{ file.label }}
-      </a>
-    </div>
-    <radio-card title="Tekst">
-      <template #aside>
-        <radio-badge
-          data-testid="radio-text-state"
-          :tone="recording.transcriptCheckedAt ? 'plain' : 'warn'"
+  <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div class="grid gap-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <input
+          v-model="search"
+          type="search"
+          placeholder="Otsi tekstist"
+          aria-label="Otsi tekstist"
+          class="min-w-48 grow rounded-container border border-control-border bg-surface px-3 py-1.5 text-ink shadow-control focus-visible:outline-2 focus-visible:outline-brass-deep"
+        />
+        <app-button
+          :disabled="Boolean(recording.transcriptCheckedAt)"
+          :loading="checking"
+          @click="check"
         >
-          {{ textState(recording) }}
-        </radio-badge>
-      </template>
-      <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
-      <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
-        {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
-      </p>
-      <ol v-else class="mb-0 list-none p-0">
-        <li
-          v-for="line in shown"
-          :key="line.start"
-          data-testid="radio-text-line"
-          :aria-current="line === current ? 'true' : undefined"
-          class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
-          :class="{ 'bg-brass-wash': line === current }"
-        >
-          <button
-            type="button"
-            class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink"
-            @click="player.playFrom(line.start)"
+          <radio-icon name="check" class="me-1.5 inline align-[-0.125em]" />
+          Märgi kontrollituks
+        </app-button>
+        <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">
+          <radio-icon name="download" />
+          {{ file.label }}
+        </a>
+      </div>
+      <radio-card title="Tekst">
+        <template #aside>
+          <radio-badge
+            data-testid="radio-text-state"
+            :tone="recording.transcriptCheckedAt ? 'plain' : 'warn'"
           >
-            {{ clock(recording.status.startedAt, line.start, true) }}
-          </button>
-          <div>
-            <p class="mb-0">
-              <template v-if="line === current && line.words.length">
-                <template v-for="word in line.words" :key="word.start">
-                  <span
-                    :data-testid="word === spoken ? 'radio-word-now' : undefined"
-                    :class="{ 'rounded-control bg-surface font-semibold': word === spoken }"
-                  >
-                    {{ word.word.trim() }}
-                  </span>
-                  {{ ' ' }}
+            {{ textState(recording) }}
+          </radio-badge>
+        </template>
+        <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
+        <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
+          {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
+        </p>
+        <ol v-else class="mb-0 list-none p-0">
+          <li
+            v-for="line in shown"
+            :key="line.start"
+            data-testid="radio-text-line"
+            :aria-current="line === current ? 'true' : undefined"
+            class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
+            :class="{ 'bg-brass-wash': line === current }"
+          >
+            <button
+              type="button"
+              class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink"
+              @click="player.playFrom(line.start)"
+            >
+              {{ clock(recording.status.startedAt, line.start, true) }}
+            </button>
+            <div>
+              <p class="mb-0">
+                <template v-if="line === current && line.words.length">
+                  <template v-for="word in line.words" :key="word.start">
+                    <span
+                      :data-testid="word === spoken ? 'radio-word-now' : undefined"
+                      :class="{ 'rounded-control bg-surface font-semibold': word === spoken }"
+                    >
+                      {{ word.word.trim() }}
+                    </span>
+                    {{ ' ' }}
+                  </template>
                 </template>
-              </template>
-              <template v-else>{{ line.text.trim() }}</template>
-            </p>
-            <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
-              <radio-badge tone="warn">Lõige poolitab lause</radio-badge>
-              <span class="text-ink-soft">
-                {{ line.split.title }}
-                {{ clock(recording.status.startedAt, line.split.start) }}–{{
-                  clock(recording.status.startedAt, line.split.end)
-                }}
-              </span>
-            </p>
-          </div>
-        </li>
-      </ol>
-    </radio-card>
+                <template v-else>{{ line.text.trim() }}</template>
+              </p>
+              <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
+                <radio-badge tone="warn">Lõige poolitab lause</radio-badge>
+                <span class="text-ink-soft">
+                  {{ line.split.title }}
+                  {{ clock(recording.status.startedAt, line.split.start) }}–{{
+                    clock(recording.status.startedAt, line.split.end)
+                  }}
+                </span>
+              </p>
+            </div>
+          </li>
+        </ol>
+      </radio-card>
+    </div>
+    <radio-analysis :recording="recording" />
   </div>
 </template>
 
@@ -91,6 +94,7 @@ import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
 import { clock, textState } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
+import RadioAnalysis from './radio-analysis.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioIcon from './radio-icon.vue'

@@ -49,6 +49,28 @@ describe('RadioText', () => {
   const lines = (wrapper: Awaited<ReturnType<typeof render>>) =>
     wrapper.findAll('[data-testid="radio-text-line"]')
 
+  it('should list each topic with its length', async () => {
+    const topics = (await render()).findAll('[data-testid="radio-topic"]').map(t => t.text())
+    expect(topics[0]).toBe('12:07Rahvusooperi tüli23 min')
+  })
+
+  it('should list the ad breaks the machine found', async () => {
+    expect((await render()).find('[data-testid="radio-ads"]').text()).toContain(
+      '12:30–12:322 min 15 s'
+    )
+  })
+
+  it('should say no ad break was found when the machine found none', async () => {
+    const wrapper = await render(recording({ cuts: [] }))
+    expect(wrapper.find('[data-testid="radio-ads"]').text()).toContain('Ei leitud')
+  })
+
+  it('should name the model that found the topics and breaks', async () => {
+    expect((await render()).find('[data-testid="radio-detection"]').text()).toContain(
+      'deepseek/deepseek-v4-flash'
+    )
+  })
+
   it('should show each line of the transcript', async () => {
     expect(lines(await render())).toHaveLength(3)
   })
