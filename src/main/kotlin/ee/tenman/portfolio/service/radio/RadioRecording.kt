@@ -41,7 +41,10 @@ data class RecordingStatus(
   val startedAt: Double = 0.0,
   val seconds: Double = 0.0,
   val parts: List<RecordingPart> = emptyList(),
+  val programmes: List<String> = listOf(PROGRAMME),
 )
+
+fun RecordingStatus.title(): String = programmes.joinToString(", ")
 
 data class RecordingPart(
   val file: String,

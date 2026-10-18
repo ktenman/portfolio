@@ -158,6 +158,15 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
+  fun `should leave a recording of another programme alone`() {
+    show()
+    val status = readStatus(directory).copy(programmes = listOf("Tarkade klubi"))
+    Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
   fun `should ask for no reads when it cannot write into the recording`() {
     show()
     Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))

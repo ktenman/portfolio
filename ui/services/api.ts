@@ -18,6 +18,9 @@ import {
   type CutContext,
   type CutReview,
   type JingleReview,
+  type ProgrammeChoice,
+  type RadioProgrammeDto,
+  type RadioStation,
   type RecordingSummary,
   type TranscriptLine,
   type IntradaySummaryPointDto,
@@ -225,6 +228,10 @@ export const radioService = {
   jingle: (name: string, cut: number, review: JingleReview) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/${cut}/jingle`, review),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
+  programmes: () => httpClient.get<RadioProgrammeDto[]>(`${API_ENDPOINTS.RADIO}/programmes`),
+  station: () => httpClient.get<RadioStation>(`${API_ENDPOINTS.RADIO}/station`),
+  choose: (id: number, choice: ProgrammeChoice) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/programmes/${id}`, choice),
 }
 
 export const liveUpdatesService = {

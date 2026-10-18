@@ -6,7 +6,13 @@ import RadioRecordings from './radio-recordings.vue'
 import { recording } from './radio-fixture'
 import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
 
-vi.mock('../../services/api', () => ({ radioService: { recordings: vi.fn() } }))
+vi.mock('../../services/api', () => ({
+  radioService: {
+    recordings: vi.fn(),
+    programmes: vi.fn().mockResolvedValue([]),
+    station: vi.fn().mockResolvedValue(null),
+  },
+}))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -26,7 +32,13 @@ describe('RadioRecordings', () => {
       recording(),
       recording({
         name: '2026-10-16',
-        status: { state: RecordingState.RECORDING, startedAt: 1792170142, seconds: 60, parts: [] },
+        status: {
+          state: RecordingState.RECORDING,
+          programmes: ['Keskpäevatund'],
+          startedAt: 1792170142,
+          seconds: 60,
+          parts: [],
+        },
         sizeBytes: 1_600_000,
         transcribed: false,
         editList: null,

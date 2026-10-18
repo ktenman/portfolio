@@ -1,5 +1,6 @@
 import datetime as dt
 import hashlib
+import json
 import os
 import shutil
 import time
@@ -8,20 +9,20 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 TALLINN = ZoneInfo("Europe/Tallinn")
-SATURDAY = 5
-OPENS = dt.time(11, 55)
-CLOSES = dt.time(13, 5)
+PLAN = "plan.json"
+CHECK_SECONDS = 60
 RETRY_SECONDS = 3600
 REPOSITORY = "TalTechNLP/whisper-large-v3-turbo-et-verbatim-2604"
 REVISION = "310c550922fc1d1bebf3fad41f9b33ede6652bdc"
 MODEL_SHA256 = "e3ebce23a10322e1401e4cafd4e6675811988c0890aff1885469b357a27388da"
 
 
-def window(now: float) -> tuple[float, float]:
-    day = dt.datetime.fromtimestamp(now, TALLINN).date()
-    saturday = day + dt.timedelta(days=(SATURDAY - day.weekday()) % 7)
-    start, end = (dt.datetime.combine(saturday, moment, TALLINN).timestamp() for moment in (OPENS, CLOSES))
-    return (start, end) if now < end else window(end + 86400)
+def upcoming(recordings: Path, now: float) -> dict | None:
+    try:
+        captures = json.loads((recordings / PLAN).read_text())
+    except (OSError, ValueError):
+        return None
+    return min((capture for capture in captures if capture["end"] > now), key=lambda capture: capture["start"], default=None)
 
 
 def ready(model: Path) -> bool:
@@ -41,29 +42,36 @@ def fetch(model: Path) -> None:
     shutil.rmtree(download)
 
 
-def saturdays(
+def planned(
     recordings: Path,
     model: Path,
-    record: Callable[[Path, float], str],
+    record: Callable[[Path, float, list[str]], str],
     download: Callable[[Path], None] = fetch,
     clock: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
 ) -> None:
+    tried, announced = float("-inf"), None
     while True:
-        start, end = window(clock())
-        if not ready(model) and clock() < start:
-            attempt(lambda: download(model), f"Downloading {REPOSITORY} into {model}")
-            if not ready(model):
-                sleep(min(RETRY_SECONDS, start - clock()))
-                continue
-        directory = recordings / dt.datetime.fromtimestamp(start, TALLINN).date().isoformat()
-        say(f"Next recording {directory} until {dt.datetime.fromtimestamp(end, TALLINN):%Y-%m-%d %H:%M}")
-        pause(start, clock, sleep)
+        capture = upcoming(recordings, clock())
+        if capture and capture != announced:
+            say(f"Next recording {capture['name']} from {shown(capture['start'])} until {shown(capture['end'])}")
+            announced = capture
+        if capture is None or capture["start"] > clock():
+            if not ready(model) and clock() - tried >= RETRY_SECONDS:
+                tried = clock()
+                attempt(lambda: download(model), f"Downloading {REPOSITORY} into {model}")
+            sleep(min(CHECK_SECONDS, capture["start"] - clock()) if capture else CHECK_SECONDS)
+            continue
+        directory = recordings / capture["name"]
         if ready(model):
-            attempt(lambda: say(f"{record(directory, end - clock())}: {directory}"), f"Recording {directory}")
+            attempt(lambda: say(f"{record(directory, capture['end'] - clock(), capture['programmes'])}: {directory}"), f"Recording {directory}")
         else:
             say(f"Skipping {directory}: {model} holds no verified model")
-        pause(end, clock, sleep)
+        pause(capture["end"], clock, sleep)
+
+
+def shown(moment: float) -> str:
+    return f"{dt.datetime.fromtimestamp(moment, TALLINN):%Y-%m-%d %H:%M}"
 
 
 def attempt(action: Callable[[], object], what: str) -> None:

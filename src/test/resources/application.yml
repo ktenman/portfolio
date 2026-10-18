@@ -27,6 +27,12 @@ tuleva:
   url: http://localhost:${wiremock.server.port}
   web-url: http://localhost:${wiremock.server.port}
 
+kuku:
+  url: http://localhost:${wiremock.server.port}
+
+radio:
+  recordings: ${java.io.tmpdir}/radio-it
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 
