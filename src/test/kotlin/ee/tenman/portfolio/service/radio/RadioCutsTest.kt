@@ -56,6 +56,19 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should cut between two programmes of one recording at the end of the first and the start of the second`() {
+    val second = listOf(boundary("show starts", 4300.0), boundary("show ends", 7400.0)).map { it.copy(programme = "Tarkade klubi") }
+    val shared = edit().copy(boundaries = edit().boundaries.map { it.copy(programme = PROGRAMME) } + second)
+    expect(cuts(shared, 7800.0).filter { it.kind != CutKind.BREAK }.map { Triple(it.kind, it.start, it.end) }).toEqual(
+      listOf(
+        Triple(CutKind.BEFORE, 0.0, 761.5),
+        Triple(CutKind.BETWEEN, 3837.0, 4300.0),
+        Triple(CutKind.AFTER, 7400.0, 7800.0),
+      ),
+    )
+  }
+
+  @Test
   fun `should list a cut made by hand after the machine cuts`() {
     val cut = cuts(edit().copy(manual = listOf(ManualCut(1500.0, 1560.0))), 4200.0).last()
     expect(Triple(cut.kind, cut.start to cut.end, cut.methods)).toEqual(
@@ -170,7 +183,7 @@ class RadioCutsTest {
 
   @Test
   fun `should list the cuts and the topics in recording order`() {
-    expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
+    expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0, PROGRAMME).map { Triple(it.start, it.title, it.cut) }).toEqual(
       listOf(
         Triple(0.0, "Enne saadet", true),
         Triple(761.5, "Rahvusooperi tüli", false),
@@ -187,6 +200,6 @@ class RadioCutsTest {
 
   @Test
   fun `should show a recording without an edit list as one part`() {
-    expect(timeline(emptyList(), emptyList(), 60.0)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
+    expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
   }
 }

@@ -9,6 +9,7 @@ import {
 import {
   CutState,
   DayOfWeek,
+  ProgrammeCutState,
   RecorderState,
   RecordingState,
   TranscriptState,
@@ -22,7 +23,7 @@ const RECORDINGS = [
     name: '2026-10-24',
     status: {
       state: RecordingState.RECORDING,
-      programmes: ['Keskpäevatund'],
+      programmes: ['Keskpäevatund', 'Tarkade klubi'],
       startedAt: Date.UTC(2026, 9, 24, 8, 55, 0) / 1000,
       seconds: 1260,
       parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null }],
@@ -36,6 +37,10 @@ const RECORDINGS = [
     timeline: [],
     transcriptState: TranscriptState.RECORDING,
     cutState: CutState.NONE,
+    programmeCuts: [
+      { name: 'Keskpäevatund', state: ProgrammeCutState.FINDING },
+      { name: 'Tarkade klubi', state: ProgrammeCutState.NONE },
+    ],
   }),
   recording(),
 ]

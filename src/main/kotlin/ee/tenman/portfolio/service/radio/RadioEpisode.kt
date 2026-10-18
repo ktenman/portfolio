@@ -22,6 +22,7 @@ private fun joins(keep: List<Pair<Double, Double>>): List<Double> = keep.running
 fun chapters(
   keep: List<Pair<Double, Double>>,
   topics: List<OutlineChapter>,
+  title: String,
 ): List<Pair<Double, String>> {
   val seams = joins(keep)
   val total = keep.sumOf { it.second - it.first }
@@ -29,7 +30,7 @@ fun chapters(
     keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total
   }
   val order = compareBy<Pair<Double, String>>({ it.first }, { it.second })
-  val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, PROGRAMME)) }.map { clean(it.time) to it.title }.sortedWith(order)
+  val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, title)) }.map { clean(it.time) to it.title }.sortedWith(order)
   val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
   val marks =
     seams.withIndex().drop(1).map { (index, seam) ->
@@ -103,6 +104,12 @@ data class EditList(
   val topics: List<EpisodeChapter> = emptyList(),
   val music: List<KeptSpan> = emptyList(),
   val manual: List<ManualCut> = emptyList(),
+)
+
+data class Finding(
+  val agreed: Consensus,
+  val placed: List<Boundary>,
+  val summary: OutlineSummary,
 )
 
 data class EpisodeFailure(

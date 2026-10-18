@@ -7,6 +7,8 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.RadioProgramme
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -32,6 +34,8 @@ class RadioEpisodeServiceTest {
       outlineService,
       RadioCutService(),
       RadioRenderService(),
+      airings(),
+      programmes(),
       RadioProperties(),
       Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC),
     )
@@ -84,7 +88,7 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should read the outline three times and render the show`() {
     show()
-    every { outlineService.reads(any(), AiModel.GEMINI_3_5_FLASH_LITE) } returns List(3) { outline(1.0, 5.0, 50.0) }
+    every { outlineService.reads(any(), any(), AiModel.GEMINI_3_5_FLASH_LITE) } returns List(3) { outline(1.0, 5.0, 50.0) }
     service.make(directory)
     val found = edit()
     expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
@@ -96,13 +100,13 @@ class RadioEpisodeServiceTest {
     show()
     saved(outline(1.0, 5.0, 50.0))
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
   }
 
   @Test
   fun `should vote with the reads that came back when one request fails`() {
     show()
-    every { outlineService.reads(any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
+    every { outlineService.reads(any(), any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
     service.make(directory)
     val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
     expect(Triple(reads.first(), edit().outline.matched, Files.exists(directory.resolve("episode.m4a")))).toEqual(Triple(null, 2, true))
@@ -111,7 +115,7 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should save no reads and mark the recording failed when every read fails`() {
     show()
-    every { outlineService.reads(any(), any()) } returns listOf(null, null, null)
+    every { outlineService.reads(any(), any(), any()) } returns listOf(null, null, null)
     service.make(directory)
     expect(Files.exists(directory.resolve("outline.json")) to ("No outline read came back" in failure())).toEqual(false to true)
   }
@@ -146,7 +150,7 @@ class RadioEpisodeServiceTest {
   fun `should skip a recording whose transcript is not finished`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), "captured")
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
   }
 
   @Test
@@ -154,7 +158,7 @@ class RadioEpisodeServiceTest {
     show()
     Files.writeString(directory.resolve("episode-failed.json"), "{}")
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
   }
 
   @Test
@@ -163,7 +167,7 @@ class RadioEpisodeServiceTest {
     val status = readStatus(directory).copy(programmes = listOf("Tarkade klubi"))
     Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
   }
 
   @Test
@@ -171,7 +175,7 @@ class RadioEpisodeServiceTest {
     show()
     Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
   }
 
   @Test
@@ -259,8 +263,94 @@ class RadioEpisodeServiceTest {
     saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0, "Väike paus."))))
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
-    RadioEpisodeService(outlineService, RadioCutService(), RadioRenderService(), properties, Clock.systemUTC()).make(directory)
+    RadioEpisodeService(
+      outlineService,
+      RadioCutService(),
+      RadioRenderService(),
+      airings(),
+      programmes(),
+      properties,
+      Clock.systemUTC(),
+    ).make(directory)
     expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
+  }
+
+  private fun shared() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 120))))
+    save(directory.resolve("status.json"), readStatus(directory).copy(seconds = 120.0, programmes = listOf(PROGRAMME, "Tarkade klubi")))
+    transcribed(1.0, 5.0, 50.0, 65.0, 70.0, 110.0)
+    saved(outline(1.0, 5.0, 50.0))
+  }
+
+  private fun asked(read: OutlineRead) {
+    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
+    Files.writeString(directory.resolve("outline-2.json"), JsonMapperFactory.instance.writeValueAsString(listOf(read)))
+  }
+
+  @Test
+  fun `should cut only the programme it knows in a recording shared with another`() {
+    shared()
+    service.make(directory)
+    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf(PROGRAMME) to true)
+  }
+
+  @Test
+  fun `should find the cuts of another programme on request without rendering them`() {
+    shared()
+    service.make(directory)
+    val episode = Files.readAllBytes(directory.resolve("episode.m4a"))
+    asked(outline(65.0, 70.0, 110.0))
+    service.make(directory)
+    expect(edit().found() to Files.readAllBytes(directory.resolve("episode.m4a")).contentEquals(episode))
+      .toEqual(setOf(PROGRAMME, "Tarkade klubi") to true)
+  }
+
+  @Test
+  fun `should cut between two programmes found in one recording`() {
+    shared()
+    service.make(directory)
+    asked(outline(65.0, 70.0, 110.0))
+    service.make(directory)
+    val between = cuts(edit(), 120.0).single { it.kind == CutKind.BETWEEN }
+    expect(between.start to between.end).toEqual(57.2 to 69.7)
+  }
+
+  @Test
+  fun `should not render a recording whose only programme was found on request`() {
+    shared()
+    save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf("Tarkade klubi", "Ilmaparandaja")))
+    Files.writeString(directory.resolve("outline.json"), JsonMapperFactory.instance.writeValueAsString(listOf(outline(65.0, 70.0, 110.0))))
+    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
+    service.make(directory)
+    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf("Tarkade klubi") to false)
+  }
+
+  @Test
+  fun `should mark the recording failed when two programmes overlap`() {
+    shared()
+    asked(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    expect(failure()).toContain("Programmes overlap")
+  }
+
+  @Test
+  fun `should ask for the outline of a programme with its air time from the schedule`() {
+    shared()
+    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
+    val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
+    val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
+    every { outlineService.reads(any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
+    val clock = Clock.systemUTC()
+    RadioEpisodeService(
+      outlineService,
+      RadioCutService(),
+      RadioRenderService(),
+      airings(airing),
+      programmes(klubi),
+      RadioProperties(),
+      clock,
+    ).make(directory)
+    verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any()) }
   }
 
   @Test

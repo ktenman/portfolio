@@ -14,9 +14,13 @@ class RadioOutlineService(
   private val schema: Map<String, Any> = JsonMapperFactory.instance.readValue(resource("radio/outline-schema.json"))
 
   fun reads(
+    show: Show,
     text: String,
     model: AiModel,
-  ): List<OutlineRead?> = List(READS) { openRouterClient.complete(model, prompt, text, schema)?.let(::parse) }
+  ): List<OutlineRead?> {
+    val asked = prompt.replace("{programme}", show.name).replace("{minutes}", "${show.minutes}")
+    return List(READS) { openRouterClient.complete(model, asked, text, schema)?.let(::parse) }
+  }
 
   private fun resource(path: String): String = checkNotNull(javaClass.classLoader.getResource(path)) { "Missing resource $path" }.readText()
 

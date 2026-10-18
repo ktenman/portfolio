@@ -119,6 +119,7 @@ class RadioOutlineTest {
     val text =
       describe(
         RecordingStatus(RecordingState.CAPTURED, started, 4200.0),
+        Show(PROGRAMME, null, 0.0, 4200.0),
         listOf(TranscriptLine(25.24, 27.8, "Siin saade on tänaseks kuulatud.", emptyList())),
         listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, -13.4)),
       )
@@ -131,6 +132,43 @@ class RadioOutlineTest {
           "   25.2-   27.8 s (11:55:25)  Siin saade on tänaseks kuulatud.",
         ),
       )
+  }
+
+  @Test
+  fun `should name the programme and its air time from the schedule`() {
+    val started = ZonedDateTime.of(2026, 10, 24, 11, 55, 0, 0, ZoneId.of("Europe/Tallinn")).toEpochSecond()
+    val status = RecordingStatus(RecordingState.CAPTURED, started.toDouble(), 7800.0, programmes = listOf(PROGRAMME, "Tarkade klubi"))
+    val text = describe(status, show(status, "Tarkade klubi", Slot(started + 3900, started + 7500)), emptyList(), emptyList())
+    expect(text.lines().take(2)).toEqual(
+      listOf(
+        "Recording: Kuku Raadio live internet stream, Saturday 24.10.2026, 66 minutes, stream clock 12:57:00-14:03:00.",
+        "The published schedule lists the talk show \"Tarkade klubi\" for 13:00-14:00. The stream lags the broadcast by about 20 s.",
+      ),
+    )
+  }
+
+  @Test
+  fun `should give the outline only the lines inside the window of its programme`() {
+    val lines =
+      listOf(
+        TranscriptLine(100.0, 104.0, "Keskpäevatund algab.", emptyList()),
+        TranscriptLine(4000.0, 4004.0, "Tarkade klubi!", emptyList()),
+      )
+    val text =
+      describe(RecordingStatus(RecordingState.CAPTURED, 0.0, 7800.0), Show("Tarkade klubi", null, 3720.0, 7680.0), lines, emptyList())
+    expect(("Tarkade klubi!" in text) to ("Keskpäevatund algab." in text)).toEqual(true to false)
+  }
+
+  @Test
+  fun `should window a programme of a shared recording three minutes around its air time`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 1000.0, 7800.0, programmes = listOf(PROGRAMME, "Tarkade klubi"))
+    expect(show(status, PROGRAMME, Slot(1300, 4900))).toEqual(Show(PROGRAMME, Slot(1300, 4900), 120.0, 4080.0))
+  }
+
+  @Test
+  fun `should give the whole recording of a single programme to its outline`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 1000.0, 4200.0)
+    expect(show(status, PROGRAMME, Slot(1300, 4900))).toEqual(Show(PROGRAMME, Slot(1300, 4900), 0.0, 4200.0))
   }
 
   @Test
@@ -148,6 +186,9 @@ class RadioOutlineTest {
   @Test
   fun `should print a level with no audio around it as nan`() {
     val events = listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, Double.NaN))
-    expect("after    nan dB" in describe(RecordingStatus(RecordingState.PARTIAL, 0.0, 67.36), emptyList(), events)).toEqual(true)
+    expect(
+      "after    nan dB" in
+        describe(RecordingStatus(RecordingState.PARTIAL, 0.0, 67.36), Show(PROGRAMME, null, 0.0, 67.36), emptyList(), events),
+    ).toEqual(true)
   }
 }

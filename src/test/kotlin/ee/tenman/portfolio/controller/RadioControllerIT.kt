@@ -124,6 +124,20 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should ask for the cuts of a programme the recording holds`() {
+    mockMvc
+      .perform(mvcPost("/api/radio/2026-10-17/cuts/find").contentType(APPLICATION_JSON).content("""{"programme":"Keskpäevatund"}"""))
+      .andExpect(status().isNoContent)
+  }
+
+  @Test
+  fun `should reject the cuts of a programme the recording does not hold`() {
+    mockMvc
+      .perform(mvcPost("/api/radio/2026-10-17/cuts/find").contentType(APPLICATION_JSON).content("""{"programme":"Tarkade klubi"}"""))
+      .andExpect(status().isBadRequest)
+  }
+
+  @Test
   fun `should not find the cuts of a recording without a transcript`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/cuts")).andExpect(status().isNotFound)
   }

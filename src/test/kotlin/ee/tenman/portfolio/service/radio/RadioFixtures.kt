@@ -1,6 +1,12 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.repository.RadioAiringRepository
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
+import io.mockk.every
+import io.mockk.mockk
 import tools.jackson.databind.JsonNode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -44,6 +50,10 @@ fun writeRecording(
   val status = mapOf("state" to state, "startedAt" to 0.0, "seconds" to 0.0, "parts" to listed)
   Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
 }
+
+fun airings(vararg found: RadioAiring): RadioAiringRepository = mockk { every { findStarting(any(), any()) } returns found.toList() }
+
+fun programmes(vararg found: RadioProgramme): RadioProgrammeRepository = mockk { every { findAllById(any()) } returns found.toList() }
 
 fun timeline(directory: Path): Timeline = Timeline(directory, readStatus(directory).parts)
 

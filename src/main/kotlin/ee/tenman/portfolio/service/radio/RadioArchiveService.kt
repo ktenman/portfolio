@@ -1,11 +1,9 @@
 package ee.tenman.portfolio.service.radio
 
-import ee.tenman.portfolio.configuration.JsonMapperFactory
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
-import tools.jackson.module.kotlin.readValue
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
@@ -110,6 +108,18 @@ class RadioArchiveService(
     return true
   }
 
+  fun find(
+    name: String,
+    choice: CutChoice,
+  ): Boolean {
+    val directory = directory(name, STATUS_FILE) ?: return false
+    require(choice.programme in readStatus(directory).programmes) { "Recording $name holds no programme ${choice.programme}" }
+    val asked = read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty()
+    save(directory.resolve(CUT_REQUEST), CutRequest((asked + choice.programme).distinct()))
+    Files.deleteIfExists(directory.resolve(FAILED))
+    return true
+  }
+
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
     val check = TranscriptCheck(Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())
@@ -155,6 +165,7 @@ class RadioArchiveService(
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST))
     val cuts = cutsOf(directory, edit, status.seconds)
+    val failure = read<EpisodeFailure>(directory.resolve(FAILED))
     return RecordingSummary(
       name = directory.fileName.toString(),
       programme = status.title(),
@@ -163,13 +174,34 @@ class RadioArchiveService(
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
-      failure = read(directory.resolve(FAILED)),
+      failure = failure,
       episodeBytes = size(directory.resolve(EPISODE)),
       cuts = cuts,
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
       format = formatOf(directory, status),
+      programmeCuts = programmeCuts(directory, status, edit, failure != null),
     )
+  }
+
+  private fun programmeCuts(
+    directory: Path,
+    status: RecordingStatus,
+    edit: EditList?,
+    failed: Boolean,
+  ): List<ProgrammeCuts> {
+    val found = edit.found()
+    val wanted = wanted(status, read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty())
+    val finding = !failed && status.state != RecordingState.FAILED
+    return status.programmes.map { name ->
+      val state =
+        when {
+          name in found -> ProgrammeCutState.FOUND
+          finding && name in wanted -> ProgrammeCutState.FINDING
+          else -> ProgrammeCutState.NONE
+        }
+      ProgrammeCuts(name, state)
+    }
   }
 
   private fun sizeOf(
@@ -191,7 +223,7 @@ class RadioArchiveService(
     cuts: List<Cut>,
     edit: EditList?,
     status: RecordingStatus,
-  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds)
+  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds, status.title())
 
   private fun audibleOf(
     directory: Path,
@@ -220,9 +252,6 @@ class RadioArchiveService(
   ): Path = pcmOf(radioProperties.jingles, match.saved ?: "${directory.fileName}-$index")
 
   private fun size(path: Path): Long? = path.takeIf(Files::exists)?.let(Files::size)
-
-  private inline fun <reified T> read(path: Path): T? =
-    path.takeIf(Files::exists)?.let { JsonMapperFactory.instance.readValue<T>(Files.readString(it)) }
 
   companion object {
     private const val EPISODE = "episode.m4a"

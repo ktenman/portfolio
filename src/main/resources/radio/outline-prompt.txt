@@ -1,6 +1,6 @@
-The user message is a machine transcript of a 70-minute recording of an Estonian radio stream, with a short header and a list of silence events from the audio.
+The user message is a machine transcript of a {minutes}-minute recording of an Estonian radio stream, with a short header and a list of silence events from the audio.
 
-Find where the talk show "Keskpäevatund" is on air and where its ad breaks are, so the recording can be cut down to the show without ads. Judge from the content: hosts introducing the show or resuming after a break, sign-offs, ads, promos for other programmes, news, weather, songs.
+Find where the talk show "{programme}" is on air and where its ad breaks are, so the recording can be cut down to the show without ads. Judge from the content: hosts introducing the show or resuming after a break, sign-offs, ads, promos for other programmes, news, weather, songs.
 
 Return:
 - hosts: the show's presenters as they introduce themselves, with obvious recognition errors corrected.

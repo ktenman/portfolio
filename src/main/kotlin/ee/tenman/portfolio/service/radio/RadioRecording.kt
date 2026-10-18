@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
 import org.springframework.boot.context.properties.ConfigurationProperties
+import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.file.Files
@@ -13,6 +14,7 @@ import java.nio.file.StandardCopyOption
 
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
+const val CUT_REQUEST = "cuts-requested.json"
 
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
@@ -96,6 +98,7 @@ data class Boundary(
   val method: String,
   val review: Boolean,
   val jingle: JingleMatch? = null,
+  val programme: String? = null,
 )
 
 data class JingleMatch(
@@ -109,6 +112,9 @@ fun readStatus(directory: Path): RecordingStatus =
 
 fun readTranscript(directory: Path): Transcript =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(TRANSCRIPT_FILE)), Transcript::class.java)
+
+inline fun <reified T> read(path: Path): T? =
+  path.takeIf(Files::exists)?.let { JsonMapperFactory.instance.readValue<T>(Files.readString(it)) }
 
 fun save(
   path: Path,
@@ -135,6 +141,7 @@ data class RecordingSummary(
   val timeline: List<TimelineEntry>,
   val audible: List<KeptSpan>,
   val format: AudioFormat?,
+  val programmeCuts: List<ProgrammeCuts>,
 ) {
   val drops: Int
     get() = (status.parts.size - 1).coerceAtLeast(0)
@@ -171,6 +178,37 @@ enum class CutState {
   SUGGESTED,
   REVIEWED,
 }
+
+enum class ProgrammeCutState {
+  FOUND,
+  FINDING,
+  NONE,
+}
+
+data class ProgrammeCuts(
+  val name: String,
+  val state: ProgrammeCutState,
+)
+
+data class CutRequest(
+  val programmes: List<String>,
+)
+
+data class CutChoice(
+  val programme: String,
+)
+
+fun wanted(
+  status: RecordingStatus,
+  requested: List<String>,
+): List<String> = status.programmes.filter { it == PROGRAMME || it in requested }
+
+fun EditList?.found(): Set<String> =
+  this
+  ?.boundaries
+  ?.map { it.programme ?: PROGRAMME }
+  ?.toSet()
+  .orEmpty()
 
 data class TranscriptCheck(
   val checkedAt: String,

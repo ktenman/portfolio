@@ -1,5 +1,8 @@
 <template>
-  <p v-if="!recording.editList" class="text-ink-soft">Lõikesoovitusi veel pole.</p>
+  <div v-if="!recording.editList" class="grid gap-4">
+    <p class="mb-0 text-ink-soft">Lõikesoovitusi veel pole.</p>
+    <radio-find-cuts :recording="recording" />
+  </div>
   <div v-else class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="grid gap-4">
       <radio-card :title="`Salvestus ${span(recording)}`">
@@ -42,6 +45,7 @@
         @drop="drop(i)"
       />
       <radio-manual-cut :recording="recording" />
+      <radio-find-cuts :recording="recording" />
     </div>
     <radio-card title="Tulemus">
       <div data-testid="radio-cut-result">
@@ -71,6 +75,7 @@ import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioFacts from './radio-facts.vue'
+import RadioFindCuts from './radio-find-cuts.vue'
 import RadioManualCut from './radio-manual-cut.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()

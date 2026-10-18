@@ -16,7 +16,7 @@ class RadioEpisodeTest {
         OutlineChapter(2711.8, "Umbusaldusavaldus ja sotside dilemma"),
         OutlineChapter(3202.2, "President Ülle Madise ja tema nõunikud"),
       )
-    expect(chapters(keep, topics).map { round(it.first * 100) / 100 to it.second }).toEqual(
+    expect(chapters(keep, topics, PROGRAMME).map { round(it.first * 100) / 100 to it.second }).toEqual(
       listOf(
         0.0 to "Rahvusooper Estonia juhtimiskriis",
         1354.09 to "Lõige 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",

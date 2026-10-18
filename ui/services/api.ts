@@ -16,6 +16,7 @@ import {
   type InstrumentDto,
   type InstrumentsResponse,
   type EditList,
+  type CutChoice,
   type CutContext,
   type CutReview,
   type JingleReview,
@@ -230,6 +231,8 @@ export const radioService = {
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/transcript/checked`),
   addCut: (name: string, cut: ManualCut) =>
     httpClient.post<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/manual`, cut),
+  findCuts: (name: string, choice: CutChoice) =>
+    httpClient.post<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/find`, choice),
   dropCut: (name: string, cut: number) =>
     httpClient.delete<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/${cut}`),
   jingle: (name: string, cut: number, review: JingleReview) =>
