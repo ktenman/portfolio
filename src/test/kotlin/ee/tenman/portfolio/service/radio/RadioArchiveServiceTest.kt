@@ -69,6 +69,22 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should read the format of the first part from its probe`() {
+    val probe = """{"streams":[{"codec_name":"mp3","bit_rate":"256000","channels":2}]}"""
+    Files.writeString(recording("2026-10-17").resolve("raw.probe.json"), probe)
+    expect(service.recordings().single().format).toEqual(AudioFormat("mp3", 256_000))
+  }
+
+  @Test
+  fun `should count a drop of the stream for each part after the first`() {
+    val directory = recording("2026-10-17")
+    val parts = listOf(RecordingPart("raw.mp3", 0.0), RecordingPart("raw-part-002.mp3", 9.5), RecordingPart("raw-part-003.mp3", 19.0))
+    val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, parts)
+    Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
+    expect(service.recordings().single().drops).toEqual(2)
+  }
+
+  @Test
   fun `should skip a directory without a status`() {
     Files.createDirectories(recordings.resolve("tühi"))
     expect(service.recordings()).toEqual(emptyList())

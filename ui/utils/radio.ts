@@ -130,5 +130,16 @@ const CUT_STATES: Record<CutState, (recording: RecordingSummary) => string> = {
 export const cutState = (recording: RecordingSummary): string =>
   CUT_STATES[recording.cutState](recording)
 
+export const audioFormat = ({ format }: RecordingSummary): string =>
+  format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
+
+export const dropNote = ({ drops, status }: RecordingSummary): string => {
+  const times = drops === 1 ? 'korra' : `${drops} korda`
+  const lost = status.lostSeconds
+    ? `${length(status.lostSeconds)} jäi salvestamata`
+    : 'midagi ei kadunud'
+  return `Voog katkes ${times}, ${lost}`
+}
+
 export const span = (recording: RecordingSummary): string =>
   range(recording.status.startedAt, 0, recording.status.seconds)

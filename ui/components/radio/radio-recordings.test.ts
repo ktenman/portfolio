@@ -36,6 +36,7 @@ describe('RadioRecordings', () => {
           state: RecordingState.RECORDING,
           programmes: ['Keskpäevatund'],
           startedAt: 1792170142,
+          lostSeconds: 0,
           seconds: 60,
           parts: [],
         },

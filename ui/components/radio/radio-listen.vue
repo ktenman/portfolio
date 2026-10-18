@@ -107,6 +107,9 @@
           <radio-badge :tone="state.tone">{{ state.label }}</radio-badge>
         </template>
         <radio-facts :rows="recordingFacts" />
+        <p v-if="recording.drops" class="mt-2 mb-0 text-sm text-ink-soft">
+          {{ dropNote(recording) }}
+        </p>
         <div class="mt-3 flex flex-wrap gap-2">
           <a
             v-for="(part, i) in recording.status.parts"
@@ -150,9 +153,11 @@ import {
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { radioService } from '../../services/api'
 import {
+  audioFormat,
   clock,
   cutState,
   day,
+  dropNote,
   megabytes,
   LINK,
   minutes,
@@ -210,6 +215,7 @@ const recordingFacts = computed<[string, string][]>(() => [
   ['Allikas', 'Kuku otsevoog'],
   ['Aeg', `${day(props.recording.status.startedAt)} · ${span(props.recording)}`],
   ['Kestus', position(props.recording.status.seconds)],
+  ['Vorming', audioFormat(props.recording)],
   ['Suurus', megabytes(props.recording.sizeBytes)],
   ...props.recording.status.parts.map((part, i, parts): [string, string] => [
     parts.length > 1 ? `Osa ${i + 1} SHA-256` : 'SHA-256',
