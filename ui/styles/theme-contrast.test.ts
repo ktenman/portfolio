@@ -8,6 +8,11 @@ function declaredTokens(): Map<string, Oklch> {
   for (const [, name, l, c, h] of themeCss.matchAll(pattern)) {
     tokens.set(name, { l: Number(l), c: Number(c), h: Number(h) })
   }
+  const alias = /--color-([a-z0-9-]+):\s*var\(--color-([a-z0-9-]+)\)/g
+  for (const [, name, target] of themeCss.matchAll(alias)) {
+    const color = tokens.get(target)
+    if (color) tokens.set(name, color)
+  }
   return tokens
 }
 
@@ -38,6 +43,15 @@ const PAIRS: ReadonlyArray<[string, string, number]> = [
   ['loss', 'loss-wash', AA_TEXT],
   ['notice', 'notice-wash', AA_TEXT],
   ['ink', 'loss-wash-deep', AA_TEXT],
+  ['ink', 'change-flat', AA_TEXT],
+  ['ink', 'gain-step-1', AA_TEXT],
+  ['ink', 'gain-step-2', AA_TEXT],
+  ['ink', 'gain-step-3', AA_TEXT],
+  ['ink', 'loss-step-1', AA_TEXT],
+  ['ink', 'loss-step-2', AA_TEXT],
+  ['ink', 'loss-step-3', AA_TEXT],
+  ['surface', 'gain', AA_TEXT],
+  ['surface', 'loss', AA_TEXT],
   ['paper', 'gray-700', AA_TEXT],
   ['gray-500', 'surface', AA_TEXT],
   ['gray-500', 'paper', AA_TEXT],

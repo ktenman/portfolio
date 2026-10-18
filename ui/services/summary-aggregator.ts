@@ -20,6 +20,11 @@ export function mergeHistoricalWithCurrent(
   return result
 }
 
+export function mergeSummariesByDate(...layers: PortfolioSummaryDto[][]): PortfolioSummaryDto[] {
+  const byDate = new Map(layers.flat().map(summary => [summary.date, summary]))
+  return sortSummariesByDateAsc([...byDate.values()])
+}
+
 export function sortSummariesByDateAsc<T extends { date: string }>(summaries: T[]): T[] {
   return [...summaries].sort((a, b) => a.date.localeCompare(b.date))
 }

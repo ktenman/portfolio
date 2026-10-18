@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import {
   mergeHistoricalWithCurrent,
+  mergeSummariesByDate,
   sortSummariesByDateAsc,
   sortSummariesByDateDesc,
   findSummaryByDate,
   flattenPages,
 } from './summary-aggregator'
 import type { PortfolioSummaryDto } from '../models/generated/domain-models'
+import { createCalendarRow } from '../tests/fixtures'
 
 const createSummary = (date: string, totalValue: number = 1000): PortfolioSummaryDto => ({
   date,
@@ -172,5 +174,48 @@ describe('summary-aggregator', () => {
       const result = flattenPages(pages)
       expect(result).toHaveLength(1)
     })
+  })
+
+  describe('mergeSummariesByDate', () => {
+    it('merges layers by date with later layers winning', () => {
+      const max = [
+        createCalendarRow('2025-12-02', 2),
+        createCalendarRow('2025-12-01', 1),
+        createCalendarRow('2025-11-30', 0),
+      ]
+      const recent = [createCalendarRow('2025-12-02', 20)]
+      const current = [createCalendarRow('2025-12-03', 30)]
+      const result = mergeSummariesByDate(max, recent, current)
+      expect([result.map(row => row.date), result.map(row => row.totalProfit)]).toEqual([
+        ['2025-11-30', '2025-12-01', '2025-12-02', '2025-12-03'],
+        [0, 1, 20, 30],
+      ])
+    })
+
+    it('keeps MAX rows inside the recent range that the recent layer lacks', () => {
+      const gap = createCalendarRow('2025-11-30', 0)
+      const max = [createCalendarRow('2025-11-29', 0), gap, createCalendarRow('2025-12-01', 0)]
+      const recent = [createCalendarRow('2025-11-29', 10), createCalendarRow('2025-12-01', 10)]
+      expect(mergeSummariesByDate(max, recent)).toContain(gap)
+    })
+
+    it('returns the source rows unchanged', () => {
+      const later = createCalendarRow('2025-12-02', 2)
+      const earlier = createCalendarRow('2025-12-01', 1)
+      const layer = [later, earlier]
+      const result = mergeSummariesByDate(layer)
+      expect(result[0]).toBe(earlier)
+      expect(result[1]).toBe(later)
+      expect(layer[0]).toBe(later)
+      expect(layer[1]).toBe(earlier)
+    })
+
+    it('keeps the later duplicate within one layer', () =>
+      expect(
+        mergeSummariesByDate([
+          createCalendarRow('2025-12-01', 1),
+          createCalendarRow('2025-12-01', 2),
+        ]).map(row => row.totalProfit)
+      ).toEqual([2]))
   })
 })

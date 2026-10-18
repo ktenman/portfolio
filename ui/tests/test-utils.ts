@@ -3,6 +3,16 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import router from '../router/index'
 
+export function deferred<T>() {
+  let resolve: (value: T) => void = () => {}
+  let reject: (error: Error) => void = () => {}
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done
+    reject = fail
+  })
+  return { promise, resolve, reject }
+}
+
 export function renderWithProviders(component: any): VueWrapper<any> & {
   queryClient: QueryClient
 } {

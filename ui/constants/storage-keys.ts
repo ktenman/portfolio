@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   SUMMARY_CHART_MODE: 'portfolio_summary_chart_mode',
   SUMMARY_CHART_HIDDEN: 'portfolio_summary_chart_hidden',
   SUMMARY_CALENDAR_DAY: 'portfolio_summary_calendar_day',
+  SUMMARY_INTERVAL: 'portfolio_summary_interval',
   PRICE_CHANGE_PERIOD: 'portfolio_price_change_period',
   SUMMARY_FILTERS_OPEN: 'portfolio_summary_filters_open',
   INSTRUMENTS_FILTERS_OPEN: 'portfolio_instruments_filters_open',
