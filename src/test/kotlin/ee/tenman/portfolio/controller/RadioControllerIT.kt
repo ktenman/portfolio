@@ -7,6 +7,7 @@ import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.OutlineSummary
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RecordingPart
+import ee.tenman.portfolio.service.radio.RecordingState
 import ee.tenman.portfolio.service.radio.RecordingStatus
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -40,7 +41,7 @@ class RadioControllerIT {
   fun setup() {
     radioProperties.recordings.toFile().deleteRecursively()
     directory = Files.createDirectories(radioProperties.recordings.resolve("2026-10-17"))
-    val status = RecordingStatus("captured", 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
+    val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
     Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
     Files.writeString(directory.resolve("episode.m4a"), "Keskpäevatund õ")
   }
@@ -48,6 +49,11 @@ class RadioControllerIT {
   @Test
   fun `should list the recordings`() {
     mockMvc.perform(mvcGet("/api/radio")).andExpect(status().isOk).andExpect(jsonPath("$[0].name").value("2026-10-17"))
+  }
+
+  @Test
+  fun `should serve the recording state as the worker writes it`() {
+    mockMvc.perform(mvcGet("/api/radio")).andExpect(jsonPath("$[0].status.state").value("captured"))
   }
 
   @Test
@@ -82,7 +88,7 @@ class RadioControllerIT {
   }
 
   @Test
-  fun `should reject cuts whose spans overlap`() {
+  fun `should reject a cut the recording does not have`() {
     val outline = OutlineSummary(null, 1, 1, 1)
     val edit = EditList(listOf(KeptSpan(761.5, 3837.38)), 3075.88, emptyList(), emptyList(), emptyList(), outline, emptyList(), false, "")
     Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
@@ -90,8 +96,13 @@ class RadioControllerIT {
       .perform(
         mvcPut(
           "/api/radio/2026-10-17/cuts",
-        ).contentType(APPLICATION_JSON).content("""[{"start":10.0,"end":30.0},{"start":20.0,"end":40.0}]"""),
+        ).contentType(APPLICATION_JSON).content("""{"removed":[5]}"""),
       ).andExpect(status().isBadRequest)
+  }
+
+  @Test
+  fun `should not find the cuts of a recording without a transcript`() {
+    mockMvc.perform(mvcGet("/api/radio/2026-10-17/cuts")).andExpect(status().isNotFound)
   }
 
   @Test

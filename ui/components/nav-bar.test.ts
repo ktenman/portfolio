@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { ref } from 'vue'
 import NavBar from './nav-bar.vue'
@@ -67,6 +67,22 @@ describe('NavBar', () => {
       expect(wrapper.text()).toContain('Calculator')
       expect(wrapper.text()).toContain('Instruments')
       expect(wrapper.text()).toContain('Transactions')
+    })
+
+    it('should list Raadio as the last navigation link', () => {
+      const wrapper = createWrapper()
+
+      expect(wrapper.findAll('.nav-link').slice(-1)[0]?.text()).toBe('Raadio')
+    })
+
+    it('should scroll the active link into view', async () => {
+      const scroll = vi.fn()
+      Element.prototype.scrollIntoView = scroll
+      await router.push('/transactions')
+      createWrapper()
+      await flushPromises()
+
+      expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
     })
   })
 

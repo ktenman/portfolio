@@ -14,6 +14,8 @@ vi.mock('@guolao/vue-monaco-editor', () => ({
   },
 }))
 
+Object.defineProperty(document, 'fonts', { value: { ready: Promise.resolve() } })
+
 config.global.stubs = {
   teleport: true,
 }

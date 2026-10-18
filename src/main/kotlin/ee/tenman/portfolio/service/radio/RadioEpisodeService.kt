@@ -49,7 +49,7 @@ class RadioEpisodeService(
     val agreed = consensus(matched)
     val placed = radioCutService.boundaries(timeline, db, agreed, lines)
     val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
-    val kept = audible(timeline, keep)
+    val kept = audible(timeline.spans, keep)
     val marks = chapters(kept, agreed.chapters)
     val temporary = directory.resolve(TEMPORARY)
     radioRenderService.render(timeline, keep, marks, title(status), temporary)
@@ -111,10 +111,10 @@ class RadioEpisodeService(
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val spans = keep.map { it.start to min(it.end, timeline.seconds) }
-    require(ordered(spans) && spans.all { audible(timeline, listOf(it)).isNotEmpty() }) {
+    require(ordered(spans) && spans.all { audible(timeline.spans, listOf(it)).isNotEmpty() }) {
       "Keep list $keep is not ordered audible spans within 0-${timeline.seconds} s"
     }
-    val kept = audible(timeline, spans)
+    val kept = audible(timeline.spans, spans)
     val marks = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) })
     val temporary = directory.resolve(REVIEWED)
     runCatching { radioRenderService.render(timeline, spans, marks, title(status), temporary) }
@@ -143,7 +143,7 @@ class RadioEpisodeService(
       spans.zipWithNext().all { (left, right) -> left.second < right.first }
 
   private fun title(status: RecordingStatus): String =
-    "Keskpäevatund ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
+    "$PROGRAMME ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
 
   private fun fail(
     directory: Path,
@@ -163,7 +163,7 @@ class RadioEpisodeService(
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
-    private val READY = setOf("captured", "partial")
+    private val READY = setOf(RecordingState.CAPTURED, RecordingState.PARTIAL)
     private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
   }
 }

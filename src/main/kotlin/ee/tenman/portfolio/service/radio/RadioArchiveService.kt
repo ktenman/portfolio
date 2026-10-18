@@ -33,7 +33,18 @@ class RadioArchiveService(
       }
   }
 
-  fun transcript(name: String): List<TranscriptLine>? = directory(name, TRANSCRIPT_FILE)?.let { lines(readTranscript(it)) }
+  fun transcript(name: String): List<TranscriptLine>? {
+    val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    return mark(lines(readTranscript(directory)), cutsOf(directory))
+  }
+
+  fun contexts(name: String): List<CutContext>? {
+    val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    val cuts = cutsOf(directory)
+    if (cuts.isEmpty()) return emptyList()
+    val lines = lines(readTranscript(directory))
+    return cuts.map { context(it, lines) }
+  }
 
   fun file(
     name: String,
@@ -46,8 +57,13 @@ class RadioArchiveService(
 
   fun review(
     name: String,
-    keep: List<KeptSpan>,
-  ): EditList? = directory(name, STATUS_FILE)?.let { radioEpisodeService.review(it, keep) }
+    review: CutReview,
+  ): EditList? {
+    val directory = directory(name, STATUS_FILE) ?: return null
+    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return null
+    val total = readStatus(directory).seconds
+    return radioEpisodeService.review(directory, keep(cuts(edit, total), review.removed, total))
+  }
 
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
@@ -77,17 +93,40 @@ class RadioArchiveService(
 
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
+    val edit = read<EditList>(directory.resolve(EDIT_LIST))
+    val cuts = cuts(edit, status.seconds)
     return RecordingSummary(
       name = directory.fileName.toString(),
+      programme = PROGRAMME,
       status = status,
       sizeBytes = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 },
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
-      editList = read(directory.resolve(EDIT_LIST)),
+      editList = edit,
       failure = read(directory.resolve(FAILED)),
       episodeBytes = size(directory.resolve(EPISODE)),
+      cuts = cuts,
+      timeline = timelineOf(cuts, edit, status),
+      audible = audibleOf(directory, status, edit),
     )
   }
+
+  private fun timelineOf(
+    cuts: List<Cut>,
+    edit: EditList?,
+    status: RecordingStatus,
+  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds)
+
+  private fun audibleOf(
+    directory: Path,
+    status: RecordingStatus,
+    edit: EditList?,
+  ): List<KeptSpan> {
+    val keep = edit?.keep ?: return emptyList()
+    return audible(coverage(directory, status.parts), keep.map { it.start to it.end }).map { KeptSpan(it.first, it.second) }
+  }
+
+  private fun cutsOf(directory: Path): List<Cut> = cuts(read(directory.resolve(EDIT_LIST)), readStatus(directory).seconds)
 
   private fun size(path: Path): Long? = path.takeIf(Files::exists)?.let(Files::size)
 

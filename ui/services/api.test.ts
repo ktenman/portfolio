@@ -5,6 +5,7 @@ import {
   instrumentsService,
   logoService,
   portfolioSummaryService,
+  radioService,
   transactionsService,
   utilityService,
 } from './api'
@@ -184,6 +185,21 @@ describe('api services', () => {
       undefined,
     ],
     ['utility.getBuildInfo', () => utilityService.getBuildInfo(), 'get', '/build-info', undefined],
+    ['radio.recordings', () => radioService.recordings(), 'get', '/radio', undefined],
+    [
+      'radio.transcript',
+      () => radioService.transcript('2026-10-17'),
+      'get',
+      '/radio/2026-10-17/transcript',
+      undefined,
+    ],
+    [
+      'radio.check',
+      () => radioService.check('2026-10-17'),
+      'put',
+      '/radio/2026-10-17/transcript/checked',
+      undefined,
+    ],
   ])('%s calls the right endpoint', async (_name, call, method, url, payload) => {
     await call()
 
@@ -216,5 +232,19 @@ describe('api services', () => {
     vi.mocked(httpClient.get).mockRejectedValueOnce(failure)
 
     await expect(utilityService.getCalculationResult()).rejects.toThrow(failure)
+  })
+
+  it('should give a radio cut review ten minutes to render', async () => {
+    await radioService.review('2026-10-17', { removed: [0, 2, 3] })
+
+    expect(httpClient.put).toHaveBeenCalledWith(
+      '/radio/2026-10-17/cuts',
+      { removed: [0, 2, 3] },
+      { timeout: 600000 }
+    )
+  })
+
+  it('should build the address of a radio file', () => {
+    expect(radioService.fileUrl('2026-10-17', 'raw.mp3')).toBe('/api/radio/2026-10-17/raw.mp3')
   })
 })

@@ -8,6 +8,7 @@ import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubMonitoring } from './monitoring-fixture'
+import { stubRadio } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -22,6 +23,10 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/diversification', name: 'diversification', stub: stubDiversification },
   { path: '/calculator', name: 'calculator', stub: stubCalculator },
   { path: '/monitoring', name: 'monitoring', stub: stubMonitoring },
+  { path: '/radio', name: 'radio', stub: stubRadio },
+  { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
+  { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
+  { path: '/radio/2026-10-17/text', name: 'radio-text', stub: stubRadio },
 ]
 
 const BREAKDOWN_ROUTES = ROUTES.filter(route =>

@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
   BUILD_INFO: '/build-info',
   MONITORING_COLLECTIONS: '/monitoring/collections',
   LIVE_UPDATES: '/live-updates',
+  RADIO: '/radio',
 } as const
 
 export const REFETCH_INTERVALS = {

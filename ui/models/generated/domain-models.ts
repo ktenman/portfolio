@@ -246,6 +246,7 @@ export interface EnumsResponse {
 
 export interface RecordingSummary {
     name: string;
+    programme: string;
     status: RecordingStatus;
     sizeBytes: number;
     transcribed: boolean;
@@ -253,6 +254,11 @@ export interface RecordingSummary {
     editList: EditList | null;
     failure: EpisodeFailure | null;
     episodeBytes: number | null;
+    cuts: Cut[];
+    timeline: TimelineEntry[];
+    audible: KeptSpan[];
+    transcriptState: TranscriptState;
+    cutState: CutState;
 }
 
 export interface TranscriptLine {
@@ -260,11 +266,16 @@ export interface TranscriptLine {
     end: number;
     text: string;
     words: TranscriptWord[];
+    split: Cut | null;
 }
 
-export interface KeptSpan {
-    start: number;
-    end: number;
+export interface CutReview {
+    removed: number[];
+}
+
+export interface CutContext {
+    before: TranscriptLine | null;
+    after: TranscriptLine | null;
 }
 
 export interface Serializable {
@@ -315,7 +326,7 @@ export interface FundWeightDto {
 }
 
 export interface RecordingStatus {
-    state: string;
+    state: RecordingState;
     startedAt: number;
     seconds: number;
     parts: RecordingPart[];
@@ -337,6 +348,28 @@ export interface EditList {
 export interface EpisodeFailure {
     reason: string;
     failedAt: string;
+}
+
+export interface Cut {
+    kind: CutKind;
+    title: string;
+    start: number;
+    end: number;
+    methods: BoundaryMethod[];
+    review: boolean;
+    removed: boolean;
+}
+
+export interface TimelineEntry {
+    start: number;
+    end: number;
+    title: string;
+    cut: boolean;
+}
+
+export interface KeptSpan {
+    start: number;
+    end: number;
 }
 
 export interface TranscriptWord {
@@ -463,4 +496,38 @@ export enum TimeRange {
 export enum LiveUpdate {
     PRICES = "PRICES",
     SUMMARY = "SUMMARY",
+}
+
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    UNCHECKED = "UNCHECKED",
+    CHECKED = "CHECKED",
+}
+
+export enum CutState {
+    NONE = "NONE",
+    FAILED = "FAILED",
+    SUGGESTED = "SUGGESTED",
+    REVIEWED = "REVIEWED",
+}
+
+export enum RecordingState {
+    RECORDING = "recording",
+    CAPTURED = "captured",
+    PARTIAL = "partial",
+    FAILED = "failed",
+}
+
+export enum CutKind {
+    BEFORE = "BEFORE",
+    BREAK = "BREAK",
+    AFTER = "AFTER",
+}
+
+export enum BoundaryMethod {
+    DIGITAL_SILENCE = "DIGITAL_SILENCE",
+    STATION_JINGLE = "STATION_JINGLE",
+    LEVEL_DIP = "LEVEL_DIP",
+    TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
 }

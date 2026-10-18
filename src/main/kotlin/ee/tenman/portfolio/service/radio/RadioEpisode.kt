@@ -29,7 +29,7 @@ fun chapters(
     keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total
   }
   val order = compareBy<Pair<Double, String>>({ it.first }, { it.second })
-  val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, "Keskpäevatund")) }.map { clean(it.time) to it.title }.sortedWith(order)
+  val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, PROGRAMME)) }.map { clean(it.time) to it.title }.sortedWith(order)
   val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
   val marks =
     seams.withIndex().drop(1).map { (index, seam) ->
@@ -54,20 +54,20 @@ fun metadata(
 }
 
 fun pieces(
-  timeline: Timeline,
+  spans: List<Span>,
   keep: List<Pair<Double, Double>>,
 ): List<Piece> =
   keep.flatMap { (a, b) ->
-    timeline.spans.mapIndexedNotNull { index, span ->
+    spans.mapIndexedNotNull { index, span ->
       Piece(index, max(a, span.start), min(b, span.end), span.offset).takeIf { it.end - it.start >= 2 * FADE }
     }
   }
 
 fun audible(
-  timeline: Timeline,
+  spans: List<Span>,
   keep: List<Pair<Double, Double>>,
 ): List<Pair<Double, Double>> =
-  pieces(timeline, keep).fold(emptyList()) { merged, piece ->
+  pieces(spans, keep).fold(emptyList()) { merged, piece ->
     val last = merged.lastOrNull()
     val touching = last != null && abs(last.second - piece.start) < 1e-6
     if (touching) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
