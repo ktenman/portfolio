@@ -3,6 +3,7 @@ import { contexts, recording, song, transcript } from '../../components/radio/ra
 import {
   CutState,
   DayOfWeek,
+  RecorderState,
   RecordingState,
   TranscriptState,
 } from '../../models/generated/domain-models'
@@ -142,6 +143,9 @@ const STATION = {
   },
   freeBytes: 364_000_000_000,
   hours: 3159,
+  recorder: RecorderState.WAITING,
+  last: { programme: 'Keskpäevatund', end: Date.UTC(2026, 9, 17, 10, 5, 0) / 1000 },
+  format: { codec: 'mp3', bitRate: 256_000 },
 }
 
 export const stubRadio: RouteStub = async page => {

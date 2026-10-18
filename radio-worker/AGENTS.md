@@ -29,7 +29,7 @@ docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolu
 - `src/radio_worker/station.py` - Replay station: FFmpeg's HLS muxer behind `http.server`
 - `src/radio_worker/recorder.py` - Records the stream into parts and owns `status.json`
 - `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM
-- `src/radio_worker/schedule.py` - Follows the backend's `plan.json`, re-read every minute, and downloads the pinned model's `ct2/` files, checked by SHA-256, between captures
+- `src/radio_worker/schedule.py` - Follows the backend's `plan.json`, re-read every minute, and downloads the pinned model's `ct2/` files, checked by SHA-256, between captures; it leaves `heartbeat.json` with the time it will next be seen, so the backend can tell a stopped recorder
 - `src/radio_worker/cli.py` - The `station`, `run` and `planned` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
 - `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`

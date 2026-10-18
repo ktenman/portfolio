@@ -215,7 +215,7 @@ const recordingFacts = computed<[string, string][]>(() => [
   ['Allikas', 'Kuku otsevoog'],
   ['Aeg', `${day(props.recording.status.startedAt)} · ${span(props.recording)}`],
   ['Kestus', position(props.recording.status.seconds)],
-  ['Vorming', audioFormat(props.recording)],
+  ['Vorming', audioFormat(props.recording.format)],
   ['Suurus', megabytes(props.recording.sizeBytes)],
   ...props.recording.status.parts.map((part, i, parts): [string, string] => [
     parts.length > 1 ? `Osa ${i + 1} SHA-256` : 'SHA-256',
