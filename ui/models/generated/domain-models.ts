@@ -267,6 +267,7 @@ export interface TranscriptLine {
     text: string;
     words: TranscriptWord[];
     split: Cut | null;
+    music: boolean;
 }
 
 export interface CutReview {
@@ -370,6 +371,7 @@ export interface EditList {
     reviewed: boolean;
     renderedAt: string;
     topics: EpisodeChapter[];
+    music: KeptSpan[];
 }
 
 export interface EpisodeFailure {

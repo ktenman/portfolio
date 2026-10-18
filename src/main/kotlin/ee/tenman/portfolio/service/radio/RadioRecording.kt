@@ -75,6 +75,7 @@ data class TranscriptLine(
   val text: String,
   val words: List<TranscriptWord>,
   val split: Cut? = null,
+  val music: Boolean = false,
 )
 
 data class Boundary(

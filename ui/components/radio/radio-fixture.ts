@@ -51,6 +51,7 @@ const editList = (overrides: Partial<EditList> = {}): EditList => ({
     { start: 2700, title: 'Mis toimub poliitikas?' },
     { start: 3400, title: 'President Ülle Madise' },
   ],
+  music: [],
   ...overrides,
 })
 
@@ -118,6 +119,7 @@ const line = (start: number, end: number, text: string): TranscriptLine => ({
   text,
   words: [],
   split: null,
+  music: false,
 })
 
 export const contexts = (): CutContext[] => [
@@ -132,6 +134,8 @@ export const contexts = (): CutContext[] => [
   },
   { before: line(3830, 3836.5, ' Ja siinkohal lõpetame.'), after: null },
 ]
+
+export const song = (): TranscriptLine => ({ ...line(795, 886, ''), music: true })
 
 export const transcript = (): TranscriptLine[] => [
   {

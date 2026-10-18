@@ -101,6 +101,7 @@ data class EditList(
   val reviewed: Boolean,
   val renderedAt: String,
   val topics: List<EpisodeChapter> = emptyList(),
+  val music: List<KeptSpan> = emptyList(),
 )
 
 data class EpisodeFailure(
