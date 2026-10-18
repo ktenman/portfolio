@@ -152,6 +152,41 @@ class OpenRouterClient(
     }.getOrNull()
   }
 
+  fun complete(
+    model: AiModel,
+    system: String,
+    user: String,
+    schema: Map<String, Any>,
+    maxTokens: Int = DEFAULT_MAX_TOKENS,
+  ): String? {
+    if (openRouterProperties.apiKey.isBlank()) {
+      log.warn("OpenRouter API key is not configured")
+      return null
+    }
+    if (!circuitBreaker.tryAcquireForModel(model)) {
+      log.warn("Rate limit exceeded for model ${model.modelId}, skipping request")
+      return null
+    }
+    val request =
+      OpenRouterRequest(
+        model = model.modelId,
+        messages = listOf(OpenRouterRequest.Message("system", system), OpenRouterRequest.Message("user", user)),
+        maxTokens = maxTokens,
+        temperature = 0.0,
+        responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
+        provider = OpenRouterRequest.ProviderPreferences(),
+      )
+    return runCatching {
+      log.info("Calling OpenRouter with a json schema and model: ${model.modelId}")
+      val content = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request).extractContent()
+      circuitBreaker.recordSuccess()
+      content
+    }.onFailure { throwable ->
+      log.error("Error calling OpenRouter with a json schema and model ${model.modelId}: ${throwable.message}", throwable)
+      circuitBreaker.recordFailure(throwable)
+    }.getOrNull()
+  }
+
   companion object {
     private const val DEFAULT_MAX_TOKENS = 8000
     private const val RATE_LIMIT_BUFFER_MS = 50L
