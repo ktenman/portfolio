@@ -20,11 +20,14 @@ class SharedJingle(
   val r: Double,
 )
 
-private class Window(
+class Window(
   val samples: DoubleArray,
   val spectrum: Spectrum,
   val size: Int,
-)
+) {
+  val sums: DoubleArray = cumulative(samples) { it }
+  val squares: DoubleArray = cumulative(samples) { it * it }
+}
 
 fun fft(
   re: DoubleArray,
@@ -45,11 +48,10 @@ fun fft(
       im[i] = im[j].also { im[j] = im[i] }
     }
   }
-  var length = 2
-  while (length <= n) {
-    butterflies(re, im, length, if (inverse) 2 * PI / length else -2 * PI / length)
-    length = length shl 1
-  }
+  val turn = if (inverse) 2 * PI / n else -2 * PI / n
+  val wr = DoubleArray(n / 2) { cos(turn * it) }
+  val wi = DoubleArray(n / 2) { sin(turn * it) }
+  generateSequence(2) { it shl 1 }.takeWhile { it <= n }.forEach { butterflies(re, im, it, wr, wi) }
   if (inverse) re.indices.forEach { re[it] /= n.toDouble() }
 }
 
@@ -57,17 +59,18 @@ private fun butterflies(
   re: DoubleArray,
   im: DoubleArray,
   length: Int,
-  angle: Double,
+  wr: DoubleArray,
+  wi: DoubleArray,
 ) {
   val half = length / 2
-  val wr = DoubleArray(half) { cos(angle * it) }
-  val wi = DoubleArray(half) { sin(angle * it) }
+  val stride = re.size / length
   for (i in re.indices step length) {
     for (k in 0 until half) {
       val a = i + k
       val b = a + half
-      val xr = re[b] * wr[k] - im[b] * wi[k]
-      val xi = re[b] * wi[k] + im[b] * wr[k]
+      val w = k * stride
+      val xr = re[b] * wr[w] - im[b] * wi[w]
+      val xi = re[b] * wi[w] + im[b] * wr[w]
       re[b] = re[a] - xr
       im[b] = im[a] - xi
       re[a] += xr
@@ -86,31 +89,49 @@ private fun spectrum(
   return Spectrum(re, im)
 }
 
-private fun cumulative(values: DoubleArray): DoubleArray = values.runningFold(0.0) { sum, value -> sum + value }.toDoubleArray()
+private fun cumulative(
+  values: DoubleArray,
+  term: (Double) -> Double,
+): DoubleArray {
+  val out = DoubleArray(values.size + 1)
+  values.indices.forEach { out[it + 1] = out[it] + term(values[it]) }
+  return out
+}
 
 fun ncc(
   template: DoubleArray,
-  signal: DoubleArray,
-  spectrum: Spectrum,
-  size: Int,
+  window: Window,
 ): Pair<Double, Int> {
   val mean = template.average()
   val centred = DoubleArray(template.size) { template[it] - mean }
-  val own = spectrum(centred, size)
-  val re = DoubleArray(size) { spectrum.re[it] * own.re[it] + spectrum.im[it] * own.im[it] }
-  val im = DoubleArray(size) { spectrum.im[it] * own.re[it] - spectrum.re[it] * own.im[it] }
+  val own = spectrum(centred, window.size)
+  val re = own.re
+  val im = own.im
+  val signal = window.spectrum
+  for (k in 0 until window.size) {
+    val r = signal.re[k] * re[k] + signal.im[k] * im[k]
+    im[k] = signal.im[k] * re[k] - signal.re[k] * im[k]
+    re[k] = r
+  }
   fft(re, im, inverse = true)
-  val n = template.size
-  val sums = cumulative(signal)
-  val squares = cumulative(DoubleArray(signal.size) { signal[it] * signal[it] })
-  val energy = centred.sumOf { it * it }
-  val r =
-    DoubleArray(signal.size - n + 1) {
-      val variance = (squares[it + n] - squares[it]) - (sums[it + n] - sums[it]) * (sums[it + n] - sums[it]) / n
-      re[it] / sqrt(max(variance, 1e-9) * energy)
-    }
-  val best = r.indices.filterNot { r[it].isNaN() }.maxByOrNull { r[it] } ?: return Double.NaN to 0
-  return r[best] to best
+  return best(re, window, template.size, centred.sumOf { it * it })
+}
+
+private fun best(
+  num: DoubleArray,
+  window: Window,
+  n: Int,
+  energy: Double,
+): Pair<Double, Int> {
+  val sums = window.sums
+  val squares = window.squares
+  var found = Double.NaN to 0
+  for (k in 0..window.samples.size - n) {
+    val sum = sums[k + n] - sums[k]
+    val r = num[k] / sqrt(max(squares[k + n] - squares[k] - sum * sum / n, 1e-9) * energy)
+    if (!r.isNaN() && (found.first.isNaN() || r > found.first)) found = r to k
+  }
+  return found
 }
 
 private fun window(
@@ -156,7 +177,7 @@ fun jingle(
   val first = timeline.samples(returns[0] - WINDOW, returns[0])
   val second = window(timeline, returns[1])
   return (0 until first.size - RATE step RATE / 50).asSequence().firstNotNullOfOrNull { offset ->
-    val (r, lag) = ncc(first.copyOfRange(offset, offset + RATE), second.samples, second.spectrum, second.size)
+    val (r, lag) = ncc(first.copyOfRange(offset, offset + RATE), second)
     if (!(r >= MATCH)) return@firstNotNullOfOrNull null
     val t1 = returns[0] - WINDOW + offset.toDouble() / RATE
     val t2 = returns[1] - WINDOW + lag.toDouble() / RATE
@@ -175,8 +196,7 @@ private fun shared(
   val template = timeline.read(sample(first), RATE)
   val later =
     returns.drop(2).map { back ->
-      val found = window(timeline, back)
-      val (rr, lag) = ncc(template, found.samples, found.spectrum, found.size)
+      val (rr, lag) = ncc(template, window(timeline, back))
       val t = back - WINDOW + lag.toDouble() / RATE
       if (rr >= MATCH) valley(db, t - 0.6, t + 0.05) else null
     }

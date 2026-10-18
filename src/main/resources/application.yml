@@ -166,6 +166,10 @@ scheduling:
     price-snapshot-retention-days: ${PRICE_SNAPSHOT_RETENTION_DAYS:30}
     intraday-summary-cleanup-cron: ${INTRADAY_SUMMARY_CLEANUP_CRON:0 30 4 * * *}
     intraday-summary-retention-days: ${INTRADAY_SUMMARY_RETENTION_DAYS:30}
+    radio-episode-cron: ${RADIO_EPISODE_CRON:0 */10 * * * *}
+
+radio:
+  recordings: ${RADIO_RECORDINGS:/recordings}
 
 etf:
   holding-reconciliation:

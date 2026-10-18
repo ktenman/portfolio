@@ -68,3 +68,37 @@ fun audible(
     val last = merged.lastOrNull()
     if (last != null && abs(last.second - piece.start) < 1e-6) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
   }
+
+data class KeptSpan(
+  val start: Double,
+  val end: Double,
+)
+
+data class EpisodeChapter(
+  val start: Double,
+  val title: String,
+)
+
+data class OutlineSummary(
+  val model: String?,
+  val reads: Int,
+  val matched: Int,
+  val voters: Int,
+)
+
+data class EditList(
+  val keep: List<KeptSpan>,
+  val durationSeconds: Double,
+  val parts: List<RecordingPart>,
+  val boundaries: List<Boundary>,
+  val hosts: List<String>,
+  val outline: OutlineSummary,
+  val chapters: List<EpisodeChapter>,
+  val reviewed: Boolean,
+  val renderedAt: String,
+)
+
+data class EpisodeFailure(
+  val reason: String,
+  val failedAt: String,
+)

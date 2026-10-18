@@ -14,7 +14,7 @@ import kotlin.math.sqrt
 const val RATE = 16000
 const val HOP = 160
 const val FRAME = HOP.toDouble() / RATE
-private const val BLOCK = 6000
+private const val BLOCK = 300
 private const val DIGITAL = "digital silence"
 
 data class Span(
