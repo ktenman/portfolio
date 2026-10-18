@@ -90,6 +90,7 @@ class RadioEpisodeService(
     reviewed = false,
     renderedAt = now(),
     topics = agreed.chapters.map { EpisodeChapter(rounded(it.time), it.title) },
+    music = listOfNotNull(KeptSpan(placed.first().seconds, agreed.firstSpeechTime).takeIf { agreed.opensWithMusic }),
   )
 
   @Synchronized

@@ -53,7 +53,7 @@
               {{ clock(recording.status.startedAt, line.start, true) }}
             </button>
             <div>
-              <p class="mb-0">
+              <p class="mb-0" :class="{ 'text-ink-soft': line.music }">
                 <template v-if="line === current && line.words.length">
                   <template v-for="word in line.words" :key="word.start">
                     <span
@@ -65,7 +65,7 @@
                     {{ ' ' }}
                   </template>
                 </template>
-                <template v-else>{{ line.text.trim() }}</template>
+                <template v-else>{{ line.music ? 'Muusika' : line.text.trim() }}</template>
               </p>
               <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
                 <radio-badge tone="warn">Lõige poolitab lause</radio-badge>

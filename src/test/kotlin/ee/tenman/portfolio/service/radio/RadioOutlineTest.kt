@@ -134,6 +134,18 @@ class RadioOutlineTest {
   }
 
   @Test
+  fun `should take a line in another script for music`() {
+    val lines = listOf(TranscriptLine(10.0, 14.0, "Мы любим оперу и буфет", emptyList()))
+    expect(music(lines, emptyList()).single().music).toEqual(true)
+  }
+
+  @Test
+  fun `should keep a spoken line that names someone in another script`() {
+    val lines = listOf(TranscriptLine(10.0, 14.0, "Täna räägime sellest, mida ütles Зеленський", emptyList()))
+    expect(music(lines, emptyList()).single().music).toEqual(false)
+  }
+
+  @Test
   fun `should print a level with no audio around it as nan`() {
     val events = listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, Double.NaN))
     expect("after    nan dB" in describe(RecordingStatus(RecordingState.PARTIAL, 0.0, 67.36), emptyList(), events)).toEqual(true)

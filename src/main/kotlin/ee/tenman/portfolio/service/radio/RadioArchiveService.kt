@@ -26,8 +26,15 @@ class RadioArchiveService(
 
   fun transcript(name: String): List<TranscriptLine>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
-    return mark(lines(readTranscript(directory)), cutsOf(directory))
+    val music = read<EditList>(directory.resolve(EDIT_LIST))?.music.orEmpty()
+    return mark(music(lines(readTranscript(directory)), music), cutsOf(directory))
   }
+
+  fun text(name: String): String? = spoken(name)?.joinToString("") { "${it.text.trim()}\n" }
+
+  fun subtitles(name: String): String? = spoken(name)?.let(::subtitles)
+
+  private fun spoken(name: String): List<TranscriptLine>? = transcript(name)?.filterNot { it.music }
 
   fun contexts(name: String): List<CutContext>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
@@ -192,6 +199,6 @@ class RadioArchiveService(
     private const val FAILED = "episode-failed.json"
     private const val CHECKED = "transcript-checked.json"
     private val NAME = Regex("[0-9a-z][0-9a-z-]*")
-    private val FILE = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.mp3|transcript\\.(srt|txt)")
+    private val FILE = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.mp3")
   }
 }

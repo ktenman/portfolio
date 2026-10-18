@@ -87,6 +87,17 @@ class RadioEpisodePocTest {
   }
 
   @Test
+  fun `should show the opening song as music and hide no spoken line`() {
+    prepare(Path.of(System.getenv("RADIO_WORKER_POC")))
+    val lines = lines(readTranscript(directory))
+    val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
+    val agreed = consensus(reads.filterNotNull().mapNotNull { match(it, lines) })
+    val rows = music(lines, listOf(KeptSpan(reference[0], agreed.firstSpeechTime)))
+    val song = rows.indexOfFirst { it.music }
+    expect(rows.filter { it.music }.map { it.start to it.end } to rows[song + 1].text).toEqual(listOf(793.52 to 916.4) to "Tere.")
+  }
+
+  @Test
   fun `should render the proof of concept episode from the saved reads`() {
     prepare(Path.of(System.getenv("RADIO_WORKER_POC")))
     val service = RadioEpisodeService(mockk(), RadioCutService(), RadioRenderService(), RadioProperties(), Clock.systemUTC())

@@ -366,6 +366,7 @@ class RadioArchiveServiceTest {
     directory: Path,
     keep: List<KeptSpan> = listOf(KeptSpan(761.5, 4200.0)),
     boundaries: List<Boundary> = listOf(Boundary("show starts", 761.5, "digital silence", false)),
+    music: List<KeptSpan> = emptyList(),
   ) {
     val edit =
       EditList(
@@ -378,7 +379,43 @@ class RadioArchiveServiceTest {
         chapters = emptyList(),
         reviewed = false,
         renderedAt = "2026-10-17T10:20:00Z",
+        music = music,
       )
     Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
+  }
+
+  private fun sung(): String {
+    val directory = recording("2026-10-17")
+    edited(directory, music = listOf(KeptSpan(761.5, 928.0)))
+    val segments =
+      listOf(
+        TranscriptSegment(756.8, 760.9, "Välismääraja paneb kokku Neeme Raud."),
+        TranscriptSegment(795.0, 805.2, "Pane ooperist ja tema hüvas puhvetist."),
+        TranscriptSegment(863.8, 886.0, "Ja ooperit ja ooperit me armastame ooperit."),
+        TranscriptSegment(928.0, 938.0, "Tere, siin Keskpäevatund."),
+      )
+    Files.writeString(directory.resolve(TRANSCRIPT_FILE), JsonMapperFactory.instance.writeValueAsString(Transcript(segments, emptyList())))
+    return directory.fileName.toString()
+  }
+
+  @Test
+  fun `should give the opening song as one music line`() {
+    val lines = service.transcript(sung()).orEmpty()
+    expect(lines.map { Triple(it.start, it.end, it.music) }).toEqual(
+      listOf(Triple(756.8, 760.9, false), Triple(795.0, 886.0, true), Triple(928.0, 938.0, false)),
+    )
+  }
+
+  @Test
+  fun `should leave the song out of the text`() {
+    expect(service.text(sung())).toEqual("Välismääraja paneb kokku Neeme Raud.\nTere, siin Keskpäevatund.\n")
+  }
+
+  @Test
+  fun `should leave the song out of the subtitles`() {
+    expect(service.subtitles(sung())).toEqual(
+      "1\n00:12:36,800 --> 00:12:40,900\nVälismääraja paneb kokku Neeme Raud.\n\n" +
+        "2\n00:15:28,000 --> 00:15:38,000\nTere, siin Keskpäevatund.\n\n",
+    )
   }
 }

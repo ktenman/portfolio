@@ -4,7 +4,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioText from './radio-text.vue'
-import { recording, transcript } from './radio-fixture'
+import { recording, song, transcript } from './radio-fixture'
 import { type RecordingSummary, TranscriptState } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
@@ -73,6 +73,19 @@ describe('RadioText', () => {
 
   it('should show each line of the transcript', async () => {
     expect(lines(await render())).toHaveLength(3)
+  })
+
+  it('should show a run of music as one Muusika row with its time', async () => {
+    const [first, ...rest] = transcript()
+    vi.mocked(radioService.transcript).mockResolvedValue([first, song(), ...rest])
+    expect(lines(await render())[1].text()).toBe('12:08:15Muusika')
+  })
+
+  it('should leave music out of the search', async () => {
+    vi.mocked(radioService.transcript).mockResolvedValue([song()])
+    const wrapper = await render()
+    await wrapper.find('input[type="search"]').setValue('Muusika')
+    expect(lines(wrapper)).toHaveLength(0)
   })
 
   it('should keep only the lines that contain the search', async () => {
