@@ -38,10 +38,8 @@ const weekdays = (days: DayOfWeek[]): string =>
     )
     .join(', ')
 
-export const airStart = (slot: AirSlot): string =>
-  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}`
-
-export const airTime = (slot: AirSlot): string => `${airStart(slot)}–${slot.end.slice(0, 5)}`
+export const airTime = (slot: AirSlot): string =>
+  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}–${slot.end.slice(0, 5)}`
 
 export const LINK =
   'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'

@@ -28,8 +28,8 @@ describe('RadioProgrammes', () => {
         name: 'Keskpäevatund',
         description: 'Ülle ja Õie arutavad nädala uudiseid',
         recordEvery: false,
-        slots: [{ days: [DayOfWeek.SATURDAY], start: '12:00:00', end: '13:00:00' }],
-        repeats: [
+        slots: [
+          { days: [DayOfWeek.SATURDAY], start: '12:00:00', end: '13:00:00' },
           {
             days: [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY],
             start: '01:00:00',
@@ -42,7 +42,7 @@ describe('RadioProgrammes', () => {
   })
 
   it('should show a weekday run as a range of day letters', async () => {
-    expect((await mount()).text()).toContain('E–K, R 01:00')
+    expect((await mount()).text()).toContain('E–K, R 01:00–02:00')
   })
 
   it('should say the schedule is not loaded before the first import', async () => {

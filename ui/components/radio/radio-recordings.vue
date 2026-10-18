@@ -1,9 +1,6 @@
 <template>
   <div>
-    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 class="mb-0">Raadio</h2>
-      <p v-if="recordings" class="mb-0 text-body-secondary">{{ summary }}</p>
-    </div>
+    <h2 class="mb-4">Raadio</h2>
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div class="min-w-0">
         <h3 class="mb-3 text-heading">Salvestused</h3>
@@ -53,23 +50,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
-import { cutState, day, length, LINK, megabytes, span, STATES, textState } from '../../utils/radio'
+import { cutState, day, length, LINK, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioProgrammes from './radio-programmes.vue'
 import RadioStation from './radio-station.vue'
 
 const { data: recordings, isLoading, isError } = useRadioRecordings()
-
-const summary = computed(() => {
-  const list = recordings.value ?? []
-  const bytes = list.reduce((sum, r) => sum + r.sizeBytes, 0)
-  const count = list.length === 1 ? '1 salvestus' : `${list.length} salvestust`
-  return `Kuku · ${count} · ${megabytes(bytes)}`
-})
 
 const columns: ColumnDefinition[] = [
   { key: 'programme', label: 'Saade' },

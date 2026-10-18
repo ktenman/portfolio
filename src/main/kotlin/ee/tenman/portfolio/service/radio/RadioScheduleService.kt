@@ -72,13 +72,13 @@ class RadioScheduleService(
     val next = airings.firstOrNull { it.startsAt > now }
     val names = radioProgrammeRepository.findAllById(listOfNotNull(onAir, next).map { it.programmeId }).associate { it.id to it.name }
     val root = radioProperties.recordings
-    val free = if (Files.isDirectory(root)) Files.getFileStore(root).usableSpace else 0
+    val free = root.takeIf(Files::isDirectory)?.let { Files.getFileStore(it).usableSpace }
     return RadioStation(
       onAir = onAir?.let { live(it, names, captures) },
       next = next?.let { live(it, names, captures) },
       capture = captures.firstOrNull(),
       freeBytes = free,
-      hours = free / BYTES_PER_HOUR,
+      hours = free?.div(BYTES_PER_HOUR),
     )
   }
 
@@ -139,18 +139,15 @@ class RadioScheduleService(
     programme: RadioProgramme,
     airings: List<RadioAiring>,
     recordings: Int,
-  ): RadioProgrammeDto {
-    val (originals, repeats) = airings.partition { it.originalId == null }
-    return RadioProgrammeDto(
+  ): RadioProgrammeDto =
+    RadioProgrammeDto(
       id = programme.kukuId,
       name = programme.name,
       description = programme.description,
       recordEvery = programme.recordEvery,
-      slots = slots(originals.map { it.startsAt to it.endsAt }, clock.zone),
-      repeats = slots(repeats.map { it.startsAt to it.endsAt }, clock.zone),
+      slots = slots(airings.filter { it.originalId == null }.map { it.startsAt to it.endsAt }, clock.zone),
       recordings = recordings,
     )
-  }
 
   companion object {
     private const val BYTES_PER_HOUR = (256_000L / 8 + RATE * 2L) * 3600

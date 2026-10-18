@@ -37,8 +37,8 @@ const recorder = computed<[string, string][]>(() => {
     : 'Pole valitud'
   return [
     ['Järgmine', next],
-    ['Vaba ruumi', `${Math.round(s.freeBytes / 1e9)} GB`],
-    ['Jätkub', `≈ ${s.hours.toLocaleString('et')} tundi`],
+    ['Vaba ruumi', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
+    ['Jätkub', s.hours == null ? '—' : `≈ ${s.hours.toLocaleString('et')} tundi`],
   ]
 })
 </script>
