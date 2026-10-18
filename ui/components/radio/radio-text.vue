@@ -13,7 +13,7 @@
         :loading="checking"
         @click="check"
       >
-        <radio-icon name="check" />
+        <radio-icon name="check" class="me-1.5 inline align-[-0.125em]" />
         Märgi kontrollituks
       </app-button>
       <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">

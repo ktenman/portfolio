@@ -15,7 +15,7 @@
       <p class="mb-0 text-sm text-ink-soft">Piir: {{ cut.methods.map(method).join(' · ') }}</p>
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
         <app-button @click="player.preview(cut.start, cut.end)">
-          <radio-icon name="play" />
+          <radio-icon name="play" class="me-1.5 inline align-[-0.125em]" />
           Kuula üleminekut
         </app-button>
         <div class="flex gap-2" role="group" aria-label="Otsus">
