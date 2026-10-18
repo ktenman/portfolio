@@ -244,6 +244,17 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
+  fun `should end a break at a saved jingle`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
+    transcribed(1.0, 5.0, 12.0, 30.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0, "Väike paus."))))
+    val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
+    store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
+    RadioEpisodeService(outlineService, RadioCutService(), RadioRenderService(), properties, Clock.systemUTC()).make(directory)
+    expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
+  }
+
+  @Test
   fun `should find no review for a recording without an edit list`() {
     show()
     expect(service.review(directory, listOf(KeptSpan(10.0, 20.0)))).toEqual(null)

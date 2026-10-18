@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.radio
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import kotlin.math.round
 
 const val TRANSCRIPT = "transcript only"
 private const val DIP = "level dip"
@@ -33,27 +34,34 @@ class RadioCutService {
     db: DoubleArray,
     outline: Consensus,
     lines: List<TranscriptLine>,
+    library: List<SavedJingle>,
   ): List<Boundary> {
     val line = lines.associateBy { it.start }
     val at = { time: Double -> checkNotNull(line[time]) { "No transcript line starts at $time s" } }
     val returns = outline.breaks.map { firstWord(at(it.firstShowLineTime)) }
-    val pauses = pauses(db, outline, at, returns, jingle(timeline, db, returns))
-    val end = "show ends" to leave(db, lastWord(at(outline.lastShowLineTime)), 15.0)
-    val placed = listOf("show starts" to start(db, outline, at)) + pauses + end
-    return ordered(placed.map { (label, cut) -> Boundary(label, rounded(cut.first), cut.second, cut.second == TRANSCRIPT) })
+    val shared by lazy { jingle(timeline, returns) }
+    val ends = returns.mapIndexed { index, back -> recognise(timeline, back, library) ?: shared?.get(index) }
+    val start = placed("show starts", start(db, outline, at))
+    val end = placed("show ends", leave(db, lastWord(at(outline.lastShowLineTime)), 15.0))
+    return ordered(listOf(start) + pauses(db, outline, at, returns, ends) + end)
   }
+
+  private fun placed(
+    label: String,
+    cut: Pair<Double, String>,
+  ): Boundary = Boundary(label, rounded(cut.first), cut.second, cut.second == TRANSCRIPT)
 
   private fun pauses(
     db: DoubleArray,
     outline: Consensus,
     at: (Double) -> TranscriptLine,
     returns: List<Double>,
-    shared: SharedJingle?,
-  ): List<Pair<String, Pair<Double, String>>> =
+    ends: List<JingleMatch?>,
+  ): List<Boundary> =
     outline.breaks.flatMapIndexed { index, pause ->
       listOf(
-        "break ${index + 1} starts" to leave(db, lastWord(at(pause.lastShowLineTime)), 6.0),
-        "break ${index + 1} ends" to back(db, returns[index], shared, index),
+        placed("break ${index + 1} starts", leave(db, lastWord(at(pause.lastShowLineTime)), 6.0)),
+        back("break ${index + 1} ends", db, returns[index], ends[index]),
       )
     }
 
@@ -76,14 +84,23 @@ class RadioCutService {
   }
 
   private fun back(
+    label: String,
     db: DoubleArray,
     word: Double,
-    shared: SharedJingle?,
-    index: Int,
-  ): Pair<Double, String> {
-    val cut = shared?.cuts?.get(index)
-    if (cut != null) return cut to "station jingle, r=${BigDecimal(shared.r).setScale(2, RoundingMode.HALF_EVEN)}"
-    val dip = dips(db, word - 8, word - 0.3).lastOrNull() ?: return word - 0.3 to TRANSCRIPT
-    return dip to DIP
+    match: JingleMatch?,
+  ): Boundary {
+    if (match != null) return jingled(label, db, match)
+    val dip = dips(db, word - 8, word - 0.3).lastOrNull() ?: return placed(label, word - 0.3 to TRANSCRIPT)
+    return placed(label, dip to DIP)
+  }
+
+  private fun jingled(
+    label: String,
+    db: DoubleArray,
+    match: JingleMatch,
+  ): Boundary {
+    val kept = match.copy(start = round(match.start * 1000) / 1000, r = rounded(match.r))
+    val method = "${BoundaryMethod.STATION_JINGLE.prefix}, r=${BigDecimal(kept.r).setScale(2, RoundingMode.HALF_EVEN)}"
+    return Boundary(label, rounded(valley(db, match.start - 0.6, match.start + 0.05)), method, false, kept)
   }
 }

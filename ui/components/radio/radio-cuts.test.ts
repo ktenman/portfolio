@@ -13,6 +13,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     cuts: vi.fn(),
     review: vi.fn(),
+    jingle: vi.fn(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -31,6 +32,7 @@ describe('RadioCuts', () => {
   beforeEach(() => {
     vi.mocked(radioService.cuts).mockResolvedValue(contexts())
     vi.mocked(radioService.review).mockReset().mockResolvedValue(recording().editList!)
+    vi.mocked(radioService.jingle).mockReset().mockResolvedValue()
     confirm.mockReset()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
@@ -118,6 +120,36 @@ describe('RadioCuts', () => {
     await button(await render(), 'Rakenda lõiked').trigger('click')
     await flushPromises()
     expect(radioService.review).not.toHaveBeenCalled()
+  })
+
+  it('should show the jingle that ends a break and how well it matched', async () => {
+    expect((await card(1)).text()).toContain('Džingel r = 0,93 · kinnitamata')
+  })
+
+  it('should show no jingle for a cut without one', async () => {
+    expect((await card(2)).text()).not.toContain('Džingel')
+  })
+
+  it('should save the jingle of a break once the user confirms it', async () => {
+    await button(await card(1), 'Kinnita džingel').trigger('click')
+    await flushPromises()
+    expect(radioService.jingle).toHaveBeenCalledWith('2026-10-17', 1, { saved: true })
+  })
+
+  it('should forget a saved jingle', async () => {
+    const cuts = recording().cuts.map(cut =>
+      cut.jingle ? { ...cut, jingle: { ...cut.jingle, saved: true } } : cut
+    )
+    const wrapper = await render(recording({ cuts }))
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Unusta džingel').trigger('click')
+    await flushPromises()
+    expect(radioService.jingle).toHaveBeenCalledWith('2026-10-17', 1, { saved: false })
+  })
+
+  it('should name the jingle button after its cut', async () => {
+    expect(button(await card(1), 'Kinnita džingel')?.attributes('aria-label')).toBe(
+      'Kinnita džingel: Reklaamipaus 12:30'
+    )
   })
 
   it('should play the moment before a cut to hear the transition', async () => {

@@ -15,6 +15,18 @@
       <p class="mb-0 text-sm text-ink-soft">
         Piir: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
       </p>
+      <div v-if="cut.jingle" class="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span class="text-ink-soft">
+          Džingel r = {{ cut.jingle.r.toFixed(2).replace('.', ',') }} ·
+          {{ cut.jingle.saved ? 'salvestatud' : 'kinnitamata' }}
+        </span>
+        <app-button
+          :aria-label="`${jingleAction}: ${name}`"
+          @click="emit('jingle', !cut.jingle.saved)"
+        >
+          {{ jingleAction }}
+        </app-button>
+      </div>
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
         <app-button
           :aria-label="`Kuula üleminekut: ${name}`"
@@ -57,7 +69,7 @@ const props = defineProps<{
   removed: boolean
 }>()
 
-const emit = defineEmits<{ choose: [removed: boolean] }>()
+const emit = defineEmits<{ choose: [removed: boolean]; jingle: [saved: boolean] }>()
 
 const CHOICES = [
   { label: 'Eemalda', removed: true },
@@ -70,6 +82,10 @@ const quote = (line: TranscriptLine) =>
   `${clock(props.startedAt, line.start)} „${line.text.trim()}“`
 
 const name = computed(() => `${props.cut.title} ${clock(props.startedAt, props.cut.start)}`)
+
+const jingleAction = computed(() =>
+  props.cut.jingle?.saved ? 'Unusta džingel' : 'Kinnita džingel'
+)
 
 const quotes = computed(() =>
   [props.context?.before, props.context?.after]

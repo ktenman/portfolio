@@ -73,7 +73,7 @@ fun pcmOf(
 
 private fun pcmSeconds(path: Path): Double = if (Files.exists(path)) Files.size(path) / 2 / RATE.toDouble() else 0.0
 
-private fun map(path: Path): ShortBuffer =
+fun map(path: Path): ShortBuffer =
   FileChannel.open(path).use { channel ->
     channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size() / 2 * 2).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
   }

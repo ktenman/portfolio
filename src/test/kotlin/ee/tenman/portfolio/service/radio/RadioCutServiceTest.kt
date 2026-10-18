@@ -40,6 +40,13 @@ class RadioCutServiceTest {
     return samples
   }
 
+  private fun tone(hertz: Int): ShortArray = ShortArray(RATE) { (8000 * sin(2 * PI * hertz * it / RATE)).toInt().toShort() }
+
+  private fun saved(
+    name: String,
+    samples: ShortArray,
+  ) = SavedJingle(name, DoubleArray(RATE) { samples[it].toDouble() })
+
   private fun line(start: Double) =
     TranscriptLine(start, start + 1, "Ja siinkohal väike paus.", listOf(TranscriptWord(start, start + 1, " paus.")))
 
@@ -76,8 +83,8 @@ class RadioCutServiceTest {
   @Test
   fun `should end both breaks before the jingle they share`() {
     val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
-    val shared = checkNotNull(jingle(recorded, db, listOf(20.0, 45.0)))
-    expect(listOf(20.0, 45.0).zip(shared.cuts).all { (back, cut) -> abs(back - (cut ?: 0.0) - 2.85) <= 0.16 }).toEqual(true)
+    val shared = checkNotNull(jingle(recorded, listOf(20.0, 45.0)))
+    expect(listOf(20.0, 45.0).zip(shared).all { (back, match) -> abs(back - (match?.start ?: 0.0) - 2.75) <= 0.06 }).toEqual(true)
   }
 
   @Test
@@ -91,34 +98,36 @@ class RadioCutServiceTest {
         db,
         outline(1.0, 5.0, listOf(30.0 to 40.0), 50.0, false),
         listOf(1.0, 5.0, 30.0, 40.0, 50.0).map(::line),
+        emptyList(),
       )
     expect(found[2].method to (abs(found[2].seconds - 38.1) <= 0.1)).toEqual("level dip" to true)
   }
 
+  private fun paired(library: List<SavedJingle>): List<Boundary> {
+    val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
+    val lines = listOf(1.0, 5.0, 8.0, 20.0, 30.0, 45.0, 50.0).map(::line)
+    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false), lines, library)
+  }
+
   @Test
   fun `should end breaks that share a jingle at it`() {
-    val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
-    val found =
-      service.boundaries(
-        recorded,
-        db,
-        outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false),
-        listOf(1.0, 5.0, 8.0, 20.0, 30.0, 45.0, 50.0).map(::line),
-      )
+    val found = paired(emptyList())
     expect(found.map { it.method.startsWith("station jingle") }).toEqual(listOf(false, false, true, false, true, false))
   }
 
   @Test
   fun `should start a show without music just before the first word`() {
     val (recorded, db) = recording(noise(60.0))
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, false), listOf(1.0, 5.0, 50.0).map(::line))
+    val lines = listOf(1.0, 5.0, 50.0).map(::line)
+    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, false), lines, emptyList())
     expect(found.first()).toEqual(Boundary("show starts", 4.7, "transcript only", true))
   }
 
   @Test
   fun `should start a show with music in the silence before the hosts`() {
     val (recorded, db) = recording(noise(60.0, listOf(3.0)))
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, true), listOf(1.0, 5.0, 50.0).map(::line))
+    val lines = listOf(1.0, 5.0, 50.0).map(::line)
+    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, true), lines, emptyList())
     expect((abs(found.first().seconds - 3.15) <= 0.011) to found.first().review).toEqual(true to false)
   }
 
@@ -126,7 +135,7 @@ class RadioCutServiceTest {
   fun `should refuse a break that ends before it starts`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 20.0, 30.0, 50.0).map(::line)
-    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines) }
+    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines, emptyList()) }
       .toThrow<IllegalStateException>()
       .messageToContain("break 1 ends")
   }
@@ -136,7 +145,48 @@ class RadioCutServiceTest {
     val samples = noise(60.0)
     samples.fill(0, 10 * RATE, (11.3 * RATE).toInt())
     samples.copyInto(samples, (34.7 * RATE).toInt(), (9.7 * RATE).toInt(), 10 * RATE)
-    val (recorded, db) = recording(samples)
-    expect(jingle(recorded, db, listOf(20.0, 45.0))).toEqual(null)
+    val (recorded, _) = recording(samples)
+    expect(jingle(recorded, listOf(20.0, 45.0))).toEqual(null)
+  }
+
+  private fun single(library: List<SavedJingle>): List<Boundary> {
+    val (recorded, db) = recording(withJingles(noise(60.0), listOf(45.0)))
+    val lines = listOf(1.0, 5.0, 30.0, 45.0, 50.0).map(::line)
+    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 45.0), 50.0, false), lines, library)
+  }
+
+  @Test
+  fun `should end a single break in the silence before a saved jingle`() {
+    val found = single(listOf(saved("2026-10-17-1", chirp(1.0))))
+    expect(found[2].method to (abs(found[2].seconds - 42.0) <= 0.02)).toEqual("station jingle, r=1.00" to true)
+  }
+
+  @Test
+  fun `should record the saved jingle and its correlation on the break end`() {
+    expect(single(listOf(saved("2026-10-17-1", chirp(1.0))))[2].jingle).toEqual(JingleMatch(42.3, 1.0, "2026-10-17-1"))
+  }
+
+  @Test
+  fun `should pick the saved jingle that matches best`() {
+    val found = single(listOf(saved("2026-10-10-1", tone(2000)), saved("2026-10-17-1", chirp(1.0))))
+    expect(found[2].jingle?.saved).toEqual("2026-10-17-1")
+  }
+
+  @Test
+  fun `should end a single break with an unknown jingle at the last dip`() {
+    expect(single(listOf(saved("2026-10-10-1", tone(2000))))[2].method).toEqual("level dip")
+  }
+
+  @Test
+  fun `should end breaks at a saved jingle before comparing them`() {
+    val found = paired(listOf(saved("2026-10-17-1", chirp(1.0))))
+    expect(listOf(found[2], found[4]).map { it.jingle?.saved }).toEqual(listOf("2026-10-17-1", "2026-10-17-1"))
+  }
+
+  @Test
+  fun `should compare the breaks when no saved jingle matches them`() {
+    val found = paired(listOf(saved("2026-10-10-1", tone(2000))))
+    expect(listOf(found[2], found[4]).map { it.method.substringBefore(",") to it.jingle?.saved })
+      .toEqual(listOf("station jingle" to null, "station jingle" to null))
   }
 }

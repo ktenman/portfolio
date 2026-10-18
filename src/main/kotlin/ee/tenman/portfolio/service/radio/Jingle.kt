@@ -1,5 +1,11 @@
 package ee.tenman.portfolio.service.radio
 
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.ShortBuffer
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -9,15 +15,16 @@ import kotlin.math.sqrt
 private const val MATCH = 0.8
 private const val ALIKE = 0.9
 private const val WINDOW = 10.0
+private const val PCM = ".pcm"
 
 class Spectrum(
   val re: DoubleArray,
   val im: DoubleArray,
 )
 
-class SharedJingle(
-  val cuts: List<Double?>,
-  val r: Double,
+class SavedJingle(
+  val name: String,
+  val template: DoubleArray,
 )
 
 class Window(
@@ -170,9 +177,8 @@ private fun onset(
 
 fun jingle(
   timeline: Timeline,
-  db: DoubleArray,
   returns: List<Double>,
-): SharedJingle? {
+): List<JingleMatch?>? {
   if (returns.size < 2) return null
   val first = timeline.samples(returns[0] - WINDOW, returns[0])
   val second = window(timeline, returns[1])
@@ -181,24 +187,66 @@ fun jingle(
     if (!(r >= MATCH)) return@firstNotNullOfOrNull null
     val t1 = returns[0] - WINDOW + offset.toDouble() / RATE
     val t2 = returns[1] - WINDOW + lag.toDouble() / RATE
-    onset(timeline, t1, t2)?.let { start -> shared(timeline, db, returns, t1 + start, t2 + start, r) }
+    onset(timeline, t1, t2)?.let { start -> shared(timeline, returns, t1 + start, t2 + start, r) }
   }
 }
 
 private fun shared(
   timeline: Timeline,
-  db: DoubleArray,
   returns: List<Double>,
   first: Double,
   second: Double,
   r: Double,
-): SharedJingle {
-  val template = timeline.read(sample(first), RATE)
-  val later =
-    returns.drop(2).map { back ->
-      val (rr, lag) = ncc(template, window(timeline, back))
-      val t = back - WINDOW + lag.toDouble() / RATE
-      if (rr >= MATCH) valley(db, t - 0.6, t + 0.05) else null
-    }
-  return SharedJingle(listOf(valley(db, first - 0.6, first + 0.05), valley(db, second - 0.6, second + 0.05)) + later, r)
+): List<JingleMatch?> {
+  val template = template(timeline, first)
+  val later = returns.drop(2).map { back -> find(template, window(timeline, back), back, null) }
+  return listOf(JingleMatch(first, r), JingleMatch(second, r)) + later
+}
+
+private fun find(
+  template: DoubleArray,
+  window: Window,
+  back: Double,
+  saved: String?,
+): JingleMatch? {
+  val (r, lag) = ncc(template, window)
+  if (!(r >= MATCH)) return null
+  return JingleMatch(back - WINDOW + lag.toDouble() / RATE, r, saved)
+}
+
+fun recognise(
+  timeline: Timeline,
+  back: Double,
+  library: List<SavedJingle>,
+): JingleMatch? {
+  if (library.isEmpty()) return null
+  val window = window(timeline, back)
+  return library.mapNotNull { find(it.template, window, back, it.name) }.maxByOrNull { it.r }
+}
+
+fun template(
+  timeline: Timeline,
+  start: Double,
+): DoubleArray = timeline.read(sample(start), RATE)
+
+fun library(directory: Path): List<SavedJingle> {
+  if (!Files.isDirectory(directory)) return emptyList()
+  return Files
+    .list(directory)
+    .use { it.toList() }
+    .filter { it.fileName.toString().endsWith(PCM) }
+    .sorted()
+    .map { SavedJingle(it.fileName.toString().removeSuffix(PCM), samples(map(it))) }
+}
+
+private fun samples(shorts: ShortBuffer): DoubleArray = DoubleArray(shorts.remaining()) { shorts.get(it).toDouble() }
+
+fun store(
+  path: Path,
+  samples: DoubleArray,
+) {
+  val bytes = ByteBuffer.allocate(samples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+  samples.forEach { bytes.putShort(it.toInt().toShort()) }
+  Files.createDirectories(path.parent)
+  Files.write(path, bytes.array(), StandardOpenOption.CREATE_NEW)
 }

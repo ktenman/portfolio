@@ -51,6 +51,41 @@ class RadioEpisodePocTest {
     return output
   }
 
+  private fun boundaries(
+    end: Int,
+    name: String,
+    breaks: (List<Pause>) -> List<Pause>,
+  ): List<Boundary> {
+    prepare(Path.of(System.getenv("RADIO_WORKER_POC")))
+    val lines = lines(readTranscript(directory))
+    val timeline = timeline(directory)
+    val db = loudness(timeline)
+    val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
+    val agreed = consensus(reads.filterNotNull().mapNotNull { match(it, lines) })
+    val service = RadioCutService()
+    val machine = service.boundaries(timeline, db, agreed, lines, emptyList())
+    val saved = listOf(SavedJingle(name, template(timeline, checkNotNull(machine[end].jingle).start)))
+    return service.boundaries(timeline, db, agreed.copy(breaks = breaks(agreed.breaks)), lines, saved)
+  }
+
+  @Test
+  fun `should end the second break alone at the jingle saved from the first`() {
+    val found = boundaries(2, "2026-10-17-1") { it.drop(1) }
+    expect(found[2].jingle?.saved to (abs(found[2].seconds - reference[4]) <= 0.1)).toEqual("2026-10-17-1" to true)
+  }
+
+  @Test
+  fun `should end the first break alone at the jingle saved from the second`() {
+    val found = boundaries(4, "2026-10-17-2") { it.take(1) }
+    expect(found[2].jingle?.saved to (abs(found[2].seconds - reference[2]) <= 0.1)).toEqual("2026-10-17-2" to true)
+  }
+
+  @Test
+  fun `should keep every boundary within a tenth of a second of the reference with the jingle saved`() {
+    val found = boundaries(2, "2026-10-17-1") { it }
+    expect(found.map { it.seconds }.zip(reference).all { (seconds, expected) -> abs(seconds - expected) <= 0.1 }).toEqual(true)
+  }
+
   @Test
   fun `should render the proof of concept episode from the saved reads`() {
     prepare(Path.of(System.getenv("RADIO_WORKER_POC")))

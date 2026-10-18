@@ -17,7 +17,10 @@ const val TRANSCRIPT_FILE = "transcript.json"
 data class RadioProperties(
   val recordings: Path = Path.of("/recordings"),
   val outlineModel: AiModel = AiModel.GEMINI_3_5_FLASH_LITE,
-)
+) {
+  val jingles: Path
+    get() = recordings.resolve("jingles")
+}
 
 enum class RecordingState {
   @JsonProperty("recording")
@@ -76,6 +79,13 @@ data class Boundary(
   val seconds: Double,
   val method: String,
   val review: Boolean,
+  val jingle: JingleMatch? = null,
+)
+
+data class JingleMatch(
+  val start: Double,
+  val r: Double,
+  val saved: String? = null,
 )
 
 fun readStatus(directory: Path): RecordingStatus =
