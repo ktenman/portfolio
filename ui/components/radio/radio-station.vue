@@ -7,7 +7,9 @@
       <template #aside><radio-badge tone="live">Otse</radio-badge></template>
       <p class="mb-0 font-semibold">{{ station.onAir.name }}</p>
       <p class="mb-3 text-sm text-body-secondary">{{ airing(station.onAir) }}</p>
-      <a :class="LINK" href="https://kuku.pleier.ee" target="_blank" rel="noopener">Kuula otse</a>
+      <button type="button" :class="[LINK, 'cursor-pointer']" @click="player.listen()">
+        Kuula otse
+      </button>
       <p v-if="station.next" class="mt-3 mb-0 text-sm text-body-secondary">
         Järgmisena {{ clock(station.next.start, 0) }} {{ station.next.name }}
       </p>
@@ -18,6 +20,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { StationAiring } from '../../models/generated/domain-models'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
 import { clock, day, LINK, range } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
@@ -25,6 +28,7 @@ import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 
 const { data: station } = useRadioStation()
+const player = useRadioPlayer()
 
 const airing = (a: StationAiring) =>
   `${range(a.start, 0, a.end - a.start)} · ${a.recorded ? 'salvestatakse' : 'ei salvestata'}`

@@ -11,6 +11,7 @@ import ee.tenman.portfolio.service.radio.RecordingState
 import ee.tenman.portfolio.service.radio.RecordingStatus
 import ee.tenman.portfolio.service.radio.Transcript
 import ee.tenman.portfolio.service.radio.TranscriptSegment
+import ee.tenman.portfolio.service.radio.ffmpeg
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -44,6 +45,14 @@ class RadioControllerIT {
     val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
     Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
     Files.writeString(directory.resolve("episode.m4a"), "Keskpäevatund õ")
+  }
+
+  @Test
+  fun `should pass the live station on as MP3`() {
+    val playlist = Files.createDirectories(Path.of(radioProperties.live).parent).resolve("stream.m3u8")
+    val tone = arrayOf("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "libmp3lame")
+    ffmpeg(*tone, "-f", "hls", "-hls_list_size", "0", playlist.toString())
+    mockMvc.perform(mvcGet("/api/radio/live")).andExpect(status().isOk).andExpect(header().string(CONTENT_TYPE, "audio/mpeg"))
   }
 
   @Test

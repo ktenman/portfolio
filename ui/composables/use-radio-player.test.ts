@@ -5,7 +5,10 @@ import { recording } from '../components/radio/radio-fixture'
 import { RecordingState } from '../models/generated/domain-models'
 
 vi.mock('../services/api', () => ({
-  radioService: { fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}` },
+  radioService: {
+    fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
+    liveUrl: '/api/radio/live',
+  },
 }))
 
 const split = () =>
@@ -31,6 +34,7 @@ describe('useRadioPlayer', () => {
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     vi.spyOn(audio, 'pause').mockImplementation(() => {})
+    vi.spyOn(audio, 'load').mockImplementation(() => {})
     player.rate.value = 1
     player.attach(audio)
   })
@@ -41,6 +45,30 @@ describe('useRadioPlayer', () => {
     audio.currentTime = seconds
     audio.dispatchEvent(new Event('timeupdate'))
   }
+
+  it('should play the station live through the server', () => {
+    player.listen()
+    expect([audio.src.endsWith('/api/radio/live'), player.live.value]).toEqual([true, true])
+  })
+
+  it('should drop the live stream when it is stopped', () => {
+    player.listen()
+    audio.dispatchEvent(new Event('play'))
+    player.toggle()
+    expect(audio.getAttribute('src')).toBeNull()
+  })
+
+  it('should leave the live stream when a recording is loaded', () => {
+    player.listen()
+    player.load(split())
+    expect(player.live.value).toBe(false)
+  })
+
+  it('should play the station at normal speed', () => {
+    player.rate.value = 1.5
+    player.listen()
+    expect(audio.playbackRate).toBe(1)
+  })
 
   it('should load the first part of the raw recording', () => {
     player.load(split())

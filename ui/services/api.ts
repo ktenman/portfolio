@@ -230,6 +230,7 @@ export const radioService = {
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
   programmes: () => httpClient.get<RadioProgrammeDto[]>(`${API_ENDPOINTS.RADIO}/programmes`),
   station: () => httpClient.get<RadioStation>(`${API_ENDPOINTS.RADIO}/station`),
+  liveUrl: `/api${API_ENDPOINTS.RADIO}/live`,
   choose: (id: number, choice: ProgrammeChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/programmes/${id}`, choice),
 }
