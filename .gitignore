@@ -89,6 +89,11 @@ scripts/*.jpg
 scripts/model-benchmark/
 .worktrees/
 
+### Radio worker ###
+__pycache__/
+.venv/
+.pytest_cache/
+
 ### Working docs (keep architecture diagrams) ###
 docs/*
 !docs/architecture/
