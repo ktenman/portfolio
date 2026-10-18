@@ -57,6 +57,11 @@ describe('RadioRecordings', () => {
     expect((await mount()).text()).toContain('Salvestab')
   })
 
+  it('should name each listen link after its recording', async () => {
+    const link = (await mount()).find('a[href="/radio/2026-10-17"]')
+    expect(link.attributes('aria-label')).toBe('Kuula: Keskpäevatund L 17.10')
+  })
+
   it('should link each recording to its episode page', async () => {
     const links = (await mount()).findAll('a[href^="/radio/"]').map(a => a.attributes('href'))
     expect(links).toContain('/radio/2026-10-17')

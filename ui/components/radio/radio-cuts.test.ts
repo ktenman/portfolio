@@ -62,6 +62,12 @@ describe('RadioCuts', () => {
     expect((await render()).findAll('[data-testid="radio-cut"]')).toHaveLength(4)
   })
 
+  it('should name each transition preview after its cut', async () => {
+    expect(button(await card(1), 'Kuula üleminekut')?.attributes('aria-label')).toBe(
+      'Kuula üleminekut: Reklaamipaus 12:30'
+    )
+  })
+
   it('should ask to check a cut the machine is unsure of', async () => {
     expect((await card(2)).text()).toContain('Kontrolli')
   })

@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto mt-4 w-full max-w-app px-3">
+  <div class="mx-auto mt-4 w-full max-w-app px-3" lang="et">
     <router-view />
     <radio-dock />
   </div>

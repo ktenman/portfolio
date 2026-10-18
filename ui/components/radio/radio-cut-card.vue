@@ -14,11 +14,14 @@
       <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
       <p class="mb-0 text-sm text-ink-soft">Piir: {{ cut.methods.map(method).join(' · ') }}</p>
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
-        <app-button @click="player.preview(cut.start, cut.end)">
+        <app-button
+          :aria-label="`Kuula üleminekut: ${name}`"
+          @click="player.preview(cut.start, cut.end)"
+        >
           <radio-icon name="play" class="me-1.5 inline align-[-0.125em]" />
           Kuula üleminekut
         </app-button>
-        <div class="flex gap-2" role="group" aria-label="Otsus">
+        <div class="flex gap-2" role="group" :aria-label="`Otsus: ${name}`">
           <button
             v-for="choice in CHOICES"
             :key="choice.label"
@@ -63,6 +66,8 @@ const player = useRadioPlayer()
 
 const quote = (line: TranscriptLine) =>
   `${clock(props.startedAt, line.start)} „${line.text.trim()}“`
+
+const name = computed(() => `${props.cut.title} ${clock(props.startedAt, props.cut.start)}`)
 
 const quotes = computed(() =>
   [props.context?.before, props.context?.after]

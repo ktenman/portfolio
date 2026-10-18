@@ -46,6 +46,10 @@ describe('RadioListen', () => {
     })
   })
 
+  it('should speak the position in the recording as a clock', () => {
+    expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
+  })
+
   it('should give the position on the station clock', () => {
     const wrapper = render()
     audio.currentTime = 761.5

@@ -31,7 +31,11 @@
         </radio-badge>
       </template>
       <template #cell-listen="{ item }">
-        <router-link :to="`/radio/${item.name}`" :class="LINK_BUTTON">
+        <router-link
+          :to="`/radio/${item.name}`"
+          :class="LINK_BUTTON"
+          :aria-label="`Kuula: ${item.programme} ${day(item.status.startedAt)}`"
+        >
           <svg class="size-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M7 4v16l13-8z" />
           </svg>

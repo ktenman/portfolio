@@ -1,6 +1,8 @@
 <template>
   <div>
-    <div class="relative h-4">
+    <div
+      class="relative h-4 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass"
+    >
       <div class="absolute inset-x-0 top-1.5 flex h-1 gap-0.5">
         <div
           v-for="part in parts"
@@ -26,6 +28,7 @@
         step="1"
         :value="value"
         :aria-label="label"
+        :aria-valuetext="`${position(value)} / ${position(total)}`"
         @input="emit('seek', Number(($event.target as HTMLInputElement).value))"
       />
     </div>
@@ -45,6 +48,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { position } from '../../utils/radio'
 
 export interface Tick {
   at: number
