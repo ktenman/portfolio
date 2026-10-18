@@ -8,8 +8,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 1000 --create-home worker \
-    && mkdir /recordings \
-    && chown worker:worker /recordings
+    && mkdir /recordings /model \
+    && chown worker:worker /recordings /model
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./

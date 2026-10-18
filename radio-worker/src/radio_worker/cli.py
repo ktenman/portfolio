@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from radio_worker.recorder import KUKU, hold, prepare, read_status, record
+from radio_worker.schedule import saturdays
 from radio_worker.station import Station
 from radio_worker.transcriber import transcribe
 
@@ -24,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         return broadcast(args.recording, args.host, args.port, args.start, args.speed)
     if args.chunk_seconds < 60:
         parser.error("--chunk-seconds must be at least 60")
+    if args.command == "saturdays":
+        return every_saturday(args.recordings, args.model, args.source, args.threads, args.chunk_seconds)
     if not (args.model / "model.bin").is_file():
         parser.error(f"{args.model} holds no CTranslate2 model.bin")
     load = functools.partial(load_whisper, args.model, args.threads)
@@ -55,6 +58,12 @@ def build() -> argparse.ArgumentParser:
     live.add_argument("--model", type=Path, required=True, metavar="CT2_DIRECTORY")
     live.add_argument("--threads", type=int, default=2)
     live.add_argument("--chunk-seconds", type=float, default=300, metavar="SECONDS")
+    weekly = commands.add_parser("saturdays", help="record and transcribe Keskpäevatund every Saturday 11:55-13:05 Europe/Tallinn")
+    weekly.add_argument("--recordings", type=Path, default=Path("/recordings"), metavar="DIRECTORY")
+    weekly.add_argument("--model", type=Path, default=Path("/model"), metavar="DIRECTORY")
+    weekly.add_argument("--source", default=KUKU)
+    weekly.add_argument("--threads", type=int, default=2)
+    weekly.add_argument("--chunk-seconds", type=float, default=300, metavar="SECONDS")
     return parser
 
 
@@ -64,6 +73,16 @@ def broadcast(recording: Path, host: str, port: int, start: float, speed: float)
         with contextlib.suppress(KeyboardInterrupt):
             server.serve_forever()
     return 0
+
+
+def every_saturday(recordings: Path, model: Path, source: str, threads: int, chunk_seconds: float) -> int:
+    weights = model / "ct2"
+    load = functools.partial(load_whisper, weights, threads)
+    try:
+        saturdays(recordings, model, lambda directory, seconds: run(directory, source, seconds, load, str(weights), chunk_seconds))
+    except KeyboardInterrupt:
+        print("Stopped; the next start resumes an unfinished recording", file=sys.stderr)
+    return 130
 
 
 def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float) -> str:
