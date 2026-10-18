@@ -1,0 +1,70 @@
+package ee.tenman.portfolio.service.radio
+
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.round
+
+const val FADE = 0.015
+private const val ESCAPED = "\\=;#"
+
+data class Piece(
+  val index: Int,
+  val start: Double,
+  val end: Double,
+  val offset: Double,
+)
+
+fun position(seconds: Double): String = "${(seconds / 60).toInt()}:${(seconds % 60).toInt().toString().padStart(2, '0')}"
+
+private fun joins(keep: List<Pair<Double, Double>>): List<Double> = keep.runningFold(0.0) { total, (a, b) -> total + b - a }.dropLast(1)
+
+fun chapters(
+  keep: List<Pair<Double, Double>>,
+  topics: List<OutlineChapter>,
+): List<Pair<Double, String>> {
+  val seams = joins(keep)
+  val total = keep.sumOf { it.second - it.first }
+  val clean = { t: Double -> keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total }
+  val order = compareBy<Pair<Double, String>>({ it.first }, { it.second })
+  val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, "Keskpäevatund")) }.map { clean(it.time) to it.title }.sortedWith(order)
+  val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
+  val marks =
+    seams.withIndex().drop(1).map { (index, seam) ->
+      seam - 5 to "Lõige $index (${position(seam)}) – ${opened.last { it.first <= seam + 30 }.second}"
+    }
+  val untouched = opened.filterNot { (t, _) -> seams.drop(1).any { seam -> t in seam - 5..seam + 30 } }
+  return (marks + untouched).sortedWith(order)
+}
+
+private fun escape(text: String): String = text.replace("\n", " ").map { if (it in ESCAPED) "\\$it" else "$it" }.joinToString("")
+
+fun metadata(
+  marks: List<Pair<Double, String>>,
+  total: Double,
+): String {
+  val ends = marks.drop(1).map { it.first } + total
+  return ";FFMETADATA1\n" +
+    marks.zip(ends).joinToString("") { (mark, end) ->
+      "[CHAPTER]\nTIMEBASE=1/1000\nSTART=${round(mark.first * 1000).toLong()}\nEND=${round(end * 1000).toLong()}\ntitle=${escape(mark.second)}\n"
+    }
+}
+
+fun pieces(
+  timeline: Timeline,
+  keep: List<Pair<Double, Double>>,
+): List<Piece> =
+  keep.flatMap { (a, b) ->
+    timeline.spans.mapIndexedNotNull { index, span ->
+      Piece(index, max(a, span.start), min(b, span.end), span.offset).takeIf { it.end - it.start >= 2 * FADE }
+    }
+  }
+
+fun audible(
+  timeline: Timeline,
+  keep: List<Pair<Double, Double>>,
+): List<Pair<Double, Double>> =
+  pieces(timeline, keep).fold(emptyList()) { merged, piece ->
+    val last = merged.lastOrNull()
+    if (last != null && abs(last.second - piece.start) < 1e-6) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
+  }
