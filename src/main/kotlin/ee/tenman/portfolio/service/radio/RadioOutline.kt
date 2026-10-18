@@ -66,7 +66,9 @@ fun parse(text: String): OutlineRead? = runCatching { JsonMapperFactory.instance
 fun lines(transcript: Transcript): List<TranscriptLine> {
   val starts = transcript.segments.map { it.start }
   val owners = transcript.words.groupBy { word -> maxOf(starts.indexOfLast { it <= word.start }, 0) }
-  return transcript.segments.mapIndexed { index, segment -> TranscriptLine(segment.start, segment.end, segment.text, owners[index].orEmpty()) }
+  return transcript.segments.mapIndexed { index, segment ->
+    TranscriptLine(segment.start, segment.end, segment.text, owners[index].orEmpty())
+  }
 }
 
 private fun fixed(
@@ -122,7 +124,7 @@ fun match(
     val starts = lines.map { it.start }.sorted()
     val snap = { time: Double -> checkNotNull(nearest(starts, time)) { "No transcript line starts within 1 s of $time" } }
     read.copy(
-      showStart = read.showStart.copy(lastNonShowLineTime = snap(read.showStart.lastNonShowLineTime), firstSpeechTime = snap(read.showStart.firstSpeechTime)),
+      showStart = with(read.showStart) { copy(lastNonShowLineTime = snap(lastNonShowLineTime), firstSpeechTime = snap(firstSpeechTime)) },
       breaks = read.breaks.map { it.copy(lastShowLineTime = snap(it.lastShowLineTime), firstShowLineTime = snap(it.firstShowLineTime)) },
       showEnd = read.showEnd.copy(lastShowLineTime = snap(read.showEnd.lastShowLineTime)),
       chapters = read.chapters.map { it.copy(time = snap(it.time)) },
@@ -149,7 +151,7 @@ fun consensus(reads: List<OutlineRead>): Consensus {
     opensWithMusic = majority(voters.map { it.showStart.opensWithMusic }),
     lastNonShowLineTime = median { it.showStart.lastNonShowLineTime },
     firstSpeechTime = median { it.showStart.firstSpeechTime },
-    breaks = (0 until count).map { index -> Pause(median { it.breaks[index].lastShowLineTime }, median { it.breaks[index].firstShowLineTime }) },
+    breaks = List(count) { index -> Pause(median { it.breaks[index].lastShowLineTime }, median { it.breaks[index].firstShowLineTime }) },
     lastShowLineTime = median { it.showEnd.lastShowLineTime },
     chapters = voters.first().chapters,
     voters = voters.size,

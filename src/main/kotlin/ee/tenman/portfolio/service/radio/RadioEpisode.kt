@@ -25,7 +25,9 @@ fun chapters(
 ): List<Pair<Double, String>> {
   val seams = joins(keep)
   val total = keep.sumOf { it.second - it.first }
-  val clean = { t: Double -> keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total }
+  val clean = { t: Double ->
+    keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total
+  }
   val order = compareBy<Pair<Double, String>>({ it.first }, { it.second })
   val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, "Keskpäevatund")) }.map { clean(it.time) to it.title }.sortedWith(order)
   val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
@@ -46,7 +48,8 @@ fun metadata(
   val ends = marks.drop(1).map { it.first } + total
   return ";FFMETADATA1\n" +
     marks.zip(ends).joinToString("") { (mark, end) ->
-      "[CHAPTER]\nTIMEBASE=1/1000\nSTART=${round(mark.first * 1000).toLong()}\nEND=${round(end * 1000).toLong()}\ntitle=${escape(mark.second)}\n"
+      val start = round(mark.first * 1000).toLong()
+      "[CHAPTER]\nTIMEBASE=1/1000\nSTART=$start\nEND=${round(end * 1000).toLong()}\ntitle=${escape(mark.second)}\n"
     }
 }
 
@@ -66,7 +69,8 @@ fun audible(
 ): List<Pair<Double, Double>> =
   pieces(timeline, keep).fold(emptyList()) { merged, piece ->
     val last = merged.lastOrNull()
-    if (last != null && abs(last.second - piece.start) < 1e-6) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
+    val touching = last != null && abs(last.second - piece.start) < 1e-6
+    if (touching) merged.dropLast(1) + (last.first to piece.end) else merged + (piece.start to piece.end)
   }
 
 data class KeptSpan(

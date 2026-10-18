@@ -128,7 +128,8 @@ private data class Quiet(
 )
 
 private fun quiet(db: DoubleArray): Set<Quiet> {
-  val digital = runs(BooleanArray(db.size) { db[it] < -75 }).filter { it.second - it.first >= 3 }.map { Quiet(it.first, it.second, DIGITAL) }
+  val silent = runs(BooleanArray(db.size) { db[it] < -75 })
+  val digital = silent.filter { it.second - it.first >= 3 }.map { Quiet(it.first, it.second, DIGITAL) }
   val low = runs(BooleanArray(db.size) { db[it] < -50 }).filter { it.second - it.first >= 30 }.map { Quiet(it.first, it.second, "quiet") }
   return (digital + low).toSet()
 }
@@ -201,6 +202,7 @@ fun events(db: DoubleArray): List<AudioEvent> {
         found.dropLast(1) + Quiet(last.start, max(next.end, last.end), kind)
       }
   return merged.map {
-    AudioEvent(round(it.start * FRAME * 100) / 100, round(it.end * FRAME * 100) / 100, it.kind, level(db, it.start - 300, it.start), level(db, it.end, it.end + 300))
+    val before = level(db, it.start - 300, it.start)
+    AudioEvent(round(it.start * FRAME * 100) / 100, round(it.end * FRAME * 100) / 100, it.kind, before, level(db, it.end, it.end + 300))
   }
 }

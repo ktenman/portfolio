@@ -36,17 +36,29 @@ class RadioCutService {
     val line = lines.associateBy { it.start }
     val at = { time: Double -> checkNotNull(line[time]) { "No transcript line starts at $time s" } }
     val returns = outline.breaks.map { firstWord(at(it.firstShowLineTime)) }
-    val shared = jingle(timeline, db, returns)
-    val pauses =
-      outline.breaks.flatMapIndexed { index, pause ->
-        listOf(
-          "break ${index + 1} starts" to leave(db, lastWord(at(pause.lastShowLineTime)), 6.0),
-          "break ${index + 1} ends" to back(db, returns[index], shared, index),
-        )
-      }
-    val placed = listOf("show starts" to start(db, outline, at)) + pauses + ("show ends" to leave(db, lastWord(at(outline.lastShowLineTime)), 15.0))
-    val found = placed.map { (label, cut) -> Boundary(label, rounded(cut.first), cut.second, cut.second == TRANSCRIPT) }
-    check(found.zipWithNext().all { (a, b) -> a.seconds < b.seconds }) { "Boundaries are out of order: ${found.map { it.boundary to it.seconds }}" }
+    val pauses = pauses(db, outline, at, returns, jingle(timeline, db, returns))
+    val end = "show ends" to leave(db, lastWord(at(outline.lastShowLineTime)), 15.0)
+    val placed = listOf("show starts" to start(db, outline, at)) + pauses + end
+    return ordered(placed.map { (label, cut) -> Boundary(label, rounded(cut.first), cut.second, cut.second == TRANSCRIPT) })
+  }
+
+  private fun pauses(
+    db: DoubleArray,
+    outline: Consensus,
+    at: (Double) -> TranscriptLine,
+    returns: List<Double>,
+    shared: SharedJingle?,
+  ): List<Pair<String, Pair<Double, String>>> =
+    outline.breaks.flatMapIndexed { index, pause ->
+      listOf(
+        "break ${index + 1} starts" to leave(db, lastWord(at(pause.lastShowLineTime)), 6.0),
+        "break ${index + 1} ends" to back(db, returns[index], shared, index),
+      )
+    }
+
+  private fun ordered(found: List<Boundary>): List<Boundary> {
+    val order = found.map { it.boundary to it.seconds }
+    check(found.zipWithNext().all { (a, b) -> a.seconds < b.seconds }) { "Boundaries are out of order: $order" }
     return found
   }
 

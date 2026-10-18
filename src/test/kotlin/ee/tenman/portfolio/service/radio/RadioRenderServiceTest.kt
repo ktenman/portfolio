@@ -21,7 +21,13 @@ class RadioRenderServiceTest {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30))))
     val keep = listOf(2.0 to 10.0, 15.0 to 25.0)
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), keep, chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1"))), "Keskpäevatund 17.10.2026", episode)
+    service.render(
+      timeline(directory),
+      keep,
+      chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1"))),
+      "Keskpäevatund 17.10.2026",
+      episode,
+    )
     val found = probe(episode)
     expect((abs(duration(episode) - 18.0) <= 0.1) to found["chapters"].toList().map { it["tags"]["title"].asString() })
       .toEqual(true to listOf("Õhtu; uudised = #1", "Lõige 1 (0:08) – Õhtu; uudised = #1"))
@@ -29,7 +35,11 @@ class RadioRenderServiceTest {
 
   @Test
   fun `should take each piece from the part that covers it`() {
-    val parts = listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)), FixturePart("raw-part-002.mp3", 8.0, taped(directory, "raw-part-002", 10)))
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)),
+        FixturePart("raw-part-002.mp3", 8.0, taped(directory, "raw-part-002", 10)),
+      )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
     service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
@@ -38,18 +48,28 @@ class RadioRenderServiceTest {
 
   @Test
   fun `should play each part from its own offset`() {
-    val parts = listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)), FixturePart("raw-part-002.mp3", 8.0, silent(directory, "raw-part-002", 10)))
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)),
+        FixturePart("raw-part-002.mp3", 8.0, silent(directory, "raw-part-002", 10)),
+      )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
     service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
     val audio = decoded(episode)
-    val loud = { start: Double, end: Double -> sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average()) }
+    val loud = { start: Double, end: Double ->
+      sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average())
+    }
     expect((loud(0.5, 4.5) > 1000) to (loud(5.5, 9.5) < 10)).toEqual(true to true)
   }
 
   @Test
   fun `should skip a piece too short to fade`() {
-    val parts = listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)), FixturePart("raw-part-002.mp3", 10.0, taped(directory, "raw-part-002", 10)))
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10)),
+        FixturePart("raw-part-002.mp3", 10.0, taped(directory, "raw-part-002", 10)),
+      )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
     service.render(timeline(directory), listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)

@@ -24,7 +24,7 @@ class RadioEpisodeJob(
     val recordings = radioProperties.recordings
     if (!Files.isDirectory(recordings)) return
     Files.list(recordings).use { it.toList() }.filter { Files.isDirectory(it) }.sorted().forEach { directory ->
-      runCatching { radioEpisodeService.make(directory) }.onFailure { log.error("Radio episode job failed for {}", directory, it) }
+      runCatching { radioEpisodeService.make(directory) }.onFailure { log.error("Radio episode job failed for $directory", it) }
     }
   }
 }

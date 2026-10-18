@@ -46,7 +46,8 @@ class RadioEpisodeServiceTest {
   )
 
   private fun transcribed(vararg starts: Double) {
-    val transcript = Transcript(starts.map { TranscriptSegment(it, it + 1, "Tere päevast.") }, starts.map { TranscriptWord(it, it + 1, " Tere") })
+    val transcript =
+      Transcript(starts.map { TranscriptSegment(it, it + 1, "Tere päevast.") }, starts.map { TranscriptWord(it, it + 1, " Tere") })
     Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
   }
 
@@ -108,7 +109,8 @@ class RadioEpisodeServiceTest {
     show()
     every { outlineService.reads(any(), any()) } returns listOf(null, null, null)
     val result = service.make(directory)
-    expect(Triple(result, Files.exists(directory.resolve("outline.json")), "No outline read came back" in failure())).toEqual(Triple(null, false, true))
+    val saved = Files.exists(directory.resolve("outline.json"))
+    expect(Triple(result, saved, "No outline read came back" in failure())).toEqual(Triple(null, false, true))
   }
 
   @Test
@@ -121,13 +123,19 @@ class RadioEpisodeServiceTest {
 
   @Test
   fun `should measure chapters and duration without the gap no part covers`() {
-    val parts = listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)), FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)))
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)),
+        FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)),
+      )
     writeRecording(directory, parts, "partial")
     transcribed(1.0, 5.0, 50.0)
     saved(outline(1.0, 5.0, 50.0))
     val episode = checkNotNull(service.make(directory))
-    val duration = probe(episode)["format"]["duration"].asString().toDouble()
-    val end = probe(episode)["chapters"].toList().last()["end_time"].asString().toDouble()
+    val found = probe(episode)
+    val duration = found["format"]["duration"].asString().toDouble()
+    val last = found["chapters"].toList().last()
+    val end = last["end_time"].asString().toDouble()
     expect((abs(edit().durationSeconds - duration) <= 0.1) to (abs(end - duration) <= 0.1)).toEqual(true to true)
   }
 }

@@ -93,7 +93,7 @@ class RadioEpisodeService(
     directory: Path,
     failure: Throwable,
   ): Path? {
-    log.error("Radio episode for {} failed", directory, failure)
+    log.error("Radio episode for $directory failed", failure)
     save(directory.resolve(FAILED), EpisodeFailure(failure.message ?: failure.javaClass.simpleName, now()))
     return null
   }

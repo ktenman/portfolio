@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.junit.jupiter.api.io.TempDir
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.JsonNode
 import tools.jackson.module.kotlin.readValue
 import java.lang.management.ManagementFactory
 import java.lang.management.MemoryType
@@ -35,13 +36,16 @@ class RadioEpisodePocTest {
     val transcript =
       Transcript(
         segments.map { TranscriptSegment(it["start"].asDouble(), it["end"].asDouble(), it["text"].asString()) },
-        segments.flatMap { segment -> segment["words"].toList().map { TranscriptWord(it["start"].asDouble(), it["end"].asDouble(), it["word"].asString()) } },
+        segments.flatMap { it["words"].toList() }.map(::word),
       )
     Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
   }
 
+  private fun word(node: JsonNode) = TranscriptWord(node["start"].asDouble(), node["end"].asDouble(), node["word"].asString())
+
   private fun errors(episode: Path): String {
-    val process = ProcessBuilder("ffmpeg", "-v", "error", "-i", episode.toString(), "-f", "null", "-").redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
+    val command = listOf("ffmpeg", "-v", "error", "-i", episode.toString(), "-f", "null", "-")
+    val process = ProcessBuilder(command).redirectOutput(ProcessBuilder.Redirect.DISCARD).start()
     val output = process.errorStream.use { String(it.readBytes()) }
     check(process.waitFor(5, TimeUnit.MINUTES)) { "ffmpeg did not finish decoding $episode" }
     return output
@@ -54,19 +58,29 @@ class RadioEpisodePocTest {
     val started = System.nanoTime()
     val episode = checkNotNull(service.make(directory))
     val peak = ManagementFactory.getMemoryPoolMXBeans().filter { it.type == MemoryType.HEAP }.sumOf { it.peakUsage.used } / 1_048_576
-    log.info("PoC episode took {} s with a peak heap of {} MiB", (System.nanoTime() - started) / 1_000_000_000, peak)
+    log.info("PoC episode took ${(System.nanoTime() - started) / 1_000_000_000} s with a peak heap of $peak MiB")
     val edit = JsonMapperFactory.instance.readValue<EditList>(Files.readString(directory.resolve("edit-list.json")))
     val found = probe(episode)
     val titles = found["chapters"].toList().map { it["tags"]["title"].asString() }
+    val placed = edit.boundaries.map { it.seconds }
     expect(
       listOf(
-        edit.boundaries.map { it.seconds }.zip(reference).all { (placed, expected) -> abs(placed - expected) <= 0.1 },
+        placed.zip(reference).all { (seconds, expected) -> abs(seconds - expected) <= 0.1 },
         abs(found["format"]["duration"].asString().toDouble() - 2829.2) <= 0.1,
         errors(episode),
         titles.size,
         titles[1],
         titles[3],
       ),
-    ).toEqual(listOf(true, true, "", 4, "Lõige 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis", "Lõige 2 (36:29) – President Ülle Madise ja tema nõunikud"))
+    ).toEqual(
+      listOf(
+        true,
+        true,
+        "",
+        4,
+        "Lõige 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",
+        "Lõige 2 (36:29) – President Ülle Madise ja tema nõunikud",
+      ),
+    )
   }
 }

@@ -45,7 +45,8 @@ class RadioRenderService {
     val count = timeline.spans.size.toString()
     return listOf("ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "error", "-y") + inputs +
       listOf("-i", chapters.toString(), "-filter_complex", graph, "-map", "[out]", "-map_metadata", count, "-map_chapters", count) +
-      listOf("-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", "-metadata", "title=$title", "-metadata", "artist=Kuku", target.toString())
+      listOf("-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart") +
+      listOf("-metadata", "title=$title", "-metadata", "artist=Kuku", target.toString())
   }
 
   private fun plain(seconds: Double): String = seconds.toBigDecimal().toPlainString()
@@ -59,7 +60,8 @@ class RadioRenderService {
       process.destroyForcibly()
       throw IllegalStateException("FFmpeg did not finish within $TIMEOUT_MINUTES minutes")
     }
-    check(process.exitValue() == 0) { "FFmpeg exited with ${process.exitValue()}: ${Files.readAllLines(log).takeLast(20).joinToString("\n")}" }
+    val tail = Files.readAllLines(log).takeLast(20).joinToString("\n")
+    check(process.exitValue() == 0) { "FFmpeg exited with ${process.exitValue()}: $tail" }
   }
 
   companion object {

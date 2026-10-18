@@ -40,7 +40,8 @@ class RadioCutServiceTest {
     return samples
   }
 
-  private fun line(start: Double) = TranscriptLine(start, start + 1, "Ja siinkohal väike paus.", listOf(TranscriptWord(start, start + 1, " paus.")))
+  private fun line(start: Double) =
+    TranscriptLine(start, start + 1, "Ja siinkohal väike paus.", listOf(TranscriptWord(start, start + 1, " paus.")))
 
   private fun outline(
     before: Double,
@@ -84,14 +85,26 @@ class RadioCutServiceTest {
     val samples = noise(60.0)
     (38 * RATE).until((38.2 * RATE).toInt()).forEach { samples[it] = (samples[it] / 100).toShort() }
     val (recorded, db) = recording(samples)
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 40.0), 50.0, false), listOf(1.0, 5.0, 30.0, 40.0, 50.0).map(::line))
+    val found =
+      service.boundaries(
+        recorded,
+        db,
+        outline(1.0, 5.0, listOf(30.0 to 40.0), 50.0, false),
+        listOf(1.0, 5.0, 30.0, 40.0, 50.0).map(::line),
+      )
     expect(found[2].method to (abs(found[2].seconds - 38.1) <= 0.1)).toEqual("level dip" to true)
   }
 
   @Test
   fun `should end breaks that share a jingle at it`() {
     val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false), listOf(1.0, 5.0, 8.0, 20.0, 30.0, 45.0, 50.0).map(::line))
+    val found =
+      service.boundaries(
+        recorded,
+        db,
+        outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false),
+        listOf(1.0, 5.0, 8.0, 20.0, 30.0, 45.0, 50.0).map(::line),
+      )
     expect(found.map { it.method.startsWith("station jingle") }).toEqual(listOf(false, false, true, false, true, false))
   }
 
@@ -112,7 +125,8 @@ class RadioCutServiceTest {
   @Test
   fun `should refuse a break that ends before it starts`() {
     val (recorded, db) = recording(noise(60.0))
-    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), listOf(1.0, 5.0, 20.0, 30.0, 50.0).map(::line)) }
+    val lines = listOf(1.0, 5.0, 20.0, 30.0, 50.0).map(::line)
+    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines) }
       .toThrow<IllegalStateException>()
       .messageToContain("break 1 ends")
   }

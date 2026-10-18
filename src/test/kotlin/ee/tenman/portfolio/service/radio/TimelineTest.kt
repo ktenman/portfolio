@@ -23,7 +23,10 @@ class TimelineTest {
 
   @Test
   fun `should read an overlap from the earlier part`() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, constant(10.0, 100)), FixturePart("raw-part-002.mp3", 4.0, constant(10.0, 200))))
+    writeRecording(
+      directory,
+      listOf(FixturePart("raw.mp3", 0.0, constant(10.0, 100)), FixturePart("raw-part-002.mp3", 4.0, constant(10.0, 200))),
+    )
     val recording = timeline(directory)
     val samples = recording.samples(9.9, 10.1)
     expect(listOf(recording.seconds, samples.first(), samples.last())).toEqual(listOf(14.0, 100.0, 200.0))
@@ -31,7 +34,10 @@ class TimelineTest {
 
   @Test
   fun `should read silence where no part covers`() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, constant(1.0, 100)), FixturePart("raw-part-002.mp3", 3.0, constant(1.0, 100))))
+    writeRecording(
+      directory,
+      listOf(FixturePart("raw.mp3", 0.0, constant(1.0, 100)), FixturePart("raw-part-002.mp3", 3.0, constant(1.0, 100))),
+    )
     expect(timeline(directory).samples(1.5, 2.5).toList()).toEqual(List(RATE) { 0.0 })
   }
 
