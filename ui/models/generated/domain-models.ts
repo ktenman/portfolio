@@ -258,9 +258,9 @@ export interface RecordingSummary {
     timeline: TimelineEntry[];
     audible: KeptSpan[];
     format: AudioFormat | null;
+    drops: number;
     transcriptState: TranscriptState;
     cutState: CutState;
-    drops: number;
 }
 
 export interface TranscriptLine {
@@ -309,6 +309,9 @@ export interface RadioStation {
     capture: Capture | null;
     freeBytes: number | null;
     hours: number | null;
+    recorder: RecorderState;
+    last: LastRecording | null;
+    format: AudioFormat | null;
 }
 
 export interface Serializable {
@@ -438,6 +441,11 @@ export interface Capture {
     name: string;
     programmes: string[];
     start: number;
+    end: number;
+}
+
+export interface LastRecording {
+    programme: string;
     end: number;
 }
 
@@ -585,6 +593,12 @@ export enum CutState {
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
+}
+
+export enum RecorderState {
+    WAITING = "WAITING",
+    RECORDING = "RECORDING",
+    OFF = "OFF",
 }
 
 export enum RecordingState {

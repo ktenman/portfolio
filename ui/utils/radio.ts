@@ -1,9 +1,11 @@
 import {
   type AirSlot,
+  type AudioFormat,
   BoundaryMethod,
   CutState,
   DayOfWeek,
   type KeptSpan,
+  RecorderState,
   type RecordingSummary,
   RecordingState,
   TranscriptState,
@@ -121,6 +123,12 @@ export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> 
   [RecordingState.FAILED]: { label: 'Ebaõnnestus', tone: 'error' },
 }
 
+export const RECORDER_STATES: Record<RecorderState, { label: string; tone: BadgeTone }> = {
+  [RecorderState.WAITING]: { label: 'Ootel', tone: 'plain' },
+  [RecorderState.RECORDING]: { label: 'Salvestab', tone: 'live' },
+  [RecorderState.OFF]: { label: 'Väljas', tone: 'error' },
+}
+
 const TEXT_STATES: Record<TranscriptState, string> = {
   [TranscriptState.NONE]: '—',
   [TranscriptState.RECORDING]: 'Salvestamisel',
@@ -141,7 +149,7 @@ const CUT_STATES: Record<CutState, (recording: RecordingSummary) => string> = {
 export const cutState = (recording: RecordingSummary): string =>
   CUT_STATES[recording.cutState](recording)
 
-export const audioFormat = ({ format }: RecordingSummary): string =>
+export const audioFormat = (format: AudioFormat | null): string =>
   format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
 
 export const dropNote = ({ drops, status }: RecordingSummary): string => {

@@ -311,3 +311,49 @@ tests:
               severity: critical
             exp_annotations:
               summary: 'Collection inventory is unavailable'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_radio_missed_capture{capture="2026-10-24-1155-keskpaevatund",programmes="Keskpäevatund"}'
+        values: '1+0x20'
+      - series: 'portfolio_radio_missed_capture{capture="2026-10-24-1755-kasi-pulsil",programmes="Käsi pulsil"}'
+        values: '2+0x20'
+      - series: 'portfolio_radio_schedule_failed'
+        values: '1+0x20'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: RadioCaptureMissed
+        exp_alerts:
+          - exp_labels:
+              capture: 2026-10-24-1155-keskpaevatund
+              programmes: Keskpäevatund
+              severity: warning
+            exp_annotations:
+              summary: 'Kuku recording 2026-10-24-1155-keskpaevatund of Keskpäevatund ended without a recording: the recorder has never run here, so RADIO_ENABLED may be off'
+          - exp_labels:
+              capture: 2026-10-24-1755-kasi-pulsil
+              programmes: Käsi pulsil
+              severity: warning
+            exp_annotations:
+              summary: 'Kuku recording 2026-10-24-1755-kasi-pulsil of Käsi pulsil ended without a recording: the recorder is not running'
+      - eval_time: 1m
+        alertname: RadioScheduleFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Kuku schedule import failed, so the recording plan is not renewed'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_radio_plan_timestamp_seconds'
+        values: '0+0x12000'
+    alert_rule_test:
+      - eval_time: 47h
+        alertname: RadioPlanStale
+        exp_alerts: []
+      - eval_time: 50h
+        alertname: RadioPlanStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Kuku recording plan is over two days old, so nothing new is planned'

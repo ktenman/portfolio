@@ -8,8 +8,11 @@ from collections.abc import Callable
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from .recorder import save
+
 TALLINN = ZoneInfo("Europe/Tallinn")
 PLAN = "plan.json"
+HEARTBEAT = "heartbeat.json"
 CHECK_SECONDS = 60
 RETRY_SECONDS = 3600
 REPOSITORY = "TalTechNLP/whisper-large-v3-turbo-et-verbatim-2604"
@@ -59,15 +62,23 @@ def planned(
         if capture is None or capture["start"] > clock():
             if not ready(model) and clock() - tried >= RETRY_SECONDS:
                 tried = clock()
+                beat(recordings, tried, tried + RETRY_SECONDS)
                 attempt(lambda: download(model), f"Downloading {REPOSITORY} into {model}")
-            sleep(min(CHECK_SECONDS, capture["start"] - clock()) if capture else CHECK_SECONDS)
+            wait = min(CHECK_SECONDS, capture["start"] - clock()) if capture else CHECK_SECONDS
+            beat(recordings, clock(), clock() + wait)
+            sleep(wait)
             continue
+        beat(recordings, clock(), capture["end"])
         directory = recordings / capture["name"]
         if ready(model):
             attempt(lambda: say(f"{record(directory, capture['end'] - clock(), capture['programmes'])}: {directory}"), f"Recording {directory}")
         else:
             say(f"Skipping {directory}: {model} holds no verified model")
         pause(capture["end"], clock, sleep)
+
+
+def beat(recordings: Path, now: float, until: float) -> None:
+    save(recordings / HEARTBEAT, json.dumps({"seen": now, "until": until}) + "\n")
 
 
 def shown(moment: float) -> str:

@@ -1,6 +1,11 @@
 <template>
   <aside class="flex flex-col gap-4" aria-label="Salvestaja ja eeter">
     <radio-card title="Salvestaja">
+      <template v-if="station" #aside>
+        <radio-badge :tone="RECORDER_STATES[station.recorder].tone">
+          {{ RECORDER_STATES[station.recorder].label }}
+        </radio-badge>
+      </template>
       <radio-facts :rows="recorder" />
     </radio-card>
     <radio-card v-if="station?.onAir" title="Eetris">
@@ -22,7 +27,7 @@ import { computed } from 'vue'
 import type { StationAiring } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
-import { clock, day, LINK, range } from '../../utils/radio'
+import { audioFormat, clock, day, LINK, range, RECORDER_STATES } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
@@ -39,8 +44,11 @@ const recorder = computed<[string, string][]>(() => {
   const next = s.capture
     ? `${s.capture.programmes.join(', ')}, ${day(s.capture.start)} ${clock(s.capture.start, 0)}`
     : 'Pole valitud'
+  const last = s.last ? `${s.last.programme}, ${day(s.last.end)} ${clock(s.last.end, 0)}` : '—'
   return [
+    ['Viimane', last],
     ['Järgmine', next],
+    ['Vorming', audioFormat(s.format)],
     ['Vaba ruumi', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
     ['Jätkub', s.hours == null ? '—' : `≈ ${s.hours.toLocaleString('et')} tundi`],
   ]

@@ -17,10 +17,13 @@ import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.AirSlot
 import ee.tenman.portfolio.service.radio.Capture
+import ee.tenman.portfolio.service.radio.HEARTBEAT_FILE
+import ee.tenman.portfolio.service.radio.MissedReason
 import ee.tenman.portfolio.service.radio.PLAN_FILE
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioScheduleService
+import ee.tenman.portfolio.service.radio.RecorderState
 import io.mockk.mockk
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -36,6 +39,7 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put as mvcPut
 
@@ -85,7 +89,16 @@ class RadioScheduleJobIT {
     start: String,
     end: String,
     original: Long? = null,
-  ) = """{"id":$id,"start":"${at(start).toOffsetDateTime()}","end":"${at(end).toOffsetDateTime()}","title":"$name $day",""" +
+  ) = episode(id, show, name, at(start), at(end), original)
+
+  private fun episode(
+    id: Long,
+    show: Long,
+    name: String,
+    start: ZonedDateTime,
+    end: ZonedDateTime,
+    original: Long? = null,
+  ) = """{"id":$id,"start":"${start.toOffsetDateTime()}","end":"${end.toOffsetDateTime()}","title":"$name $day",""" +
     """"original_id":$original,"show":{"id":$show,"name":"$name","slug":"${SLUGS.getValue(show)}",""" +
     """"description_short":"Saade, mida juhivad Ülle ja Õie"}}"""
 
@@ -180,6 +193,26 @@ class RadioScheduleJobIT {
   fun `should give no free space when the recordings directory is missing`() {
     radioProperties.recordings.toFile().deleteRecursively()
     expect(radioScheduleService.station().freeBytes).toEqual(null)
+  }
+
+  @Test
+  fun `should call the recorder off when the worker left no heartbeat`() {
+    expect(radioScheduleService.station().recorder).toEqual(RecorderState.OFF)
+  }
+
+  @Test
+  fun `should call the recorder waiting while the worker beats`() {
+    Files.writeString(radioProperties.recordings.resolve(HEARTBEAT_FILE), """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
+    expect(radioScheduleService.station().recorder).toEqual(RecorderState.WAITING)
+  }
+
+  @Test
+  fun `should report a chosen airing that ended without a recording`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    expect(radioScheduleService.missed().map { it.capture.programmes to it.reason })
+      .toContainExactly(listOf("Keskpäevatund") to MissedReason.NEVER_RAN)
   }
 
   @Test

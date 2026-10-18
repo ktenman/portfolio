@@ -4,6 +4,7 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioStation from './radio-station.vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
+import { RecorderState } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: { station: vi.fn(), liveUrl: '/api/radio/live' },
@@ -30,6 +31,9 @@ const idle = {
   capture: null,
   freeBytes: 364_000_000_000,
   hours: 3159,
+  recorder: RecorderState.WAITING,
+  last: null,
+  format: null,
 }
 
 describe('RadioStation', () => {
@@ -45,6 +49,30 @@ describe('RadioStation', () => {
       end: SATURDAY_NOON + 3900,
     }
     expect((await mount({ ...idle, capture })).text()).toContain('Keskpäevatund, L 24.10 11:55')
+  })
+
+  it('should show the recorder waiting between recordings', async () => {
+    expect((await mount(idle)).text()).toContain('SalvestajaOotel')
+  })
+
+  it('should show the recorder off when the worker is not seen', async () => {
+    expect((await mount({ ...idle, recorder: RecorderState.OFF })).text()).toContain(
+      'SalvestajaVäljas'
+    )
+  })
+
+  it('should name the last recording with the day and time it ended', async () => {
+    const last = { programme: 'Keskpäevatund', end: SATURDAY_NOON + 3900 }
+    expect((await mount({ ...idle, last })).text()).toContain('ViimaneKeskpäevatund, L 24.10 13:05')
+  })
+
+  it('should give the format of the last recording', async () => {
+    const format = { codec: 'mp3', bitRate: 256_000 }
+    expect((await mount({ ...idle, format })).text()).toContain('VormingMP3 256 kb/s')
+  })
+
+  it('should show a dash before the first recording', async () => {
+    expect((await mount(idle)).text()).toContain('Viimane—')
   })
 
   it('should say how many hours of radio still fit', async () => {

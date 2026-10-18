@@ -135,3 +135,28 @@ groups:
           severity: watchdog
         annotations:
           summary: 'Monitoring heartbeat'
+  - name: portfolio-radio
+    interval: 15s
+    rules:
+      - alert: RadioCaptureMissed
+        expr: portfolio_radio_missed_capture > 0
+        keep_firing_for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: >-
+            Kuku recording {{ $labels.capture }} of {{ $labels.programmes }} ended without a recording:
+            {{ if eq $value 1.0 }}the recorder has never run here, so RADIO_ENABLED may be off{{ else if eq $value 2.0 }}the recorder is not running{{ else }}the recorder runs but saved nothing, see its log{{ end }}
+      - alert: RadioPlanStale
+        expr: time() - portfolio_radio_plan_timestamp_seconds > 2 * 86400
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kuku recording plan is over two days old, so nothing new is planned'
+      - alert: RadioScheduleFailed
+        expr: portfolio_radio_schedule_failed == 1
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Kuku schedule import failed, so the recording plan is not renewed'

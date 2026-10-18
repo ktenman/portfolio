@@ -8,6 +8,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 const val PLAN_FILE = "plan.json"
+const val HEARTBEAT_FILE = "heartbeat.json"
+val MISSED_FOR: Duration = Duration.ofDays(1)
+private val GRACE = Duration.ofMinutes(2)
 private val PADDING = Duration.ofMinutes(5)
 private val UNSAFE = Regex("[^0-9a-z]+")
 private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
@@ -51,7 +54,66 @@ data class RadioStation(
   val capture: Capture?,
   val freeBytes: Long?,
   val hours: Long?,
+  val recorder: RecorderState,
+  val last: LastRecording?,
+  val format: AudioFormat?,
 )
+
+enum class RecorderState { WAITING, RECORDING, OFF }
+
+data class LastRecording(
+  val programme: String,
+  val end: Long,
+)
+
+data class Heartbeat(
+  val until: Double,
+)
+
+enum class MissedReason(
+  val code: Double,
+) {
+  NEVER_RAN(1.0),
+  DOWN(2.0),
+  SAVED_NOTHING(3.0),
+}
+
+data class MissedCapture(
+  val capture: Capture,
+  val reason: MissedReason,
+)
+
+fun recorder(
+  heartbeat: Heartbeat?,
+  recording: Boolean,
+  now: Instant,
+): RecorderState =
+  when {
+    !alive(heartbeat, now) -> RecorderState.OFF
+    recording -> RecorderState.RECORDING
+    else -> RecorderState.WAITING
+  }
+
+fun missed(
+  captures: List<Capture>,
+  recorded: Set<String>,
+  heartbeat: Heartbeat?,
+  now: Instant,
+): List<MissedCapture> {
+  val reason =
+    when {
+      heartbeat == null -> MissedReason.NEVER_RAN
+      !alive(heartbeat, now) -> MissedReason.DOWN
+      else -> MissedReason.SAVED_NOTHING
+    }
+  val window = (now - MISSED_FOR).epochSecond..now.epochSecond
+  return captures.filter { it.end in window && it.name !in recorded }.map { MissedCapture(it, reason) }
+}
+
+private fun alive(
+  heartbeat: Heartbeat?,
+  now: Instant,
+): Boolean = heartbeat != null && now.epochSecond <= heartbeat.until + GRACE.seconds
 
 data class StationAiring(
   val name: String,

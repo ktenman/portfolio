@@ -90,7 +90,7 @@ describe('stream', () => {
     recording({ drops, status: { ...recording().status, lostSeconds } })
 
   it('should give the format of the recording', () => {
-    expect(audioFormat(recording())).toEqual('MP3 256 kb/s')
+    expect(audioFormat(recording().format)).toEqual('MP3 256 kb/s')
   })
 
   it('should say nothing was lost when the stream dropped once', () => {

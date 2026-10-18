@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.service.radio.RadioMetricsService
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -30,6 +31,8 @@ class MonitoringEndpointIT {
 
   @Resource private lateinit var stream: CollectionStreamService
 
+  @Resource private lateinit var radio: RadioMetricsService
+
   @Test
   fun `should expose complete collection metrics on the management listener`() {
     metrics.refresh()
@@ -41,6 +44,15 @@ class MonitoringEndpointIT {
       "portfolio_collection_inventory_ready 1.0",
       "portfolio_collection_operation_info",
       "portfolio_collection_deadline_timestamp_seconds",
+    )
+  }
+
+  @Test
+  fun `should expose the radio recorder metrics on the management listener`() {
+    radio.refresh()
+    expect(get(managementPort, "/actuator/prometheus").body()).toContain(
+      "portfolio_radio_plan_timestamp_seconds",
+      "portfolio_radio_schedule_failed",
     )
   }
 

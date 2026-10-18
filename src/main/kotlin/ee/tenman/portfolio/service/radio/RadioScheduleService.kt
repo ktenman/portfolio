@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.kuku.KukuEpisode
@@ -9,6 +10,7 @@ import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 
@@ -68,19 +70,46 @@ class RadioScheduleService(
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now)
     val captures = planned(airings)
-    val onAir = airings.firstOrNull { it.startsAt <= now }
-    val next = airings.firstOrNull { it.startsAt > now }
-    val names = radioProgrammeRepository.findAllById(listOfNotNull(onAir, next).map { it.programmeId }).associate { it.id to it.name }
+    val (onAir, next) = airing(airings, captures, now)
     val root = radioProperties.recordings
     val free = root.takeIf(Files::isDirectory)?.let { Files.getFileStore(it).usableSpace }
+    val recordings = radioArchiveService.recordings()
+    val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING }
     return RadioStation(
-      onAir = onAir?.let { live(it, names, captures) },
-      next = next?.let { live(it, names, captures) },
+      onAir = onAir,
+      next = next,
       capture = captures.firstOrNull(),
       freeBytes = free,
       hours = free?.div(BYTES_PER_HOUR),
+      recorder = recorder(heartbeat(root), recordings.any { it.status.state == RecordingState.RECORDING }, now),
+      last = last?.let { LastRecording(it.programme, (it.status.startedAt + it.status.seconds).toLong()) },
+      format = last?.format,
     )
   }
+
+  private fun airing(
+    airings: List<RadioAiring>,
+    captures: List<Capture>,
+    now: Instant,
+  ): Pair<StationAiring?, StationAiring?> {
+    val onAir = airings.firstOrNull { it.startsAt <= now }
+    val next = airings.firstOrNull { it.startsAt > now }
+    val names = radioProgrammeRepository.findAllById(listOfNotNull(onAir, next).map { it.programmeId }).associate { it.id to it.name }
+    return onAir?.let { live(it, names, captures) } to next?.let { live(it, names, captures) }
+  }
+
+  fun missed(): List<MissedCapture> {
+    val root = radioProperties.recordings
+    if (!Files.isDirectory(root)) return emptyList()
+    val now = clock.instant()
+    val names = Files.list(root).use { files -> files.map { it.fileName.toString() }.toList() }.toSet()
+    return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), names, heartbeat(root), now)
+  }
+
+  private fun heartbeat(root: Path): Heartbeat? =
+    root.resolve(HEARTBEAT_FILE).takeIf(Files::exists)?.let {
+      JsonMapperFactory.instance.readValue(Files.readString(it), Heartbeat::class.java)
+    }
 
   private fun planned(airings: List<RadioAiring>): List<Capture> {
     val chosen = radioProgrammeRepository.findByRecordEveryTrue().associateBy { it.id }

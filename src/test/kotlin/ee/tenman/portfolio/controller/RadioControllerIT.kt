@@ -57,6 +57,11 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should name the last recording and when it ended`() {
+    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(status().isOk).andExpect(jsonPath("$.last.end").value(1792235100))
+  }
+
+  @Test
   fun `should list the recordings`() {
     mockMvc.perform(mvcGet("/api/radio")).andExpect(status().isOk).andExpect(jsonPath("$[0].name").value("2026-10-17"))
   }

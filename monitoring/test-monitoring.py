@@ -392,6 +392,26 @@ def check_metric_coverage():
     print(f'{len(operations)}-operation and per-item metric coverage passed')
 
 
+def check_radio_delivery(base):
+    def missed(ends_after):
+        incident = alert('RadioCaptureMissed', ends_after)
+        incident['labels'].update(severity='warning', capture='2026-10-24-1155-keskpaevatund', programmes='Keskpäevatund')
+        incident['annotations'] = {'summary': 'Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording'}
+        return incident
+
+    def sent():
+        return [json.loads(event[2])['text'] for event in events('/sendMessage') if 'RadioCaptureMissed' in event[2]]
+
+    request(base + '/api/v2/alerts', [missed(30)])
+    wait_for(lambda: len(sent()) == 1)
+    assert sent() == ['production RadioCaptureMissed: Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording']
+    request(base + '/api/v2/alerts', [missed(30)])
+    time.sleep(3)
+    request(base + '/api/v2/alerts', [missed(-1)])
+    time.sleep(2)
+    assert len(sent()) == 1, f'A missed capture reached Telegram more than once: {sent()}'
+
+
 def check_delivery():
     Receiver.events = []
     server = ThreadingHTTPServer(('0.0.0.0', 0), Receiver)
@@ -471,6 +491,7 @@ def check_delivery():
             time.sleep(2)
             assert not notifications('CollectionInventoryUnavailable', 'firing')
             assert not notifications('CollectionMetricsIncomplete', 'firing')
+            check_radio_delivery(base)
             stop_alertmanager(container)
             (directory / 'alertmanager.yml').write_text(production_config)
             container, base = start_alertmanager(directory, network)
