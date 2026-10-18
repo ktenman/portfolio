@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import kotlin.text.Charsets.UTF_8
 
 @RestController
 @RequestMapping("/api/radio")
@@ -50,7 +51,13 @@ class RadioController(
   private fun media(resource: Resource): ResponseEntity<Resource> =
     ResponseEntity
       .ok()
-      .contentType(MediaTypeFactory.getMediaType(resource).orElse(MediaType.APPLICATION_OCTET_STREAM))
+      .contentType(type(resource))
+      .lastModified(resource.lastModified())
       .cacheControl(CacheControl.noCache())
       .body(resource)
+
+  private fun type(resource: Resource): MediaType {
+    val type = MediaTypeFactory.getMediaType(resource).orElse(MediaType.APPLICATION_OCTET_STREAM)
+    return if (type.type == "text") MediaType(type, UTF_8) else type
+  }
 }

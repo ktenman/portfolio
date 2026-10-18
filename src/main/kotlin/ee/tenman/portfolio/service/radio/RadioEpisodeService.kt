@@ -11,6 +11,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 @Service
 class RadioEpisodeService(
@@ -109,16 +110,18 @@ class RadioEpisodeService(
   ): EditList {
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
-    val spans = keep.map { it.start to it.end }
+    val spans = keep.map { it.start to min(it.end, timeline.seconds) }
+    require(ordered(spans) && spans.all { audible(timeline, listOf(it)).isNotEmpty() }) {
+      "Keep list $keep is not ordered audible spans within 0-${timeline.seconds} s"
+    }
     val kept = audible(timeline, spans)
-    require(ordered(spans, timeline.seconds) && kept.isNotEmpty()) { "Keep list $keep is not ordered spans within 0-${timeline.seconds} s" }
     val marks = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) })
     val temporary = directory.resolve(REVIEWED)
     runCatching { radioRenderService.render(timeline, spans, marks, title(status), temporary) }
       .onFailure { Files.deleteIfExists(temporary) }
       .getOrThrow()
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    return reviewed(edit, keep, kept, marks)
+    return reviewed(edit, spans.map { KeptSpan(it.first, it.second) }, kept, marks)
   }
 
   private fun reviewed(
@@ -134,13 +137,10 @@ class RadioEpisodeService(
     renderedAt = now(),
   )
 
-  private fun ordered(
-    spans: List<Pair<Double, Double>>,
-    seconds: Double,
-  ): Boolean =
+  private fun ordered(spans: List<Pair<Double, Double>>): Boolean =
     spans.isNotEmpty() &&
-      spans.all { (start, end) -> start >= 0 && start < end && end <= seconds } &&
-      spans.zipWithNext().all { (left, right) -> left.second <= right.first }
+      spans.all { (start, end) -> start >= 0 && start < end } &&
+      spans.zipWithNext().all { (left, right) -> left.second < right.first }
 
   private fun title(status: RecordingStatus): String =
     "Keskpäevatund ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
@@ -155,15 +155,6 @@ class RadioEpisodeService(
   }
 
   private fun now(): String = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString()
-
-  private fun save(
-    path: Path,
-    value: Any,
-  ) {
-    val temporary = path.resolveSibling("${path.fileName}.tmp")
-    Files.writeString(temporary, JsonMapperFactory.instance.writerWithDefaultPrettyPrinter().writeValueAsString(value) + "\n")
-    Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-  }
 
   companion object {
     private const val EPISODE = "episode.m4a"

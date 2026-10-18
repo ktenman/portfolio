@@ -12,6 +12,7 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_RANGE
+import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.HttpHeaders.RANGE
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.test.context.TestPropertySource
@@ -58,6 +59,14 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should serve the text transcript as UTF-8`() {
+    Files.writeString(directory.resolve("transcript.txt"), "Tere, Keskpäevatund!")
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
+      .andExpect(header().string(CONTENT_TYPE, "text/plain;charset=UTF-8"))
+  }
+
+  @Test
   fun `should not serve the status file`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/status.json")).andExpect(status().isNotFound)
   }
@@ -73,13 +82,16 @@ class RadioControllerIT {
   }
 
   @Test
-  fun `should reject cuts that leave no audio`() {
+  fun `should reject cuts whose spans overlap`() {
     val outline = OutlineSummary(null, 1, 1, 1)
     val edit = EditList(listOf(KeptSpan(761.5, 3837.38)), 3075.88, emptyList(), emptyList(), emptyList(), outline, emptyList(), false, "")
     Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
     mockMvc
-      .perform(mvcPut("/api/radio/2026-10-17/cuts").contentType(APPLICATION_JSON).content("""[{"start":20.0,"end":10.0}]"""))
-      .andExpect(status().isBadRequest)
+      .perform(
+        mvcPut(
+          "/api/radio/2026-10-17/cuts",
+        ).contentType(APPLICATION_JSON).content("""[{"start":10.0,"end":30.0},{"start":20.0,"end":40.0}]"""),
+      ).andExpect(status().isBadRequest)
   }
 
   @Test

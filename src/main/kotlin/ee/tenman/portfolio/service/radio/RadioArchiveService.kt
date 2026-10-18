@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import org.slf4j.LoggerFactory
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
@@ -17,15 +18,19 @@ class RadioArchiveService(
   private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
+  private val log = LoggerFactory.getLogger(javaClass)
+
   fun recordings(): List<RecordingSummary> {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return emptyList()
     return Files
       .list(root)
       .use { it.toList() }
-      .filter { Files.exists(it.resolve(STATUS_FILE)) }
+      .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
       .sortedDescending()
-      .map { summary(it) }
+      .mapNotNull { directory ->
+        runCatching { summary(directory) }.onFailure { log.warn("Cannot read radio recording $directory", it) }.getOrNull()
+      }
   }
 
   fun transcript(name: String): List<TranscriptLine>? = directory(name, TRANSCRIPT_FILE)?.let { lines(readTranscript(it)) }
@@ -46,7 +51,7 @@ class RadioArchiveService(
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
     val check = TranscriptCheck(Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())
-    Files.writeString(directory.resolve(CHECKED), JsonMapperFactory.instance.writeValueAsString(check))
+    save(directory.resolve(CHECKED), check)
     return true
   }
 

@@ -7,6 +7,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
@@ -66,6 +67,15 @@ fun readStatus(directory: Path): RecordingStatus =
 
 fun readTranscript(directory: Path): Transcript =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(TRANSCRIPT_FILE)), Transcript::class.java)
+
+fun save(
+  path: Path,
+  value: Any,
+) {
+  val temporary = path.resolveSibling("${path.fileName}.tmp")
+  Files.writeString(temporary, JsonMapperFactory.instance.writerWithDefaultPrettyPrinter().writeValueAsString(value) + "\n")
+  Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+}
 
 fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()
 

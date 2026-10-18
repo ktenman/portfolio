@@ -192,7 +192,7 @@ class RadioEpisodeServiceTest {
     rendered()
     service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(30.0, 40.0)))
     val duration = probe(directory.resolve("episode.m4a"))["format"]["duration"].asString().toDouble()
-    expect(Triple(edit().reviewed, edit().keep.size, abs(duration - 20) <= 0.1)).toEqual(Triple(true, 2, true))
+    expect(edit().reviewed to (abs(duration - 20) <= 0.1)).toEqual(true to true)
   }
 
   @Test
@@ -211,9 +211,30 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should reject a keep list that reaches past the recording`() {
+  fun `should end a keep list that reaches past the recording at its last sample`() {
     rendered()
-    expect { service.review(directory, listOf(KeptSpan(50.0, 61.0))) }.toThrow<IllegalArgumentException>()
+    service.review(directory, listOf(KeptSpan(50.0, 60.04)))
+    expect(edit().keep).toEqual(listOf(KeptSpan(50.0, 60.0)))
+  }
+
+  @Test
+  fun `should reject a keep list whose spans touch`() {
+    rendered()
+    expect { service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(20.0, 30.0))) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should reject a kept span that no part covers`() {
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)),
+        FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)),
+      )
+    writeRecording(directory, parts, "partial")
+    transcribed(1.0, 5.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    expect { service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(32.0, 38.0))) }.toThrow<IllegalArgumentException>()
   }
 
   @Test

@@ -75,6 +75,19 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should list the other recordings when one has a broken edit list`() {
+    Files.writeString(recording("2026-10-17").resolve("edit-list.json"), "{\"keep\":")
+    recording("2026-10-24")
+    expect(service.recordings().map { it.name }).toEqual(listOf("2026-10-24"))
+  }
+
+  @Test
+  fun `should skip a directory whose name cannot be addressed`() {
+    recording("Keskpäevatund")
+    expect(service.recordings()).toEqual(emptyList())
+  }
+
+  @Test
   fun `should list nothing when the recordings directory is missing`() {
     Files.delete(recordings)
     expect(service.recordings()).toEqual(emptyList())
