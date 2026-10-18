@@ -1,6 +1,6 @@
-FROM python:3.12-slim-trixie AS base
+FROM ghcr.io/astral-sh/uv:0.13.1 AS uv
 
-COPY --from=ghcr.io/astral-sh/uv:0.13.1 /uv /usr/local/bin/uv
+FROM python:3.12-slim-trixie AS base
 
 ENV UV_NO_CACHE=1
 
@@ -13,12 +13,12 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev --no-install-project
+RUN --mount=from=uv,source=/uv,target=/bin/uv uv sync --locked --no-dev --no-install-project
 COPY src ./src
-RUN uv sync --locked --no-dev && .venv/bin/python -c "import faster_whisper"
+RUN --mount=from=uv,source=/uv,target=/bin/uv uv sync --locked --no-dev && .venv/bin/python -c "import faster_whisper"
 
 FROM base AS test
-RUN apt-get update \
+RUN --mount=from=uv,source=/uv,target=/bin/uv apt-get update \
     && apt-get install -y --no-install-recommends procps \
     && rm -rf /var/lib/apt/lists/* \
     && uv sync --locked

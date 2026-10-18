@@ -80,11 +80,12 @@ def attempt(directory: Path, status: dict, remaining: float, stop: threading.Eve
     with (directory / f"{stem}.log").open("ab") as log:
         process = subprocess.Popen(command(status["source"], remaining, directory / stem), stderr=log)
     part = None
-    while process.poll() is None:
-        if stop.wait(POLL_SECONDS):
-            process.kill()
-            process.wait()
-        part = part or register(directory, status, stem)
+    try:
+        while process.poll() is None and not stop.wait(POLL_SECONDS):
+            part = part or register(directory, status, stem)
+    finally:
+        process.kill()
+        process.wait()
     part = part or register(directory, status, stem)
     if part is None and (directory / f"{stem}.mp3").exists():
         raise RuntimeError(f"FFmpeg wrote {stem}.mp3 but {stem}.log does not say where the stream starts")

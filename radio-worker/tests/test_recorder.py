@@ -9,7 +9,7 @@ import pytest
 from pytest import approx
 from support import broadcast, first_silence, sha256, tone, wait
 
-from radio_worker.recorder import KUKU, prepare, read_status, record, register, write_status
+from radio_worker.recorder import KUKU, RATE, prepare, read_status, record, register, write_status
 from radio_worker.transcriber import seconds
 
 
@@ -56,9 +56,9 @@ def test_recorder_logs_when_each_part_starts_and_ends(recorded):
 def test_recorder_carries_on_into_a_new_part_after_a_restart(tmp_path):
     directory = tmp_path / "rec"
     with broadcast(tmp_path) as url:
-        prepare(directory, url, 12)
+        prepare(directory, url, 4)
         shutil.copy(tone(tmp_path / "old.mp3", 3), directory / "raw.mp3")
-        (directory / "raw.pcm").write_bytes(bytes(3 * 32000))
+        (directory / "raw.pcm").write_bytes(bytes(3 * 2 * RATE))
         status = read_status(directory)
         status["parts"].append({"file": "raw.mp3", "streamStart": 1.4, "offsetSeconds": 0.0})
         write_status(directory, status)

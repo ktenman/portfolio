@@ -90,7 +90,6 @@ scripts/model-benchmark/
 .worktrees/
 
 ### Radio worker ###
-radio-worker/data/
 __pycache__/
 
 ### Working docs (keep architecture diagrams) ###

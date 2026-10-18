@@ -15,7 +15,7 @@ def test_station_serves_the_recording_as_live_hls(tmp_path):
 
 
 def test_station_serves_segments_as_mpeg_ts(tmp_path):
-    with broadcast(tmp_path) as url:
+    with broadcast(tmp_path, seconds=2) as url:
         urllib.request.urlopen(url, timeout=30).close()
         with urllib.request.urlopen(url.replace("stream.m3u8", "seg_00000.ts"), timeout=30) as response:
             kind = response.headers["Content-Type"]
@@ -33,7 +33,7 @@ def test_station_starts_part_way_with_from(tmp_path):
 
 def test_station_goes_off_air_after_the_replay_ends(tmp_path, monkeypatch):
     monkeypatch.setattr("radio_worker.station.GRACE_SECONDS", 0.1)
-    server = replay(tmp_path)
+    server = replay(tmp_path, seconds=2)
     listening = threading.Thread(target=server.serve_forever, daemon=True)
     listening.start()
     urllib.request.urlopen(f"http://127.0.0.1:{server.server_port}/stream.m3u8", timeout=30).close()

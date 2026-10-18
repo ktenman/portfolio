@@ -11,18 +11,18 @@ from radio_worker.recorder import read_status
 
 def test_run_records_and_transcribes_a_replay(tmp_path):
     with broadcast(tmp_path) as url:
-        state = run(tmp_path / "rec", url, 12, Stub, "stub", 60)
+        state = run(tmp_path / "rec", url, 4, Stub, "stub", 60)
     assert (state, len(transcript(tmp_path / "rec")["words"])) == ("captured", 1)
 
 
 def test_run_only_finishes_the_transcript_of_an_ended_recording(tmp_path):
     directory = tmp_path / "rec"
     with broadcast(tmp_path) as url:
-        run(directory, url, 12, Stub, "stub", 60)
+        run(directory, url, 4, Stub, "stub", 60)
     before = sha256(directory / "raw.mp3")
     (directory / "transcript.json").unlink()
     (directory / "transcript.jsonl").unlink()
-    run(directory, url, 12, Stub, "stub", 60)
+    run(directory, url, 4, Stub, "stub", 60)
     after = sha256(directory / "raw.mp3")
     assert ([part["file"] for part in read_status(directory)["parts"]], after, (directory / "transcript.json").exists()) == (["raw.mp3"], before, True)
 

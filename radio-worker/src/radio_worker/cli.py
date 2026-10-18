@@ -59,12 +59,10 @@ def build() -> argparse.ArgumentParser:
 
 
 def broadcast(recording: Path, host: str, port: int, start: float, speed: float) -> int:
-    with tempfile.TemporaryDirectory() as directory:
-        server = Station(recording, Path(directory), port, start, speed, host)
+    with tempfile.TemporaryDirectory() as directory, Station(recording, Path(directory), port, start, speed, host) as server:
         print(f"On air at http://{host}:{server.server_port}/stream.m3u8", flush=True)
         with contextlib.suppress(KeyboardInterrupt):
             server.serve_forever()
-        server.server_close()
     return 0
 
 

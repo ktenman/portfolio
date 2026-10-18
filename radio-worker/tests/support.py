@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from radio_worker.recorder import write_status
+from radio_worker.recorder import RATE, write_status
 from radio_worker.station import Station
 
 
@@ -37,10 +37,8 @@ def replay(directory: Path, seconds: float = 13, start: float = 0.0) -> Station:
     return Station(tone(directory / "in.mp3", seconds), directory / "hls", port=0, start=start, speed=4, host="127.0.0.1")
 
 
-@contextlib.contextmanager
-def broadcast(directory: Path, seconds: float = 13) -> Iterator[str]:
-    with serving(replay(directory, seconds)) as url:
-        yield url
+def broadcast(directory: Path, seconds: float = 13) -> contextlib.AbstractContextManager[str]:
+    return serving(replay(directory, seconds))
 
 
 def wait(condition: Callable[[], bool], seconds: float = 30) -> None:
@@ -61,22 +59,23 @@ def transcript(directory: Path) -> dict:
 
 def first_silence(pcm: Path, after: float) -> float:
     samples = np.fromfile(pcm, "<i2").astype(np.float32)
-    frames = samples[: len(samples) // 160 * 160].reshape(-1, 160)
+    hop = RATE // 100
+    frames = samples[: len(samples) // hop * hop].reshape(-1, hop)
     quiet = np.flatnonzero(np.sqrt((frames**2).mean(axis=1)) < 50) / 100
     return float(quiet[quiet > after][0])
 
 
 def noise(seconds: float, silences: list[float]) -> np.ndarray:
-    samples = np.random.default_rng(7).integers(-8000, 8000, int(seconds * 16000), dtype=np.int16)
+    samples = np.random.default_rng(7).integers(-8000, 8000, int(seconds * RATE), dtype=np.int16)
     for start in silences:
-        samples[int(start * 16000) : int((start + 0.3) * 16000)] = 0
+        samples[int(start * RATE) : int((start + 0.3) * RATE)] = 0
     return samples
 
 
 def write_recording(directory: Path, parts: list[tuple[str, float, np.ndarray, bool]], state: str) -> None:
     for file, _, samples, _ in parts:
         samples.astype("<i2").tofile(directory / Path(file).with_suffix(".pcm"))
-    listed = [listing(file, offset, len(samples) / 16000, finished) for file, offset, samples, finished in parts]
+    listed = [listing(file, offset, len(samples) / RATE, finished) for file, offset, samples, finished in parts]
     write_status(directory, {"state": state, "source": "http://127.0.0.1:9/stream.m3u8", "startedAt": 0.0, "endsAt": 0.0, "seconds": 0.0, "parts": listed})
 
 
@@ -91,7 +90,7 @@ class Stub:
         self.calls: list[float] = []
 
     def transcribe(self, audio: np.ndarray, **options: object) -> tuple[Iterator[SimpleNamespace], None]:
-        seconds = round(len(audio) / 16000, 3)
+        seconds = round(len(audio) / RATE, 3)
         self.calls.append(seconds)
         if len(self.calls) == self.fail_on:
             raise RuntimeError(f"stub fails on call {self.fail_on}")

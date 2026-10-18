@@ -50,7 +50,7 @@ class Session:
         self.directory = directory
         self.model = model
         self.chunk_seconds = chunk_seconds
-        self.chunks = load(directory / "transcript.jsonl")
+        self.chunks = resume(directory / "transcript.jsonl")
 
     def advance(self, parts: list[dict], index: int, over: bool) -> bool:
         part = parts[index]
@@ -76,7 +76,7 @@ class Session:
         return chunk["to"]
 
 
-def load(path: Path) -> list[dict]:
+def resume(path: Path) -> list[dict]:
     if not path.exists():
         return []
     chunks = []
@@ -114,7 +114,7 @@ def whisper(model: Any, audio: np.ndarray, origin: float) -> list[dict]:
             "start": round(origin + segment.start, 3),
             "end": round(origin + segment.end, 3),
             "text": segment.text.strip(),
-            "words": [{"start": round(origin + word.start, 3), "end": round(origin + word.end, 3), "word": word.word, "probability": round(word.probability, 3)} for word in segment.words or []],
+            "words": [{"start": round(origin + word.start, 3), "end": round(origin + word.end, 3), "word": word.word, "probability": round(word.probability, 3)} for word in segment.words],
         }
         for segment in segments
     ]
