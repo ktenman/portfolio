@@ -104,6 +104,8 @@ services:
         condition: service_healthy
       cloudflare-bypass-proxy:
         condition: service_healthy
+    volumes:
+      - radio_recordings:/recordings
     restart: always
     mem_limit: 2048m
     healthcheck:
@@ -188,6 +190,25 @@ services:
     mem_limit: 256m
     environment:
       NODE_ENV: production
+
+  radio-worker:
+    logging: *logging
+    container_name: radio-worker
+    image: ktenman/radio-worker:latest
+    profiles: [radio]
+    command: ["saturdays"]
+    restart: always
+    stop_grace_period: 90s
+    cpus: 1.5
+    cpu_shares: 256
+    mem_limit: 1.2g
+    memswap_limit: 2.4g
+    oom_score_adj: 1000
+    networks:
+      - radio
+    volumes:
+      - radio_model:/model
+      - radio_recordings:/recordings
 
   healthcheck:
     logging: *logging
@@ -283,3 +304,8 @@ volumes:
     name: portfolio_seaweedfs_data
   prometheus_data:
   alertmanager_data:
+  radio_model:
+  radio_recordings:
+
+networks:
+  radio:

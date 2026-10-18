@@ -16,7 +16,8 @@ RUN apk update && \
     apk add --no-cache curl ffmpeg && \
     rm -rf /var/cache/apk/* && \
     adduser -D -s /bin/sh appuser && \
-    chown -R appuser:appuser /app
+    mkdir /recordings && \
+    chown -R appuser:appuser /app /recordings
 
 USER appuser
 
