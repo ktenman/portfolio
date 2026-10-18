@@ -33,6 +33,7 @@ fun snap(
   db: DoubleArray,
   seconds: Double,
 ): Double {
+  if (seconds < 0 || seconds > db.size * FRAME) return seconds
   val nearest = { found: List<Double> -> found.minByOrNull { abs(it - seconds) } }
   val quiet = silences(db, seconds - REACH, seconds + REACH).map { (it.first + it.second) / 2 }
   return nearest(quiet) ?: nearest(dips(db, seconds - REACH, seconds + REACH)) ?: seconds
