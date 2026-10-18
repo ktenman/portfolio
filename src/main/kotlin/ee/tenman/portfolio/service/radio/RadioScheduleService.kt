@@ -96,6 +96,7 @@ class RadioScheduleService(
       recorder = recorder(heartbeat(root), recordings.any { it.status.state == RecordingState.RECORDING }, now),
       last = last?.let { LastRecording(it.programme, (it.status.startedAt + it.status.seconds).toLong()) },
       format = last?.format,
+      continuous = ContinuousRecording(MP3_BYTES_PER_DAY, MP3_BYTES_PER_DAY * 7),
     )
   }
 
@@ -192,5 +193,6 @@ class RadioScheduleService(
 
   companion object {
     private const val BYTES_PER_HOUR = (256_000L / 8 + RATE * 2L) * 3600
+    private const val MP3_BYTES_PER_DAY = 256_000L / 8 * 86_400
   }
 }
