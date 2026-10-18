@@ -13,14 +13,15 @@ import java.time.temporal.ChronoUnit
 @Service
 class RadioArchiveService(
   private val radioEpisodeService: RadioEpisodeService,
+  private val radioStorageService: RadioStorageService,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun recordings(): List<RecordingSummary> = directories().mapNotNull { readable(it, ::summary) }
+  fun recordings(): List<RecordingSummary> = directories(radioProperties.recordings).mapNotNull { readable(it, ::summary) }
 
-  fun statuses(): List<RecordingStatus> = directories().mapNotNull { readable(it, ::readStatus) }
+  fun statuses(): List<RecordingStatus> = directories(radioProperties.recordings).mapNotNull { readable(it, ::readStatus) }
 
   fun transcript(name: String): List<TranscriptLine>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
@@ -46,9 +47,11 @@ class RadioArchiveService(
     name: String,
     file: String,
   ): Resource? {
-    if (!FILE.matches(file)) return null
-    val path = directory(name, STATUS_FILE)?.let { inside(it, file) } ?: return null
-    return FileSystemResource(path).takeIf { it.isReadable }
+    if (!AUDIO.matches(file)) return null
+    val directory = directory(name, STATUS_FILE) ?: return null
+    val path = inside(directory, file) ?: return null
+    if (Files.isReadable(path)) return FileSystemResource(path)
+    return radioStorageService.resource(directory, file)
   }
 
   fun review(
@@ -127,16 +130,6 @@ class RadioArchiveService(
     return true
   }
 
-  private fun directories(): List<Path> {
-    val root = radioProperties.recordings
-    if (!Files.isDirectory(root)) return emptyList()
-    return Files
-      .list(root)
-      .use { it.toList() }
-      .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
-      .sortedDescending()
-  }
-
   private fun <T> readable(
     directory: Path,
     read: (Path) -> T,
@@ -145,12 +138,10 @@ class RadioArchiveService(
   private fun directory(
     name: String,
     required: String,
-  ): Path? {
-    if (!NAME.matches(name)) return null
-    val directory = inside(radioProperties.recordings.normalize(), name) ?: return null
-    if (!Files.exists(directory.resolve(required))) return null
-    return directory
-  }
+  ): Path? =
+    directories(radioProperties.recordings)
+      .firstOrNull { it.fileName.toString() == name }
+      ?.takeIf { Files.exists(it.resolve(required)) }
 
   private fun inside(
     parent: Path,
@@ -170,12 +161,12 @@ class RadioArchiveService(
       name = directory.fileName.toString(),
       programme = status.title(),
       status = status,
-      sizeBytes = sizeOf(directory, status),
+      sizeBytes = status.parts.sumOf { size(directory, it.file) ?: 0 },
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
       failure = failure,
-      episodeBytes = size(directory.resolve(EPISODE)),
+      episodeBytes = size(directory, EPISODE),
       cuts = cuts,
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
@@ -203,11 +194,6 @@ class RadioArchiveService(
       ProgrammeCuts(name, state)
     }
   }
-
-  private fun sizeOf(
-    directory: Path,
-    status: RecordingStatus,
-  ): Long = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 }
 
   private fun formatOf(
     directory: Path,
@@ -251,14 +237,16 @@ class RadioArchiveService(
     match: JingleMatch,
   ): Path = pcmOf(radioProperties.jingles, match.saved ?: "${directory.fileName}-$index")
 
-  private fun size(path: Path): Long? = path.takeIf(Files::exists)?.let(Files::size)
+  private fun size(
+    directory: Path,
+    file: String,
+  ): Long? =
+    directory.resolve(file).takeIf(Files::exists)?.let(Files::size) ?: read<Upload>(directory.resolve(UPLOAD))?.files?.get(file)?.size
 
   companion object {
     private const val EPISODE = "episode.m4a"
     private const val EDIT_LIST = "edit-list.json"
     private const val FAILED = "episode-failed.json"
     private const val CHECKED = "transcript-checked.json"
-    private val NAME = Regex("[0-9a-z][0-9a-z-]*")
-    private val FILE = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.mp3")
   }
 }

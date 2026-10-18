@@ -168,6 +168,7 @@ scheduling:
     intraday-summary-retention-days: ${INTRADAY_SUMMARY_RETENTION_DAYS:30}
     radio-episode-cron: ${RADIO_EPISODE_CRON:0 */10 * * * *}
     radio-schedule-cron: ${RADIO_SCHEDULE_CRON:0 30 3 * * *}
+    radio-storage-cron: ${RADIO_STORAGE_CRON:0 45 * * * *}
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}

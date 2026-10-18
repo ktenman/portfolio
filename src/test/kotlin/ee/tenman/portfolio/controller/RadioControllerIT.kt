@@ -6,6 +6,7 @@ import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.OutlineSummary
 import ee.tenman.portfolio.service.radio.RadioProperties
+import ee.tenman.portfolio.service.radio.RadioStorageService
 import ee.tenman.portfolio.service.radio.RecordingPart
 import ee.tenman.portfolio.service.radio.RecordingState
 import ee.tenman.portfolio.service.radio.RecordingStatus
@@ -20,6 +21,7 @@ import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.HttpHeaders.RANGE
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -36,6 +38,9 @@ class RadioControllerIT {
 
   @Resource
   private lateinit var radioProperties: RadioProperties
+
+  @Resource
+  private lateinit var radioStorageService: RadioStorageService
 
   private lateinit var directory: Path
 
@@ -86,6 +91,16 @@ class RadioControllerIT {
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
       .andExpect(header().string(CONTENT_TYPE, "text/plain;charset=UTF-8"))
+  }
+
+  @Test
+  fun `should serve a byte range of an episode kept only in the bucket`() {
+    radioStorageService.store()
+    Files.deleteIfExists(directory.resolve("episode.m4a"))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/episode.m4a").header(RANGE, "bytes=4-7"))
+      .andExpect(status().isPartialContent)
+      .andExpect(content().bytes("päe".toByteArray()))
   }
 
   @Test

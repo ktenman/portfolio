@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption
 
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
+val NAME = Regex("[0-9a-z][0-9a-z-]*")
 const val CUT_REQUEST = "cuts-requested.json"
 
 @ConfigurationProperties(prefix = "radio")
@@ -21,6 +22,8 @@ data class RadioProperties(
   val recordings: Path = Path.of("/recordings"),
   val outlineModel: AiModel = AiModel.GEMINI_3_5_FLASH_LITE,
   val live: String = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000",
+  val bucket: String = "radio",
+  val localDays: Long = 7,
 ) {
   val jingles: Path
     get() = recordings.resolve("jingles")
@@ -55,6 +58,7 @@ data class RecordingPart(
   val file: String,
   val offsetSeconds: Double,
   val sha256: String? = null,
+  val durationSeconds: Double? = null,
 )
 
 data class AudioFormat(
@@ -106,6 +110,15 @@ data class JingleMatch(
   val r: Double,
   val saved: String? = null,
 )
+
+fun directories(root: Path): List<Path> {
+  if (!Files.isDirectory(root)) return emptyList()
+  return Files
+    .list(root)
+    .use { it.toList() }
+    .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
+    .sortedDescending()
+}
 
 fun readStatus(directory: Path): RecordingStatus =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(STATUS_FILE)), RecordingStatus::class.java)

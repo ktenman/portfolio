@@ -34,7 +34,7 @@ const editList = (overrides: Partial<EditList> = {}): EditList => ({
     { start: 3137, end: 3837 },
   ],
   durationSeconds: 2512.5,
-  parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12' }],
+  parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
   boundaries: [
     boundary('show starts', 761.5, 'digital silence'),
     boundary('break 1 starts', 2120, 'level dip'),
@@ -78,7 +78,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     programmes: ['Keskpäevatund'],
     startedAt: STARTED,
     seconds: 4200,
-    parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12' }],
+    parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
     lostSeconds: 0,
   },
   sizeBytes: 134_400_000,

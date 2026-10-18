@@ -501,6 +501,7 @@ export interface RecordingPart {
     file: string;
     offsetSeconds: number;
     sha256: string | null;
+    durationSeconds: number | null;
 }
 
 export interface Boundary {

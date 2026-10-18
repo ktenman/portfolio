@@ -23,6 +23,7 @@ class RadioArchiveServiceTest {
   private val service by lazy {
     RadioArchiveService(
       episodeService,
+      mockk { every { resource(any(), any()) } returns null },
       RadioProperties(recordings = recordings),
       Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC),
     )

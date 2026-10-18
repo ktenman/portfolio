@@ -26,7 +26,7 @@ const RECORDINGS = [
       programmes: ['Keskpäevatund', 'Tarkade klubi'],
       startedAt: Date.UTC(2026, 9, 24, 8, 55, 0) / 1000,
       seconds: 1260,
-      parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null }],
+      parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
       lostSeconds: 0,
     },
     sizeBytes: 40_300_000,
