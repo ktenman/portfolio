@@ -167,6 +167,7 @@ scheduling:
     intraday-summary-cleanup-cron: ${INTRADAY_SUMMARY_CLEANUP_CRON:0 30 4 * * *}
     intraday-summary-retention-days: ${INTRADAY_SUMMARY_RETENTION_DAYS:30}
     radio-episode-cron: ${RADIO_EPISODE_CRON:0 */10 * * * *}
+    radio-schedule-cron: ${RADIO_SCHEDULE_CRON:0 30 3 * * *}
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}
@@ -276,6 +277,9 @@ industry-classification:
 
 ecb:
   url: https://data-api.ecb.europa.eu
+
+kuku:
+  url: https://ams.postimees.ee
 
 blackrock:
   url: https://www.blackrock.com

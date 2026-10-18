@@ -32,7 +32,7 @@ class RadioEpisodeService(
     val ready =
       listOf(EPISODE, FAILED).none { Files.exists(directory.resolve(it)) } &&
         listOf(STATUS_FILE, TRANSCRIPT_FILE).all { Files.exists(directory.resolve(it)) } &&
-        readStatus(directory).state in READY
+        readStatus(directory).let { it.state in READY && it.programmes == listOf(PROGRAMME) }
     if (!ready || Files.isWritable(directory)) return ready
     log.warn("Cannot write the radio episode into $directory")
     return false

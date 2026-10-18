@@ -13,6 +13,25 @@ export const useRadioRecordings = () => {
   })
 }
 
+export const useRadioProgrammes = () => {
+  const { isAuthenticated } = useAuthState()
+  return useQuery({
+    queryKey: ['radio-programmes'],
+    queryFn: radioService.programmes,
+    enabled: isAuthenticated,
+  })
+}
+
+export const useRadioStation = () => {
+  const { isAuthenticated } = useAuthState()
+  return useQuery({
+    queryKey: ['radio-station'],
+    queryFn: radioService.station,
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+  })
+}
+
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   const query = useRadioRecordings()
   const recording = computed(() => query.data.value?.find(r => r.name === toValue(name)) ?? null)

@@ -1,6 +1,8 @@
 import {
+  type AirSlot,
   BoundaryMethod,
   CutState,
+  DayOfWeek,
   type KeptSpan,
   type RecordingSummary,
   RecordingState,
@@ -16,6 +18,30 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.LEVEL_DIP]: 'helitaseme langus',
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
 }
+
+const DAYS = Object.values(DayOfWeek)
+const LETTER = 'ETKNRLP'
+
+const weekdays = (days: DayOfWeek[]): string =>
+  days
+    .map(d => DAYS.indexOf(d))
+    .reduce<number[][]>((runs, i) => {
+      const last = runs[runs.length - 1]
+      if (last && last[last.length - 1] === i - 1) last.push(i)
+      else runs.push([i])
+      return runs
+    }, [])
+    .map(run =>
+      run.length > 2
+        ? `${LETTER[run[0]]}–${LETTER[run[run.length - 1]]}`
+        : run.map(i => LETTER[i]).join(', ')
+    )
+    .join(', ')
+
+export const airStart = (slot: AirSlot): string =>
+  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}`
+
+export const airTime = (slot: AirSlot): string => `${airStart(slot)}–${slot.end.slice(0, 5)}`
 
 export const LINK =
   'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'

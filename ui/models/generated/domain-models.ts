@@ -282,6 +282,28 @@ export interface CutContext {
     after: TranscriptLine | null;
 }
 
+export interface RadioProgrammeDto {
+    id: number;
+    name: string;
+    description: string | null;
+    recordEvery: boolean;
+    slots: AirSlot[];
+    repeats: AirSlot[];
+    recordings: number;
+}
+
+export interface ProgrammeChoice {
+    recordEvery: boolean;
+}
+
+export interface RadioStation {
+    onAir: StationAiring | null;
+    next: StationAiring | null;
+    capture: Capture | null;
+    freeBytes: number;
+    hours: number;
+}
+
 export interface Serializable {
 }
 
@@ -334,6 +356,7 @@ export interface RecordingStatus {
     startedAt: number;
     seconds: number;
     parts: RecordingPart[];
+    programmes: string[];
 }
 
 export interface EditList {
@@ -381,6 +404,26 @@ export interface TranscriptWord {
     start: number;
     end: number;
     word: string;
+}
+
+export interface AirSlot {
+    days: DayOfWeek[];
+    start: DateAsString;
+    end: DateAsString;
+}
+
+export interface StationAiring {
+    name: string;
+    start: number;
+    end: number;
+    recorded: boolean;
+}
+
+export interface Capture {
+    name: string;
+    programmes: string[];
+    start: number;
+    end: number;
 }
 
 export interface LargestPositionDto extends Serializable {
@@ -547,4 +590,14 @@ export enum BoundaryMethod {
     STATION_JINGLE = "STATION_JINGLE",
     LEVEL_DIP = "LEVEL_DIP",
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
+}
+
+export enum DayOfWeek {
+    MONDAY = "MONDAY",
+    TUESDAY = "TUESDAY",
+    WEDNESDAY = "WEDNESDAY",
+    THURSDAY = "THURSDAY",
+    FRIDAY = "FRIDAY",
+    SATURDAY = "SATURDAY",
+    SUNDAY = "SUNDAY",
 }

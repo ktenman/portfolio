@@ -68,6 +68,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   programme: 'Keskpäevatund',
   status: {
     state: RecordingState.CAPTURED,
+    programmes: ['Keskpäevatund'],
     startedAt: STARTED,
     seconds: 4200,
     parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12' }],
