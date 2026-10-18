@@ -18,7 +18,6 @@ data class RadioProgrammeDto(
   val description: String?,
   val recordEvery: Boolean,
   val slots: List<AirSlot>,
-  val repeats: List<AirSlot>,
   val recordings: Int,
 )
 
@@ -50,8 +49,8 @@ data class RadioStation(
   val onAir: StationAiring?,
   val next: StationAiring?,
   val capture: Capture?,
-  val freeBytes: Long,
-  val hours: Long,
+  val freeBytes: Long?,
+  val hours: Long?,
 )
 
 data class StationAiring(

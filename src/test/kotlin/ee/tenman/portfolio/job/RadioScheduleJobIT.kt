@@ -101,12 +101,10 @@ class RadioScheduleJobIT {
   private fun plan(): List<Capture> = JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(PLAN_FILE)))
 
   @Test
-  fun `should list a programme with its air time and its repeats`() {
+  fun `should list a programme with the air time of its original airings only`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), episode(2, 175, "Keskpäevatund", "18:00", "19:00", original = 1))
-    val programme = radioScheduleService.programmes().single()
-    expect(programme.slots to programme.repeats).toEqual(
-      listOf(AirSlot(listOf(day.dayOfWeek), LocalTime.NOON, LocalTime.of(13, 0))) to
-        listOf(AirSlot(listOf(day.dayOfWeek), LocalTime.of(18, 0), LocalTime.of(19, 0))),
+    expect(radioScheduleService.programmes().single().slots).toEqual(
+      listOf(AirSlot(listOf(day.dayOfWeek), LocalTime.NOON, LocalTime.of(13, 0))),
     )
   }
 
@@ -175,7 +173,13 @@ class RadioScheduleJobIT {
   @Test
   fun `should count the hours the free space holds of MP3 and its PCM`() {
     val station = radioScheduleService.station()
-    expect(station.hours).toEqual(station.freeBytes / 230_400_000)
+    expect(station.hours).toEqual(station.freeBytes?.div(230_400_000))
+  }
+
+  @Test
+  fun `should give no free space when the recordings directory is missing`() {
+    radioProperties.recordings.toFile().deleteRecursively()
+    expect(radioScheduleService.station().freeBytes).toEqual(null)
   }
 
   @Test
