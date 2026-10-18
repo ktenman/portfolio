@@ -38,6 +38,17 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../components/monitoring/monitoring-view.vue'),
   },
   {
+    path: '/radio',
+    component: () => import('../components/radio/radio-view.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Raadio',
+        component: () => import('../components/radio/radio-recordings.vue'),
+      },
+    ],
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

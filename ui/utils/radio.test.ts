@@ -91,8 +91,16 @@ describe('removed', () => {
   })
 
   it('should mark a break kept when a reviewed keep list covers it', () => {
-    const keep = [{ start: 761.5, end: 3025 }, { start: 3137, end: 3837 }]
-    expect(cuts(edit(keep), TOTAL).map(cut => removed(cut, keep))).toEqual([true, false, true, true])
+    const keep = [
+      { start: 761.5, end: 3025 },
+      { start: 3137, end: 3837 },
+    ]
+    expect(cuts(edit(keep), TOTAL).map(cut => removed(cut, keep))).toEqual([
+      true,
+      false,
+      true,
+      true,
+    ])
   })
 })
 
@@ -116,7 +124,9 @@ describe('keepWithout', () => {
 
 describe('segments', () => {
   it('should list the cuts and the topics in recording order', () => {
-    expect(segments(edit(), TOTAL).map(segment => [segment.start, segment.title, segment.cut])).toEqual([
+    expect(
+      segments(edit(), TOTAL).map(segment => [segment.start, segment.title, segment.cut])
+    ).toEqual([
       [0, 'Enne saadet', true],
       [761.5, 'Rahvusooperi tüli', false],
       [2120, 'Reklaamipaus', true],
@@ -186,11 +196,8 @@ describe('labels', () => {
   })
 
   it('should name a boundary method in Estonian', () => {
-    expect(['digital silence', 'station jingle, r=0.93', 'level dip', 'transcript only'].map(method)).toEqual([
-      'digivaikus',
-      'jaama džingel',
-      'helitaseme langus',
-      'ainult tekst',
-    ])
+    expect(
+      ['digital silence', 'station jingle, r=0.93', 'level dip', 'transcript only'].map(method)
+    ).toEqual(['digivaikus', 'jaama džingel', 'helitaseme langus', 'ainult tekst'])
   })
 })
