@@ -1,16 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { KeptSpan } from '../models/generated/domain-models'
-import {
-  clock,
-  day,
-  fullDay,
-  length,
-  megabytes,
-  method,
-  minutes,
-  position,
-  recordingTime,
-} from './radio'
+import { clock, day, fullDay, length, megabytes, minutes, position, recordingTime } from './radio'
 
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
@@ -69,11 +59,5 @@ describe('labels', () => {
 
   it('should give the full day of a recording', () => {
     expect(fullDay(STARTED)).toEqual('Laupäev, 17.10.2026')
-  })
-
-  it('should name a boundary method in Estonian', () => {
-    expect(
-      ['digital silence', 'station jingle, r=0.93', 'level dip', 'transcript only'].map(method)
-    ).toEqual(['digivaikus', 'jaama džingel', 'helitaseme langus', 'ainult tekst'])
   })
 })

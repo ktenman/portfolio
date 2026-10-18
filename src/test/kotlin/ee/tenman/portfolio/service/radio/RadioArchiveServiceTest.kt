@@ -188,7 +188,7 @@ class RadioArchiveServiceTest {
     val directory = recording("2026-10-17")
     transcribed(directory)
     edited(directory)
-    expect(service.contexts("2026-10-17")?.map { it.cut.kind to it.before?.text }).toEqual(listOf(CutKind.BEFORE to null))
+    expect(service.contexts("2026-10-17")?.map { it.before?.text to it.after?.text }).toEqual(listOf(null to null))
   }
 
   @Test
@@ -230,6 +230,30 @@ class RadioArchiveServiceTest {
     )
     edited(directory, listOf(KeptSpan(2.0, 22.0)))
     expect(service.recordings().single().audible).toEqual(listOf(KeptSpan(2.0, 10.0), KeptSpan(15.0, 22.0)))
+  }
+
+  @Test
+  fun `should say a transcript nobody has checked is unchecked`() {
+    transcribed(recording("2026-10-17"))
+    expect(service.recordings().single().transcriptState).toEqual(TranscriptState.UNCHECKED)
+  }
+
+  @Test
+  fun `should say a recording in progress has its transcript still coming`() {
+    recording("2026-10-24", RecordingState.RECORDING)
+    expect(service.recordings().single().transcriptState).toEqual(TranscriptState.RECORDING)
+  }
+
+  @Test
+  fun `should say the cuts of an edit list nobody has reviewed are suggested`() {
+    edited(recording("2026-10-17"))
+    expect(service.recordings().single().cutState).toEqual(CutState.SUGGESTED)
+  }
+
+  @Test
+  fun `should say a recording without an edit list has no cuts yet`() {
+    recording("2026-10-17")
+    expect(service.recordings().single().cutState).toEqual(CutState.NONE)
   }
 
   @Test

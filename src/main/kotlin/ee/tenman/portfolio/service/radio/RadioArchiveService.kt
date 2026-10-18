@@ -40,8 +40,10 @@ class RadioArchiveService(
 
   fun contexts(name: String): List<CutContext>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    val cuts = cutsOf(directory)
+    if (cuts.isEmpty()) return emptyList()
     val lines = lines(readTranscript(directory))
-    return cutsOf(directory).map { context(it, lines) }
+    return cuts.map { context(it, lines) }
   }
 
   fun file(
@@ -92,6 +94,7 @@ class RadioArchiveService(
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST))
+    val cuts = cuts(edit, status.seconds)
     return RecordingSummary(
       name = directory.fileName.toString(),
       programme = PROGRAMME,
@@ -102,11 +105,17 @@ class RadioArchiveService(
       editList = edit,
       failure = read(directory.resolve(FAILED)),
       episodeBytes = size(directory.resolve(EPISODE)),
-      cuts = cuts(edit, status.seconds),
-      timeline = timeline(edit, status.seconds),
+      cuts = cuts,
+      timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
     )
   }
+
+  private fun timelineOf(
+    cuts: List<Cut>,
+    edit: EditList?,
+    status: RecordingStatus,
+  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds)
 
   private fun audibleOf(
     directory: Path,

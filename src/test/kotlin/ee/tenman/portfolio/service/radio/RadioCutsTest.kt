@@ -57,7 +57,7 @@ class RadioCutsTest {
 
   @Test
   fun `should give the methods that placed both boundaries of a cut`() {
-    expect(cuts(edit(), 4200.0)[1].methods).toEqual(listOf("level dip", "station jingle, r=0.93"))
+    expect(cuts(edit(), 4200.0)[1].methods).toEqual(listOf(BoundaryMethod.LEVEL_DIP, BoundaryMethod.STATION_JINGLE))
   }
 
   @Test
@@ -154,7 +154,7 @@ class RadioCutsTest {
 
   @Test
   fun `should list the cuts and the topics in recording order`() {
-    expect(timeline(edit(), 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
+    expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
       listOf(
         Triple(0.0, "Enne saadet", true),
         Triple(761.5, "Rahvusooperi tüli", false),
@@ -171,6 +171,6 @@ class RadioCutsTest {
 
   @Test
   fun `should show a recording without an edit list as one part`() {
-    expect(timeline(null, 60.0)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
+    expect(timeline(emptyList(), emptyList(), 60.0)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
   }
 }

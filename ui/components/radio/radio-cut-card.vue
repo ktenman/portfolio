@@ -5,20 +5,22 @@
         <div>
           <h4 class="mb-0 text-base font-semibold">{{ cut.title }}</h4>
           <p class="mb-0 text-sm text-ink-soft tabular-nums">
-            {{ clock(startedAt, cut.start, true) }}–{{ clock(startedAt, cut.end, true) }} ·
+            {{ range(startedAt, cut.start, cut.end, true) }} ·
             {{ length(cut.end - cut.start) }}
           </p>
         </div>
         <radio-badge v-if="cut.review" tone="warn">Kontrolli</radio-badge>
       </div>
       <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
-      <p class="mb-0 text-sm text-ink-soft">Piir: {{ cut.methods.map(method).join(' · ') }}</p>
+      <p class="mb-0 text-sm text-ink-soft">
+        Piir: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
+      </p>
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
         <app-button
           :aria-label="`Kuula üleminekut: ${name}`"
           @click="player.preview(cut.start, cut.end)"
         >
-          <radio-icon name="play" class="me-1.5 inline align-[-0.125em]" />
+          <radio-icon name="play" class="me-1.5" />
           Kuula üleminekut
         </app-button>
         <div class="flex gap-2" role="group" :aria-label="`Otsus: ${name}`">
@@ -43,7 +45,7 @@
 import { computed } from 'vue'
 import type { Cut, CutContext, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { clock, length, method } from '../../utils/radio'
+import { clock, length, METHODS, range } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'

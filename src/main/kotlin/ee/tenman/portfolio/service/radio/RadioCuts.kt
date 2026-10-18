@@ -5,6 +5,20 @@ private const val TOPIC_LEAD = 30.0
 private const val SHORTEST = 0.01
 private val BREAK_STARTS = Regex("break \\d+ starts")
 
+enum class BoundaryMethod(
+  val prefix: String,
+) {
+  DIGITAL_SILENCE(DIGITAL),
+  STATION_JINGLE("station jingle"),
+  LEVEL_DIP("level dip"),
+  TRANSCRIPT_ONLY(TRANSCRIPT),
+  ;
+
+  companion object {
+    fun of(method: String): BoundaryMethod = entries.first { method.startsWith(it.prefix) }
+  }
+}
+
 enum class CutKind(
   val title: String,
 ) {
@@ -18,7 +32,7 @@ data class Cut(
   val title: String,
   val start: Double,
   val end: Double,
-  val methods: List<String>,
+  val methods: List<BoundaryMethod>,
   val review: Boolean,
   val removed: Boolean,
 )
@@ -35,7 +49,6 @@ data class CutReview(
 )
 
 data class CutContext(
-  val cut: Cut,
   val before: TranscriptLine?,
   val after: TranscriptLine?,
 )
@@ -44,14 +57,24 @@ fun mark(
   lines: List<TranscriptLine>,
   cuts: List<Cut>,
 ): List<TranscriptLine> {
-  val edges = cuts.filter { it.removed }.flatMap { cut -> listOf(cut.start to cut, cut.end to cut) }
-  return lines.map { line -> line.copy(split = edges.firstOrNull { (at) -> firstWord(line) < at && at < lastWord(line) }?.second) }
+  val removed = cuts.filter { it.removed }
+  return lines.map { line ->
+    line.copy(
+      split =
+      removed.firstOrNull { cut ->
+        listOf(cut.start, cut.end).any {
+          firstWord(line) < it &&
+    it < lastWord(line)
+            }
+          },
+      )
+      }
 }
 
 fun context(
   cut: Cut,
   lines: List<TranscriptLine>,
-): CutContext = CutContext(cut, lines.lastOrNull { it.start < cut.start }, lines.firstOrNull { it.end > cut.end })
+): CutContext = CutContext(lines.lastOrNull { it.start < cut.start }, lines.firstOrNull { it.end > cut.end })
 
 fun cuts(
   edit: EditList?,
@@ -88,7 +111,7 @@ private fun cut(
     title = kind.title,
     start = start,
     end = end,
-    methods = ends.map { it.method },
+    methods = ends.map { BoundaryMethod.of(it.method) },
     review = ends.any { it.review },
     removed = keep.none { middle >= it.start && middle < it.end },
   )
@@ -115,11 +138,11 @@ private fun between(
 }
 
 fun timeline(
-  edit: EditList?,
+  found: List<Cut>,
+  chapters: List<EpisodeChapter>,
   total: Double,
 ): List<TimelineEntry> {
-  val found = cuts(edit, total)
-  val topics = edit?.topics.orEmpty().sortedBy { it.start }
+  val topics = chapters.sortedBy { it.start }
   val marked = found.map { TimelineEntry(it.start, it.end, it.title, true) }
   return (marked + between(found, total).flatMap { split(it, topics) }).sortedBy { it.start }
 }

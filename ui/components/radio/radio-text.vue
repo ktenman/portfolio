@@ -14,7 +14,7 @@
           :loading="checking"
           @click="check"
         >
-          <radio-icon name="check" class="me-1.5 inline align-[-0.125em]" />
+          <radio-icon name="check" class="me-1.5" />
           Märgi kontrollituks
         </app-button>
         <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">
@@ -39,6 +39,7 @@
           <li
             v-for="line in shown"
             :key="line.start"
+            v-memo="[line, line === current, line === current && spoken]"
             data-testid="radio-text-line"
             :aria-current="line === current ? 'true' : undefined"
             class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
@@ -70,9 +71,7 @@
                 <radio-badge tone="warn">Lõige poolitab lause</radio-badge>
                 <span class="text-ink-soft">
                   {{ line.split.title }}
-                  {{ clock(recording.status.startedAt, line.split.start) }}–{{
-                    clock(recording.status.startedAt, line.split.end)
-                  }}
+                  {{ range(recording.status.startedAt, line.split.start, line.split.end) }}
                 </span>
               </p>
             </div>
@@ -92,7 +91,7 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioTranscript } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { clock, textState } from '../../utils/radio'
+import { clock, LINK, range, textState } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioBadge from './radio-badge.vue'
@@ -101,8 +100,6 @@ import RadioIcon from './radio-icon.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
-const LINK =
-  'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep'
 const FILES = [
   { name: 'transcript.srt', label: 'SRT' },
   { name: 'transcript.txt', label: 'TXT' },

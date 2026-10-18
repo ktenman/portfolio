@@ -5,7 +5,7 @@ import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioText from './radio-text.vue'
 import { recording, transcript } from './radio-fixture'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import { type RecordingSummary, TranscriptState } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -112,7 +112,12 @@ describe('RadioText', () => {
   })
 
   it('should say a checked transcript is checked', async () => {
-    const wrapper = await render(recording({ transcriptCheckedAt: '2026-10-18T09:00:00Z' }))
+    const wrapper = await render(
+      recording({
+        transcriptCheckedAt: '2026-10-18T09:00:00Z',
+        transcriptState: TranscriptState.CHECKED,
+      })
+    )
     expect(wrapper.find('[data-testid="radio-text-state"]').text()).toBe('Kontrollitud')
   })
 

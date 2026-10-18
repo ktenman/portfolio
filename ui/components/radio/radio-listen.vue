@@ -16,7 +16,11 @@
             </div>
             <label class="flex items-center gap-2 text-sm text-ink-soft">
               Versioon
-              <select v-model="version" aria-label="Versioon" :class="SELECT">
+              <select
+                v-model="version"
+                aria-label="Versioon"
+                class="form-select form-select-sm w-auto"
+              >
                 <option value="raw">
                   Toorsalvestus · {{ position(recording.status.seconds) }}
                 </option>
@@ -29,7 +33,7 @@
           <radio-scrubber
             :value="player.seconds.value"
             :total="player.total.value"
-            :parts="player.version.value === 'raw' ? bars : undefined"
+            :parts="player.version.value === 'raw' ? recording.timeline : undefined"
             :ticks="ticks"
             label="Asukoht salvestuses"
             @seek="player.seek"
@@ -46,7 +50,10 @@
               </app-button>
               <label class="flex items-center gap-2 text-sm text-ink-soft">
                 Kiirus
-                <select v-model.number="player.rate.value" :class="SELECT">
+                <select
+                  v-model.number="player.rate.value"
+                  class="form-select form-select-sm w-auto"
+                >
                   <option v-for="rate in RATES" :key="rate" :value="rate">{{ rate }}×</option>
                 </select>
               </label>
@@ -58,7 +65,7 @@
         <template #aside><span class="text-sm text-ink-soft">Masinteksti järgi</span></template>
         <ol class="mb-0 list-none p-0">
           <li
-            v-for="segment in timeline"
+            v-for="segment in recording.timeline"
             :key="segment.start"
             class="border-b border-hairline last:border-b-0"
           >
@@ -89,9 +96,8 @@
           </li>
         </ol>
         <p v-if="showStart !== null && showEnd !== null" class="mt-3 mb-0 text-sm text-ink-soft">
-          Saade tegelikult {{ clock(recording.status.startedAt, showStart, true) }}–{{
-            clock(recording.status.startedAt, showEnd, true)
-          }}. Hallid read on lõikesoovitused; teemad on iga osa algusest.
+          Saade tegelikult {{ range(recording.status.startedAt, showStart, showEnd, true) }}. Hallid
+          read on lõikesoovitused; teemad on iga osa algusest.
         </p>
       </radio-card>
     </div>
@@ -148,8 +154,10 @@ import {
   cutState,
   day,
   megabytes,
+  LINK,
   minutes,
   position,
+  range,
   span,
   STATES,
   textState,
@@ -164,10 +172,6 @@ import RadioScrubber, { type Tick } from './radio-scrubber.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
-const SELECT =
-  'rounded-container border border-control-border bg-surface px-3 py-1.5 text-sm text-ink shadow-control focus-visible:outline-2 focus-visible:outline-brass-deep'
-const LINK =
-  'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep'
 const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
@@ -184,8 +188,6 @@ const showStart = computed(
 const showEnd = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.AFTER)?.start ?? null
 )
-const timeline = computed(() => props.recording.timeline)
-const bars = computed(() => timeline.value.map(({ start, end, cut }) => ({ start, end, cut })))
 const state = computed(() => STATES[props.recording.status.state])
 
 const ticks = computed<Tick[]>(() => {

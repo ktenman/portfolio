@@ -29,6 +29,8 @@ const useTranscribed = <T>(
     queryKey: computed(() => ['radio', toValue(recording).name, key]),
     queryFn: () => fetch(toValue(recording).name),
     enabled: computed(() => isAuthenticated.value && toValue(recording).transcribed),
+    staleTime: Infinity,
+    shallow: true,
   })
 }
 

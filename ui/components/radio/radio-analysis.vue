@@ -45,7 +45,7 @@
 import { computed } from 'vue'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { clock, length, minutes } from '../../utils/radio'
+import { clock, length, minutes, range } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
@@ -60,7 +60,7 @@ const breaks = computed<[string, string][]>(() =>
   props.recording.cuts
     .filter(cut => cut.kind === CutKind.BREAK)
     .map(cut => [
-      `${clock(props.recording.status.startedAt, cut.start)}–${clock(props.recording.status.startedAt, cut.end)}`,
+      range(props.recording.status.startedAt, cut.start, cut.end),
       length(cut.end - cut.start),
     ])
 )

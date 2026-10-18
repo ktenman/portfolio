@@ -108,7 +108,39 @@ data class RecordingSummary(
   val cuts: List<Cut>,
   val timeline: List<TimelineEntry>,
   val audible: List<KeptSpan>,
-)
+) {
+  val transcriptState: TranscriptState
+    get() =
+      when {
+        transcribed && transcriptCheckedAt != null -> TranscriptState.CHECKED
+        transcribed -> TranscriptState.UNCHECKED
+        status.state == RecordingState.RECORDING -> TranscriptState.RECORDING
+        else -> TranscriptState.NONE
+      }
+
+  val cutState: CutState
+    get() =
+      when {
+        failure != null -> CutState.FAILED
+        editList == null -> CutState.NONE
+        editList.reviewed -> CutState.REVIEWED
+        else -> CutState.SUGGESTED
+      }
+}
+
+enum class TranscriptState {
+  NONE,
+  RECORDING,
+  UNCHECKED,
+  CHECKED,
+}
+
+enum class CutState {
+  NONE,
+  FAILED,
+  SUGGESTED,
+  REVIEWED,
+}
 
 data class TranscriptCheck(
   val checkedAt: String,

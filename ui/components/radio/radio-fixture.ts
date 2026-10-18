@@ -1,12 +1,16 @@
 import {
+  BoundaryMethod,
   CutKind,
+  CutState,
   type CutContext,
   type EditList,
   type RecordingSummary,
   RecordingState,
   type TranscriptLine,
+  TranscriptState,
 } from '../../models/generated/domain-models'
 
+const DIGITAL = BoundaryMethod.DIGITAL_SILENCE
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
 const editList = (overrides: Partial<EditList> = {}): EditList => ({
@@ -43,7 +47,7 @@ const cut = (
   title: string,
   start: number,
   end: number,
-  methods: string[],
+  methods: BoundaryMethod[],
   review = false
 ) => ({ kind, title, start, end, methods, review, removed: true })
 
@@ -63,10 +67,13 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   failure: null,
   episodeBytes: 34_000_000,
   cuts: [
-    cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, ['digital silence']),
-    cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, ['level dip', 'station jingle, r=0.93']),
-    cut(CutKind.BREAK, 'Reklaamipaus', 3025, 3137, ['digital silence', 'transcript only'], true),
-    cut(CutKind.AFTER, 'Pärast saadet', 3837, 4200, ['digital silence']),
+    cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, [DIGITAL]),
+    cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, [
+      BoundaryMethod.LEVEL_DIP,
+      BoundaryMethod.STATION_JINGLE,
+    ]),
+    cut(CutKind.BREAK, 'Reklaamipaus', 3025, 3137, [DIGITAL, BoundaryMethod.TRANSCRIPT_ONLY], true),
+    cut(CutKind.AFTER, 'Pärast saadet', 3837, 4200, [DIGITAL]),
   ],
   timeline: [
     { start: 0, end: 761.5, title: 'Enne saadet', cut: true },
@@ -84,6 +91,8 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     { start: 2255, end: 3025 },
     { start: 3137, end: 3837 },
   ],
+  transcriptState: TranscriptState.UNCHECKED,
+  cutState: CutState.SUGGESTED,
   ...overrides,
 })
 
@@ -95,23 +104,18 @@ const line = (start: number, end: number, text: string): TranscriptLine => ({
   split: null,
 })
 
-export const contexts = (): CutContext[] => {
-  const [before, first, second, after] = recording().cuts
-  return [
-    { cut: before, before: null, after: line(762, 770, ' Tere päevast, kell on kaksteist.') },
-    {
-      cut: first,
-      before: line(2110, 2119.5, ' Ja siinkohal väike paus.'),
-      after: line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
-    },
-    {
-      cut: second,
-      before: line(3018, 3024.8, ' Kohe tuleme tagasi.'),
-      after: line(3138, 3145, ' Kuku Raadio otsestuudios.'),
-    },
-    { cut: after, before: line(3830, 3836.5, ' Ja siinkohal lõpetame.'), after: null },
-  ]
-}
+export const contexts = (): CutContext[] => [
+  { before: null, after: line(762, 770, ' Tere päevast, kell on kaksteist.') },
+  {
+    before: line(2110, 2119.5, ' Ja siinkohal väike paus.'),
+    after: line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
+  },
+  {
+    before: line(3018, 3024.8, ' Kohe tuleme tagasi.'),
+    after: line(3138, 3145, ' Kuku Raadio otsestuudios.'),
+  },
+  { before: line(3830, 3836.5, ' Ja siinkohal lõpetame.'), after: null },
+]
 
 export const transcript = (): TranscriptLine[] => [
   {

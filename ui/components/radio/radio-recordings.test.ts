@@ -4,7 +4,7 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
 import { recording } from './radio-fixture'
-import { RecordingState } from '../../models/generated/domain-models'
+import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({ radioService: { recordings: vi.fn() } }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -33,6 +33,8 @@ describe('RadioRecordings', () => {
         episodeBytes: null,
         cuts: [],
         timeline: [],
+        transcriptState: TranscriptState.RECORDING,
+        cutState: CutState.NONE,
       }),
     ])
   })

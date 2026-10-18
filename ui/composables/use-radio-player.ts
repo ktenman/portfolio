@@ -15,7 +15,6 @@ const current = ref(0)
 const playing = ref(false)
 const rate = ref(1)
 let loaded = ''
-let wanted: Version = 'raw'
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
 const parts = computed(() =>
@@ -72,21 +71,20 @@ const open = () => {
   const audio = element.value
   const target = recording.value
   if (!audio || !target) return
-  const key = `${target.name}|${wanted}|${wanted === 'episode' ? target.editList?.renderedAt : ''}`
+  const key = `${target.name}|${version.value}|${version.value === 'episode' ? target.editList?.renderedAt : ''}`
   if (key === loaded) return
   loaded = key
-  version.value = wanted
   current.value = 0
   playing.value = false
   plan = null
-  if (wanted === 'raw') return source(0)
+  if (version.value === 'raw') return source(0)
   const edit = target.editList
   audio.src = `${url(target, 'episode.m4a')}?v=${encodeURIComponent(edit?.renderedAt ?? '')}`
 }
 
-const load = (target: RecordingSummary, version: Version = 'raw') => {
+const load = (target: RecordingSummary, wanted: Version = 'raw') => {
   recording.value = target
-  wanted = version
+  version.value = wanted
   open()
 }
 
@@ -160,7 +158,6 @@ const detach = () => {
   }
   element.value = null
   loaded = ''
-  wanted = 'raw'
   recording.value = null
   version.value = 'raw'
   part.value = 0

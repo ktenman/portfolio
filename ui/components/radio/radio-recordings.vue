@@ -33,7 +33,7 @@
       <template #cell-listen="{ item }">
         <router-link
           :to="`/radio/${item.name}`"
-          :class="LINK_BUTTON"
+          :class="LINK"
           :aria-label="`Kuula: ${item.programme} ${day(item.status.startedAt)}`"
         >
           <svg class="size-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -50,12 +50,9 @@
 import { computed } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
-import { cutState, day, length, megabytes, span, STATES, textState } from '../../utils/radio'
+import { cutState, day, length, LINK, megabytes, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
-
-const LINK_BUTTON =
-  'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3.5 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
 const { data: recordings, isLoading, isError } = useRadioRecordings()
 

@@ -1,17 +1,24 @@
 import {
+  BoundaryMethod,
+  CutState,
   type KeptSpan,
   type RecordingSummary,
   RecordingState,
+  TranscriptState,
 } from '../models/generated/domain-models'
+import type { BadgeTone } from '../components/radio/radio-badge.vue'
 
 const ZONE = 'Europe/Tallinn'
 
-const METHODS: [string, string][] = [
-  ['digital silence', 'digivaikus'],
-  ['station jingle', 'jaama džingel'],
-  ['level dip', 'helitaseme langus'],
-  ['transcript only', 'ainult tekst'],
-]
+export const METHODS: Record<BoundaryMethod, string> = {
+  [BoundaryMethod.DIGITAL_SILENCE]: 'digivaikus',
+  [BoundaryMethod.STATION_JINGLE]: 'jaama džingel',
+  [BoundaryMethod.LEVEL_DIP]: 'helitaseme langus',
+  [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
+}
+
+export const LINK =
+  'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
 export const recordingTime = (keep: KeptSpan[], seconds: number): number => {
   const last = keep[keep.length - 1]?.end ?? seconds
@@ -59,6 +66,9 @@ const instant = (startedAt: number, seconds = 0) => new Date((startedAt + second
 export const clock = (startedAt: number, seconds: number, withSeconds = false): string =>
   (withSeconds ? TIME_SECONDS : TIME).format(instant(startedAt, seconds))
 
+export const range = (startedAt: number, start: number, end: number, withSeconds = false): string =>
+  `${clock(startedAt, start, withSeconds)}–${clock(startedAt, end, withSeconds)}`
+
 export const day = (startedAt: number): string =>
   `${WEEKDAY.format(instant(startedAt))} ${DATE.format(instant(startedAt)).slice(0, 5)}`
 
@@ -67,33 +77,32 @@ export const fullDay = (startedAt: number): string => {
   return `${weekday[0].toUpperCase()}${weekday.slice(1)}, ${DATE.format(instant(startedAt))}`
 }
 
-export const method = (name: string): string =>
-  METHODS.find(([key]) => name.startsWith(key))?.[1] ?? name
-
-export const STATES: Record<
-  RecordingState,
-  { label: string; tone: 'plain' | 'live' | 'warn' | 'error' }
-> = {
+export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> = {
   [RecordingState.RECORDING]: { label: 'Salvestab', tone: 'live' },
   [RecordingState.CAPTURED]: { label: 'Salvestatud', tone: 'plain' },
   [RecordingState.PARTIAL]: { label: 'Osaline', tone: 'warn' },
   [RecordingState.FAILED]: { label: 'Ebaõnnestus', tone: 'error' },
 }
 
-export const textState = (recording: RecordingSummary): string => {
-  if (!recording.transcribed)
-    return recording.status.state === RecordingState.RECORDING ? 'Salvestamisel' : '—'
-  return recording.transcriptCheckedAt ? 'Kontrollitud' : 'Kontrollimata'
+const TEXT_STATES: Record<TranscriptState, string> = {
+  [TranscriptState.NONE]: '—',
+  [TranscriptState.RECORDING]: 'Salvestamisel',
+  [TranscriptState.UNCHECKED]: 'Kontrollimata',
+  [TranscriptState.CHECKED]: 'Kontrollitud',
 }
 
-export const cutState = (recording: RecordingSummary): string => {
-  if (recording.failure) return 'Ebaõnnestus'
-  if (!recording.editList) return '—'
-  if (recording.editList.reviewed) return 'Kinnitatud'
-  return `${recording.cuts.length} soovitust`
+export const textState = (recording: RecordingSummary): string =>
+  TEXT_STATES[recording.transcriptState]
+
+const CUT_STATES: Record<CutState, (recording: RecordingSummary) => string> = {
+  [CutState.NONE]: () => '—',
+  [CutState.FAILED]: () => 'Ebaõnnestus',
+  [CutState.SUGGESTED]: recording => `${recording.cuts.length} soovitust`,
+  [CutState.REVIEWED]: () => 'Kinnitatud',
 }
 
-export const span = (recording: RecordingSummary): string => {
-  const { startedAt, seconds } = recording.status
-  return `${clock(startedAt, 0)}–${clock(startedAt, seconds)}`
-}
+export const cutState = (recording: RecordingSummary): string =>
+  CUT_STATES[recording.cutState](recording)
+
+export const span = (recording: RecordingSummary): string =>
+  range(recording.status.startedAt, 0, recording.status.seconds)

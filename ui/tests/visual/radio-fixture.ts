@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '../../constants/api'
 import { contexts, recording, transcript } from '../../components/radio/radio-fixture'
-import { RecordingState } from '../../models/generated/domain-models'
+import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
 import { apiRoute, type RouteStub } from './stub'
 
 const NAME = '2026-10-17'
@@ -20,6 +20,8 @@ const RECORDINGS = [
     episodeBytes: null,
     cuts: [],
     timeline: [],
+    transcriptState: TranscriptState.RECORDING,
+    cutState: CutState.NONE,
   }),
   recording(),
 ]

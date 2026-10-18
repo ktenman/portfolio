@@ -257,6 +257,8 @@ export interface RecordingSummary {
     cuts: Cut[];
     timeline: TimelineEntry[];
     audible: KeptSpan[];
+    transcriptState: TranscriptState;
+    cutState: CutState;
 }
 
 export interface TranscriptLine {
@@ -272,7 +274,6 @@ export interface CutReview {
 }
 
 export interface CutContext {
-    cut: Cut;
     before: TranscriptLine | null;
     after: TranscriptLine | null;
 }
@@ -354,7 +355,7 @@ export interface Cut {
     title: string;
     start: number;
     end: number;
-    methods: string[];
+    methods: BoundaryMethod[];
     review: boolean;
     removed: boolean;
 }
@@ -497,6 +498,20 @@ export enum LiveUpdate {
     SUMMARY = "SUMMARY",
 }
 
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    UNCHECKED = "UNCHECKED",
+    CHECKED = "CHECKED",
+}
+
+export enum CutState {
+    NONE = "NONE",
+    FAILED = "FAILED",
+    SUGGESTED = "SUGGESTED",
+    REVIEWED = "REVIEWED",
+}
+
 export enum RecordingState {
     RECORDING = "recording",
     CAPTURED = "captured",
@@ -508,4 +523,11 @@ export enum CutKind {
     BEFORE = "BEFORE",
     BREAK = "BREAK",
     AFTER = "AFTER",
+}
+
+export enum BoundaryMethod {
+    DIGITAL_SILENCE = "DIGITAL_SILENCE",
+    STATION_JINGLE = "STATION_JINGLE",
+    LEVEL_DIP = "LEVEL_DIP",
+    TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
 }
