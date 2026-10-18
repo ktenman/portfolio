@@ -153,9 +153,4 @@ describe('MonthlyProfitGrid', () => {
 
     expect(wrapper.emitted('preview')).toEqual([['2025-11'], [null]])
   })
-
-  it('lists the year coverage below the grid', () =>
-    expect(mountGrid().find('[role="application"] + .year-notes').text()).toBe(
-      '2025 · from 27 Jun'
-    ))
 })

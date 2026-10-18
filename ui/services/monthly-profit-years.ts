@@ -101,5 +101,7 @@ export const hasMissingMonth = (years: MonthlyYear[]): boolean =>
 
 export const yearNotes = (years: MonthlyYear[]): string[] =>
   years.flatMap(({ year, coverage, note }) =>
-    coverage || note ? [[year, coverage, note].filter(Boolean).join(SEPARATOR)] : []
+    coverage || note
+      ? [[coverage ? `${year} ${coverage}` : year, note].filter(Boolean).join(SEPARATOR)]
+      : []
   )

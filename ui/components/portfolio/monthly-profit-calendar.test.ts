@@ -57,6 +57,11 @@ describe('MonthlyProfitCalendar', () => {
     ]).toEqual(['Monthly profit', 'Jun – Dec 2025', 'December 2025', 'true', undefined, ['Best']])
   })
 
+  it('lists the year coverage at the end of the legend', () =>
+    expect(
+      mountCalendar(createMonthlyProfit()).find('.calendar-legend > .year-notes:last-child').text()
+    ).toBe('2025 from 27 Jun'))
+
   it('disables the previous arrow on the first month', async () => {
     const wrapper = mountCalendar(createMonthlyProfit())
 

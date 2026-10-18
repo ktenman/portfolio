@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createMissingMonthRows, createMonthlyProfit } from '../../tests/fixtures'
+import {
+  createCalendarRow as row,
+  createMissingMonthRows,
+  createMonthlyProfit,
+} from '../../tests/fixtures'
 import type { MonthlyProfit } from '../../services/monthly-profit'
 import { monthlyYears } from '../../services/monthly-profit-years'
 import DailyProfitCell from './daily-profit-cell.vue'
@@ -31,13 +35,20 @@ describe('MonthlyProfitCompact', () => {
     ])
   })
 
-  it('shows partial-year coverage under the dots without repeating it to screen readers', () => {
-    const wrapper = mountCompact()
+  it('lists each partial year on its own line under the dots without repeating it to screen readers', () => {
+    const wrapper = mountCompact(
+      createMonthlyProfit([
+        row('2024-11-30', 0),
+        row('2024-12-31', 10),
+        row('2025-01-31', 20),
+        row('2025-02-14', 30),
+      ])
+    )
 
     expect([
       wrapper.findAll('.year-notes p').map(note => note.text()),
       wrapper.find('.year-notes').attributes('aria-hidden'),
-    ]).toEqual([['2025 · from 27 Jun'], 'true'])
+    ]).toEqual([['2025 to 14 Feb', '2024 from 30 Nov'], 'true'])
   })
 
   it('tells screen readers the best month is ranked by euro profit', () =>

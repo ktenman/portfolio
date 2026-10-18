@@ -17,6 +17,7 @@
       <daily-profit-cell variant="missing" class="legend-key" />
       <span class="legend-text">No daily summary</span>
     </span>
+    <slot />
   </div>
 </template>
 

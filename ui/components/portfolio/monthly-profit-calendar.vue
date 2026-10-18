@@ -27,7 +27,11 @@
           @select="select"
           @preview="previewKey = $event"
         />
-        <daily-profit-legend :missing="hasMissingMonth(years)" :steps="MONTH_STEPS" />
+        <daily-profit-legend :missing="hasMissingMonth(years)" :steps="MONTH_STEPS">
+          <div v-if="notes.length" class="year-notes mr-0.5 ml-auto grid gap-y-0.75 text-right">
+            <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
+          </div>
+        </daily-profit-legend>
       </div>
       <div class="calendar-side">
         <monthly-profit-panel
@@ -71,7 +75,7 @@ import {
   NOT_ENOUGH_HISTORY,
   type MonthlyProfit,
 } from '../../services/monthly-profit'
-import { hasMissingMonth, monthlyYears } from '../../services/monthly-profit-years'
+import { hasMissingMonth, monthlyYears, yearNotes } from '../../services/monthly-profit-years'
 import { formatFullDate } from '../../utils/iso-dates'
 import AlertMessage from '../shared/alert-message.vue'
 import AppButton from '../shared/app-button.vue'
@@ -97,6 +101,8 @@ const card = ref<HTMLElement | null>(null)
 const notice = ref<HTMLElement | null>(null)
 
 const years = computed(() => (props.model ? monthlyYears(props.model) : []))
+
+const notes = computed(() => yearNotes(years.value))
 
 const asOf = computed(() =>
   props.model ? formatFullDate(props.model.months[props.model.months.length - 1].row.date) : ''

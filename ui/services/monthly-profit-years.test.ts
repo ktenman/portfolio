@@ -97,7 +97,7 @@ describe('monthly years', () => {
           row('2025-02-28', 300, 300),
         ])
       )
-    ).toEqual(['2025 · to 28 Feb · Percentage unavailable']))
+    ).toEqual(['2025 to 28 Feb · Percentage unavailable']))
 
   it('labels an unfinished latest year', () => {
     const [year] = yearsOf([row('2025-12-31', 0), row('2026-09-30', 50), row('2026-10-16', 100)])

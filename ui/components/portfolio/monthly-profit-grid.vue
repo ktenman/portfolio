@@ -1,88 +1,83 @@
 <template>
-  <div class="mx-0.5 grid grid-cols-[auto_repeat(12,minmax(0,1fr))_auto] gap-x-0.75">
-    <div
-      ref="grid"
-      class="calendar-grid"
-      role="application"
-      aria-label="Monthly profit calendar"
-      tabindex="0"
-      :aria-describedby="selectedId"
-      @keydown="onKeydown"
-      @pointerleave="emit('preview', null)"
+  <div
+    ref="grid"
+    class="calendar-grid"
+    role="application"
+    aria-label="Monthly profit calendar"
+    tabindex="0"
+    :aria-describedby="selectedId"
+    @keydown="onKeydown"
+    @pointerleave="emit('preview', null)"
+  >
+    <span
+      v-for="(month, index) in MONTHS"
+      :key="month"
+      class="axis-label column-label"
+      :style="{ gridColumn: index + FIRST_MONTH_COLUMN }"
+      aria-hidden="true"
     >
+      {{ month }}
+    </span>
+    <span
+      class="axis-label column-label total-label"
+      :style="{ gridColumn: TOTAL_COLUMN }"
+      aria-hidden="true"
+    >
+      Year
+    </span>
+    <template v-for="(year, row) in years" :key="year.year">
       <span
-        v-for="(month, index) in MONTHS"
-        :key="month"
-        class="axis-label column-label"
-        :style="{ gridColumn: index + FIRST_MONTH_COLUMN }"
+        class="axis-label year-label"
+        :style="{ gridRow: row + FIRST_YEAR_ROW }"
         aria-hidden="true"
       >
-        {{ month }}
+        {{ year.year }}
       </span>
-      <span
-        class="axis-label column-label total-label"
-        :style="{ gridColumn: TOTAL_COLUMN }"
-        aria-hidden="true"
-      >
-        Year
-      </span>
-      <template v-for="(year, row) in years" :key="year.year">
+      <template v-for="(slot, index) in year.slots" :key="index">
         <span
-          class="axis-label year-label"
-          :style="{ gridRow: row + FIRST_YEAR_ROW }"
-          aria-hidden="true"
-        >
-          {{ year.year }}
-        </span>
-        <template v-for="(slot, index) in year.slots" :key="index">
-          <span
-            v-if="slot?.kind === 'observed'"
-            class="month-cell selectable rounded-control"
-            :class="[
-              STEP_CLASSES[slot.step],
-              {
-                selected: slot.key === selected,
-                previewed: slot.key === previewed && slot.key !== selected,
-              },
-            ]"
-            :style="placeOf(row, index)"
-            role="img"
-            :aria-label="slot.name"
-            :title="slot.name"
-            v-bind="currentOf(slot.key)"
-            @click="onClick(slot.key)"
-            @pointerenter="onEnter(slot.key, $event)"
-          >
-            {{ formatMonthCell(slot.percent) }}
-          </span>
-          <span
-            v-else-if="slot"
-            class="rounded-control border border-dashed border-ink-faint"
-            :style="placeOf(row, index)"
-            role="img"
-            :aria-label="slot.name"
-            :title="slot.name"
-          />
-        </template>
-        <span
-          class="year-total"
-          :class="percentClass(year.percent)"
-          :style="{ gridRow: row + FIRST_YEAR_ROW, gridColumn: TOTAL_COLUMN }"
+          v-if="slot?.kind === 'observed'"
+          class="month-cell selectable rounded-control"
+          :class="[
+            STEP_CLASSES[slot.step],
+            {
+              selected: slot.key === selected,
+              previewed: slot.key === previewed && slot.key !== selected,
+            },
+          ]"
+          :style="placeOf(row, index)"
           role="img"
-          :aria-label="year.name"
+          :aria-label="slot.name"
+          :title="slot.name"
+          v-bind="currentOf(slot.key)"
+          @click="onClick(slot.key)"
+          @pointerenter="onEnter(slot.key, $event)"
         >
-          {{ year.text }}
+          {{ formatMonthCell(slot.percent) }}
         </span>
+        <span
+          v-else-if="slot"
+          class="rounded-control border border-dashed border-ink-faint"
+          :style="placeOf(row, index)"
+          role="img"
+          :aria-label="slot.name"
+          :title="slot.name"
+        />
       </template>
-    </div>
-    <div class="year-notes col-[2/-1] mt-2.5 text-label leading-[1.4] text-ink-soft">
-      <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
-    </div>
+      <span
+        class="year-total"
+        :class="percentClass(year.percent)"
+        :style="{ gridRow: row + FIRST_YEAR_ROW, gridColumn: TOTAL_COLUMN }"
+        role="img"
+        :aria-label="year.name"
+      >
+        {{ year.text }}
+      </span>
+    </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, useId } from 'vue'
+import { ref, useId } from 'vue'
 import type { ChangeStep } from '../../services/daily-profit-calendar'
 import {
   formatMonthCell,
@@ -90,7 +85,7 @@ import {
   percentClass,
   type MonthlyProfit,
 } from '../../services/monthly-profit'
-import { yearNotes, type MonthlyYear } from '../../services/monthly-profit-years'
+import type { MonthlyYear } from '../../services/monthly-profit-years'
 import { MONTHS } from '../../utils/iso-dates'
 
 const props = defineProps<{
@@ -126,8 +121,6 @@ const STEP_CLASSES: Record<ChangeStep, string> = {
 const grid = ref<HTMLElement | null>(null)
 const selectedId = useId()
 
-const notes = computed(() => yearNotes(props.years))
-
 const placeOf = (row: number, index: number) => ({
   gridRow: row + FIRST_YEAR_ROW,
   gridColumn: index + FIRST_MONTH_COLUMN,
@@ -157,11 +150,11 @@ const onKeydown = (event: KeyboardEvent) => {
 <style scoped>
 .calendar-grid {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
+  grid-template-columns: auto repeat(12, minmax(0, 1fr)) auto;
   grid-template-rows: auto;
   grid-auto-rows: 40px;
-  row-gap: 3px;
+  gap: 3px;
+  margin-inline: 2px;
   border-radius: var(--radius-control);
   outline: none;
   font-size: var(--text-label);
