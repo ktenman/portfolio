@@ -5,7 +5,7 @@ import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioCuts from './radio-cuts.vue'
 import { contexts, recording } from './radio-fixture'
-import { BoundaryMethod, CutKind } from '../../models/generated/domain-models'
+import { BoundaryMethod, CutKind, ProgrammeCutState } from '../../models/generated/domain-models'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 
 const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
@@ -17,6 +17,7 @@ vi.mock('../../services/api', () => ({
     jingle: vi.fn(),
     addCut: vi.fn(),
     dropCut: vi.fn(),
+    findCuts: vi.fn(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -38,6 +39,7 @@ describe('RadioCuts', () => {
     vi.mocked(radioService.jingle).mockReset().mockResolvedValue()
     vi.mocked(radioService.addCut).mockReset().mockResolvedValue()
     vi.mocked(radioService.dropCut).mockReset().mockResolvedValue()
+    vi.mocked(radioService.findCuts).mockReset().mockResolvedValue()
     confirm.mockReset()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
@@ -211,6 +213,38 @@ describe('RadioCuts', () => {
     const cuts = [...recording().cuts, manual]
     await button(await render(recording({ cuts })), 'Kustuta').trigger('click')
     expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
+  })
+
+  const shared = (state: ProgrammeCutState) =>
+    recording({
+      programmeCuts: [
+        { name: 'Keskpäevatund', state: ProgrammeCutState.FOUND },
+        { name: 'Tarkade klubi', state },
+      ],
+    })
+
+  it('should offer to find the cuts of a recording without any', async () => {
+    const target = recording({
+      editList: null,
+      cuts: [],
+      programmeCuts: [{ name: 'Tarkade klubi', state: ProgrammeCutState.NONE }],
+    })
+    expect(button(await render(target), 'Leia lõiked')?.attributes('aria-label')).toBe(
+      'Leia lõiked: Tarkade klubi'
+    )
+  })
+
+  it('should ask for the cuts of the other programme of a recording', async () => {
+    await button(await render(shared(ProgrammeCutState.NONE)), 'Leia lõiked').trigger('click')
+    expect(radioService.findCuts).toHaveBeenCalledWith('2026-10-17', { programme: 'Tarkade klubi' })
+  })
+
+  it('should say the cuts of a programme are being looked for', async () => {
+    expect((await render(shared(ProgrammeCutState.FINDING))).text()).toContain('Otsin lõikeid…')
+  })
+
+  it('should not offer to find cuts once every programme has them', async () => {
+    expect(button(await render(), 'Leia lõiked')).toBeUndefined()
   })
 
   it('should play the moment before a cut to hear the transition', async () => {

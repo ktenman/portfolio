@@ -4,6 +4,7 @@ import {
   BoundaryMethod,
   CutKind,
   CutState,
+  ProgrammeCutState,
   type CutContext,
   type DayAiring,
   type EditList,
@@ -23,6 +24,7 @@ const boundary = (name: string, seconds: number, method: string): Boundary => ({
   method,
   review: method === 'transcript only',
   jingle: null,
+  programme: 'Keskpäevatund',
 })
 
 const editList = (overrides: Partial<EditList> = {}): EditList => ({
@@ -114,6 +116,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     { start: 3137, end: 3837 },
   ],
   format: { codec: 'mp3', bitRate: 256_000 },
+  programmeCuts: [{ name: 'Keskpäevatund', state: ProgrammeCutState.FOUND }],
   drops: 0,
   transcriptState: TranscriptState.UNCHECKED,
   cutState: CutState.SUGGESTED,

@@ -258,6 +258,7 @@ export interface RecordingSummary {
     timeline: TimelineEntry[];
     audible: KeptSpan[];
     format: AudioFormat | null;
+    programmeCuts: ProgrammeCuts[];
     drops: number;
     transcriptState: TranscriptState;
     cutState: CutState;
@@ -329,6 +330,10 @@ export interface RadioDay {
 
 export interface AiringChoice {
     record: boolean;
+}
+
+export interface CutChoice {
+    programme: string;
 }
 
 export interface Serializable {
@@ -435,6 +440,11 @@ export interface AudioFormat {
     bitRate: number;
 }
 
+export interface ProgrammeCuts {
+    name: string;
+    state: ProgrammeCutState;
+}
+
 export interface TranscriptWord {
     start: number;
     end: number;
@@ -493,6 +503,7 @@ export interface Boundary {
     method: string;
     review: boolean;
     jingle: JingleMatch | null;
+    programme: string | null;
 }
 
 export interface OutlineSummary {
@@ -666,6 +677,7 @@ export enum RecordingState {
 export enum CutKind {
     BEFORE = "BEFORE",
     BREAK = "BREAK",
+    BETWEEN = "BETWEEN",
     AFTER = "AFTER",
     MANUAL = "MANUAL",
 }
@@ -676,6 +688,12 @@ export enum BoundaryMethod {
     LEVEL_DIP = "LEVEL_DIP",
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
     MANUAL = "MANUAL",
+}
+
+export enum ProgrammeCutState {
+    FOUND = "FOUND",
+    FINDING = "FINDING",
+    NONE = "NONE",
 }
 
 export enum DayOfWeek {

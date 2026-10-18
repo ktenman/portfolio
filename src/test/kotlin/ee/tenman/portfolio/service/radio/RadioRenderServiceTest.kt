@@ -24,7 +24,7 @@ class RadioRenderServiceTest {
     service.render(
       timeline(directory),
       keep,
-      chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1"))),
+      chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1")), PROGRAMME),
       "Keskpäevatund 17.10.2026",
       episode,
     )

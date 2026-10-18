@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.service.radio.AiringChoice
+import ee.tenman.portfolio.service.radio.CutChoice
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
@@ -118,6 +119,12 @@ class RadioController(
     @PathVariable name: String,
     @PathVariable index: Int,
   ): ResponseEntity<Void> = done(radioArchiveService.drop(name, index))
+
+  @PostMapping("/{name}/cuts/find")
+  fun findCuts(
+    @PathVariable name: String,
+    @RequestBody choice: CutChoice,
+  ): ResponseEntity<Void> = done(radioArchiveService.find(name, choice))
 
   @PutMapping("/{name}/cuts/{index}/jingle")
   fun putJingle(

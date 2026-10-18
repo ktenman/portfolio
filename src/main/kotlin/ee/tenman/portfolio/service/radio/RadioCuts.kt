@@ -27,6 +27,7 @@ enum class CutKind(
 ) {
   BEFORE("Enne saadet"),
   BREAK("Reklaamipaus"),
+  BETWEEN("Saadete vahel"),
   AFTER("Pärast saadet"),
   MANUAL("Käsitsi lõige"),
 }
@@ -101,13 +102,26 @@ fun cuts(
   total: Double,
 ): List<Cut> {
   if (edit == null) return emptyList()
-  val at = edit.boundaries.associateBy { it.boundary }
-  val count = edit.boundaries.count { BREAK_STARTS.matches(it.boundary) }
-  val before = at["show starts"]?.let { cut(CutKind.BEFORE, 0.0, it.seconds, listOf(it), edit.keep) }
-  val pauses = (1..count).mapNotNull { pause(at["break $it starts"], at["break $it ends"], edit.keep) }
-  val after = at["show ends"]?.let { cut(CutKind.AFTER, it.seconds, total, listOf(it), edit.keep) }
+  val shows =
+    edit.boundaries
+    .groupBy { it.programme }
+    .values
+    .map { show -> show.associateBy { it.boundary } }
+  val starts = shows.mapNotNull { it["show starts"] }
+  val ends = shows.mapNotNull { it["show ends"] }
+  val before = starts.firstOrNull()?.let { cut(CutKind.BEFORE, 0.0, it.seconds, listOf(it), edit.keep) }
+  val pauses =
+    shows.flatMap { at ->
+    (1..at.keys.count { BREAK_STARTS.matches(it) }).mapNotNull { pause(at["break $it starts"], at["break $it ends"], edit.keep) }
+  }
+  val between =
+    ends.zip(starts.drop(1)).map { (end, start) ->
+    cut(CutKind.BETWEEN, end.seconds, start.seconds, listOf(end, start), edit.keep)
+  }
+  val after = ends.lastOrNull()?.let { cut(CutKind.AFTER, it.seconds, total, listOf(it), edit.keep) }
   val manual = edit.manual.map { manual(it, edit.keep) }
-  return (listOfNotNull(before) + pauses + listOfNotNull(after)).filter { it.end - it.start > SHORTEST } + manual
+  return (listOfNotNull(before) + pauses + between + listOfNotNull(after)).sortedBy { it.start }.filter { it.end - it.start > SHORTEST } +
+    manual
 }
 
 private fun manual(
@@ -178,17 +192,19 @@ fun timeline(
   found: List<Cut>,
   chapters: List<EpisodeChapter>,
   total: Double,
+  title: String,
 ): List<TimelineEntry> {
   val topics = chapters.sortedBy { it.start }
   val marked = found.map { TimelineEntry(it.start, it.end, it.title, true) }
-  return (marked + between(found, total).flatMap { split(it, topics) }).sortedBy { it.start }
+  return (marked + between(found, total).flatMap { split(it, topics, title) }).sortedBy { it.start }
 }
 
 private fun split(
   kept: KeptSpan,
   topics: List<EpisodeChapter>,
+  title: String,
 ): List<TimelineEntry> {
-  val opening = EpisodeChapter(kept.start, topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.title ?: PROGRAMME)
+  val opening = EpisodeChapter(kept.start, topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.title ?: title)
   val marks = listOf(opening) + topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
   val ends = marks.drop(1).map { it.start } + kept.end
   return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false) }
