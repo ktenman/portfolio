@@ -15,8 +15,8 @@ uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 dire
 docker build -t radio-worker .                     # Image without the model, which is mounted at /model
 docker build --target test -t radio-worker-test . && docker run --rm radio-worker-test   # Tests inside the image, as CI runs them
 docker network create radio
-docker run --rm --network radio --name station -p 127.0.0.1:8770:8770 -v <recording.mp3>:/replay.mp3:ro radio-worker station /replay.mp3 --host 0.0.0.0
-docker run --rm --network radio -v <ct2 directory>:/model:ro -v <directory>:/recordings radio-worker run --source http://station:8770/stream.m3u8 --duration <seconds> --out /recordings/<name> --model /model
+docker run -d --rm --network radio --name station -p 127.0.0.1:8770:8770 -v <absolute recording.mp3 path>:/replay.mp3:ro radio-worker station /replay.mp3 --host 0.0.0.0
+docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolute directory owned by uid 1000>:/recordings radio-worker run --source http://station:8770/stream.m3u8 --duration <seconds> --out /recordings/<name> --model /model
 ```
 
 ## Structure

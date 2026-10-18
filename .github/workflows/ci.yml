@@ -162,6 +162,7 @@ jobs:
           cache-from: type=gha,scope=radio-worker
       - name: Run radio worker tests in the image
         if: matrix.type == 'radio'
+        timeout-minutes: 10
         run: docker run --rm radio-worker-test
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'

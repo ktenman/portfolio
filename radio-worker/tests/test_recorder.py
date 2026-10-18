@@ -9,7 +9,7 @@ import pytest
 from pytest import approx
 from support import broadcast, first_silence, sha256, tone, wait
 
-from radio_worker.recorder import KUKU, RATE, prepare, read_status, record, register, write_status
+from radio_worker.recorder import KUKU, RATE, hold, prepare, read_status, record, register, stems, write_status
 from radio_worker.transcriber import seconds
 
 
@@ -82,13 +82,37 @@ def test_recorder_places_a_part_after_a_drop_at_its_place_in_the_stream(tmp_path
     assert (second["offsetSeconds"] < first["durationSeconds"], silence % 10) == (True, approx(7.0, abs=0.1))
 
 
-def test_recorder_places_parts_across_the_timestamp_wrap(tmp_path):
+def offsets(directory: Path, starts: list[str]) -> list[float]:
     status = {"parts": []}
-    for stem, start in [("raw", "-30.023022"), ("raw-part-002", "5.976978")]:
-        (tmp_path / f"{stem}.mp3").write_bytes(b"")
-        (tmp_path / f"{stem}.log").write_text(f"  Duration: N/A, start: {start}, bitrate: N/A\n")
-        register(tmp_path, status, stem)
-    assert [part["offsetSeconds"] for part in status["parts"]] == [0.0, 36.0]
+    for stem, start in zip(stems(), starts):
+        (directory / f"{stem}.mp3").write_bytes(b"")
+        (directory / f"{stem}.log").write_text(f"  Duration: N/A, start: {start}, bitrate: N/A\n")
+        register(directory, status, stem)
+    return [part["offsetSeconds"] for part in status["parts"]]
+
+
+def test_recorder_places_parts_across_the_timestamp_wrap(tmp_path):
+    assert offsets(tmp_path, ["95413.694667", "5.976978"]) == [0.0, 36.0]
+
+
+def test_recorder_places_a_part_that_starts_before_the_first_one(tmp_path):
+    assert offsets(tmp_path, ["100.000000", "94.000000"]) == [0.0, -6.0]
+
+
+def test_recorder_adopts_a_part_it_never_registered(tmp_path):
+    directory = tmp_path / "rec"
+    with broadcast(tmp_path) as url:
+        prepare(directory, url, 4)
+        shutil.copy(tone(tmp_path / "old.mp3", 3), directory / "raw.mp3")
+        (directory / "raw.log").write_text("  Duration: N/A, start: 1.400000, bitrate: N/A\n")
+        record(directory, threading.Event())
+    assert [part["file"] for part in read_status(directory)["parts"]] == ["raw.mp3", "raw-part-002.mp3"]
+
+
+def test_recorder_refuses_a_directory_another_worker_holds(tmp_path):
+    prepare(tmp_path / "rec", KUKU, 4200)
+    with hold(tmp_path / "rec"), pytest.raises(FileExistsError, match="another worker"), hold(tmp_path / "rec"):
+        pass
 
 
 def test_recorder_refuses_a_directory_that_is_not_its_own(tmp_path):

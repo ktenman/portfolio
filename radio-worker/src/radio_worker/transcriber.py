@@ -80,7 +80,7 @@ def resume(path: Path) -> list[dict]:
     if not path.exists():
         return []
     chunks = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").split("\n"):
         try:
             chunks.append(json.loads(line))
         except json.JSONDecodeError:

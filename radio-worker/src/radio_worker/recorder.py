@@ -1,11 +1,15 @@
+import contextlib
 import datetime
+import fcntl
 import hashlib
 import itertools
 import json
+import os
 import re
 import subprocess
 import threading
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 KUKU = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000"
@@ -34,6 +38,20 @@ def claim(directory: Path, source: str) -> None:
         raise FileExistsError(f"{directory} holds a recording of {status['source']}, not of {source}")
 
 
+@contextlib.contextmanager
+def hold(directory: Path) -> Iterator[None]:
+    descriptor = os.open(directory, os.O_RDONLY)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as error:
+        os.close(descriptor)
+        raise FileExistsError(f"{directory} is being recorded by another worker") from error
+    try:
+        yield
+    finally:
+        os.close(descriptor)
+
+
 def read_status(directory: Path) -> dict:
     return json.loads((directory / "status.json").read_text())
 
@@ -53,6 +71,7 @@ def record(directory: Path, stop: threading.Event) -> None:
     if status["state"] != "recording":
         return
     try:
+        adopt(directory, status)
         for part in status["parts"]:
             if "durationSeconds" not in part:
                 finish(directory, status, part, None)
@@ -67,8 +86,15 @@ def record(directory: Path, stop: threading.Event) -> None:
     write_status(directory, status)
 
 
+def adopt(directory: Path, status: dict) -> None:
+    listed = {part["file"] for part in status["parts"]}
+    for stem in itertools.takewhile(lambda stem: (directory / f"{stem}.mp3").exists(), stems()):
+        if f"{stem}.mp3" not in listed:
+            register(directory, status, stem)
+
+
 def capture(directory: Path, status: dict, stop: threading.Event) -> None:
-    while (remaining := status["endsAt"] - time.time()) > 0 and not stop.is_set():
+    while (remaining := round(status["endsAt"] - time.time(), 3)) > 0 and not stop.is_set():
         part = attempt(directory, status, remaining, stop)
         if part is not None and part["durationSeconds"] >= remaining - 1:
             return
@@ -95,9 +121,12 @@ def attempt(directory: Path, status: dict, remaining: float, stop: threading.Eve
     return part
 
 
+def stems() -> Iterator[str]:
+    return ("raw" if index == 1 else f"raw-part-{index:03d}" for index in itertools.count(1))
+
+
 def next_stem(directory: Path) -> str:
-    stems = ("raw" if index == 1 else f"raw-part-{index:03d}" for index in itertools.count(1))
-    return next(stem for stem in stems if not (directory / f"{stem}.mp3").exists())
+    return next(stem for stem in stems() if not (directory / f"{stem}.mp3").exists())
 
 
 def command(source: str, remaining: float, base: Path) -> list[str]:
@@ -117,7 +146,7 @@ def register(directory: Path, status: dict, stem: str) -> dict | None:
         return None
     start = float(starts[-1])
     origin = status["parts"][0]["streamStart"] if status["parts"] else start
-    part = {"file": f"{stem}.mp3", "streamStart": start, "offsetSeconds": round((start - origin) % WRAP, 3)}
+    part = {"file": f"{stem}.mp3", "streamStart": start, "offsetSeconds": round((start - origin + WRAP / 2) % WRAP - WRAP / 2, 3)}
     status["parts"].append(part)
     write_status(directory, status)
     event(directory, f"{part['file']} started at {part['offsetSeconds']} s")

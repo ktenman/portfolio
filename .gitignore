@@ -91,6 +91,8 @@ scripts/model-benchmark/
 
 ### Radio worker ###
 __pycache__/
+.venv/
+.pytest_cache/
 
 ### Working docs (keep architecture diagrams) ###
 docs/*

@@ -63,14 +63,23 @@ def test_transcriber_resumes_after_the_last_finished_chunk(tmp_path):
     assert fresh.calls == approx([61.0, 16.85], abs=0.01)
 
 
-def test_transcriber_drops_a_truncated_last_line(tmp_path):
+def test_transcriber_drops_a_last_line_torn_inside_a_character(tmp_path):
     write_recording(tmp_path, [("raw.mp3", 0.0, noise(130, [52.0, 113.0]), True)], "captured")
     with pytest.raises(RuntimeError):
         transcribed(tmp_path, lambda: Stub(fail_on=2))
-    with (tmp_path / "transcript.jsonl").open("a") as file:
-        file.write('{"part": "raw.mp3", "fr')
+    with (tmp_path / "transcript.jsonl").open("ab") as file:
+        file.write('{"part": "raw.mp3", "text": "lõ'.encode()[:-1])
     transcribed(tmp_path)
     assert [json.loads(line)["to"] for line in (tmp_path / "transcript.jsonl").read_text().splitlines()] == approx([52.15, 113.15, 130], abs=0.01)
+
+
+def test_transcriber_resumes_after_a_chunk_whose_text_holds_a_line_separator(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(130, [52.0, 113.0]), True)], "captured")
+    segment = {"start": 0.0, "end": 1.0, "text": "üks\u2028kaks", "words": []}
+    (tmp_path / "transcript.jsonl").write_text(json.dumps({"part": "raw.mp3", "from": 0.0, "to": 52.15, "final": False, "segments": [segment]}, ensure_ascii=False) + "\n", encoding="utf-8")
+    stub = Stub()
+    transcribed(tmp_path, lambda: stub)
+    assert stub.calls == approx([61.0, 16.85], abs=0.01)
 
 
 def test_transcriber_skips_whisper_for_a_part_without_audio(tmp_path):
@@ -82,7 +91,7 @@ def test_transcriber_skips_whisper_for_a_part_without_audio(tmp_path):
 
 def test_transcriber_transcribes_while_the_recording_is_still_running(tmp_path):
     write_recording(tmp_path, [("raw.mp3", 0.0, noise(70, [50.0]), False)], "recording")
-    running = threading.Thread(target=transcribed, args=(tmp_path,))
+    running = threading.Thread(target=transcribed, args=(tmp_path,), daemon=True)
     running.start()
     wait(lambda: "\n" in ((tmp_path / "transcript.jsonl").read_text() if (tmp_path / "transcript.jsonl").exists() else ""), 10)
     first = json.loads((tmp_path / "transcript.jsonl").read_text().splitlines()[0])

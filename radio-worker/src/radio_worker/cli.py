@@ -9,7 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from radio_worker.recorder import KUKU, prepare, read_status, record
+from radio_worker.recorder import KUKU, hold, prepare, read_status, record
 from radio_worker.station import Station
 from radio_worker.transcriber import transcribe
 
@@ -68,16 +68,17 @@ def broadcast(recording: Path, host: str, port: int, start: float, speed: float)
 
 def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float) -> str:
     prepare(directory, source, seconds)
-    stop = threading.Event()
-    recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
-    recording.start()
-    try:
-        transcribe(directory, load, name, chunk_seconds, recording.is_alive)
-    except KeyboardInterrupt:
-        stop.set()
-        raise
-    finally:
-        join(recording, stop)
+    with hold(directory):
+        stop = threading.Event()
+        recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
+        recording.start()
+        try:
+            transcribe(directory, load, name, chunk_seconds, recording.is_alive)
+        except KeyboardInterrupt:
+            stop.set()
+            raise
+        finally:
+            join(recording, stop)
     return read_status(directory)["state"]
 
 

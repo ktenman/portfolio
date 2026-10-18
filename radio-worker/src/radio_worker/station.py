@@ -21,6 +21,8 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 class Station(ThreadingHTTPServer):
+    process: subprocess.Popen | None = None
+
     def __init__(self, recording: Path, directory: Path, port: int, start: float, speed: float, host: str) -> None:
         super().__init__((host, port), functools.partial(Handler, directory=str(directory)))
         self.recording = recording
@@ -29,7 +31,6 @@ class Station(ThreadingHTTPServer):
         self.speed = speed
         self.lock = threading.Lock()
         self.replay: threading.Thread | None = None
-        self.process: subprocess.Popen | None = None
 
     def on_air(self) -> None:
         with self.lock:

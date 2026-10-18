@@ -64,7 +64,7 @@ npm run visual:update -- --grep "<test titles>"  # Regenerate, then review and c
 
 # Testing
 npm run test:all            # ALL tests: backend + frontend + E2E
-npm run test:unit           # Backend unit + frontend UI + proxy tests
+npm run test:unit           # Backend unit + frontend UI + proxy + radio worker tests
 npm run test:e2e            # Full E2E setup + tests (starts all services)
 npm run test:proxy          # Cloudflare-bypass-proxy tests only
 npm run test:radio          # Radio worker tests only (uv, pytest)

@@ -1,6 +1,8 @@
+import socket
 import threading
 import urllib.request
 
+import pytest
 from pytest import approx
 from support import broadcast, replay, serving
 
@@ -46,3 +48,11 @@ def test_station_listens_on_the_given_host(tmp_path):
     server = Station(tmp_path / "in.mp3", tmp_path, port=0, start=0.0, speed=1.0, host="0.0.0.0")
     server.server_close()
     assert server.server_address[0] == "0.0.0.0"
+
+
+def test_station_reports_a_port_already_in_use(tmp_path):
+    with socket.socket() as taken:
+        taken.bind(("127.0.0.1", 0))
+        taken.listen()
+        with pytest.raises(OSError, match="in use"):
+            Station(tmp_path / "in.mp3", tmp_path, port=taken.getsockname()[1], start=0.0, speed=1.0, host="127.0.0.1")
