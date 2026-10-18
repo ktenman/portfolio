@@ -1,19 +1,41 @@
 package ee.tenman.portfolio.openrouter
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.domain.AiModel
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class OpenRouterRequest(
   val model: String,
   val messages: List<Message>,
   @JsonProperty("max_tokens")
   val maxTokens: Int = 50,
   val temperature: Double = 0.1,
+  @JsonProperty("response_format")
+  val responseFormat: ResponseFormat? = null,
+  val provider: ProviderPreferences? = null,
 ) {
   data class Message(
     val role: String,
     val content: String,
+  )
+
+  data class ResponseFormat(
+    @JsonProperty("json_schema")
+    val jsonSchema: JsonSchema,
+    val type: String = "json_schema",
+  )
+
+  data class JsonSchema(
+    val name: String,
+    val schema: Map<String, Any>,
+    val strict: Boolean = true,
+  )
+
+  data class ProviderPreferences(
+    @JsonProperty("require_parameters")
+    val requireParameters: Boolean = true,
   )
 }
 

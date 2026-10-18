@@ -5,6 +5,10 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath
+import com.github.tomakehurst.wiremock.client.WireMock.notContaining
+import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
@@ -117,6 +121,40 @@ class OpenRouterClientIT {
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Healthcare")
     expect(result?.model).toEqual(AiModel.CLAUDE_OPUS_5_5)
+  }
+
+  @Test
+  fun `should send system prompt and strict json schema when completing`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("google/gemini-3.5-flash-lite")))
+        .withRequestBody(matchingJsonPath("$.messages[0].role", equalTo("system")))
+        .withRequestBody(matchingJsonPath("$.messages[1].content", equalTo("Saade algab 11:59.")))
+        .withRequestBody(matchingJsonPath("$.response_format.json_schema.strict", equalTo("true")))
+        .withRequestBody(matchingJsonPath("$.provider.require_parameters", equalTo("true")))
+        .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
+    )
+    val result = openRouterClient.complete(AiModel.GEMINI_3_5_FLASH_LITE, "Leia saade.", "Saade algab 11:59.", mapOf("type" to "object"))
+    expect(result).toEqual("{\"hosts\":[]}")
+  }
+
+  @Test
+  fun `should return null when completion answers with an error body`() {
+    stubOpenRouterSuccess("{\"error\":{\"message\":\"upstream\"}}")
+    val result = openRouterClient.complete(AiModel.GEMINI_3_5_FLASH_LITE, "Leia saade.", "Saade.", mapOf("type" to "object"))
+    expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should leave response format out of classification requests`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(notContaining("response_format"))
+        .withRequestBody(notContaining("provider"))
+        .willReturn(okJson(createSuccessResponse("Technology"))),
+    )
+    val result = openRouterClient.classify("Classify Apple Inc")
+    expect(result).toEqual("Technology")
   }
 
   private fun createSuccessResponse(content: String): String =
