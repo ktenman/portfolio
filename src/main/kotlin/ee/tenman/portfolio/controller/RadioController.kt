@@ -1,7 +1,8 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.service.radio.CutContext
+import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
-import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
@@ -31,6 +32,11 @@ class RadioController(
     @PathVariable name: String,
   ): ResponseEntity<List<TranscriptLine>> = ResponseEntity.ofNullable(radioArchiveService.transcript(name))
 
+  @GetMapping("/{name}/cuts")
+  fun getCuts(
+    @PathVariable name: String,
+  ): ResponseEntity<List<CutContext>> = ResponseEntity.ofNullable(radioArchiveService.contexts(name))
+
   @GetMapping("/{name}/{file}")
   fun getFile(
     @PathVariable name: String,
@@ -40,8 +46,8 @@ class RadioController(
   @PutMapping("/{name}/cuts")
   fun putCuts(
     @PathVariable name: String,
-    @RequestBody keep: List<KeptSpan>,
-  ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, keep))
+    @RequestBody review: CutReview,
+  ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, review))
 
   @PutMapping("/{name}/transcript/checked")
   fun putTranscriptChecked(

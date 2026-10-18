@@ -5,6 +5,7 @@ import { stubBuildInfo } from './build-info-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
+import { stubRadio } from './radio-fixture'
 import { stubTransactions } from './transactions-fixture'
 
 const AA_TEXT = 4.5
@@ -17,6 +18,7 @@ const ROUTES = [
   { path: '/instruments', name: 'instruments', stub: stubInstruments },
   { path: '/transactions', name: 'transactions', stub: stubTransactions },
   { path: '/etf-breakdown', name: 'etf-breakdown', stub: stubEtfBreakdown },
+  { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
 ]
 
 interface PaintedText {

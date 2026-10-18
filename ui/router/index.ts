@@ -38,6 +38,38 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../components/monitoring/monitoring-view.vue'),
   },
   {
+    path: '/radio',
+    component: () => import('../components/radio/radio-view.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Raadio',
+        component: () => import('../components/radio/radio-recordings.vue'),
+      },
+      {
+        path: ':name',
+        component: () => import('../components/radio/radio-episode.vue'),
+        children: [
+          {
+            path: '',
+            name: 'RadioListen',
+            component: () => import('../components/radio/radio-listen.vue'),
+          },
+          {
+            path: 'cuts',
+            name: 'RadioCuts',
+            component: () => import('../components/radio/radio-cuts.vue'),
+          },
+          {
+            path: 'text',
+            name: 'RadioText',
+            component: () => import('../components/radio/radio-text.vue'),
+          },
+        ],
+      },
+    ],
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

@@ -3,7 +3,7 @@
     <div class="mx-auto w-full max-w-app px-3">
       <div class="navbar-scroll-container">
         <div class="navbar-content">
-          <ul class="navbar-nav">
+          <ul ref="list" class="navbar-nav">
             <li class="nav-item" v-for="route in routes" :key="route.path">
               <router-link class="nav-link" :to="route.path" active-class="active">
                 {{ route.name }}
@@ -24,7 +24,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { nextTick, ref, useTemplateRef, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { utilityService } from '../services/api'
 
@@ -36,7 +37,23 @@ const routes = ref([
   { path: '/etf-breakdown', name: 'ETF Breakdown' },
   { path: '/diversification', name: 'Diversification' },
   { path: '/monitoring', name: 'Monitoring' },
+  { path: '/radio', name: 'Raadio' },
 ])
+
+const list = useTemplateRef<HTMLUListElement>('list')
+const route = useRoute()
+
+watch(
+  () => route.path,
+  async () => {
+    await nextTick()
+    await document.fonts.ready
+    list.value
+      ?.querySelector('.nav-link.active')
+      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  },
+  { immediate: true }
+)
 
 const { data: buildInfo } = useQuery({
   queryKey: ['build-info'],

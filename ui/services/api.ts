@@ -14,6 +14,11 @@ import {
   type FundReportDto,
   type InstrumentDto,
   type InstrumentsResponse,
+  type EditList,
+  type CutContext,
+  type CutReview,
+  type RecordingSummary,
+  type TranscriptLine,
   type IntradaySummaryPointDto,
   type PortfolioSummaryDto,
   type RangeChangeDto,
@@ -26,6 +31,7 @@ import type { CachedState } from '../components/diversification/types'
 import { API_ENDPOINTS } from '../constants'
 
 const LOGO_SEARCH_TIMEOUT = 60000
+const RADIO_RENDER_TIMEOUT = 600000
 
 const platformParams = (platforms?: string[]) => (platforms?.length ? { platforms } : {})
 
@@ -202,6 +208,20 @@ export const monitoringService = {
   streamUrl: `/api${API_ENDPOINTS.MONITORING_COLLECTIONS}/stream`,
   rerun: (key: string) =>
     httpClient.post<void>(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/${key}/rerun`),
+}
+
+export const radioService = {
+  recordings: () => httpClient.get<RecordingSummary[]>(API_ENDPOINTS.RADIO),
+  transcript: (name: string) =>
+    httpClient.get<TranscriptLine[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
+  cuts: (name: string) => httpClient.get<CutContext[]>(`${API_ENDPOINTS.RADIO}/${name}/cuts`),
+  review: (name: string, review: CutReview) =>
+    httpClient.put<EditList>(`${API_ENDPOINTS.RADIO}/${name}/cuts`, review, {
+      timeout: RADIO_RENDER_TIMEOUT,
+    }),
+  check: (name: string) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/transcript/checked`),
+  fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
 }
 
 export const liveUpdatesService = {
