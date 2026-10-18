@@ -4,14 +4,11 @@ import ee.tenman.portfolio.configuration.JsonMapperFactory
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import tools.jackson.module.kotlin.readValue
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
@@ -25,15 +22,15 @@ class RadioEpisodeService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun make(directory: Path): Path? {
-    if (!pending(directory)) return directory.resolve(EPISODE).takeIf { Files.exists(it) }
-    return runCatching { render(directory) }.getOrElse { fail(directory, it) }
+  fun make(directory: Path) {
+    if (!pending(directory)) return
+    runCatching { render(directory) }.onFailure { fail(directory, it) }
   }
 
   private fun pending(directory: Path): Boolean {
     val ready =
       listOf(EPISODE, FAILED).none { Files.exists(directory.resolve(it)) } &&
-        listOf(STATUS, TRANSCRIPT_FILE).all { Files.exists(directory.resolve(it)) } &&
+        listOf(STATUS_FILE, TRANSCRIPT_FILE).all { Files.exists(directory.resolve(it)) } &&
         readStatus(directory).state in READY
     if (!ready || Files.isWritable(directory)) return ready
     log.warn("Cannot write the radio episode into $directory")
@@ -53,7 +50,7 @@ class RadioEpisodeService(
     val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
     val kept = audible(timeline, keep)
     val marks = chapters(kept, agreed.chapters)
-    val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(TALLINN).format(DAY)
+    val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)
     val temporary = directory.resolve(TEMPORARY)
     radioRenderService.render(timeline, keep, marks, "Keskpäevatund $day", temporary)
     val summary = OutlineSummary(model, reads.size, matched.size, agreed.voters)
@@ -97,16 +94,13 @@ class RadioEpisodeService(
   private fun fail(
     directory: Path,
     failure: Throwable,
-  ): Path? {
+  ) {
     log.error("Radio episode for $directory failed", failure)
     Files.deleteIfExists(directory.resolve(TEMPORARY))
     save(directory.resolve(FAILED), EpisodeFailure(failure.message ?: failure.javaClass.simpleName, now()))
-    return null
   }
 
   private fun now(): String = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString()
-
-  private fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()
 
   private fun save(
     path: Path,
@@ -121,12 +115,9 @@ class RadioEpisodeService(
     private const val EPISODE = "episode.m4a"
     private const val TEMPORARY = "episode.tmp.m4a"
     private const val FAILED = "episode-failed.json"
-    private const val STATUS = "status.json"
-    private const val TRANSCRIPT_FILE = "transcript.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
     private val READY = setOf("captured", "partial")
-    private val TALLINN: ZoneId = ZoneId.of("Europe/Tallinn")
     private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
   }
 }

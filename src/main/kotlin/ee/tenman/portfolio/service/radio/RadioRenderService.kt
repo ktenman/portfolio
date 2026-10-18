@@ -41,7 +41,7 @@ class RadioRenderService {
           "afade=t=in:d=$FADE,afade=t=out:st=${String.format(Locale.ROOT, "%.3f", length - FADE)}:d=$FADE[p$n]"
       }
     val graph = trims.joinToString(";") + ";" + found.indices.joinToString("") { "[p$it]" } + "concat=n=${found.size}:v=0:a=1[out]"
-    val inputs = timeline.spans.flatMap { listOf("-i", it.pcm.toString().removeSuffix(".pcm") + ".mp3") }
+    val inputs = timeline.spans.flatMap { listOf("-i", it.audio.toString()) }
     val count = timeline.spans.size.toString()
     return listOf("ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "error", "-y") + inputs +
       listOf("-i", chapters.toString(), "-filter_complex", graph, "-map", "[out]", "-map_metadata", count, "-map_chapters", count) +

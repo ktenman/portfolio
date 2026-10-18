@@ -23,8 +23,8 @@ class SharedJingle(
 class Window(
   val samples: DoubleArray,
   val spectrum: Spectrum,
-  val size: Int,
 ) {
+  val size: Int = spectrum.re.size
   val sums: DoubleArray = cumulative(samples) { it }
   val squares: DoubleArray = cumulative(samples) { it * it }
 }
@@ -140,7 +140,7 @@ private fun window(
 ): Window {
   val samples = timeline.samples(back - WINDOW, back)
   val size = Integer.highestOneBit(samples.size + RATE) shl 1
-  return Window(samples, spectrum(samples, size), size)
+  return Window(samples, spectrum(samples, size))
 }
 
 private fun pearson(

@@ -75,7 +75,8 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should skip a recording that is still recording`() {
     show("recording")
-    expect(service.make(directory) to Files.exists(directory.resolve("episode-failed.json"))).toEqual(null to false)
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode-failed.json"))).toEqual(false)
   }
 
   @Test
@@ -109,9 +110,8 @@ class RadioEpisodeServiceTest {
   fun `should save no reads and mark the recording failed when every read fails`() {
     show()
     every { outlineService.reads(any(), any()) } returns listOf(null, null, null)
-    val result = service.make(directory)
-    val saved = Files.exists(directory.resolve("outline.json"))
-    expect(Triple(result, saved, "No outline read came back" in failure())).toEqual(Triple(null, false, true))
+    service.make(directory)
+    expect(Files.exists(directory.resolve("outline.json")) to ("No outline read came back" in failure())).toEqual(false to true)
   }
 
   @Test
@@ -132,8 +132,8 @@ class RadioEpisodeServiceTest {
     writeRecording(directory, parts, "partial")
     transcribed(1.0, 5.0, 50.0)
     saved(outline(1.0, 5.0, 50.0))
-    val episode = checkNotNull(service.make(directory))
-    val found = probe(episode)
+    service.make(directory)
+    val found = probe(directory.resolve("episode.m4a"))
     val duration = found["format"]["duration"].asString().toDouble()
     val last = found["chapters"].toList().last()
     val end = last["end_time"].asString().toDouble()

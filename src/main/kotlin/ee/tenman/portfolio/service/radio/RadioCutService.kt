@@ -5,6 +5,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 const val TRANSCRIPT = "transcript only"
+private const val DIP = "level dip"
 
 fun firstWord(line: TranscriptLine): Double {
   val words = line.words
@@ -20,9 +21,9 @@ fun leave(
   limit: Double,
 ): Pair<Double, String> {
   val gap = silences(db, wordEnd - 0.5, wordEnd + limit).firstOrNull { it.first >= wordEnd - 0.5 }
-  if (gap != null) return (gap.first + gap.second) / 2 to "digital silence"
+  if (gap != null) return (gap.first + gap.second) / 2 to DIGITAL
   val dip = dips(db, wordEnd, wordEnd + limit).firstOrNull() ?: return wordEnd + 0.2 to TRANSCRIPT
-  return dip to "level dip"
+  return dip to DIP
 }
 
 @Service
@@ -57,8 +58,9 @@ class RadioCutService {
     }
 
   private fun ordered(found: List<Boundary>): List<Boundary> {
-    val order = found.map { it.boundary to it.seconds }
-    check(found.zipWithNext().all { (a, b) -> a.seconds < b.seconds }) { "Boundaries are out of order: $order" }
+    check(found.zipWithNext().all { (a, b) -> a.seconds < b.seconds }) {
+      "Boundaries are out of order: ${found.map { it.boundary to it.seconds }}"
+    }
     return found
   }
 
@@ -82,8 +84,6 @@ class RadioCutService {
     val cut = shared?.cuts?.get(index)
     if (cut != null) return cut to "station jingle, r=${BigDecimal(shared.r).setScale(2, RoundingMode.HALF_EVEN)}"
     val dip = dips(db, word - 8, word - 0.3).lastOrNull() ?: return word - 0.3 to TRANSCRIPT
-    return dip to "level dip"
+    return dip to DIP
   }
-
-  private fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()
 }

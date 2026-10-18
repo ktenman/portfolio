@@ -80,9 +80,8 @@ fun describe(
   status: RecordingStatus,
   lines: List<TranscriptLine>,
   events: List<AudioEvent>,
-  zone: ZoneId = TALLINN,
 ): String {
-  val started = Instant.ofEpochSecond(0, (status.startedAt * 1e9).toLong()).atZone(zone)
+  val started = Instant.ofEpochSecond(0, (status.startedAt * 1e9).toLong()).atZone(TALLINN)
   val clock = { seconds: Double -> started.plusNanos((seconds * 1e9).toLong()).format(CLOCK) }
   val header =
     listOf(

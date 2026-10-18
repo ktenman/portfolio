@@ -15,13 +15,14 @@ const val RATE = 16000
 const val HOP = 160
 const val FRAME = HOP.toDouble() / RATE
 private const val BLOCK = 300
-private const val DIGITAL = "digital silence"
+const val DIGITAL = "digital silence"
 
 data class Span(
   val start: Double,
   val end: Double,
   val pcm: Path,
   val offset: Double,
+  val audio: Path,
 )
 
 data class AudioEvent(
@@ -86,7 +87,7 @@ fun coverage(
       val pcm = pcmOf(directory, part.file)
       val start = max(part.offsetSeconds, covered)
       val end = part.offsetSeconds + pcmSeconds(pcm)
-      (if (start < end) spans + Span(start, end, pcm, part.offsetSeconds) else spans) to max(covered, end)
+      (if (start < end) spans + Span(start, end, pcm, part.offsetSeconds, directory.resolve(part.file)) else spans) to max(covered, end)
     }.first
 
 fun loudness(timeline: Timeline): DoubleArray {
@@ -163,7 +164,7 @@ fun valley(
 
 private fun median(values: DoubleArray): Double {
   if (values.any { it.isNaN() }) return Double.NaN
-  val sorted = values.sorted()
+  val sorted = values.sortedArray()
   val middle = sorted.size / 2
   return if (sorted.size % 2 == 1) sorted[middle] else (sorted[middle - 1] + sorted[middle]) / 2
 }

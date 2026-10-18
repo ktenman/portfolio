@@ -3,8 +3,13 @@ package ee.tenman.portfolio.service.radio
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
 import org.springframework.boot.context.properties.ConfigurationProperties
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
+
+const val STATUS_FILE = "status.json"
+const val TRANSCRIPT_FILE = "transcript.json"
 
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
@@ -57,7 +62,9 @@ data class Boundary(
 )
 
 fun readStatus(directory: Path): RecordingStatus =
-  JsonMapperFactory.instance.readValue(Files.readString(directory.resolve("status.json")), RecordingStatus::class.java)
+  JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(STATUS_FILE)), RecordingStatus::class.java)
 
 fun readTranscript(directory: Path): Transcript =
-  JsonMapperFactory.instance.readValue(Files.readString(directory.resolve("transcript.json")), Transcript::class.java)
+  JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(TRANSCRIPT_FILE)), Transcript::class.java)
+
+fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()

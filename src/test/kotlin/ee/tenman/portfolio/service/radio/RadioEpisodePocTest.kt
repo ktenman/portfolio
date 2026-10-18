@@ -56,7 +56,8 @@ class RadioEpisodePocTest {
     prepare(Path.of(System.getenv("RADIO_WORKER_POC")))
     val service = RadioEpisodeService(mockk(), RadioCutService(), RadioRenderService(), RadioProperties(), Clock.systemUTC())
     val started = System.nanoTime()
-    val episode = checkNotNull(service.make(directory))
+    service.make(directory)
+    val episode = directory.resolve("episode.m4a")
     val peak = ManagementFactory.getMemoryPoolMXBeans().filter { it.type == MemoryType.HEAP }.sumOf { it.peakUsage.used } / 1_048_576
     log.info("PoC episode took ${(System.nanoTime() - started) / 1_000_000_000} s with a peak heap of $peak MiB")
     val edit = JsonMapperFactory.instance.readValue<EditList>(Files.readString(directory.resolve("edit-list.json")))

@@ -123,66 +123,55 @@ class OpenRouterClient(
     prompt: String,
     maxTokens: Int = 1500,
     temperature: Double = 0.1,
-  ): String? {
-    if (openRouterProperties.apiKey.isBlank()) {
-      log.warn("OpenRouter API key is not configured")
-      return null
-    }
-    if (!circuitBreaker.tryAcquireForModel(model)) {
-      log.warn("Rate limit exceeded for model ${model.modelId}:online, skipping request")
-      return null
-    }
-    val request =
+  ): String? =
+    send(
+      model,
       OpenRouterRequest(
         model = "${model.modelId}:online",
         messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
         maxTokens = maxTokens,
         temperature = temperature,
-      )
-    return runCatching {
-      log.info("Calling OpenRouter (online) with model: ${model.modelId}:online")
-      val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
-      val content = response.extractContent()
-      log.debug("OpenRouter online response: '$content'")
-      circuitBreaker.recordSuccess()
-      content
-    }.onFailure { throwable ->
-      log.error("Error calling OpenRouter online with ${model.modelId}: ${throwable.message}", throwable)
-      circuitBreaker.recordFailure(throwable)
-    }.getOrNull()
-  }
+      ),
+    )
 
   fun complete(
     model: AiModel,
     system: String,
     user: String,
     schema: Map<String, Any>,
-    maxTokens: Int = DEFAULT_MAX_TOKENS,
+  ): String? =
+    send(
+      model,
+      OpenRouterRequest(
+        model = model.modelId,
+        messages = listOf(OpenRouterRequest.Message("system", system), OpenRouterRequest.Message("user", user)),
+        maxTokens = DEFAULT_MAX_TOKENS,
+        temperature = 0.0,
+        responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
+        provider = OpenRouterRequest.ProviderPreferences(),
+      ),
+    )
+
+  private fun send(
+    model: AiModel,
+    request: OpenRouterRequest,
   ): String? {
     if (openRouterProperties.apiKey.isBlank()) {
       log.warn("OpenRouter API key is not configured")
       return null
     }
     if (!circuitBreaker.tryAcquireForModel(model)) {
-      log.warn("Rate limit exceeded for model ${model.modelId}, skipping request")
+      log.warn("Rate limit exceeded for model ${request.model}, skipping request")
       return null
     }
-    val request =
-      OpenRouterRequest(
-        model = model.modelId,
-        messages = listOf(OpenRouterRequest.Message("system", system), OpenRouterRequest.Message("user", user)),
-        maxTokens = maxTokens,
-        temperature = 0.0,
-        responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
-        provider = OpenRouterRequest.ProviderPreferences(),
-      )
     return runCatching {
-      log.info("Calling OpenRouter with a json schema and model: ${model.modelId}")
+      log.info("Calling OpenRouter with model: ${request.model}")
       val content = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request).extractContent()
+      log.debug("OpenRouter response: '$content'")
       circuitBreaker.recordSuccess()
       content
     }.onFailure { throwable ->
-      log.error("Error calling OpenRouter with a json schema and model ${model.modelId}: ${throwable.message}", throwable)
+      log.error("Error calling OpenRouter with model ${request.model}: ${throwable.message}", throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }
