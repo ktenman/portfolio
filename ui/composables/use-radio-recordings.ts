@@ -1,5 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { useAuthState } from './use-auth-state'
@@ -29,6 +29,17 @@ export const useRadioStation = () => {
     queryFn: radioService.station,
     enabled: isAuthenticated,
     refetchInterval: 60_000,
+  })
+}
+
+export const useRadioDay = (date: MaybeRefOrGetter<string | null>) => {
+  const { isAuthenticated } = useAuthState()
+  return useQuery({
+    queryKey: computed(() => ['radio-day', toValue(date)]),
+    queryFn: () => radioService.day(toValue(date)),
+    enabled: isAuthenticated,
+    refetchInterval: 60_000,
+    placeholderData: keepPreviousData,
   })
 }
 

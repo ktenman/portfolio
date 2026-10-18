@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -16,6 +17,7 @@ import ee.tenman.portfolio.kuku.KukuScheduleClient
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.AirSlot
+import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.Capture
 import ee.tenman.portfolio.service.radio.HEARTBEAT_FILE
 import ee.tenman.portfolio.service.radio.MissedReason
@@ -110,6 +112,23 @@ class RadioScheduleJobIT {
     )
     RadioScheduleJob(kukuScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock).execute()
   }
+
+  private fun recording(
+    name: String,
+    start: ZonedDateTime,
+    seconds: Long,
+  ) {
+    val directory = Files.createDirectories(radioProperties.recordings.resolve(name))
+    Files.writeString(
+      directory.resolve("status.json"),
+      """{"state":"captured","startedAt":${start.toEpochSecond()},"seconds":$seconds,"programmes":["Keskpäevatund"]}""",
+    )
+  }
+
+  private fun choose(
+    id: Long,
+    record: Boolean,
+  ) = mvcPut("/api/radio/airings/$id").contentType(APPLICATION_JSON).content("""{"record":$record}""")
 
   private fun plan(): List<Capture> = JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(PLAN_FILE)))
 
@@ -213,6 +232,61 @@ class RadioScheduleJobIT {
     radioScheduleService.choose(175, ProgrammeChoice(true))
     expect(radioScheduleService.missed().map { it.capture.programmes to it.reason })
       .toContainExactly(listOf("Keskpäevatund") to MissedReason.NEVER_RAN)
+  }
+
+  @Test
+  fun `should plan to record an airing chosen once`() {
+    load(episode(30, 231, "Tarkade klubi", "13:00", "14:00"))
+    radioScheduleService.record(30, AiringChoice(true))
+    expect(plan().map { it.name }).toContain("$day-1300-tarkade-klubi")
+  }
+
+  @Test
+  fun `should plan to record a repeat chosen once`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), episode(31, 175, "Keskpäevatund", "18:00", "19:00", original = 1))
+    radioScheduleService.record(31, AiringChoice(true))
+    expect(plan().map { it.name }).toContain("$day-1800-keskpaevatund")
+  }
+
+  @Test
+  fun `should refuse to choose an airing that has begun`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(32, 231, "Tarkade klubi", now.minusMinutes(10), now.plusMinutes(50)))
+    mockMvc.perform(choose(32, true)).andExpect(status().isBadRequest)
+  }
+
+  @Test
+  fun `should answer not found for an airing missing from the schedule`() {
+    mockMvc.perform(choose(999, true)).andExpect(status().isNotFound)
+  }
+
+  @Test
+  fun `should serve an airing chosen once as planned`() {
+    load(episode(33, 231, "Tarkade klubi", "13:00", "14:00"))
+    mockMvc.perform(choose(33, true)).andExpect(status().isNoContent)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.day[0].airings[0].state").value("PLANNED"))
+      .andExpect(jsonPath("$.day[0].airings[0].once").value(true))
+  }
+
+  @Test
+  fun `should serve an airing a recording holds as recorded`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    recording("$day-1200-keskpaevatund", at("11:55"), 4200)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.day[0].airings[0].state").value("RECORDED"))
+      .andExpect(jsonPath("$.day[0].airings[0].recording.name").value("$day-1200-keskpaevatund"))
+  }
+
+  @Test
+  fun `should serve the night after midnight apart from the day`() {
+    val night = episode(34, 175, "Keskpäevatund", at("02:00").plusDays(1), at("03:00").plusDays(1), original = 1)
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), night)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.night[0].airings[0].original.start").value(at("12:00").toEpochSecond()))
   }
 
   @Test

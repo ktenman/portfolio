@@ -247,6 +247,8 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.service.radio.RadioProgrammeDto",
       "ee.tenman.portfolio.service.radio.ProgrammeChoice",
       "ee.tenman.portfolio.service.radio.RadioStation",
+      "ee.tenman.portfolio.service.radio.RadioDay",
+      "ee.tenman.portfolio.service.radio.AiringChoice",
     ),
   )
   outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)

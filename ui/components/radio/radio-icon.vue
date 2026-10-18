@@ -14,7 +14,15 @@
 </template>
 
 <script lang="ts" setup>
-export type IconName = 'back' | 'forward' | 'play' | 'pause' | 'left' | 'download' | 'check'
+export type IconName =
+  | 'back'
+  | 'forward'
+  | 'play'
+  | 'pause'
+  | 'left'
+  | 'down'
+  | 'download'
+  | 'check'
 
 defineProps<{ name: IconName }>()
 
@@ -26,6 +34,7 @@ const PATHS: Record<IconName, string[]> = {
   play: ['M7 4v16l13-8z'],
   pause: ['M6 4h4v16H6z', 'M14 4h4v16h-4z'],
   left: ['m15 18-6-6 6-6'],
+  down: ['m6 9 6 6 6-6'],
   download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'm7 10 5 5 5-5', 'M12 15V3'],
   check: ['M20 6 9 17l-5-5'],
 }

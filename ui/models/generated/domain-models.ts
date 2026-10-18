@@ -314,6 +314,23 @@ export interface RadioStation {
     format: AudioFormat | null;
 }
 
+export interface RadioDay {
+    date: DateAsString;
+    today: DateAsString;
+    days: DateAsString[];
+    from: number;
+    until: number;
+    now: number;
+    recorded: RecordedSpan[];
+    seconds: number;
+    day: DayBlock[];
+    night: DayBlock[];
+}
+
+export interface AiringChoice {
+    record: boolean;
+}
+
 export interface Serializable {
 }
 
@@ -449,6 +466,16 @@ export interface LastRecording {
     end: number;
 }
 
+export interface RecordedSpan {
+    start: number;
+    end: number;
+}
+
+export interface DayBlock {
+    missed: boolean;
+    airings: DayAiring[];
+}
+
 export interface LargestPositionDto extends Serializable {
     name: string;
     percentage: number;
@@ -485,10 +512,38 @@ export interface CutJingle {
     saved: boolean;
 }
 
+export interface DayAiring {
+    id: number;
+    name: string;
+    episode: string | null;
+    start: number;
+    end: number;
+    state: AiringState;
+    once: boolean;
+    repeat: boolean;
+    original: OriginalAiring | null;
+    recording: AiringRecording | null;
+}
+
 export interface JingleMatch {
     start: number;
     r: number;
     saved: string | null;
+}
+
+export interface OriginalAiring {
+    start: number;
+    state: AiringState;
+    recording: AiringRecording | null;
+}
+
+export interface AiringRecording {
+    name: string;
+    programme: string;
+    start: number;
+    end: number;
+    from: number;
+    to: number;
 }
 
 type DateAsString = string;
@@ -631,4 +686,15 @@ export enum DayOfWeek {
     FRIDAY = "FRIDAY",
     SATURDAY = "SATURDAY",
     SUNDAY = "SUNDAY",
+}
+
+export enum AiringState {
+    RECORDED = "RECORDED",
+    PARTIAL = "PARTIAL",
+    RECORDING = "RECORDING",
+    ON_AIR = "ON_AIR",
+    PLANNED = "PLANNED",
+    ARCHIVED = "ARCHIVED",
+    OPEN = "OPEN",
+    MISSED = "MISSED",
 }
