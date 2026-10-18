@@ -56,9 +56,7 @@
       <div class="calendar-side">
         <div class="calendar-day skeleton h-22 @min-[800px]:h-27.5"></div>
         <div class="calendar-period">
-          <div
-            class="skeleton h-23.5 md-down:h-27 @min-[945px]:@max-[1057px]:h-11.5 @min-[1057px]:h-38"
-          ></div>
+          <div class="skeleton h-32 @min-[945px]:@max-[1057px]:h-16 @min-[1057px]:h-46.5"></div>
         </div>
       </div>
     </div>

@@ -37,11 +37,13 @@
         >
           <span class="extreme-content">
             <daily-profit-cell :variant="extreme.variant" class="extreme-swatch" />
-            <span>{{ extreme.label }}</span>
-            <span class="extreme-amount" :class="getGainLossClass(extreme.day.change)">
-              {{ formatCurrencyChange(extreme.day.change) }}
+            <span class="extreme-label">{{ extreme.label }}</span>
+            <span class="extreme-value">
+              <span class="extreme-amount" :class="getGainLossClass(extreme.day.change)">
+                {{ formatCurrencyChange(extreme.day.change) }}
+              </span>
+              <span>{{ formatDayMonth(extreme.day.date) }}</span>
             </span>
-            <span>{{ formatDayMonth(extreme.day.date) }}</span>
           </span>
         </button>
       </div>

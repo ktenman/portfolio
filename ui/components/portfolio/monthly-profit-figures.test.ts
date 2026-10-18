@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createCalendarRow as row, createMonthlyProfit } from '../../tests/fixtures'
 import type { MonthlyProfit } from '../../services/monthly-profit'
+import { formatCurrencyChange } from '../../utils/formatters'
 import MonthlyProfitFigures from './monthly-profit-figures.vue'
 
 const mountFigures = (model: MonthlyProfit = createMonthlyProfit()) =>
@@ -32,6 +33,19 @@ describe('MonthlyProfitFigures', () => {
       wrapper.text().includes('Worst month'),
       wrapper.emitted('select'),
     ]).toEqual([1, true, true, 'by euro profit', false, [['2025-11']]])
+  })
+
+  it('sets the amount and month of a shortcut beneath its label', () => {
+    const model = createMonthlyProfit()
+    const button = mountFigures(model).find('button')
+
+    expect([
+      normalised(button.find('.extreme-label').text()),
+      button.findAll('.extreme-value > span').map(span => span.text()),
+    ]).toEqual([
+      'Best month by euro profit',
+      [formatCurrencyChange(model.best!.change), 'Nov 2025'],
+    ])
   })
 
   it('shows a dash average and the excluded count without single months', () => {

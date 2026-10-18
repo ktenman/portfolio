@@ -48,28 +48,42 @@
 }
 
 .extreme-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
 .extreme-btn {
-  flex: 1 1 auto;
-  padding-inline: 14px 8px;
+  justify-content: flex-start;
+  padding: 8px 12px 9px;
+  text-align: start;
 }
 
 .extreme-content {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 6px;
+  align-items: center;
 }
 
 .extreme-swatch {
-  align-self: center;
   width: 9px;
 }
 
+.extreme-label {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.extreme-value {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 6px;
+  align-items: baseline;
+}
+
 .extreme-amount {
+  font-size: var(--text-base);
   font-weight: 550;
 }
 
@@ -79,8 +93,6 @@
   }
 
   .extreme-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     justify-items: start;
   }
@@ -110,9 +122,5 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-flow: column;
     gap: 12px 6px;
-  }
-
-  .extreme-btn {
-    flex-basis: 0;
   }
 }
