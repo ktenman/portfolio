@@ -69,35 +69,26 @@ fun captures(
     .sortedBy { it.start }
     .fold(emptyList<List<PlannedAiring>>()) { groups, airing ->
       val last = groups.lastOrNull()
-      if (last != null &&
-        airing.start - PADDING <= last.maxOf { it.end } + PADDING
-      ) {
-          groups.dropLast(1) + listOf(last + airing)
-        } else {
-          groups +
-          listOf(listOf(airing))
-        }
+      when {
+        last == null || airing.start - PADDING > last.maxOf { it.end } + PADDING -> groups + listOf(listOf(airing))
+        else -> groups.dropLast(1) + listOf(last + airing)
+      }
     }.map { capture(it, zone) }
 
 private fun capture(
   group: List<PlannedAiring>,
   zone: ZoneId,
 ): Capture {
-  val slugs =
-    group
-      .map {
-    it.slug
-    .lowercase()
-    .replace(UNSAFE, "-")
-    .trim('-')
-  }.distinct()
+  val slugs = group.map { safe(it.slug) }.distinct()
   return Capture(
-    name = (listOf(MINUTE.format(group.first().start.atZone(zone))) + slugs).joinToString("-"),
+    name = slugs.joinToString("-", prefix = "${MINUTE.format(group.first().start.atZone(zone))}-"),
     programmes = group.map { it.programme }.distinct(),
     start = (group.first().start - PADDING).epochSecond,
     end = (group.maxOf { it.end } + PADDING).epochSecond,
   )
 }
+
+private fun safe(slug: String): String = slug.lowercase().replace(UNSAFE, "-").trim('-')
 
 fun slots(
   times: List<Pair<Instant, Instant>>,

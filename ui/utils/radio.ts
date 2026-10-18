@@ -19,31 +19,29 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
 }
 
-const LETTERS = Object.values(DayOfWeek)
+const DAYS = Object.values(DayOfWeek)
 const LETTER = 'ETKNRLP'
-
-const run = (days: DayOfWeek[]): string => {
-  const first = LETTER[LETTERS.indexOf(days[0])]
-  const last = LETTER[LETTERS.indexOf(days[days.length - 1])]
-  return days.length > 2 ? `${first}–${last}` : days.map(d => LETTER[LETTERS.indexOf(d)]).join(', ')
-}
 
 const weekdays = (days: DayOfWeek[]): string =>
   days
-    .reduce<DayOfWeek[][]>((runs, d) => {
-      const current = runs[runs.length - 1]
-      const next =
-        current && LETTERS.indexOf(d) === LETTERS.indexOf(current[current.length - 1]) + 1
-      return next ? [...runs.slice(0, -1), [...current, d]] : [...runs, [d]]
+    .map(d => DAYS.indexOf(d))
+    .reduce<number[][]>((runs, i) => {
+      const last = runs[runs.length - 1]
+      if (last && last[last.length - 1] === i - 1) last.push(i)
+      else runs.push([i])
+      return runs
     }, [])
-    .map(run)
+    .map(run =>
+      run.length > 2
+        ? `${LETTER[run[0]]}–${LETTER[run[run.length - 1]]}`
+        : run.map(i => LETTER[i]).join(', ')
+    )
     .join(', ')
-
-export const airTime = (slot: AirSlot): string =>
-  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}–${slot.end.slice(0, 5)}`
 
 export const airStart = (slot: AirSlot): string =>
   `${weekdays(slot.days)} ${slot.start.slice(0, 5)}`
+
+export const airTime = (slot: AirSlot): string => `${airStart(slot)}–${slot.end.slice(0, 5)}`
 
 export const LINK =
   'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'

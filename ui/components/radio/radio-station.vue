@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import type { StationAiring } from '../../models/generated/domain-models'
 import { useRadioStation } from '../../composables/use-radio-recordings'
-import { clock, day, LINK } from '../../utils/radio'
+import { clock, day, LINK, range } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
@@ -27,7 +27,7 @@ import RadioFacts from './radio-facts.vue'
 const { data: station } = useRadioStation()
 
 const airing = (a: StationAiring) =>
-  `${clock(a.start, 0)}–${clock(a.end, 0)} · ${a.recorded ? 'salvestatakse' : 'ei salvestata'}`
+  `${range(a.start, 0, a.end - a.start)} · ${a.recorded ? 'salvestatakse' : 'ei salvestata'}`
 
 const recorder = computed<[string, string][]>(() => {
   const s = station.value

@@ -20,18 +20,9 @@ class RadioArchiveService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun recordings(): List<RecordingSummary> {
-    val root = radioProperties.recordings
-    if (!Files.isDirectory(root)) return emptyList()
-    return Files
-      .list(root)
-      .use { it.toList() }
-      .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
-      .sortedDescending()
-      .mapNotNull { directory ->
-        runCatching { summary(directory) }.onFailure { log.warn("Cannot read radio recording $directory", it) }.getOrNull()
-      }
-  }
+  fun recordings(): List<RecordingSummary> = directories().mapNotNull { readable(it, ::summary) }
+
+  fun statuses(): List<RecordingStatus> = directories().mapNotNull { readable(it, ::readStatus) }
 
   fun transcript(name: String): List<TranscriptLine>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
@@ -87,6 +78,21 @@ class RadioArchiveService(
     save(directory.resolve(CHECKED), check)
     return true
   }
+
+  private fun directories(): List<Path> {
+    val root = radioProperties.recordings
+    if (!Files.isDirectory(root)) return emptyList()
+    return Files
+      .list(root)
+      .use { it.toList() }
+      .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
+      .sortedDescending()
+  }
+
+  private fun <T> readable(
+    directory: Path,
+    read: (Path) -> T,
+  ): T? = runCatching { read(directory) }.onFailure { log.warn("Cannot read radio recording $directory", it) }.getOrNull()
 
   private fun directory(
     name: String,

@@ -44,10 +44,11 @@ def plan(recordings, *captures):
 
 
 SATURDAY = ("2026-10-24-keskpaevatund", "Keskpäevatund", "2026-10-24T11:55", "2026-10-24T13:05")
+NEXT_SATURDAY = ("2026-10-31-keskpaevatund", "Keskpäevatund", "2026-10-31T11:55", "2026-10-31T13:05")
 
 
 def test_planned_records_each_capture_into_its_directory_until_its_end(tmp_path):
-    plan(tmp_path, ("2026-10-31-keskpaevatund", "Keskpäevatund", "2026-10-31T11:55", "2026-10-31T13:05"), SATURDAY)
+    plan(tmp_path, NEXT_SATURDAY, SATURDAY)
     week = Week("2026-10-21T09:00", "2026-10-31T12:00")
     record = lambda directory, seconds, programmes: week.calls.append((directory.name, seconds, programmes, shown(week.now))) or "captured"
     with pytest.raises(KeyboardInterrupt):
@@ -100,7 +101,7 @@ def test_planned_records_nothing_from_a_plan_it_cannot_read(tmp_path):
 
 
 def test_planned_waits_for_the_next_capture_after_a_failed_recording(tmp_path):
-    plan(tmp_path, SATURDAY, ("2026-10-31-keskpaevatund", "Keskpäevatund", "2026-10-31T11:55", "2026-10-31T13:05"))
+    plan(tmp_path, SATURDAY, NEXT_SATURDAY)
     week = Week("2026-10-24T11:00", "2026-10-31T12:00")
 
     def record(directory, seconds, programmes):

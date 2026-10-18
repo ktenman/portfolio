@@ -36,8 +36,8 @@ class RadioScheduleService(
     val upcoming = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant()).groupBy { it.programmeId }
     val archived =
       radioArchiveService
-      .recordings()
-      .flatMap { it.status.programmes }
+      .statuses()
+      .flatMap { it.programmes }
       .groupingBy { it }
       .eachCount()
     return radioProgrammeRepository
@@ -68,12 +68,14 @@ class RadioScheduleService(
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now)
     val captures = planned(airings)
-    val names = radioProgrammeRepository.findAllById(airings.take(2).map { it.programmeId }).associate { it.id to it.name }
+    val onAir = airings.firstOrNull { it.startsAt <= now }
+    val next = airings.firstOrNull { it.startsAt > now }
+    val names = radioProgrammeRepository.findAllById(listOfNotNull(onAir, next).map { it.programmeId }).associate { it.id to it.name }
     val root = radioProperties.recordings
     val free = if (Files.isDirectory(root)) Files.getFileStore(root).usableSpace else 0
     return RadioStation(
-      onAir = airings.firstOrNull { it.startsAt <= now }?.let { live(it, names, captures) },
-      next = airings.firstOrNull { it.startsAt > now }?.let { live(it, names, captures) },
+      onAir = onAir?.let { live(it, names, captures) },
+      next = next?.let { live(it, names, captures) },
       capture = captures.firstOrNull(),
       freeBytes = free,
       hours = free / BYTES_PER_HOUR,
@@ -96,7 +98,7 @@ class RadioScheduleService(
   ): StationAiring {
     val start = airing.startsAt.epochSecond
     val end = airing.endsAt.epochSecond
-    return StationAiring(names[airing.programmeId] ?: airing.title, start, end, captures.any { it.start <= start && it.end >= end })
+    return StationAiring(names.getValue(airing.programmeId), start, end, captures.any { it.start <= start && it.end >= end })
   }
 
   private fun upsert(shows: List<KukuShow>): Map<Long, Long> {
@@ -151,6 +153,6 @@ class RadioScheduleService(
   }
 
   companion object {
-    private const val BYTES_PER_HOUR = (256_000L / 8 + 16_000L * 2) * 3600
+    private const val BYTES_PER_HOUR = (256_000L / 8 + RATE * 2L) * 3600
   }
 }
