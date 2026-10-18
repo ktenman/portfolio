@@ -313,6 +313,7 @@ export interface RadioStation {
     recorder: RecorderState;
     last: LastRecording | null;
     format: AudioFormat | null;
+    continuous: ContinuousRecording;
 }
 
 export interface RadioDay {
@@ -474,6 +475,11 @@ export interface Capture {
 export interface LastRecording {
     programme: string;
     end: number;
+}
+
+export interface ContinuousRecording {
+    dayBytes: number;
+    weekBytes: number;
 }
 
 export interface RecordedSpan {

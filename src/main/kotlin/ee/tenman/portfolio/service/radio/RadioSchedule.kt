@@ -57,6 +57,12 @@ data class RadioStation(
   val recorder: RecorderState,
   val last: LastRecording?,
   val format: AudioFormat?,
+  val continuous: ContinuousRecording,
+)
+
+data class ContinuousRecording(
+  val dayBytes: Long,
+  val weekBytes: Long,
 )
 
 enum class RecorderState { WAITING, RECORDING, OFF }
