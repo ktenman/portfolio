@@ -13,7 +13,9 @@ Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), numpy, FFmpeg and ffpr
 ```bash
 uv run pytest                                      # Tests: no network, no model
 uv run radio-worker station <recording.mp3>        # Replay at http://127.0.0.1:8770/stream.m3u8
-uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 directory>
+uv run radio-worker model <directory>              # The pinned TalTech model into <directory>/ct2, checked by SHA-256
+uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 directory>   # Kuku live
+uv run radio-worker run --source <recording.mp3> --start <ISO time> --out <directory> --model <ct2 directory>   # A file, to its end
 uv run radio-worker planned --recordings <directory> --model <directory>     # Every capture the backend lists in <directory>/plan.json
 docker build -t radio-worker .                     # Image without the model, which is mounted at /model
 docker build --target test -t radio-worker-test . && docker run --rm radio-worker-test   # Tests inside the image, as CI runs them
@@ -31,6 +33,24 @@ docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolu
 - `src/radio_worker/cli.py` - The `station`, `run` and `planned` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
 - `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`
+
+## From a fresh clone
+
+`npm run dev` points the backend at the gitignored `radio-data/recordings`. From `radio-worker/`:
+
+```bash
+uv run radio-worker model ../radio-data/model
+uv run radio-worker run --duration 600 --programme Kuku --out ../radio-data/recordings/2026-10-18-1200-kuku --model ../radio-data/model/ct2
+uv run radio-worker run --source ~/keskpaevatund.mp3 --start 2026-10-17T11:55 --programme Keskpäevatund --out ../radio-data/recordings/2026-10-17-1155-keskpaevatund --model ../radio-data/model/ct2
+```
+
+The directory name is the recording's name in the Raadio tab: lowercase letters, digits and hyphens. `--start` is the time the recording went on air, in Tallinn time; without it, the start is now. A file is read to its end as fast as FFmpeg can; Kuku live takes `--duration`. Cuts and topics also need `OPENROUTER_API_KEY` in the backend; the transcript shows without it.
+
+The full Docker stack runs the worker as production does, recording every programme ticked „Iga kord“ into the `radio_recordings` volume:
+
+```bash
+SCHEDULING_ENABLED=true docker compose -f docker-compose.local.yml --profile radio up -d --build
+```
 
 ## Production
 

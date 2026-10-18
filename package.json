@@ -7,7 +7,7 @@
     "predev": "docker stop $(docker ps -q) 2>/dev/null; docker ps -aq | xargs -r docker rm 2>/dev/null; lsof -ti:8081,61234 | xargs kill -9 2>/dev/null; echo 'Cleanup complete' && npm run --silent docker:build-proxy",
     "dev": "concurrently -k -p '[{name}]' -n 'BACKEND,FRONTEND' -c 'blue,green' 'npm run dev:backend' 'npm run dev:ui'",
     "dev:ui": "vite",
-    "dev:backend": "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' ./gradlew bootRun",
+    "dev:backend": "GRADLE_OPTS='--enable-native-access=ALL-UNNAMED' RADIO_RECORDINGS=$PWD/radio-data/recordings ./gradlew bootRun",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint ui --fix",
