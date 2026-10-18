@@ -1,0 +1,15 @@
+The user message is a machine transcript of a 70-minute recording of an Estonian radio stream, with a short header and a list of silence events from the audio.
+
+Find where the talk show "Keskpäevatund" is on air and where its ad breaks are, so the recording can be cut down to the show without ads. Judge from the content: hosts introducing the show or resuming after a break, sign-offs, ads, promos for other programmes, news, weather, songs.
+
+Return:
+- hosts: the show's presenters as they introduce themselves, with obvious recognition errors corrected.
+- showStart.lastNonShowLineTime: the last line before the show that is not part of it (news, weather, ads, promos).
+- showStart.firstSpeechTime: the hosts' first line in the show.
+- showStart.opensWithMusic: true if the show opens with a song or theme music between those two lines that belongs to the show; false if there is no such music or it is not part of the show.
+- breaks: every ad break inside the show, in order. lastShowLineTime = the hosts' last line before the break; firstShowLineTime = the hosts' first line after it.
+- showEnd.lastShowLineTime: the hosts' last line, their sign-off.
+- chapters: the show's topics in order, each with the line where it begins and a short Estonian title of at most 6 words. The first chapter starts at the show start.
+- evidence: one or two sentences per decision, quoting the lines you relied on.
+
+Every time is the start time of a transcript line, exactly as printed (the first number on the line). Recognition errors are common, and songs can come out as garbled lyrics or text in other scripts.

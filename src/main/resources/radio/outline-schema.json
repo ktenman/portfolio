@@ -1,0 +1,86 @@
+{
+  "type": "object",
+  "properties": {
+    "hosts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "showStart": {
+      "type": "object",
+      "properties": {
+        "lastNonShowLineTime": {
+          "type": "number",
+          "description": "start time in seconds, exactly as printed at the start of the transcript line"
+        },
+        "firstSpeechTime": {
+          "type": "number",
+          "description": "start time in seconds, exactly as printed at the start of the transcript line"
+        },
+        "opensWithMusic": {
+          "type": "boolean"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "required": ["lastNonShowLineTime", "firstSpeechTime", "opensWithMusic", "evidence"],
+      "additionalProperties": false
+    },
+    "breaks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lastShowLineTime": {
+            "type": "number",
+            "description": "start time in seconds, exactly as printed at the start of the transcript line"
+          },
+          "firstShowLineTime": {
+            "type": "number",
+            "description": "start time in seconds, exactly as printed at the start of the transcript line"
+          },
+          "evidence": {
+            "type": "string"
+          }
+        },
+        "required": ["lastShowLineTime", "firstShowLineTime", "evidence"],
+        "additionalProperties": false
+      }
+    },
+    "showEnd": {
+      "type": "object",
+      "properties": {
+        "lastShowLineTime": {
+          "type": "number",
+          "description": "start time in seconds, exactly as printed at the start of the transcript line"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "required": ["lastShowLineTime", "evidence"],
+      "additionalProperties": false
+    },
+    "chapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "number",
+            "description": "start time in seconds, exactly as printed at the start of the transcript line"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": ["time", "title"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["hosts", "showStart", "breaks", "showEnd", "chapters"],
+  "additionalProperties": false
+}

@@ -1,0 +1,26 @@
+package ee.tenman.portfolio.service.radio
+
+import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.openrouter.OpenRouterClient
+import org.springframework.stereotype.Service
+import tools.jackson.module.kotlin.readValue
+
+@Service
+class RadioOutlineService(
+  private val openRouterClient: OpenRouterClient,
+) {
+  private val prompt: String = resource("radio/outline-prompt.txt").trimEnd()
+  private val schema: Map<String, Any> = JsonMapperFactory.instance.readValue(resource("radio/outline-schema.json"))
+
+  fun reads(
+    text: String,
+    model: AiModel,
+  ): List<OutlineRead?> = List(READS) { openRouterClient.complete(model, prompt, text, schema)?.let(::parse) }
+
+  private fun resource(path: String): String = checkNotNull(javaClass.classLoader.getResource(path)) { "Missing resource $path" }.readText()
+
+  companion object {
+    private const val READS = 3
+  }
+}

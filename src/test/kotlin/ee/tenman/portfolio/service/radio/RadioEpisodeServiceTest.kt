@@ -1,0 +1,175 @@
+package ee.tenman.portfolio.service.radio
+
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.AiModel
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import tools.jackson.module.kotlin.readValue
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
+import kotlin.math.abs
+
+class RadioEpisodeServiceTest {
+  @TempDir
+  lateinit var directory: Path
+
+  private val outlineService = mockk<RadioOutlineService>()
+
+  private val service =
+    RadioEpisodeService(
+      outlineService,
+      RadioCutService(),
+      RadioRenderService(),
+      RadioProperties(),
+      Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC),
+    )
+
+  private fun outline(
+    before: Double,
+    first: Double,
+    end: Double,
+  ) = OutlineRead(
+    listOf("Ainar Ruussaar"),
+    ShowStart(before, first, false, "Tere."),
+    emptyList(),
+    ShowEnd(end, "Head aega."),
+    listOf(OutlineChapter(first, "Ooperikriis")),
+  )
+
+  private fun transcribed(vararg starts: Double) {
+    val transcript =
+      Transcript(starts.map { TranscriptSegment(it, it + 1, "Tere päevast.") }, starts.map { TranscriptWord(it, it + 1, " Tere") })
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+  }
+
+  private fun show(state: String = "captured") {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), state)
+    transcribed(1.0, 5.0, 50.0)
+  }
+
+  private fun saved(vararg reads: OutlineRead?) {
+    Files.writeString(directory.resolve("outline.json"), JsonMapperFactory.instance.writeValueAsString(reads.toList()))
+  }
+
+  private fun edit(): EditList = JsonMapperFactory.instance.readValue(Files.readString(directory.resolve("edit-list.json")))
+
+  private fun failure(): String = Files.readString(directory.resolve("episode-failed.json"))
+
+  @Test
+  fun `should leave an existing episode alone`() {
+    Files.writeString(directory.resolve("episode.m4a"), "valmis")
+    service.make(directory)
+    expect(Files.readString(directory.resolve("episode.m4a"))).toEqual("valmis")
+  }
+
+  @Test
+  fun `should skip a recording that is still recording`() {
+    show("recording")
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode-failed.json"))).toEqual(false)
+  }
+
+  @Test
+  fun `should read the outline three times and render the show`() {
+    show()
+    every { outlineService.reads(any(), AiModel.GEMINI_3_5_FLASH_LITE) } returns List(3) { outline(1.0, 5.0, 50.0) }
+    service.make(directory)
+    val found = edit()
+    expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
+      .toEqual(Triple(OutlineSummary("google/gemini-3.5-flash-lite", 3, 3, 3), 4.7, true))
+  }
+
+  @Test
+  fun `should reuse saved reads instead of asking again`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should vote with the reads that came back when one request fails`() {
+    show()
+    every { outlineService.reads(any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
+    expect(Triple(reads.first(), edit().outline.matched, Files.exists(directory.resolve("episode.m4a")))).toEqual(Triple(null, 2, true))
+  }
+
+  @Test
+  fun `should save no reads and mark the recording failed when every read fails`() {
+    show()
+    every { outlineService.reads(any(), any()) } returns listOf(null, null, null)
+    service.make(directory)
+    expect(Files.exists(directory.resolve("outline.json")) to ("No outline read came back" in failure())).toEqual(false to true)
+  }
+
+  @Test
+  fun `should mark the recording failed naming the outline file when no read matches`() {
+    show()
+    saved(outline(1.0, 15.0, 50.0))
+    service.make(directory)
+    expect(failure()).toContain("outline.json")
+  }
+
+  @Test
+  fun `should measure chapters and duration without the gap no part covers`() {
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)),
+        FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)),
+      )
+    writeRecording(directory, parts, "partial")
+    transcribed(1.0, 5.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    val found = probe(directory.resolve("episode.m4a"))
+    val duration = found["format"]["duration"].asString().toDouble()
+    val last = found["chapters"].toList().last()
+    val end = last["end_time"].asString().toDouble()
+    expect((abs(edit().durationSeconds - duration) <= 0.1) to (abs(end - duration) <= 0.1)).toEqual(true to true)
+  }
+
+  @Test
+  fun `should skip a recording whose transcript is not finished`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), "captured")
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should leave a recording marked failed alone`() {
+    show()
+    Files.writeString(directory.resolve("episode-failed.json"), "{}")
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should ask for no reads when it cannot write into the recording`() {
+    show()
+    Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))
+    service.make(directory)
+    verify(exactly = 0) { outlineService.reads(any(), any()) }
+  }
+
+  @Test
+  fun `should remove a partial episode when the render fails`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    Files.writeString(directory.resolve("raw.mp3"), "katkine")
+    Files.writeString(directory.resolve("episode.tmp.m4a"), "pooleli")
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode.tmp.m4a"))).toEqual(false)
+  }
+}
