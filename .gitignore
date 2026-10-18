@@ -49,6 +49,9 @@ ui/coverage/
 test-results/
 ui/.vitest/
 
+### Radio archive: model and recordings ###
+radio-data/
+
 ### Environment Variables ###
 .env
 .env.local

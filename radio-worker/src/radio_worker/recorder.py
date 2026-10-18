@@ -22,14 +22,14 @@ POLL_SECONDS = 0.5
 RETRY_SECONDS = 2
 
 
-def prepare(directory: Path, source: str, seconds: float, programmes: list[str] | None = None) -> None:
+def prepare(directory: Path, source: str, seconds: float, programmes: list[str] | None = None, started: float | None = None) -> None:
     if directory.exists():
         claim(directory, source)
         return
     directory.mkdir(parents=True)
     now = time.time()
     named = {"programmes": programmes} if programmes else {}
-    write_status(directory, {"state": "recording", "source": source, "startedAt": round(now, 3), "endsAt": round(now + seconds, 3), "seconds": float(seconds), "parts": [], **named})
+    write_status(directory, {"state": "recording", "source": source, "startedAt": round(now if started is None else started, 3), "endsAt": round(now + seconds, 3), "seconds": float(seconds), "parts": [], **named})
 
 
 def claim(directory: Path, source: str) -> None:
