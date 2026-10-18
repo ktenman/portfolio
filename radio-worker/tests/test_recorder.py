@@ -9,7 +9,7 @@ import pytest
 from pytest import approx
 from support import broadcast, first_silence, sha256, tone, wait
 
-from radio_worker.recorder import KUKU, RATE, hold, prepare, read_status, record, register, stems, write_status
+from radio_worker.recorder import KUKU, RATE, hold, lost, prepare, read_status, record, register, stems, verdict, write_status
 from radio_worker.transcriber import seconds
 
 
@@ -48,6 +48,24 @@ def test_recorder_marks_a_complete_recording_captured(recorded):
     assert read_status(recorded)["state"] == "captured"
 
 
+def test_recorder_counts_nothing_lost_when_the_parts_overlap():
+    parts = [{"offsetSeconds": 0.0, "durationSeconds": 10.0}, {"offsetSeconds": 9.5, "durationSeconds": 10.0}, {"offsetSeconds": 19.0, "durationSeconds": 11.0}]
+    assert lost({"seconds": 30.0, "parts": parts}) == 0
+
+
+def test_recorder_counts_the_seconds_missing_between_two_parts():
+    parts = [{"offsetSeconds": 14.0, "durationSeconds": 16.0}, {"offsetSeconds": 0.0, "durationSeconds": 10.0}]
+    assert lost({"seconds": 30.0, "parts": parts}) == 4
+
+
+def test_recorder_counts_the_seconds_missing_after_the_last_part():
+    assert lost({"seconds": 30.0, "parts": [{"offsetSeconds": 0.0, "durationSeconds": 21.0}]}) == 9
+
+
+def test_recorder_marks_a_recording_in_parts_with_nothing_lost_captured():
+    assert verdict({"parts": [{"file": "raw.mp3"}, {"file": "raw-part-002.mp3"}], "lostSeconds": 0}) == "captured"
+
+
 def test_recorder_logs_when_each_part_starts_and_ends(recorded):
     lines = (recorded / "events.log").read_text().splitlines()
     assert [line.split(" ")[1:3] for line in lines] == [["raw.mp3", "started"], ["raw.mp3", "ended"]]
@@ -65,7 +83,7 @@ def test_recorder_carries_on_into_a_new_part_after_a_restart(tmp_path):
         before = sha256(directory / "raw.mp3")
         record(directory, threading.Event())
     status = read_status(directory)
-    assert ([part["file"] for part in status["parts"]], status["state"], sha256(directory / "raw.mp3")) == (["raw.mp3", "raw-part-002.mp3"], "partial", before)
+    assert ([part["file"] for part in status["parts"]], sha256(directory / "raw.mp3")) == (["raw.mp3", "raw-part-002.mp3"], before)
 
 
 def test_recorder_places_a_part_after_a_drop_at_its_place_in_the_stream(tmp_path):

@@ -257,8 +257,10 @@ export interface RecordingSummary {
     cuts: Cut[];
     timeline: TimelineEntry[];
     audible: KeptSpan[];
+    format: AudioFormat | null;
     transcriptState: TranscriptState;
     cutState: CutState;
+    drops: number;
 }
 
 export interface TranscriptLine {
@@ -357,6 +359,7 @@ export interface RecordingStatus {
     seconds: number;
     parts: RecordingPart[];
     programmes: string[];
+    lostSeconds: number;
 }
 
 export interface EditList {
@@ -398,6 +401,11 @@ export interface TimelineEntry {
 export interface KeptSpan {
     start: number;
     end: number;
+}
+
+export interface AudioFormat {
+    codec: string;
+    bitRate: number;
 }
 
 export interface TranscriptWord {

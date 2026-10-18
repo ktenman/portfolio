@@ -121,7 +121,7 @@ class RadioArchiveService(
       name = directory.fileName.toString(),
       programme = status.title(),
       status = status,
-      sizeBytes = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 },
+      sizeBytes = sizeOf(directory, status),
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
@@ -130,8 +130,24 @@ class RadioArchiveService(
       cuts = cuts,
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
+      format = formatOf(directory, status),
     )
   }
+
+  private fun sizeOf(
+    directory: Path,
+    status: RecordingStatus,
+  ): Long = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 }
+
+  private fun formatOf(
+    directory: Path,
+    status: RecordingStatus,
+  ): AudioFormat? =
+    status.parts
+      .firstOrNull()
+      ?.let { read<Probe>(directory.resolve(it.file.removeSuffix(".mp3") + ".probe.json")) }
+      ?.streams
+      ?.firstOrNull()
 
   private fun timelineOf(
     cuts: List<Cut>,
