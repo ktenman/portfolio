@@ -72,4 +72,45 @@ describe('RadioProgrammes', () => {
     await flushPromises()
     expect(box.element.checked).toBe(false)
   })
+
+  const many = (count: number, recordEvery = false) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      name: `Saade ${i}`,
+      description: null,
+      recordEvery,
+      slots: [{ days: [DayOfWeek.SATURDAY], start: '09:00:00', end: '10:00:00' }],
+      recordings: 0,
+    }))
+
+  const rows = (wrapper: { findAll: (s: string) => unknown[] }) =>
+    wrapper.findAll('[data-testid="radio-programme-row"]').length
+
+  it('should show a programme on a phone as one row with its name and air time', async () => {
+    expect((await mount()).find('[data-testid="radio-programme-row"]').text()).toBe(
+      'KeskpäevatundL 12:00–13:00 · E–K, R 01:00–02:00 Iga kord'
+    )
+  })
+
+  it('should show only the next few programmes on the schedule', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
+    expect(rows(await mount())).toBe(8)
+  })
+
+  it('should show every programme on the schedule from the link', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
+    const wrapper = await mount()
+    await wrapper.find('button').trigger('click')
+    expect(rows(wrapper)).toBe(10)
+  })
+
+  it('should name how many programmes the link shows', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
+    expect((await mount()).find('button').text()).toBe('Kõik 10 saadet saatekavas')
+  })
+
+  it('should show every programme ticked to record however many there are', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue(many(10, true))
+    expect(rows(await mount())).toBe(10)
+  })
 })
