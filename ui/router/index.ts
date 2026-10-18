@@ -46,6 +46,17 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Raadio',
         component: () => import('../components/radio/radio-recordings.vue'),
       },
+      {
+        path: ':name',
+        component: () => import('../components/radio/radio-episode.vue'),
+        children: [
+          {
+            path: '',
+            name: 'RadioListen',
+            component: () => import('../components/radio/radio-listen.vue'),
+          },
+        ],
+      },
     ],
   },
   {
