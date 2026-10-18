@@ -88,4 +88,67 @@ class RadioScheduleTest {
       AirSlot(listOf(DayOfWeek.SATURDAY), LocalTime.of(8, 0), LocalTime.of(9, 0)),
     )
   }
+
+  private val ended =
+    Capture(
+      "2026-10-24-1200-keskpaevatund",
+      listOf("Keskpäevatund"),
+      at("2026-10-24T11:55").epochSecond,
+      at("2026-10-24T13:05").epochSecond,
+    )
+
+  private val afterwards = at("2026-10-24T13:06")
+
+  private fun beat(until: String) = Heartbeat(at(until).epochSecond.toDouble())
+
+  @Test
+  fun `should call the recorder off when it left no heartbeat`() {
+    expect(recorder(null, false, afterwards)).toEqual(RecorderState.OFF)
+  }
+
+  @Test
+  fun `should call the recorder off when its heartbeat ran out over two minutes ago`() {
+    expect(recorder(beat("2026-10-24T13:03"), false, afterwards)).toEqual(RecorderState.OFF)
+  }
+
+  @Test
+  fun `should call the recorder recording while a recording is under way`() {
+    expect(recorder(beat("2026-10-24T13:05"), true, afterwards)).toEqual(RecorderState.RECORDING)
+  }
+
+  @Test
+  fun `should call the recorder waiting between recordings`() {
+    expect(recorder(beat("2026-10-24T13:07"), false, afterwards)).toEqual(RecorderState.WAITING)
+  }
+
+  @Test
+  fun `should miss a capture that ended without a recording from a recorder that never ran`() {
+    expect(missed(listOf(ended), emptySet(), null, afterwards)).toContainExactly(MissedCapture(ended, MissedReason.NEVER_RAN))
+  }
+
+  @Test
+  fun `should blame a recorder that is down for a missed capture`() {
+    expect(missed(listOf(ended), emptySet(), beat("2026-10-24T11:00"), afterwards).map { it.reason }).toContainExactly(MissedReason.DOWN)
+  }
+
+  @Test
+  fun `should blame a running recorder that saved nothing for a missed capture`() {
+    val found = missed(listOf(ended), emptySet(), beat("2026-10-24T13:07"), afterwards)
+    expect(found.map { it.reason }).toContainExactly(MissedReason.SAVED_NOTHING)
+  }
+
+  @Test
+  fun `should not miss a capture that left a recording directory`() {
+    expect(missed(listOf(ended), setOf(ended.name), null, afterwards)).toHaveSize(0)
+  }
+
+  @Test
+  fun `should not miss a capture that has not ended`() {
+    expect(missed(listOf(ended), emptySet(), null, at("2026-10-24T13:00"))).toHaveSize(0)
+  }
+
+  @Test
+  fun `should forget a missed capture a day after it ended`() {
+    expect(missed(listOf(ended), emptySet(), null, at("2026-10-25T13:06"))).toHaveSize(0)
+  }
 }

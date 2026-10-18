@@ -154,6 +154,26 @@ def fake_hub(monkeypatch, content: bytes):
     monkeypatch.setattr(schedule, "MODEL_SHA256", hashlib.sha256(b"verified weights").hexdigest())
 
 
+def heartbeat(recordings):
+    return json.loads((recordings / "heartbeat.json").read_text())
+
+
+def test_planned_leaves_a_heartbeat_until_its_next_check(tmp_path):
+    week = Week("2026-10-24T09:00", "2026-10-24T09:00:30")
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), lambda *_: "captured", clock=week.clock, sleep=week.sleep)
+    assert heartbeat(tmp_path) == {"seen": at("2026-10-24T09:00"), "until": at("2026-10-24T09:01")}
+
+
+def test_planned_leaves_a_heartbeat_until_the_capture_ends(tmp_path):
+    plan(tmp_path, SATURDAY)
+    week = Week("2026-10-24T12:35", "2026-10-24T13:10")
+    record = lambda directory, seconds, programmes: week.calls.append(heartbeat(tmp_path)) or "captured"
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == [{"seen": at("2026-10-24T12:35"), "until": at("2026-10-24T13:05")}]
+
+
 def test_fetch_moves_verified_weights_into_place(tmp_path, monkeypatch):
     fake_hub(monkeypatch, b"verified weights")
     schedule.fetch(tmp_path)
