@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.RadioArchiveService
@@ -30,6 +31,11 @@ class RadioController(
   fun getTranscript(
     @PathVariable name: String,
   ): ResponseEntity<List<TranscriptLine>> = ResponseEntity.ofNullable(radioArchiveService.transcript(name))
+
+  @GetMapping("/{name}/cuts")
+  fun getCuts(
+    @PathVariable name: String,
+  ): ResponseEntity<List<CutContext>> = ResponseEntity.ofNullable(radioArchiveService.contexts(name))
 
   @GetMapping("/{name}/{file}")
   fun getFile(

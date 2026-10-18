@@ -1,5 +1,6 @@
 import {
   CutKind,
+  type CutContext,
   type EditList,
   type RecordingSummary,
   RecordingState,
@@ -79,3 +80,23 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   ],
   ...overrides,
 })
+
+const line = (start: number, end: number, text: string) => ({ start, end, text, words: [] })
+
+export const contexts = (): CutContext[] => {
+  const [before, first, second, after] = recording().cuts
+  return [
+    { cut: before, before: null, after: line(762, 770, ' Tere päevast, kell on kaksteist.') },
+    {
+      cut: first,
+      before: line(2110, 2119.5, ' Ja siinkohal väike paus.'),
+      after: line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
+    },
+    {
+      cut: second,
+      before: line(3018, 3024.8, ' Kohe tuleme tagasi.'),
+      after: line(3138, 3145, ' Kuku Raadio otsestuudios.'),
+    },
+    { cut: after, before: line(3830, 3836.5, ' Ja siinkohal lõpetame.'), after: null },
+  ]
+}

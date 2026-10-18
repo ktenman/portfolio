@@ -165,6 +165,20 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should quote the transcript around each cut of a recording`() {
+    val directory = recording("2026-10-17")
+    transcribed(directory)
+    edited(directory)
+    expect(service.contexts("2026-10-17")?.map { it.cut.kind to it.before?.text }).toEqual(listOf(CutKind.BEFORE to null))
+  }
+
+  @Test
+  fun `should find no cut context for a recording without a transcript`() {
+    edited(recording("2026-10-17"))
+    expect(service.contexts("2026-10-17")).toEqual(null)
+  }
+
+  @Test
   fun `should name the programme of a recording`() {
     recording("2026-10-17")
     expect(service.recordings().single().programme).toEqual("Keskpäevatund")

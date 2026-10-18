@@ -35,6 +35,12 @@ class RadioArchiveService(
 
   fun transcript(name: String): List<TranscriptLine>? = directory(name, TRANSCRIPT_FILE)?.let { lines(readTranscript(it)) }
 
+  fun contexts(name: String): List<CutContext>? {
+    val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    val lines = lines(readTranscript(directory))
+    return cuts(read(directory.resolve(EDIT_LIST)), readStatus(directory).seconds).map { context(it, lines) }
+  }
+
   fun file(
     name: String,
     file: String,

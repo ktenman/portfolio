@@ -101,6 +101,11 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should not find the cuts of a recording without a transcript`() {
+    mockMvc.perform(mvcGet("/api/radio/2026-10-17/cuts")).andExpect(status().isNotFound)
+  }
+
+  @Test
   fun `should not mark a missing transcript checked`() {
     mockMvc.perform(mvcPut("/api/radio/2026-10-17/transcript/checked")).andExpect(status().isNotFound)
   }

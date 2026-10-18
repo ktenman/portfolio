@@ -110,6 +110,24 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should quote the last line before a cut and the first line after it`() {
+    val lines =
+      listOf(
+        TranscriptLine(2100.0, 2119.0, "Ja siinkohal väike paus.", emptyList()),
+        TranscriptLine(2130.0, 2140.0, "Ostke Ülemiste kaubamajast!", emptyList()),
+        TranscriptLine(2256.0, 2270.0, "Ja Keskpäevatund jätkab.", emptyList()),
+      )
+    val found = context(cuts(edit(), 4200.0)[1], lines)
+    expect(found.before?.text to found.after?.text).toEqual("Ja siinkohal väike paus." to "Ja Keskpäevatund jätkab.")
+  }
+
+  @Test
+  fun `should quote nothing before the cut that opens the recording`() {
+    val lines = listOf(TranscriptLine(10.0, 20.0, "Uudised.", emptyList()))
+    expect(context(cuts(edit(), 4200.0)[0], lines).before).toEqual(null)
+  }
+
+  @Test
   fun `should list the cuts and the topics in recording order`() {
     expect(timeline(edit(), 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
       listOf(

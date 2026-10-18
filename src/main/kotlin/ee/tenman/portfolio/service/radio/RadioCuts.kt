@@ -34,6 +34,17 @@ data class CutReview(
   val removed: List<Int>,
 )
 
+data class CutContext(
+  val cut: Cut,
+  val before: TranscriptLine?,
+  val after: TranscriptLine?,
+)
+
+fun context(
+  cut: Cut,
+  lines: List<TranscriptLine>,
+): CutContext = CutContext(cut, lines.lastOrNull { it.start < cut.start }, lines.firstOrNull { it.end > cut.end })
+
 fun cuts(
   edit: EditList?,
   total: Double,

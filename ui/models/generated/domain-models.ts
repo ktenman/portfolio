@@ -269,6 +269,12 @@ export interface CutReview {
     removed: number[];
 }
 
+export interface CutContext {
+    cut: Cut;
+    before: TranscriptLine | null;
+    after: TranscriptLine | null;
+}
+
 export interface Serializable {
 }
 
