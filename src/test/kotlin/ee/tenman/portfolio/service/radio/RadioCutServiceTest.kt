@@ -82,7 +82,7 @@ class RadioCutServiceTest {
 
   @Test
   fun `should end both breaks before the jingle they share`() {
-    val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
+    val (recorded, _) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
     val shared = checkNotNull(jingle(recorded, listOf(20.0, 45.0)))
     expect(listOf(20.0, 45.0).zip(shared).all { (back, match) -> abs(back - (match?.start ?: 0.0) - 2.75) <= 0.06 }).toEqual(true)
   }

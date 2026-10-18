@@ -47,7 +47,7 @@ fun fft(
   var j = 0
   for (i in 1 until n) {
     var bit = n shr 1
-    while (j and bit != 0) {
+    while ((j and bit) != 0) {
       j = j xor bit
       bit = bit shr 1
     }
