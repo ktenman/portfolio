@@ -5,10 +5,12 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 const val PLAN_FILE = "plan.json"
 private val PADDING = Duration.ofMinutes(5)
 private val UNSAFE = Regex("[^0-9a-z]+")
+private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
 
 data class RadioProgrammeDto(
   val id: Long,
@@ -81,12 +83,6 @@ private fun capture(
   group: List<PlannedAiring>,
   zone: ZoneId,
 ): Capture {
-  val day =
-    group
-    .first()
-    .start
-    .atZone(zone)
-    .toLocalDate()
   val slugs =
     group
       .map {
@@ -96,7 +92,7 @@ private fun capture(
     .trim('-')
   }.distinct()
   return Capture(
-    name = (listOf(day.toString()) + slugs).joinToString("-"),
+    name = (listOf(MINUTE.format(group.first().start.atZone(zone))) + slugs).joinToString("-"),
     programmes = group.map { it.programme }.distinct(),
     start = (group.first().start - PADDING).epochSecond,
     end = (group.maxOf { it.end } + PADDING).epochSecond,

@@ -28,6 +28,7 @@ export const useRadioStation = () => {
     queryKey: ['radio-station'],
     queryFn: radioService.station,
     enabled: isAuthenticated,
+    refetchInterval: 60_000,
   })
 }
 

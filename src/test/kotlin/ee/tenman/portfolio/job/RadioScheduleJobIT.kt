@@ -132,7 +132,7 @@ class RadioScheduleJobIT {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     expect(plan().single()).toEqual(
-      Capture("$day-keskpaevatund", listOf("Keskpäevatund"), at("11:55").toEpochSecond(), at("13:05").toEpochSecond()),
+      Capture("$day-1200-keskpaevatund", listOf("Keskpäevatund"), at("11:55").toEpochSecond(), at("13:05").toEpochSecond()),
     )
   }
 
@@ -172,6 +172,12 @@ class RadioScheduleJobIT {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     expect(radioScheduleService.station().capture?.start).toEqual(at("11:55").toEpochSecond())
+  }
+
+  @Test
+  fun `should count the hours the free space holds of MP3 and its PCM`() {
+    val station = radioScheduleService.station()
+    expect(station.hours).toEqual(station.freeBytes / 230_400_000)
   }
 
   @Test

@@ -26,9 +26,9 @@ class RadioScheduleTest {
   @Test
   fun `should record an airing from five minutes before it to five minutes after it`() {
     val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), tallinn)
-    expect(found).toContainExactly(
-      Capture("2026-10-24-keskpaevatund", listOf("Keskpäevatund"), at("2026-10-24T11:55").epochSecond, at("2026-10-24T13:05").epochSecond),
-    )
+    val start = at("2026-10-24T11:55").epochSecond
+    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), start, at("2026-10-24T13:05").epochSecond)
+    expect(found).toContainExactly(expected)
   }
 
   @Test
@@ -39,7 +39,7 @@ class RadioScheduleTest {
         airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00"),
       )
     expect(captures(airings, tallinn).map { it.name to it.programmes })
-      .toContainExactly("2026-10-24-keskpaevatund-tarkade-klubi" to listOf("Keskpäevatund", "Tarkade klubi"))
+      .toContainExactly("2026-10-24-1200-keskpaevatund-tarkade-klubi" to listOf("Keskpäevatund", "Tarkade klubi"))
   }
 
   @Test
@@ -53,15 +53,26 @@ class RadioScheduleTest {
   }
 
   @Test
-  fun `should name a recording after the day its first airing starts on`() {
+  fun `should name a recording after the minute its first airing starts`() {
     val found = captures(listOf(airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-25T00:00", "2026-10-25T01:00")), tallinn)
-    expect(found.single().name).toEqual("2026-10-25-naistejutud-kukus")
+    expect(found.single().name).toEqual("2026-10-25-0000-naistejutud-kukus")
+  }
+
+  @Test
+  fun `should give two airings of one programme on the same day their own recordings`() {
+    val airings =
+      listOf(
+        airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-24T00:00", "2026-10-24T01:00"),
+        airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-24T17:00", "2026-10-24T18:00"),
+      )
+    expect(captures(airings, tallinn).map { it.name })
+      .toContainExactly("2026-10-24-0000-naistejutud-kukus", "2026-10-24-1700-naistejutud-kukus")
   }
 
   @Test
   fun `should turn a slug into a safe directory name`() {
     val found = captures(listOf(airing("Õhtu ÜLE", "Õhtu_ÜLE--Ööl", "2026-10-21T19:00", "2026-10-21T20:00")), tallinn)
-    expect(found.single().name).toEqual("2026-10-21-htu-le-l")
+    expect(found.single().name).toEqual("2026-10-21-1900-htu-le-l")
   }
 
   @Test

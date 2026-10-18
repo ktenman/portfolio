@@ -151,6 +151,6 @@ class RadioScheduleService(
   }
 
   companion object {
-    private const val BYTES_PER_HOUR = 256_000L / 8 * 3600
+    private const val BYTES_PER_HOUR = (256_000L / 8 + 16_000L * 2) * 3600
   }
 }
