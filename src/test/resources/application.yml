@@ -27,6 +27,9 @@ tuleva:
   url: http://localhost:${wiremock.server.port}
   web-url: http://localhost:${wiremock.server.port}
 
+kuku:
+  url: http://localhost:${wiremock.server.port}
+
 ecb:
   url: http://localhost:${wiremock.server.port}
 

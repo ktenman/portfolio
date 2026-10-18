@@ -108,6 +108,11 @@ def test_recorder_adopts_a_part_it_never_registered(tmp_path):
     assert [part["file"] for part in read_status(directory)["parts"]] == ["raw.mp3"]
 
 
+def test_recorder_names_the_programmes_it_records_in_the_status(tmp_path):
+    prepare(tmp_path / "rec", KUKU, 0, ["Keskpäevatund", "Tarkade klubi"])
+    assert read_status(tmp_path / "rec")["programmes"] == ["Keskpäevatund", "Tarkade klubi"]
+
+
 def test_recorder_refuses_a_directory_another_worker_holds(tmp_path):
     with hold(tmp_path), pytest.raises(FileExistsError, match="another worker"), hold(tmp_path):
         pass

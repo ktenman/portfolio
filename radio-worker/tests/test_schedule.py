@@ -1,10 +1,11 @@
 import datetime as dt
 import hashlib
+import json
 
 import pytest
 
 from radio_worker import schedule
-from radio_worker.schedule import TALLINN, saturdays, window
+from radio_worker.schedule import TALLINN, planned
 
 
 def at(text: str) -> float:
@@ -37,66 +38,100 @@ def model(directory):
     return directory
 
 
-def test_window_on_a_wednesday_is_the_coming_saturday_show():
-    start, end = window(at("2026-10-21T09:00"))
-    assert (shown(start), shown(end)) == ("2026-10-24T11:55:00+03:00", "2026-10-24T13:05:00+03:00")
+def plan(recordings, *captures):
+    listed = [{"name": name, "programmes": [programme], "start": at(start), "end": at(end)} for name, programme, start, end in captures]
+    (recordings / "plan.json").write_text(json.dumps(listed))
 
 
-def test_window_during_the_show_is_the_show_on_air():
-    assert window(at("2026-10-24T12:30")) == (at("2026-10-24T11:55"), at("2026-10-24T13:05"))
+SATURDAY = ("2026-10-24-keskpaevatund", "Keskpäevatund", "2026-10-24T11:55", "2026-10-24T13:05")
 
 
-def test_window_after_the_show_is_the_next_saturday_in_winter_time():
-    start, _ = window(at("2026-10-24T13:05"))
-    assert shown(start) == "2026-10-31T11:55:00+02:00"
-
-
-def test_saturdays_records_each_show_into_its_dated_directory_until_its_end(tmp_path):
+def test_planned_records_each_capture_into_its_directory_until_its_end(tmp_path):
+    plan(tmp_path, ("2026-10-31-keskpaevatund", "Keskpäevatund", "2026-10-31T11:55", "2026-10-31T13:05"), SATURDAY)
     week = Week("2026-10-21T09:00", "2026-10-31T12:00")
-    record = lambda directory, seconds: week.calls.append((directory.name, seconds, shown(week.now))) or "captured"
+    record = lambda directory, seconds, programmes: week.calls.append((directory.name, seconds, programmes, shown(week.now))) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
-    assert week.calls == [("2026-10-24", 4200, "2026-10-24T11:55:00+03:00"), ("2026-10-31", 4200, "2026-10-31T11:55:00+02:00")]
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == [
+        ("2026-10-24-keskpaevatund", 4200, ["Keskpäevatund"], "2026-10-24T11:55:00+03:00"),
+        ("2026-10-31-keskpaevatund", 4200, ["Keskpäevatund"], "2026-10-31T11:55:00+02:00"),
+    ]
 
 
-def test_saturdays_started_during_the_show_records_only_the_rest_of_it(tmp_path):
+def test_planned_started_during_a_capture_records_only_the_rest_of_it(tmp_path):
+    plan(tmp_path, SATURDAY)
     week = Week("2026-10-24T12:35", "2026-10-24T14:00")
-    record = lambda directory, seconds: week.calls.append((directory.name, seconds)) or "captured"
+    record = lambda directory, seconds, programmes: week.calls.append((directory.name, seconds)) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
-    assert week.calls == [("2026-10-24", 1800)]
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == [("2026-10-24-keskpaevatund", 1800)]
 
 
-def test_saturdays_waits_for_the_next_show_after_a_failed_recording(tmp_path):
+def test_planned_picks_up_a_capture_added_while_it_waits(tmp_path):
+    week = Week("2026-10-24T09:00", "2026-10-24T12:30")
+    wait = week.sleep
+
+    def sleep(seconds):
+        wait(seconds)
+        if week.now >= at("2026-10-24T11:00"):
+            plan(tmp_path, SATURDAY)
+
+    record = lambda directory, seconds, programmes: week.calls.append(shown(week.now)) or "captured"
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=sleep)
+    assert week.calls == ["2026-10-24T11:55:00+03:00"]
+
+
+def test_planned_records_nothing_without_a_plan(tmp_path):
+    week = Week("2026-10-24T09:00", "2026-10-25T09:00")
+    record = lambda directory, seconds, programmes: week.calls.append(directory.name) or "captured"
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == []
+
+
+def test_planned_records_nothing_from_a_plan_it_cannot_read(tmp_path):
+    (tmp_path / "plan.json").write_text("{ pooleli")
+    week = Week("2026-10-24T09:00", "2026-10-25T09:00")
+    record = lambda directory, seconds, programmes: week.calls.append(directory.name) or "captured"
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == []
+
+
+def test_planned_waits_for_the_next_capture_after_a_failed_recording(tmp_path):
+    plan(tmp_path, SATURDAY, ("2026-10-31-keskpaevatund", "Keskpäevatund", "2026-10-31T11:55", "2026-10-31T13:05"))
     week = Week("2026-10-24T11:00", "2026-10-31T12:00")
 
-    def record(directory, seconds):
+    def record(directory, seconds, programmes):
         week.calls.append(directory.name)
         raise RuntimeError("Kuku is off air")
 
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
-    assert week.calls == ["2026-10-24", "2026-10-31"]
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+    assert week.calls == ["2026-10-24-keskpaevatund", "2026-10-31-keskpaevatund"]
 
 
-def test_saturdays_downloads_a_missing_model_before_the_show(tmp_path):
+def test_planned_downloads_a_missing_model_before_the_capture(tmp_path):
+    plan(tmp_path, SATURDAY)
     week = Week("2026-10-21T09:00", "2026-10-24T12:00")
     download = lambda directory: week.calls.append(("download", shown(week.now))) or model(directory)
-    record = lambda directory, seconds: week.calls.append(("record", shown(week.now))) or "captured"
+    record = lambda directory, seconds, programmes: week.calls.append(("record", shown(week.now))) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, tmp_path / "model", record, download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", record, download, week.clock, week.sleep)
     assert week.calls == [("download", "2026-10-21T09:00:00+03:00"), ("record", "2026-10-24T11:55:00+03:00")]
 
 
-def test_saturdays_never_downloads_the_model_during_the_show(tmp_path):
+def test_planned_never_downloads_the_model_during_a_capture(tmp_path):
+    plan(tmp_path, SATURDAY)
     week = Week("2026-10-24T12:00", "2026-10-24T13:30")
     download = lambda directory: week.calls.append(shown(week.now))
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, tmp_path / "model", lambda directory, seconds: "captured", download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes: "captured", download, week.clock, week.sleep)
     assert week.calls == ["2026-10-24T13:05:00+03:00"]
 
 
-def test_saturdays_retries_a_failed_download_within_the_hour(tmp_path):
+def test_planned_retries_a_failed_download_within_the_hour(tmp_path):
     week = Week("2026-10-21T09:00", "2026-10-21T11:30")
 
     def download(directory):
@@ -104,7 +139,7 @@ def test_saturdays_retries_a_failed_download_within_the_hour(tmp_path):
         raise OSError("Hugging Face is unreachable")
 
     with pytest.raises(KeyboardInterrupt):
-        saturdays(tmp_path, tmp_path / "model", lambda directory, seconds: "captured", download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes: "captured", download, week.clock, week.sleep)
     assert week.calls == ["2026-10-21T09:00:00+03:00", "2026-10-21T10:00:00+03:00", "2026-10-21T11:00:00+03:00"]
 
 

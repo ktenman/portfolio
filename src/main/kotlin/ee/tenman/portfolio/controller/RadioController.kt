@@ -4,7 +4,11 @@ import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.JingleReview
+import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioArchiveService
+import ee.tenman.portfolio.service.radio.RadioProgrammeDto
+import ee.tenman.portfolio.service.radio.RadioScheduleService
+import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
 import org.springframework.core.io.Resource
@@ -24,9 +28,22 @@ import kotlin.text.Charsets.UTF_8
 @RequestMapping("/api/radio")
 class RadioController(
   private val radioArchiveService: RadioArchiveService,
+  private val radioScheduleService: RadioScheduleService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
+
+  @GetMapping("/programmes")
+  fun getProgrammes(): List<RadioProgrammeDto> = radioScheduleService.programmes()
+
+  @GetMapping("/station")
+  fun getStation(): RadioStation = radioScheduleService.station()
+
+  @PutMapping("/programmes/{id}")
+  fun putProgramme(
+    @PathVariable id: Long,
+    @RequestBody choice: ProgrammeChoice,
+  ): ResponseEntity<Void> = done(radioScheduleService.choose(id, choice))
 
   @GetMapping("/{name}/transcript")
   fun getTranscript(

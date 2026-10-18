@@ -12,6 +12,7 @@ const split = () =>
   recording({
     status: {
       state: RecordingState.PARTIAL,
+      programmes: ['Keskpäevatund'],
       startedAt: 1792227300,
       seconds: 4200,
       parts: [

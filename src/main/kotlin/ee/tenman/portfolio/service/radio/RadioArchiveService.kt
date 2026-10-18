@@ -113,7 +113,7 @@ class RadioArchiveService(
     val cuts = cutsOf(directory, edit, status.seconds)
     return RecordingSummary(
       name = directory.fileName.toString(),
-      programme = PROGRAMME,
+      programme = status.title(),
       status = status,
       sizeBytes = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 },
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),

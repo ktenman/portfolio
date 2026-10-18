@@ -1,6 +1,8 @@
 import {
+  type AirSlot,
   BoundaryMethod,
   CutState,
+  DayOfWeek,
   type KeptSpan,
   type RecordingSummary,
   RecordingState,
@@ -16,6 +18,32 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.LEVEL_DIP]: 'helitaseme langus',
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
 }
+
+const LETTERS = Object.values(DayOfWeek)
+const LETTER = 'ETKNRLP'
+
+const run = (days: DayOfWeek[]): string => {
+  const first = LETTER[LETTERS.indexOf(days[0])]
+  const last = LETTER[LETTERS.indexOf(days[days.length - 1])]
+  return days.length > 2 ? `${first}–${last}` : days.map(d => LETTER[LETTERS.indexOf(d)]).join(', ')
+}
+
+const weekdays = (days: DayOfWeek[]): string =>
+  days
+    .reduce<DayOfWeek[][]>((runs, d) => {
+      const current = runs[runs.length - 1]
+      const next =
+        current && LETTERS.indexOf(d) === LETTERS.indexOf(current[current.length - 1]) + 1
+      return next ? [...runs.slice(0, -1), [...current, d]] : [...runs, [d]]
+    }, [])
+    .map(run)
+    .join(', ')
+
+export const airTime = (slot: AirSlot): string =>
+  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}–${slot.end.slice(0, 5)}`
+
+export const airStart = (slot: AirSlot): string =>
+  `${weekdays(slot.days)} ${slot.start.slice(0, 5)}`
 
 export const LINK =
   'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'

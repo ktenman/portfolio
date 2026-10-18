@@ -196,7 +196,7 @@ services:
     container_name: radio-worker
     image: ktenman/radio-worker:latest
     profiles: [radio]
-    command: ["saturdays"]
+    command: ["planned"]
     restart: always
     stop_grace_period: 90s
     cpus: 1.5
