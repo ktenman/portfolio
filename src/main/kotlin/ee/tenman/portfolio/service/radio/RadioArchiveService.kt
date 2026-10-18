@@ -79,6 +79,37 @@ class RadioArchiveService(
     return true
   }
 
+  fun add(
+    name: String,
+    cut: ManualCut,
+  ): Boolean {
+    val directory = directory(name, EDIT_LIST) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
+    val status = readStatus(directory)
+    val db = loudness(Timeline(directory, status.parts))
+    val snapped = ManualCut(rounded(snap(db, cut.start)), rounded(snap(db, cut.end)))
+    require(snapped.start >= 0 && snapped.start < snapped.end && snapped.end <= status.seconds) {
+      "Manual cut $snapped of $name is not a span within 0-${status.seconds} s"
+    }
+    require(cuts(edit, status.seconds).none { snapped.start < it.end && it.start < snapped.end }) {
+      "Manual cut $snapped overlaps a cut of $name"
+    }
+    save(directory.resolve(EDIT_LIST), edit.copy(manual = edit.manual + snapped))
+    return true
+  }
+
+  fun drop(
+    name: String,
+    index: Int,
+  ): Boolean {
+    val directory = directory(name, EDIT_LIST) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
+    val cut = cuts(edit, readStatus(directory).seconds).getOrNull(index)?.takeIf { it.kind == CutKind.MANUAL } ?: return false
+    require(!cut.removed) { "Manual cut $index of $name is in the episode; keep it before dropping it" }
+    save(directory.resolve(EDIT_LIST), edit.copy(manual = edit.manual.filterNot { it.start == cut.start && it.end == cut.end }))
+    return true
+  }
+
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
     val check = TranscriptCheck(Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())

@@ -52,6 +52,7 @@ const editList = (overrides: Partial<EditList> = {}): EditList => ({
     { start: 3400, title: 'President Ülle Madise' },
   ],
   music: [],
+  manual: [],
   ...overrides,
 })
 

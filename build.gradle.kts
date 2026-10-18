@@ -242,6 +242,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.service.radio.TranscriptLine",
       "ee.tenman.portfolio.service.radio.CutReview",
       "ee.tenman.portfolio.service.radio.JingleReview",
+      "ee.tenman.portfolio.service.radio.ManualCut",
       "ee.tenman.portfolio.service.radio.CutContext",
       "ee.tenman.portfolio.service.radio.RadioProgrammeDto",
       "ee.tenman.portfolio.service.radio.ProgrammeChoice",

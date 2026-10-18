@@ -3,10 +3,12 @@ package ee.tenman.portfolio.service.radio
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
+import kotlin.math.abs
 import kotlin.math.round
 
 const val TRANSCRIPT = "transcript only"
 private const val DIP = "level dip"
+private const val REACH = 2.0
 
 fun firstWord(line: TranscriptLine): Double {
   val words = line.words
@@ -25,6 +27,15 @@ fun leave(
   if (gap != null) return (gap.first + gap.second) / 2 to DIGITAL
   val dip = dips(db, wordEnd, wordEnd + limit).firstOrNull() ?: return wordEnd + 0.2 to TRANSCRIPT
   return dip to DIP
+}
+
+fun snap(
+  db: DoubleArray,
+  seconds: Double,
+): Double {
+  val nearest = { found: List<Double> -> found.minByOrNull { abs(it - seconds) } }
+  val quiet = silences(db, seconds - REACH, seconds + REACH).map { (it.first + it.second) / 2 }
+  return nearest(quiet) ?: nearest(dips(db, seconds - REACH, seconds + REACH)) ?: seconds
 }
 
 @Service

@@ -1,5 +1,5 @@
 <template>
-  <p v-if="!recording.cuts.length" class="text-ink-soft">Lõikesoovitusi veel pole.</p>
+  <p v-if="!recording.editList" class="text-ink-soft">Lõikesoovitusi veel pole.</p>
   <div v-else class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="grid gap-4">
       <radio-card :title="`Salvestus ${span(recording)}`">
@@ -31,7 +31,7 @@
         <span class="text-sm text-ink-soft">Masinteksti ja vaikuste järgi · kuula enne otsust</span>
       </div>
       <radio-cut-card
-        v-for="(cut, i) in recording.cuts"
+        v-for="{ cut, i } in ordered"
         :key="cut.start"
         :cut="cut"
         :context="contexts.data.value?.[i]"
@@ -39,7 +39,9 @@
         :removed="removed.includes(i)"
         @choose="choose(i, $event)"
         @jingle="jingle(i, $event)"
+        @drop="drop(i)"
       />
+      <radio-manual-cut :recording="recording" />
     </div>
     <radio-card title="Tulemus">
       <div data-testid="radio-cut-result">
@@ -69,6 +71,7 @@ import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioFacts from './radio-facts.vue'
+import RadioManualCut from './radio-manual-cut.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
@@ -85,7 +88,13 @@ const removed = ref(saved())
 const saving = ref(false)
 watch(
   () => props.recording.cuts,
-  () => (removed.value = saved())
+  (cuts, before) =>
+    (removed.value =
+      cuts.length === before.length + 1 ? [...removed.value, before.length] : saved())
+)
+
+const ordered = computed(() =>
+  props.recording.cuts.map((cut, i) => ({ cut, i })).sort((a, b) => a.cut.start - b.cut.start)
 )
 
 const machine = computed(() => removed.value.length === props.recording.cuts.length)
@@ -126,6 +135,12 @@ const jingle = (index: number, saved: boolean) =>
     .catch(() =>
       toast.error(saved ? 'Džinglit ei saanud salvestada' : 'Džinglit ei saanud unustada')
     )
+
+const drop = (index: number) =>
+  radioService
+    .dropCut(props.recording.name, index)
+    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
+    .catch(() => toast.error('Lõiget ei saanud kustutada'))
 
 const apply = async () => {
   const confirmed = await confirm({

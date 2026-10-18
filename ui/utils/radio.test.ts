@@ -9,6 +9,7 @@ import {
   length,
   megabytes,
   minutes,
+  offset,
   position,
   recordingTime,
 } from './radio'
@@ -29,6 +30,16 @@ describe('recordingTime', () => {
 
   it('should stop at the end of the last kept span', () => {
     expect(recordingTime(MACHINE, 9999)).toEqual(3837)
+  })
+})
+
+describe('offset', () => {
+  it('should find a clock time in the recording', () => {
+    expect(offset(STARTED, '12:31:05')).toEqual(2165)
+  })
+
+  it('should find no time in text that is not a clock time', () => {
+    expect(offset(STARTED, '12.31')).toBeNull()
   })
 })
 
