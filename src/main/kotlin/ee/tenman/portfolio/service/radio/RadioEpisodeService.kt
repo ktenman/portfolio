@@ -97,7 +97,16 @@ class RadioEpisodeService(
     keep: List<KeptSpan>,
   ): EditList? {
     val saved = directory.resolve(EDIT_LIST).takeIf(Files::exists) ?: return null
-    val edit = JsonMapperFactory.instance.readValue<EditList>(Files.readString(saved))
+    val reviewed = rerender(directory, JsonMapperFactory.instance.readValue<EditList>(Files.readString(saved)), keep)
+    save(saved, reviewed)
+    return reviewed
+  }
+
+  private fun rerender(
+    directory: Path,
+    edit: EditList,
+    keep: List<KeptSpan>,
+  ): EditList {
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val spans = keep.map { it.start to it.end }
@@ -108,18 +117,22 @@ class RadioEpisodeService(
     runCatching { radioRenderService.render(timeline, spans, marks, title(status), temporary) }
       .onFailure { Files.deleteIfExists(temporary) }
       .getOrThrow()
-    val reviewed =
-      edit.copy(
-        keep = keep,
-        durationSeconds = rounded(kept.sumOf { it.second - it.first }),
-        chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
-        reviewed = true,
-        renderedAt = now(),
-      )
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    save(saved, reviewed)
-    return reviewed
+    return reviewed(edit, keep, kept, marks)
   }
+
+  private fun reviewed(
+    edit: EditList,
+    keep: List<KeptSpan>,
+    kept: List<Pair<Double, Double>>,
+    marks: List<Pair<Double, String>>,
+  ) = edit.copy(
+    keep = keep,
+    durationSeconds = rounded(kept.sumOf { it.second - it.first }),
+    chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
+    reviewed = true,
+    renderedAt = now(),
+  )
 
   private fun ordered(
     spans: List<Pair<Double, Double>>,

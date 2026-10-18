@@ -244,6 +244,29 @@ export interface EnumsResponse {
     currencies: string[];
 }
 
+export interface RecordingSummary {
+    name: string;
+    status: RecordingStatus;
+    sizeBytes: number;
+    transcribed: boolean;
+    transcriptCheckedAt: string | null;
+    editList: EditList | null;
+    failure: EpisodeFailure | null;
+    episodeBytes: number | null;
+}
+
+export interface TranscriptLine {
+    start: number;
+    end: number;
+    text: string;
+    words: TranscriptWord[];
+}
+
+export interface KeptSpan {
+    start: number;
+    end: number;
+}
+
 export interface Serializable {
 }
 
@@ -291,9 +314,65 @@ export interface FundWeightDto {
     weight: number;
 }
 
+export interface RecordingStatus {
+    state: string;
+    startedAt: number;
+    seconds: number;
+    parts: RecordingPart[];
+}
+
+export interface EditList {
+    keep: KeptSpan[];
+    durationSeconds: number;
+    parts: RecordingPart[];
+    boundaries: Boundary[];
+    hosts: string[];
+    outline: OutlineSummary;
+    chapters: EpisodeChapter[];
+    reviewed: boolean;
+    renderedAt: string;
+    topics: EpisodeChapter[];
+}
+
+export interface EpisodeFailure {
+    reason: string;
+    failedAt: string;
+}
+
+export interface TranscriptWord {
+    start: number;
+    end: number;
+    word: string;
+}
+
 export interface LargestPositionDto extends Serializable {
     name: string;
     percentage: number;
+}
+
+export interface RecordingPart {
+    file: string;
+    offsetSeconds: number;
+    sha256: string | null;
+}
+
+export interface Boundary {
+    boundary: string;
+    seconds: number;
+    method: string;
+    review: boolean;
+}
+
+export interface OutlineSummary {
+    model: string | null;
+    reads: number;
+    matched: number;
+    voters: number;
+}
+
+export interface EpisodeChapter {
+    start: number;
+    title: string;
 }
 
 type DateAsString = string;
