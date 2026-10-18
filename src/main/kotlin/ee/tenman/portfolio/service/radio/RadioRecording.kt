@@ -68,3 +68,18 @@ fun readTranscript(directory: Path): Transcript =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(TRANSCRIPT_FILE)), Transcript::class.java)
 
 fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()
+
+data class RecordingSummary(
+  val name: String,
+  val status: RecordingStatus,
+  val sizeBytes: Long,
+  val transcribed: Boolean,
+  val transcriptCheckedAt: String?,
+  val editList: EditList?,
+  val failure: EpisodeFailure?,
+  val episodeBytes: Long?,
+)
+
+data class TranscriptCheck(
+  val checkedAt: String,
+)
