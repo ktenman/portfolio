@@ -87,6 +87,28 @@ class RadioCutServiceTest {
     expect(listOf(20.0, 45.0).zip(shared).all { (back, match) -> abs(back - (match?.start ?: 0.0) - 2.75) <= 0.06 }).toEqual(true)
   }
 
+  private fun withShared(
+    seconds: Double,
+    returns: List<Double>,
+  ): ShortArray {
+    val samples = noise(120.0)
+    returns.forEach { back -> chirp(seconds).copyInto(samples, ((back - seconds) * RATE).toInt()) }
+    return samples
+  }
+
+  @Test
+  fun `should not take an ad that closes both breaks for their jingle`() {
+    val (recorded, _) = recording(withShared(30.0, listOf(50.0, 100.0)))
+    expect(jingle(recorded, listOf(50.0, 100.0))).toEqual(null)
+  }
+
+  @Test
+  fun `should keep a shared stretch as long as a jingle`() {
+    val (recorded, _) = recording(withShared(3.0, listOf(50.0, 100.0)))
+    val shared = checkNotNull(jingle(recorded, listOf(50.0, 100.0)))
+    expect(shared.map { abs((it?.start ?: 0.0) % 50.0 - 47.0) <= 0.06 }).toEqual(listOf(true, true))
+  }
+
   @Test
   fun `should end a break at the last dip without a shared jingle`() {
     val samples = noise(60.0)

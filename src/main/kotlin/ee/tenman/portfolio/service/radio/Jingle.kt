@@ -15,6 +15,8 @@ import kotlin.math.sqrt
 private const val MATCH = 0.8
 private const val ALIKE = 0.9
 private const val WINDOW = 10.0
+private const val LONGEST = 8.0
+private const val STRIDE = 0.25
 private const val PCM = ".pcm"
 
 class Spectrum(
@@ -180,6 +182,15 @@ fun jingle(
   returns: List<Double>,
 ): List<JingleMatch?>? {
   if (returns.size < 2) return null
+  return pair(timeline, returns)
+    ?.takeUnless { (first, second) -> outlasts(timeline, first.start, second.start) }
+    ?.let { shared(timeline, returns, it) }
+}
+
+private fun pair(
+  timeline: Timeline,
+  returns: List<Double>,
+): Pair<JingleMatch, JingleMatch>? {
   val first = timeline.samples(returns[0] - WINDOW, returns[0])
   val second = window(timeline, returns[1])
   return (0 until first.size - RATE step RATE / 50).asSequence().firstNotNullOfOrNull { offset ->
@@ -187,20 +198,27 @@ fun jingle(
     if (!(r >= MATCH)) return@firstNotNullOfOrNull null
     val t1 = returns[0] - WINDOW + offset.toDouble() / RATE
     val t2 = returns[1] - WINDOW + lag.toDouble() / RATE
-    onset(timeline, t1, t2)?.let { start -> shared(timeline, returns, t1 + start, t2 + start, r) }
+    onset(timeline, t1, t2)?.let { start -> JingleMatch(t1 + start, r) to JingleMatch(t2 + start, r) }
   }
 }
+
+private fun outlasts(
+  timeline: Timeline,
+  first: Double,
+  second: Double,
+): Boolean =
+  (0..(LONGEST / STRIDE).toInt()).all { k ->
+    pearson(template(timeline, first + k * STRIDE), template(timeline, second + k * STRIDE)) >= MATCH
+  }
 
 private fun shared(
   timeline: Timeline,
   returns: List<Double>,
-  first: Double,
-  second: Double,
-  r: Double,
+  pair: Pair<JingleMatch, JingleMatch>,
 ): List<JingleMatch?> {
-  val template = template(timeline, first)
+  val template = template(timeline, pair.first.start)
   val later = returns.drop(2).map { back -> find(template, window(timeline, back), back, null) }
-  return listOf(JingleMatch(first, r), JingleMatch(second, r)) + later
+  return pair.toList() + later
 }
 
 private fun find(
