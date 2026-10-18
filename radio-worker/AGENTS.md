@@ -14,6 +14,7 @@ Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), numpy, FFmpeg and ffpr
 uv run pytest                                      # Tests: no network, no model
 uv run radio-worker station <recording.mp3>        # Replay at http://127.0.0.1:8770/stream.m3u8
 uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 directory>
+uv run radio-worker saturdays --recordings <directory> --model <directory>   # Every Saturday 11:55-13:05 Europe/Tallinn into <directory>/<date>
 docker build -t radio-worker .                     # Image without the model, which is mounted at /model
 docker build --target test -t radio-worker-test . && docker run --rm radio-worker-test   # Tests inside the image, as CI runs them
 docker network create radio
@@ -26,9 +27,14 @@ docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolu
 - `src/radio_worker/station.py` - Replay station: FFmpeg's HLS muxer behind `http.server`
 - `src/radio_worker/recorder.py` - Records the stream into parts and owns `status.json`
 - `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM
-- `src/radio_worker/cli.py` - The `station` and `run` commands
+- `src/radio_worker/schedule.py` - The Saturday window, and the one-time download of the pinned model's `ct2/` files, checked by SHA-256, outside it
+- `src/radio_worker/cli.py` - The `station`, `run` and `saturdays` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
 - `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`
+
+## Production
+
+The `radio-worker` service in `docker-compose.yml` runs `saturdays` with the capped CPU, memory and swap measured in #2066, on its own network with no published ports. It sits in the `radio` Compose profile, which the deploy enables only when the repository variable `RADIO_ENABLED` is `true`. The model lives in the `radio_model` volume; recordings go to `radio_recordings`, which the backend mounts at `/recordings`. Both images own their mount points as uid 1000, so whichever container creates a volume, both can write to it.
 
 ## Rules
 
