@@ -7,11 +7,13 @@ import ee.tenman.portfolio.service.radio.JingleReview
 import ee.tenman.portfolio.service.radio.ManualCut
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioArchiveService
+import ee.tenman.portfolio.service.radio.RadioLiveService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
@@ -32,6 +34,7 @@ import kotlin.text.Charsets.UTF_8
 class RadioController(
   private val radioArchiveService: RadioArchiveService,
   private val radioScheduleService: RadioScheduleService,
+  private val radioLiveService: RadioLiveService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
@@ -41,6 +44,12 @@ class RadioController(
 
   @GetMapping("/station")
   fun getStation(): RadioStation = radioScheduleService.station()
+
+  @GetMapping("/live")
+  fun getLive(response: HttpServletResponse) {
+    response.contentType = "audio/mpeg"
+    radioLiveService.stream(response.outputStream)
+  }
 
   @PutMapping("/programmes/{id}")
   fun putProgramme(

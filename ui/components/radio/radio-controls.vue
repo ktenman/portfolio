@@ -1,6 +1,12 @@
 <template>
   <div class="flex items-center gap-2">
-    <button type="button" :class="SKIP" aria-label="15 s tagasi" @click="player.skip(-15)">
+    <button
+      v-if="!player.live.value"
+      type="button"
+      :class="SKIP"
+      aria-label="15 s tagasi"
+      @click="player.skip(-15)"
+    >
       <radio-icon name="back" />
       15
     </button>
@@ -14,7 +20,13 @@
     >
       <radio-icon :name="player.playing.value ? 'pause' : 'play'" />
     </button>
-    <button type="button" :class="SKIP" aria-label="30 s edasi" @click="player.skip(30)">
+    <button
+      v-if="!player.live.value"
+      type="button"
+      :class="SKIP"
+      aria-label="30 s edasi"
+      @click="player.skip(30)"
+    >
       30
       <radio-icon name="forward" />
     </button>

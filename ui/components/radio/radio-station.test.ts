@@ -3,8 +3,11 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioStation from './radio-station.vue'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 
-vi.mock('../../services/api', () => ({ radioService: { station: vi.fn() } }))
+vi.mock('../../services/api', () => ({
+  radioService: { station: vi.fn(), liveUrl: '/api/radio/live' },
+}))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -50,6 +53,24 @@ describe('RadioStation', () => {
 
   it('should show no free space without a recordings directory', async () => {
     expect((await mount({ ...idle, freeBytes: null, hours: null })).text()).toContain('Vaba ruumi—')
+  })
+
+  it('should play the station live through the server', async () => {
+    const audio = document.createElement('audio')
+    vi.spyOn(audio, 'play').mockResolvedValue()
+    const player = useRadioPlayer()
+    player.attach(audio)
+    const onAir = {
+      name: 'PaarisMäng',
+      start: SATURDAY_NOON,
+      end: SATURDAY_NOON + 3600,
+      recorded: false,
+    }
+    const wrapper = await mount({ ...idle, onAir })
+    await wrapper.find('button').trigger('click')
+    const src = audio.src
+    player.detach()
+    expect(src).toContain('/api/radio/live')
   })
 
   it('should say the programme on air is not recorded', async () => {

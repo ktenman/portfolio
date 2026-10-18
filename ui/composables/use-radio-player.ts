@@ -9,6 +9,7 @@ const LEAD = 5
 
 const element = shallowRef<HTMLAudioElement | null>(null)
 const recording = shallowRef<RecordingSummary | null>(null)
+const live = ref(false)
 const version = ref<Version>('raw')
 const part = ref(0)
 const current = ref(0)
@@ -82,15 +83,46 @@ const open = () => {
   audio.src = `${url(target, 'episode.m4a')}?v=${encodeURIComponent(edit?.renderedAt ?? '')}`
 }
 
+const speed = (audio: HTMLAudioElement, value: number) => {
+  audio.defaultPlaybackRate = value
+  audio.playbackRate = value
+}
+
 const load = (target: RecordingSummary, wanted: Version = 'raw') => {
   recording.value = target
   version.value = wanted
+  live.value = false
+  if (element.value) speed(element.value, rate.value)
   open()
 }
 
 const play = () => element.value?.play()
 
-const toggle = () => (playing.value ? element.value?.pause() : play())
+const listen = () => {
+  const audio = element.value
+  if (!audio) return
+  recording.value = null
+  live.value = true
+  loaded = 'live'
+  plan = null
+  current.value = 0
+  audio.src = radioService.liveUrl
+  speed(audio, 1)
+  play()
+}
+
+const hangUp = () => {
+  const audio = element.value
+  if (!audio) return
+  audio.pause()
+  audio.removeAttribute('src')
+  audio.load()
+}
+
+const toggle = () => {
+  if (live.value) return playing.value ? hangUp() : listen()
+  return playing.value ? element.value?.pause() : play()
+}
 
 const skip = (by: number) => seek(seconds.value + by)
 
@@ -136,11 +168,6 @@ const listeners: Record<string, () => void> = {
   },
 }
 
-const speed = (audio: HTMLAudioElement, value: number) => {
-  audio.defaultPlaybackRate = value
-  audio.playbackRate = value
-}
-
 const attach = (audio: HTMLAudioElement) => {
   element.value = audio
   Object.entries(listeners).forEach(([name, listener]) => audio.addEventListener(name, listener))
@@ -159,6 +186,7 @@ const detach = () => {
   element.value = null
   loaded = ''
   recording.value = null
+  live.value = false
   version.value = 'raw'
   part.value = 0
   current.value = 0
@@ -167,11 +195,12 @@ const detach = () => {
 }
 
 watch(rate, value => {
-  if (element.value) speed(element.value, value)
+  if (element.value && !live.value) speed(element.value, value)
 })
 
 export const useRadioPlayer = () => ({
   recording,
+  live,
   version,
   seconds,
   recordingSeconds,
@@ -181,6 +210,7 @@ export const useRadioPlayer = () => ({
   attach,
   detach,
   load,
+  listen,
   toggle,
   seek,
   skip,
