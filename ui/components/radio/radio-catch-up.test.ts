@@ -4,12 +4,12 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioCatchUp from './radio-catch-up.vue'
 import { airing, radioDay, recording } from './radio-fixture'
-import { AiringState } from '../../models/generated/domain-models'
+import { AiringState, RecorderState } from '../../models/generated/domain-models'
 
 const player = vi.hoisted(() => ({ load: vi.fn(), playFrom: vi.fn(), listen: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
-  radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn() },
+  radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn(), station: vi.fn() },
 }))
 vi.mock('../../composables/use-radio-player', () => ({ useRadioPlayer: () => player }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -39,6 +39,17 @@ describe('RadioCatchUp', () => {
     vi.mocked(radioService.day).mockResolvedValue(radioDay())
     vi.mocked(radioService.recordings).mockResolvedValue([recording()])
     vi.mocked(radioService.record).mockResolvedValue()
+    vi.mocked(radioService.station).mockResolvedValue({
+      onAir: null,
+      next: null,
+      capture: null,
+      freeBytes: 364_000_000_000,
+      hours: 3159,
+      recorder: RecorderState.WAITING,
+      last: null,
+      format: null,
+      continuous: { dayBytes: 2_764_800_000, weekBytes: 19_353_600_000 },
+    })
   })
 
   it('should fold the morning that was not recorded into one row', async () => {
@@ -126,6 +137,16 @@ describe('RadioCatchUp', () => {
   it('should say the schedule is not loaded for a day without airings', async () => {
     vi.mocked(radioService.day).mockResolvedValue(radioDay({ day: [], night: [] }))
     expect((await mount()).text()).toContain('Selle päeva kava pole veel laaditud.')
+  })
+
+  it('should size a day and a week of continuous recording', async () => {
+    expect((await mount()).text()).toContain('Päevas≈ 2,8 GB7 päeva≈ 19 GBVaba ruumi364 GB')
+  })
+
+  it('should keep continuous recording off until its storage is ready', async () => {
+    const wrapper = await mount()
+    const toggle = wrapper.findAll('button').find(b => b.text() === 'Lülita sisse')!
+    expect(toggle.attributes('disabled')).toBeDefined()
   })
 
   it('should give the length of an airing in whole hours', async () => {

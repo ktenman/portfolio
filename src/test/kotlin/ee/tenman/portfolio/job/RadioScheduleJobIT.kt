@@ -19,6 +19,7 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.AirSlot
 import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.Capture
+import ee.tenman.portfolio.service.radio.ContinuousRecording
 import ee.tenman.portfolio.service.radio.HEARTBEAT_FILE
 import ee.tenman.portfolio.service.radio.MissedReason
 import ee.tenman.portfolio.service.radio.PLAN_FILE
@@ -212,6 +213,11 @@ class RadioScheduleJobIT {
   fun `should give no free space when the recordings directory is missing`() {
     radioProperties.recordings.toFile().deleteRecursively()
     expect(radioScheduleService.station().freeBytes).toEqual(null)
+  }
+
+  @Test
+  fun `should size a day and a week of continuous recording as MP3 alone`() {
+    expect(radioScheduleService.station().continuous).toEqual(ContinuousRecording(2_764_800_000, 19_353_600_000))
   }
 
   @Test

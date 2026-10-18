@@ -31,6 +31,7 @@ const idle = {
   capture: null,
   freeBytes: 364_000_000_000,
   hours: 3159,
+  continuous: { dayBytes: 2_764_800_000, weekBytes: 19_353_600_000 },
   recorder: RecorderState.WAITING,
   last: null,
   format: null,
