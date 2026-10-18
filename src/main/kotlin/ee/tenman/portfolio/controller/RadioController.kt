@@ -50,6 +50,16 @@ class RadioController(
     @PathVariable name: String,
   ): ResponseEntity<List<TranscriptLine>> = ResponseEntity.ofNullable(radioArchiveService.transcript(name))
 
+  @GetMapping("/{name}/transcript.txt", produces = ["text/plain;charset=UTF-8"])
+  fun getText(
+    @PathVariable name: String,
+  ): ResponseEntity<String> = ResponseEntity.ofNullable(radioArchiveService.text(name))
+
+  @GetMapping("/{name}/transcript.srt", produces = ["application/x-subrip;charset=UTF-8"])
+  fun getSubtitles(
+    @PathVariable name: String,
+  ): ResponseEntity<String> = ResponseEntity.ofNullable(radioArchiveService.subtitles(name))
+
   @GetMapping("/{name}/cuts")
   fun getCuts(
     @PathVariable name: String,

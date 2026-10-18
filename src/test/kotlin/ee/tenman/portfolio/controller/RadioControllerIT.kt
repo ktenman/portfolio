@@ -9,6 +9,8 @@ import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RecordingPart
 import ee.tenman.portfolio.service.radio.RecordingState
 import ee.tenman.portfolio.service.radio.RecordingStatus
+import ee.tenman.portfolio.service.radio.Transcript
+import ee.tenman.portfolio.service.radio.TranscriptSegment
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -64,7 +66,8 @@ class RadioControllerIT {
 
   @Test
   fun `should serve the text transcript as UTF-8`() {
-    Files.writeString(directory.resolve("transcript.txt"), "Tere, Keskpäevatund!")
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
       .andExpect(header().string(CONTENT_TYPE, "text/plain;charset=UTF-8"))
