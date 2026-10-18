@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createCalendarRow as row, createMonthlyProfit } from '../../tests/fixtures'
 import type { MonthlyProfit } from '../../services/monthly-profit'
-import { formatCurrencyChange } from '../../utils/formatters'
 import MonthlyProfitFigures from './monthly-profit-figures.vue'
 
 const mountFigures = (model: MonthlyProfit = createMonthlyProfit()) =>
@@ -21,32 +20,22 @@ describe('MonthlyProfitFigures', () => {
   it('offers only the best month for an all-gain history', async () => {
     const wrapper = mountFigures()
     const buttons = wrapper.findAll('button')
-    const text = normalised(buttons[0].text())
 
     await buttons[0].trigger('click')
 
     expect([
       buttons.length,
-      text.includes('Best month'),
-      text.includes('Nov 2025'),
-      buttons[0].find('.sr-only').text(),
       wrapper.text().includes('Worst month'),
       wrapper.emitted('select'),
-    ]).toEqual([1, true, true, 'by euro profit', false, [['2025-11']]])
+    ]).toEqual([1, false, [['2025-11']]])
   })
 
-  it('sets the amount and month of a shortcut beneath its label', () => {
-    const model = createMonthlyProfit()
-    const button = mountFigures(model).find('button')
-
-    expect([
-      normalised(button.find('.extreme-label').text()),
-      button.findAll('.extreme-value > span').map(span => span.text()),
-    ]).toEqual([
-      'Best month by euro profit',
-      [formatCurrencyChange(model.best!.change), 'Nov 2025'],
-    ])
-  })
+  it('sets the amount and month of a shortcut beneath its label', () =>
+    expect(
+      mountFigures()
+        .findAll('.extreme-label, .extreme-value > span')
+        .map(span => normalised(span.text()))
+    ).toEqual(['Best month by euro profit', '+€12,307.39', 'Nov 2025']))
 
   it('shows a dash average and the excluded count without single months', () => {
     const wrapper = mountFigures(

@@ -14,11 +14,7 @@ const createWrapper = (rows = createCalendarRows()) =>
 const buttonTexts = (wrapper: ReturnType<typeof createWrapper>) =>
   wrapper
     .findAll('button')
-    .map(button =>
-      [button.find('.extreme-label'), ...button.findAll('.extreme-value > span')].map(span =>
-        span.text()
-      )
-    )
+    .map(button => button.findAll('.extreme-label, .extreme-value > span').map(span => span.text()))
 
 describe('DailyProfitFigures', () => {
   it('should show the four figures of the period', () => {
