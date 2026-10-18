@@ -20,4 +20,6 @@ class RadioAiring(
   var endsAt: Instant,
   @Column(name = "original_id")
   var originalId: Long? = null,
+  @Column(name = "record_once", nullable = false)
+  var recordOnce: Boolean = false,
 ) : BaseEntity()

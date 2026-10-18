@@ -1,5 +1,8 @@
 import {
   type AirSlot,
+  AiringState,
+  type AiringRecording,
+  type DayAiring,
   type AudioFormat,
   BoundaryMethod,
   CutState,
@@ -121,6 +124,59 @@ export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> 
   [RecordingState.CAPTURED]: { label: 'Salvestatud', tone: 'plain' },
   [RecordingState.PARTIAL]: { label: 'Osaline', tone: 'warn' },
   [RecordingState.FAILED]: { label: 'Ebaõnnestus', tone: 'error' },
+}
+
+export const AIRING_STATES: Partial<Record<AiringState, { label: string; tone: BadgeTone }>> = {
+  [AiringState.RECORDED]: { label: 'Salvestatud', tone: 'plain' },
+  [AiringState.PARTIAL]: { label: 'Osaline', tone: 'warn' },
+  [AiringState.RECORDING]: { label: 'Salvestab', tone: 'live' },
+  [AiringState.ON_AIR]: { label: 'Eetris', tone: 'live' },
+  [AiringState.PLANNED]: { label: 'Plaanis', tone: 'plain' },
+}
+
+export const airLength = (seconds: number): string => {
+  const hours = Math.round(seconds / 3600)
+  return hours && Math.abs(seconds - hours * 3600) <= 300 ? `${hours} h` : length(seconds)
+}
+
+export const coversEnd = (airing: DayAiring): boolean =>
+  !!airing.recording && airing.recording.to >= airing.end - 60
+
+const covered = (airing: DayAiring, recording: AiringRecording): string =>
+  `${coversEnd(airing) ? 'Viimased ' : ''}${minutes(recording.to - recording.from)} on salvestuses „${recording.programme}“`
+
+const repeatNote = (airing: DayAiring): string | null => {
+  const original = airing.original
+  if (original?.state === AiringState.PARTIAL) return 'saab salvestada täispikalt'
+  if (original?.state === AiringState.MISSED)
+    return `${day(original.start)} ${clock(original.start, 0)} jäi salvestamata`
+  return airing.episode ?? (original ? day(original.start) : null)
+}
+
+export const airingNote = (airing: DayAiring): string | null => {
+  const recording = airing.recording
+  if (airing.state === AiringState.RECORDED && recording)
+    return `Salvestus ${range(recording.start, 0, recording.end - recording.start)}`
+  if (airing.state === AiringState.PARTIAL && recording) return covered(airing, recording)
+  if (airing.state === AiringState.RECORDING) return 'Salvestatakse'
+  if (airing.repeat) return ['Kordus', repeatNote(airing)].filter(Boolean).join(' · ')
+  if (airing.state === AiringState.ON_AIR) return 'Ei salvestata'
+  return airing.episode
+}
+
+export const missedRun = (airings: DayAiring[]): string => {
+  const first = airings[0]
+  const last = airings[airings.length - 1]
+  const count = `${airings.length} ${airings.length === 1 ? 'saade' : 'saadet'}`
+  return `${range(first.start, 0, last.end - first.start)} · ${count}, salvestamata`
+}
+
+export const dateDay = (date: string): string => day(Date.parse(`${date}T12:00:00Z`) / 1000)
+
+export const nightOf = (until: number): string => {
+  const weekday = WEEKDAY_LONG.format(instant(until))
+  const date = DATE.format(instant(until)).slice(0, 5)
+  return `Öö vastu ${weekday.endsWith('päev') ? `${weekday}a` : weekday}, ${date}`
 }
 
 export const RECORDER_STATES: Record<RecorderState, { label: string; tone: BadgeTone }> = {

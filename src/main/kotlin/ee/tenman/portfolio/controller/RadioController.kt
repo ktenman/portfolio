@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
@@ -7,6 +8,8 @@ import ee.tenman.portfolio.service.radio.JingleReview
 import ee.tenman.portfolio.service.radio.ManualCut
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioArchiveService
+import ee.tenman.portfolio.service.radio.RadioDay
+import ee.tenman.portfolio.service.radio.RadioDayService
 import ee.tenman.portfolio.service.radio.RadioLiveService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
@@ -15,6 +18,7 @@ import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.MediaTypeFactory
@@ -26,7 +30,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
 import kotlin.text.Charsets.UTF_8
 
 @RestController
@@ -35,6 +41,7 @@ class RadioController(
   private val radioArchiveService: RadioArchiveService,
   private val radioScheduleService: RadioScheduleService,
   private val radioLiveService: RadioLiveService,
+  private val radioDayService: RadioDayService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
@@ -50,6 +57,17 @@ class RadioController(
     response.contentType = "audio/mpeg"
     radioLiveService.stream(response.outputStream)
   }
+
+  @GetMapping("/schedule")
+  fun getSchedule(
+    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
+  ): RadioDay = radioDayService.day(date)
+
+  @PutMapping("/airings/{id}")
+  fun putAiring(
+    @PathVariable id: Long,
+    @RequestBody choice: AiringChoice,
+  ): ResponseEntity<Void> = done(radioScheduleService.record(id, choice))
 
   @PutMapping("/programmes/{id}")
   fun putProgramme(

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="mb-4">Raadio</h2>
+    <radio-tabs />
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div class="min-w-0">
         <h3 class="mb-3 text-heading">Salvestused</h3>
@@ -57,6 +57,7 @@ import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioProgrammes from './radio-programmes.vue'
 import RadioStation from './radio-station.vue'
+import RadioTabs from './radio-tabs.vue'
 
 const { data: recordings, isLoading, isError } = useRadioRecordings()
 

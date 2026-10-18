@@ -9,6 +9,4 @@ interface RadioProgrammeRepository : JpaRepository<RadioProgramme, Long> {
   fun findByKukuId(kukuId: Long): RadioProgramme?
 
   fun findAllByKukuIdIn(kukuIds: Collection<Long>): List<RadioProgramme>
-
-  fun findByRecordEveryTrue(): List<RadioProgramme>
 }
