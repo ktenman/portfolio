@@ -39,7 +39,7 @@ class RadioEpisodeService(
     return files && readStatus(directory).state in READY
   }
 
-  private fun todo(directory: Path): List<String> {
+  fun todo(directory: Path): List<String> {
     if (!ready(directory)) return emptyList()
     val status = readStatus(directory)
     val requested = read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty()

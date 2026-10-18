@@ -5,6 +5,8 @@ import java.nio.ShortBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.concurrent.TimeUnit
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
@@ -15,6 +17,7 @@ const val RATE = 16000
 const val HOP = 160
 const val FRAME = HOP.toDouble() / RATE
 private const val BLOCK = 300
+private const val DECODE_MINUTES = 10L
 const val DIGITAL = "digital silence"
 
 data class Span(
@@ -37,6 +40,10 @@ class Timeline(
   directory: Path,
   parts: List<RecordingPart>,
 ) {
+  init {
+    parts.forEach { decode(directory, it.file) }
+  }
+
   val spans: List<Span> = coverage(directory, parts)
   val seconds: Double = spans.maxOfOrNull { it.end } ?: 0.0
   private val buffers: List<ShortBuffer> = spans.map { map(it.pcm) }
@@ -71,7 +78,48 @@ fun pcmOf(
   file: String,
 ): Path = directory.resolve(file.substringBeforeLast(".") + ".pcm")
 
-private fun pcmSeconds(path: Path): Double = if (Files.exists(path)) Files.size(path) / 2 / RATE.toDouble() else 0.0
+private fun seconds(
+  pcm: Path,
+  part: RecordingPart,
+): Double = if (Files.exists(pcm)) Files.size(pcm) / 2 / RATE.toDouble() else part.durationSeconds ?: 0.0
+
+private fun decode(
+  directory: Path,
+  file: String,
+) {
+  val pcm = pcmOf(directory, file)
+  if (Files.exists(pcm)) return
+  check(Files.exists(directory.resolve(file))) { "Recording ${directory.fileName} keeps $file only in S3" }
+  val temporary = "${pcm.fileName}.tmp"
+  val command =
+    listOf(
+      "ffmpeg",
+      "-nostdin",
+      "-v",
+      "error",
+      "-y",
+      "-i",
+      file,
+      "-map",
+      "0:a:0",
+      "-ac",
+      "1",
+      "-ar",
+      "$RATE",
+      "-f",
+      "s16le",
+      temporary,
+    )
+  val process =
+    ProcessBuilder(command)
+      .directory(directory.toFile())
+      .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+      .redirectError(ProcessBuilder.Redirect.DISCARD)
+      .start()
+  if (!process.waitFor(DECODE_MINUTES, TimeUnit.MINUTES)) process.destroyForcibly()
+  check(process.waitFor() == 0) { "FFmpeg could not decode $file of ${directory.fileName}" }
+  Files.move(directory.resolve(temporary), pcm, StandardCopyOption.ATOMIC_MOVE)
+}
 
 fun map(path: Path): ShortBuffer =
   FileChannel.open(path).use { channel ->
@@ -86,7 +134,7 @@ fun coverage(
     .fold(emptyList<Span>() to 0.0) { (spans, covered), part ->
       val pcm = pcmOf(directory, part.file)
       val start = max(part.offsetSeconds, covered)
-      val end = part.offsetSeconds + pcmSeconds(pcm)
+      val end = part.offsetSeconds + seconds(pcm, part)
       (if (start < end) spans + Span(start, end, pcm, part.offsetSeconds, directory.resolve(part.file)) else spans) to max(covered, end)
     }.first
 

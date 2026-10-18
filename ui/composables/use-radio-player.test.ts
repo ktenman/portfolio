@@ -20,8 +20,8 @@ const split = () =>
       lostSeconds: 0,
       seconds: 4200,
       parts: [
-        { file: 'raw.mp3', offsetSeconds: 0, sha256: null },
-        { file: 'raw-part-002.mp3', offsetSeconds: 2000, sha256: null },
+        { file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null },
+        { file: 'raw-part-002.mp3', offsetSeconds: 2000, sha256: null, durationSeconds: null },
       ],
     },
   })

@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualWithErrorTolerance
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -13,6 +14,22 @@ import kotlin.math.round
 class TimelineTest {
   @TempDir
   lateinit var directory: Path
+
+  @Test
+  fun `should decode the pcm of a part again from its mp3`() {
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "libmp3lame", directory.resolve("raw.mp3").toString())
+    expect(Timeline(directory, listOf(RecordingPart("raw.mp3", 0.0))).seconds).toEqualWithErrorTolerance(2.0, 0.1)
+  }
+
+  @Test
+  fun `should cover a part without its pcm for the length the worker measured`() {
+    expect(coverage(directory, listOf(RecordingPart("raw.mp3", 10.0, durationSeconds = 50.0))).single().end).toEqual(60.0)
+  }
+
+  @Test
+  fun `should refuse to read a part whose audio is kept only in the bucket`() {
+    expect { Timeline(directory, listOf(RecordingPart("raw.mp3", 0.0))) }.toThrow<IllegalStateException>()
+  }
 
   @Test
   fun `should mark a zeroed stretch as digital silence`() {
