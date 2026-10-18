@@ -50,9 +50,8 @@ class RadioEpisodeService(
     val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
     val kept = audible(timeline, keep)
     val marks = chapters(kept, agreed.chapters)
-    val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)
     val temporary = directory.resolve(TEMPORARY)
-    radioRenderService.render(timeline, keep, marks, "Keskpäevatund $day", temporary)
+    radioRenderService.render(timeline, keep, marks, title(status), temporary)
     val summary = OutlineSummary(model, reads.size, matched.size, agreed.voters)
     save(directory.resolve(EDIT_LIST), editList(status, placed, keep, kept, marks, agreed, summary))
     return Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE)
@@ -89,7 +88,49 @@ class RadioEpisodeService(
     chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
     reviewed = false,
     renderedAt = now(),
+    topics = agreed.chapters.map { EpisodeChapter(rounded(it.time), it.title) },
   )
+
+  @Synchronized
+  fun review(
+    directory: Path,
+    keep: List<KeptSpan>,
+  ): EditList? {
+    val saved = directory.resolve(EDIT_LIST).takeIf(Files::exists) ?: return null
+    val edit = JsonMapperFactory.instance.readValue<EditList>(Files.readString(saved))
+    val status = readStatus(directory)
+    val timeline = Timeline(directory, status.parts)
+    val spans = keep.map { it.start to it.end }
+    val kept = audible(timeline, spans)
+    require(ordered(spans, timeline.seconds) && kept.isNotEmpty()) { "Keep list $keep is not ordered spans within 0-${timeline.seconds} s" }
+    val marks = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) })
+    val temporary = directory.resolve(REVIEWED)
+    runCatching { radioRenderService.render(timeline, spans, marks, title(status), temporary) }
+      .onFailure { Files.deleteIfExists(temporary) }
+      .getOrThrow()
+    val reviewed =
+      edit.copy(
+        keep = keep,
+        durationSeconds = rounded(kept.sumOf { it.second - it.first }),
+        chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
+        reviewed = true,
+        renderedAt = now(),
+      )
+    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    save(saved, reviewed)
+    return reviewed
+  }
+
+  private fun ordered(
+    spans: List<Pair<Double, Double>>,
+    seconds: Double,
+  ): Boolean =
+    spans.isNotEmpty() &&
+      spans.all { (start, end) -> start >= 0 && start < end && end <= seconds } &&
+      spans.zipWithNext().all { (left, right) -> left.second <= right.first }
+
+  private fun title(status: RecordingStatus): String =
+    "Keskpäevatund ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
 
   private fun fail(
     directory: Path,
@@ -114,6 +155,7 @@ class RadioEpisodeService(
   companion object {
     private const val EPISODE = "episode.m4a"
     private const val TEMPORARY = "episode.tmp.m4a"
+    private const val REVIEWED = "episode.review.m4a"
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
