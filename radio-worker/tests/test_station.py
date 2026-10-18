@@ -39,3 +39,9 @@ def test_station_goes_off_air_after_the_replay_ends(tmp_path):
     listening.join(40)
     server.server_close()
     assert not listening.is_alive()
+
+
+def test_station_listens_on_the_given_host(tmp_path):
+    server = station(tmp_path / "in.mp3", tmp_path / "hls", port=0, host="0.0.0.0")
+    server.server_close()
+    assert server.server_address[0] == "0.0.0.0"

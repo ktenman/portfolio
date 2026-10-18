@@ -147,17 +147,12 @@ jobs:
       - name: Run monitoring tests
         if: matrix.type == 'monitoring'
         run: python3 monitoring/test-monitoring.py
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Build radio worker image
         if: matrix.type == 'radio'
-        with:
-          version: '0.13.1'
-      - name: Install FFmpeg
+        run: docker build -t radio-worker radio-worker
+      - name: Run radio worker tests in the image
         if: matrix.type == 'radio'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
-      - name: Run radio worker tests
-        if: matrix.type == 'radio'
-        run: uv run --locked pytest
-        working-directory: radio-worker
+        run: docker run --rm --user root -v "$PWD/radio-worker/tests:/app/tests:ro" --entrypoint uv radio-worker run --locked pytest
       - name: Build JAR for E2E
         if: matrix.type == 'e2e'
         run: |
@@ -265,6 +260,7 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       cloudflare-bypass-proxy: ${{ steps.filter.outputs.cloudflare-bypass-proxy }}
+      radio-worker: ${{ steps.filter.outputs.radio-worker }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
@@ -284,6 +280,8 @@ jobs:
               - 'tsconfig.json'
             cloudflare-bypass-proxy:
               - 'cloudflare-bypass-proxy/**'
+            radio-worker:
+              - 'radio-worker/**'
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }}
@@ -314,6 +312,12 @@ jobs:
             ghcr_image: cloudflare-bypass-proxy
             context: ./cloudflare-bypass-proxy
             changes_key: cloudflare-bypass-proxy
+          - name: radio-worker
+            dockerfile: ./radio-worker/Dockerfile
+            image: ktenman/radio-worker
+            ghcr_image: radio-worker
+            context: ./radio-worker
+            changes_key: radio-worker
     steps:
       - name: Check if build needed
         id: check
@@ -325,6 +329,8 @@ jobs:
           elif [[ "${{ matrix.changes_key }}" == "frontend" && "${{ needs.detect-changes.outputs.frontend }}" == "true" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
           elif [[ "${{ matrix.changes_key }}" == "cloudflare-bypass-proxy" && "${{ needs.detect-changes.outputs.cloudflare-bypass-proxy }}" == "true" ]]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ matrix.changes_key }}" == "radio-worker" && "${{ needs.detect-changes.outputs.radio-worker }}" == "true" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
           else
             echo "should_build=false" >> $GITHUB_OUTPUT

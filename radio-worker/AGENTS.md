@@ -12,6 +12,10 @@ Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), numpy, FFmpeg and ffpr
 uv run pytest                                      # Tests: no network, no model
 uv run radio-worker station <recording.mp3>        # Replay at http://127.0.0.1:8770/stream.m3u8
 uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 directory>
+docker build -t radio-worker .                     # Image without the model, which is mounted at /model
+docker network create radio
+docker run --rm --network radio --name station -p 127.0.0.1:8770:8770 -v <recording.mp3>:/replay.mp3:ro radio-worker station /replay.mp3 --host 0.0.0.0
+docker run --rm --network radio -v <ct2 directory>:/model:ro -v <directory>:/recordings radio-worker run --source http://station:8770/stream.m3u8 --duration <seconds> --out /recordings/<name> --model /model
 ```
 
 ## Structure
@@ -21,6 +25,7 @@ uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 dire
 - `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM
 - `src/radio_worker/cli.py` - The `station` and `run` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
+- `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`
 
 ## Rules
 
@@ -29,3 +34,4 @@ uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 dire
 - Tests use generated MP3, synthetic audio and a stub model; they never reach Kuku or Hugging Face
 - Test names are full sentences: `test_station_goes_off_air_after_the_replay_ends`
 - Run from project root: `npm run test:radio`
+- CI runs the tests inside the image, so a command a test calls (such as `pkill`) must be installed in the `Dockerfile`
