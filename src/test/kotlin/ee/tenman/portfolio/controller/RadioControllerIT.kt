@@ -106,6 +106,13 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should not find the jingle of a recording without an edit list`() {
+    mockMvc
+      .perform(mvcPut("/api/radio/2026-10-17/cuts/1/jingle").contentType(APPLICATION_JSON).content("""{"saved":true}"""))
+      .andExpect(status().isNotFound)
+  }
+
+  @Test
   fun `should not mark a missing transcript checked`() {
     mockMvc.perform(mvcPut("/api/radio/2026-10-17/transcript/checked")).andExpect(status().isNotFound)
   }

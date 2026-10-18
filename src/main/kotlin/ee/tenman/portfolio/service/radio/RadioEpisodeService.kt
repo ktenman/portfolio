@@ -47,7 +47,7 @@ class RadioEpisodeService(
     val matched = reads.filterNotNull().mapNotNull { match(it, lines) }
     check(matched.isNotEmpty()) { "No outline read in ${directory.resolve(OUTLINE)} matches the transcript" }
     val agreed = consensus(matched)
-    val placed = radioCutService.boundaries(timeline, db, agreed, lines)
+    val placed = radioCutService.boundaries(timeline, db, agreed, lines, library(radioProperties.jingles))
     val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
     val kept = audible(timeline.spans, keep)
     val marks = chapters(kept, agreed.chapters)

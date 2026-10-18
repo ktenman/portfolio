@@ -1,4 +1,5 @@
 import {
+  type Boundary,
   BoundaryMethod,
   CutKind,
   CutState,
@@ -13,6 +14,14 @@ import {
 const DIGITAL = BoundaryMethod.DIGITAL_SILENCE
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
+const boundary = (name: string, seconds: number, method: string): Boundary => ({
+  boundary: name,
+  seconds,
+  method,
+  review: method === 'transcript only',
+  jingle: null,
+})
+
 const editList = (overrides: Partial<EditList> = {}): EditList => ({
   keep: [
     { start: 761.5, end: 2120 },
@@ -22,12 +31,15 @@ const editList = (overrides: Partial<EditList> = {}): EditList => ({
   durationSeconds: 2512.5,
   parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12' }],
   boundaries: [
-    { boundary: 'show starts', seconds: 761.5, method: 'digital silence', review: false },
-    { boundary: 'break 1 starts', seconds: 2120, method: 'level dip', review: false },
-    { boundary: 'break 1 ends', seconds: 2255, method: 'station jingle, r=0.93', review: false },
-    { boundary: 'break 2 starts', seconds: 3025, method: 'digital silence', review: false },
-    { boundary: 'break 2 ends', seconds: 3137, method: 'transcript only', review: true },
-    { boundary: 'show ends', seconds: 3837, method: 'digital silence', review: false },
+    boundary('show starts', 761.5, 'digital silence'),
+    boundary('break 1 starts', 2120, 'level dip'),
+    {
+      ...boundary('break 1 ends', 2255, 'station jingle, r=0.93'),
+      jingle: { start: 2255.4, r: 0.93, saved: null },
+    },
+    boundary('break 2 starts', 3025, 'digital silence'),
+    boundary('break 2 ends', 3137, 'transcript only'),
+    boundary('show ends', 3837, 'digital silence'),
   ],
   hosts: ['Mari', 'Jüri'],
   outline: { model: 'deepseek/deepseek-v4-flash', reads: 3, matched: 3, voters: 3 },
@@ -49,7 +61,7 @@ const cut = (
   end: number,
   methods: BoundaryMethod[],
   review = false
-) => ({ kind, title, start, end, methods, review, removed: true })
+) => ({ kind, title, start, end, methods, review, removed: true, jingle: null })
 
 export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingSummary => ({
   name: '2026-10-17',
@@ -68,10 +80,13 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   episodeBytes: 34_000_000,
   cuts: [
     cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, [DIGITAL]),
-    cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, [
-      BoundaryMethod.LEVEL_DIP,
-      BoundaryMethod.STATION_JINGLE,
-    ]),
+    {
+      ...cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, [
+        BoundaryMethod.LEVEL_DIP,
+        BoundaryMethod.STATION_JINGLE,
+      ]),
+      jingle: { r: 0.93, saved: false },
+    },
     cut(CutKind.BREAK, 'Reklaamipaus', 3025, 3137, [DIGITAL, BoundaryMethod.TRANSCRIPT_ONLY], true),
     cut(CutKind.AFTER, 'Pärast saadet', 3837, 4200, [DIGITAL]),
   ],

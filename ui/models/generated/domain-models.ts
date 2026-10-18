@@ -273,6 +273,10 @@ export interface CutReview {
     removed: number[];
 }
 
+export interface JingleReview {
+    saved: boolean;
+}
+
 export interface CutContext {
     before: TranscriptLine | null;
     after: TranscriptLine | null;
@@ -358,6 +362,7 @@ export interface Cut {
     methods: BoundaryMethod[];
     review: boolean;
     removed: boolean;
+    jingle: CutJingle | null;
 }
 
 export interface TimelineEntry {
@@ -394,6 +399,7 @@ export interface Boundary {
     seconds: number;
     method: string;
     review: boolean;
+    jingle: JingleMatch | null;
 }
 
 export interface OutlineSummary {
@@ -406,6 +412,17 @@ export interface OutlineSummary {
 export interface EpisodeChapter {
     start: number;
     title: string;
+}
+
+export interface CutJingle {
+    r: number;
+    saved: boolean;
+}
+
+export interface JingleMatch {
+    start: number;
+    r: number;
+    saved: string | null;
 }
 
 type DateAsString = string;
