@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mx-0.5 grid grid-cols-[auto_repeat(12,minmax(0,1fr))_auto] gap-x-0.75">
     <div
       ref="grid"
       class="calendar-grid"
@@ -75,7 +75,7 @@
         </span>
       </template>
     </div>
-    <div class="year-notes mt-2.5 text-label leading-[1.4] text-ink-soft">
+    <div class="year-notes col-[2/-1] mt-2.5 text-label leading-[1.4] text-ink-soft">
       <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
     </div>
   </div>
@@ -157,11 +157,11 @@ const onKeydown = (event: KeyboardEvent) => {
 <style scoped>
 .calendar-grid {
   display: grid;
-  grid-template-columns: auto repeat(12, minmax(0, 1fr)) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   grid-template-rows: auto;
   grid-auto-rows: 40px;
-  gap: 3px;
-  margin-inline: 2px;
+  row-gap: 3px;
   border-radius: var(--radius-control);
   outline: none;
   font-size: var(--text-label);

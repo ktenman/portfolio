@@ -37,7 +37,7 @@ describe('MonthlyProfitCompact', () => {
     expect([
       wrapper.findAll('.year-notes p').map(note => note.text()),
       wrapper.find('.year-notes').attributes('aria-hidden'),
-    ]).toEqual([['2025: from 27 Jun'], 'true'])
+    ]).toEqual([['2025 · from 27 Jun'], 'true'])
   })
 
   it('tells screen readers the best month is ranked by euro profit', () =>

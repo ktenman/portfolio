@@ -6,7 +6,7 @@ import {
   createMonthlyProfit,
 } from '../tests/fixtures'
 import { formatMonthCell } from './monthly-profit'
-import { hasMissingMonth, monthlyYears } from './monthly-profit-years'
+import { hasMissingMonth, monthlyYears, yearNotes } from './monthly-profit-years'
 
 const TODAY = '2030-01-01'
 const UNAVAILABLE = 'Year result unavailable: missing year-end summary'
@@ -87,6 +87,17 @@ describe('monthly years', () => {
       '2025, to 28 Feb, +€300.00, percentage unavailable',
     ])
   })
+
+  it('keys each year note by its year', () =>
+    expect(
+      yearNotes(
+        yearsOf([
+          row('2024-12-31', 0, 100),
+          row('2025-01-31', 200, 150),
+          row('2025-02-28', 300, 300),
+        ])
+      )
+    ).toEqual(['2025 · to 28 Feb · Percentage unavailable']))
 
   it('labels an unfinished latest year', () => {
     const [year] = yearsOf([row('2025-12-31', 0), row('2026-09-30', 50), row('2026-10-16', 100)])

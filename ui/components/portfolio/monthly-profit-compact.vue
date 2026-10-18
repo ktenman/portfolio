@@ -24,7 +24,7 @@
       </div>
       <div
         v-if="notes.length"
-        class="year-notes mt-2.5 text-center text-label leading-[1.4] text-ink-soft"
+        class="year-notes mt-2.5 text-center text-balance text-label leading-[1.4] text-ink-soft"
         aria-hidden="true"
       >
         <p v-for="note in notes" :key="note" class="m-0">{{ note }}</p>
