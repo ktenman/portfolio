@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -18,8 +19,22 @@ data class RadioProperties(
   val outlineModel: AiModel = AiModel.GEMINI_3_5_FLASH_LITE,
 )
 
+enum class RecordingState {
+  @JsonProperty("recording")
+  RECORDING,
+
+  @JsonProperty("captured")
+  CAPTURED,
+
+  @JsonProperty("partial")
+  PARTIAL,
+
+  @JsonProperty("failed")
+  FAILED,
+}
+
 data class RecordingStatus(
-  val state: String,
+  val state: RecordingState,
   val startedAt: Double = 0.0,
   val seconds: Double = 0.0,
   val parts: List<RecordingPart> = emptyList(),
@@ -81,6 +96,7 @@ fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingM
 
 data class RecordingSummary(
   val name: String,
+  val programme: String,
   val status: RecordingStatus,
   val sizeBytes: Long,
   val transcribed: Boolean,
@@ -88,6 +104,8 @@ data class RecordingSummary(
   val editList: EditList?,
   val failure: EpisodeFailure?,
   val episodeBytes: Long?,
+  val cuts: List<Cut>,
+  val timeline: List<TimelineEntry>,
 )
 
 data class TranscriptCheck(

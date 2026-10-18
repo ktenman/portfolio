@@ -240,7 +240,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.domain.LiveUpdate",
       "ee.tenman.portfolio.service.radio.RecordingSummary",
       "ee.tenman.portfolio.service.radio.TranscriptLine",
-      "ee.tenman.portfolio.service.radio.KeptSpan",
+      "ee.tenman.portfolio.service.radio.CutReview",
     ),
   )
   outputKind.set(cz.habarta.typescript.generator.TypeScriptOutputKind.module)

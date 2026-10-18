@@ -29,7 +29,7 @@ class RadioArchiveServiceTest {
 
   private fun recording(
     name: String,
-    state: String = "captured",
+    state: RecordingState = RecordingState.CAPTURED,
   ): Path {
     val directory = Files.createDirectories(recordings.resolve(name))
     val status = RecordingStatus(state, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
@@ -50,13 +50,13 @@ class RadioArchiveServiceTest {
   @Test
   fun `should list recordings newest first`() {
     recording("2026-10-17")
-    recording("2026-10-24", "recording")
+    recording("2026-10-24", RecordingState.RECORDING)
     expect(service.recordings().map { it.name }).toEqual(listOf("2026-10-24", "2026-10-17"))
   }
 
   @Test
   fun `should list a recording in progress without a transcript or episode`() {
-    recording("2026-10-24", "recording")
+    recording("2026-10-24", RecordingState.RECORDING)
     val found = service.recordings().single()
     expect(listOf(found.transcribed, found.editList, found.episodeBytes)).toEqual(listOf(false, null, null))
   }
@@ -102,7 +102,7 @@ class RadioArchiveServiceTest {
 
   @Test
   fun `should find no transcript for a recording that has none`() {
-    recording("2026-10-24", "recording")
+    recording("2026-10-24", RecordingState.RECORDING)
     expect(service.transcript("2026-10-24")).toEqual(null)
   }
 
@@ -139,21 +139,73 @@ class RadioArchiveServiceTest {
 
   @Test
   fun `should not mark a missing transcript checked`() {
-    recording("2026-10-24", "recording")
+    recording("2026-10-24", RecordingState.RECORDING)
     expect(service.check("2026-10-24")).toEqual(false)
   }
 
   @Test
-  fun `should hand the reviewed keep list to the episode service`() {
+  fun `should keep what lies between the removed cuts`() {
     val directory = recording("2026-10-17")
-    val keep = listOf(KeptSpan(761.5, 2120.59))
+    edited(directory)
     val edit = mockk<EditList>()
-    every { episodeService.review(directory, keep) } returns edit
-    expect(service.review("2026-10-17", keep)).toEqual(edit)
+    every { episodeService.review(directory, listOf(KeptSpan(761.5, 4200.0))) } returns edit
+    expect(service.review("2026-10-17", CutReview(listOf(0)))).toEqual(edit)
+  }
+
+  @Test
+  fun `should serve the cuts of a recording with the ones the keep list removes`() {
+    edited(recording("2026-10-17"))
+    expect(
+      service
+      .recordings()
+      .single()
+      .cuts
+      .map { it.kind to it.removed },
+        ).toEqual(listOf(CutKind.BEFORE to true))
+  }
+
+  @Test
+  fun `should name the programme of a recording`() {
+    recording("2026-10-17")
+    expect(service.recordings().single().programme).toEqual("Keskpäevatund")
+  }
+
+  @Test
+  fun `should serve the timeline of a recording`() {
+    edited(recording("2026-10-17"))
+    expect(
+      service
+      .recordings()
+      .single()
+      .timeline
+      .map { it.title },
+        ).toEqual(listOf("Enne saadet", "Keskpäevatund"))
+  }
+
+  @Test
+  fun `should find no review for a recording without an edit list`() {
+    recording("2026-10-17")
+    expect(service.review("2026-10-17", CutReview(emptyList()))).toEqual(null)
   }
 
   @Test
   fun `should find no review for an unknown recording`() {
-    expect(service.review("2026-10-31", listOf(KeptSpan(0.0, 1.0)))).toEqual(null)
+    expect(service.review("2026-10-31", CutReview(emptyList()))).toEqual(null)
+  }
+
+  private fun edited(directory: Path) {
+    val edit =
+      EditList(
+        keep = listOf(KeptSpan(761.5, 4200.0)),
+        durationSeconds = 3438.5,
+        parts = listOf(RecordingPart("raw.mp3", 0.0)),
+        boundaries = listOf(Boundary("show starts", 761.5, "digital silence", false)),
+        hosts = emptyList(),
+        outline = OutlineSummary(null, 1, 1, 1),
+        chapters = emptyList(),
+        reviewed = false,
+        renderedAt = "2026-10-17T10:20:00Z",
+      )
+    Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
   }
 }

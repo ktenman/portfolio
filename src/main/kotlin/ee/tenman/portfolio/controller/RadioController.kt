@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
-import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
@@ -40,8 +40,8 @@ class RadioController(
   @PutMapping("/{name}/cuts")
   fun putCuts(
     @PathVariable name: String,
-    @RequestBody keep: List<KeptSpan>,
-  ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, keep))
+    @RequestBody review: CutReview,
+  ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, review))
 
   @PutMapping("/{name}/transcript/checked")
   fun putTranscriptChecked(

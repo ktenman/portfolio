@@ -46,8 +46,13 @@ class RadioArchiveService(
 
   fun review(
     name: String,
-    keep: List<KeptSpan>,
-  ): EditList? = directory(name, STATUS_FILE)?.let { radioEpisodeService.review(it, keep) }
+    review: CutReview,
+  ): EditList? {
+    val directory = directory(name, STATUS_FILE) ?: return null
+    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return null
+    val total = readStatus(directory).seconds
+    return radioEpisodeService.review(directory, keep(cuts(edit, total), review.removed, total))
+  }
 
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
@@ -77,15 +82,19 @@ class RadioArchiveService(
 
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
+    val edit = read<EditList>(directory.resolve(EDIT_LIST))
     return RecordingSummary(
       name = directory.fileName.toString(),
+      programme = PROGRAMME,
       status = status,
       sizeBytes = status.parts.sumOf { size(directory.resolve(it.file)) ?: 0 },
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
-      editList = read(directory.resolve(EDIT_LIST)),
+      editList = edit,
       failure = read(directory.resolve(FAILED)),
       episodeBytes = size(directory.resolve(EPISODE)),
+      cuts = cuts(edit, status.seconds),
+      timeline = timeline(edit, status.seconds),
     )
   }
 

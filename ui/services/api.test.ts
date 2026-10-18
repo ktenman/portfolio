@@ -234,11 +234,14 @@ describe('api services', () => {
     await expect(utilityService.getCalculationResult()).rejects.toThrow(failure)
   })
 
-  it('should give a reviewed radio keep list ten minutes to render', async () => {
-    const keep = [{ start: 761.5, end: 2120 }]
-    await radioService.review('2026-10-17', keep)
+  it('should give a radio cut review ten minutes to render', async () => {
+    await radioService.review('2026-10-17', { removed: [0, 2, 3] })
 
-    expect(httpClient.put).toHaveBeenCalledWith('/radio/2026-10-17/cuts', keep, { timeout: 600000 })
+    expect(httpClient.put).toHaveBeenCalledWith(
+      '/radio/2026-10-17/cuts',
+      { removed: [0, 2, 3] },
+      { timeout: 600000 }
+    )
   })
 
   it('should build the address of a radio file', () => {

@@ -14,8 +14,8 @@
       error-message="Salvestusi ei õnnestunud laadida."
       empty-message="Salvestusi veel pole."
     >
-      <template #cell-programme>
-        <span class="font-semibold">{{ PROGRAMME }}</span>
+      <template #cell-programme="{ item }">
+        <span class="font-semibold">{{ item.programme }}</span>
       </template>
       <template #cell-cuts="{ item }">
         <span :class="{ 'font-semibold': !item.editList?.reviewed }">{{ cutState(item) }}</span>
@@ -26,7 +26,9 @@
         </span>
       </template>
       <template #cell-state="{ item }">
-        <radio-badge :tone="state(item).tone">{{ state(item).label }}</radio-badge>
+        <radio-badge :tone="STATES[item.status.state].tone">
+          {{ STATES[item.status.state].label }}
+        </radio-badge>
       </template>
       <template #cell-listen="{ item }">
         <router-link :to="`/radio/${item.name}`" :class="LINK_BUTTON">
@@ -44,16 +46,7 @@
 import { computed } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
-import {
-  cutState,
-  day,
-  length,
-  megabytes,
-  PROGRAMME,
-  span,
-  STATES,
-  textState,
-} from '../../utils/radio'
+import { cutState, day, length, megabytes, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
 
@@ -68,9 +61,6 @@ const summary = computed(() => {
   const count = list.length === 1 ? '1 salvestus' : `${list.length} salvestust`
   return `Kuku · ${count} · ${megabytes(bytes)}`
 })
-
-const state = (recording: RecordingSummary) =>
-  STATES[recording.status.state] ?? { label: recording.status.state, tone: 'plain' as const }
 
 const columns: ColumnDefinition[] = [
   { key: 'programme', label: 'Saade' },

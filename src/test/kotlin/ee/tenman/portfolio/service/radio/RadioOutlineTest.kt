@@ -118,7 +118,7 @@ class RadioOutlineTest {
     val started = ZonedDateTime.of(2026, 10, 17, 11, 55, 0, 0, ZoneId.of("Europe/Tallinn")).toEpochSecond().toDouble()
     val text =
       describe(
-        RecordingStatus("captured", started, 4200.0),
+        RecordingStatus(RecordingState.CAPTURED, started, 4200.0),
         listOf(TranscriptLine(25.24, 27.8, "Siin saade on tänaseks kuulatud.", emptyList())),
         listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, -13.4)),
       )
@@ -136,6 +136,6 @@ class RadioOutlineTest {
   @Test
   fun `should print a level with no audio around it as nan`() {
     val events = listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, Double.NaN))
-    expect("after    nan dB" in describe(RecordingStatus("partial", 0.0, 67.36), emptyList(), events)).toEqual(true)
+    expect("after    nan dB" in describe(RecordingStatus(RecordingState.PARTIAL, 0.0, 67.36), emptyList(), events)).toEqual(true)
   }
 }

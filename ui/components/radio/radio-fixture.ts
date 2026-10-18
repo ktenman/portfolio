@@ -1,12 +1,13 @@
-import type {
-  EditList,
-  RecordingSummary,
-  TranscriptLine,
+import {
+  CutKind,
+  type EditList,
+  type RecordingSummary,
+  RecordingState,
 } from '../../models/generated/domain-models'
 
-export const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
+const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
-export const editList = (overrides: Partial<EditList> = {}): EditList => ({
+const editList = (overrides: Partial<EditList> = {}): EditList => ({
   keep: [
     { start: 761.5, end: 2120 },
     { start: 2255, end: 3025 },
@@ -35,10 +36,20 @@ export const editList = (overrides: Partial<EditList> = {}): EditList => ({
   ...overrides,
 })
 
+const cut = (
+  kind: CutKind,
+  title: string,
+  start: number,
+  end: number,
+  methods: string[],
+  review = false
+) => ({ kind, title, start, end, methods, review, removed: true })
+
 export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingSummary => ({
   name: '2026-10-17',
+  programme: 'Keskpäevatund',
   status: {
-    state: 'captured',
+    state: RecordingState.CAPTURED,
     startedAt: STARTED,
     seconds: 4200,
     parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12' }],
@@ -49,27 +60,22 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   editList: editList(),
   failure: null,
   episodeBytes: 34_000_000,
+  cuts: [
+    cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, ['digital silence']),
+    cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, ['level dip', 'station jingle, r=0.93']),
+    cut(CutKind.BREAK, 'Reklaamipaus', 3025, 3137, ['digital silence', 'transcript only'], true),
+    cut(CutKind.AFTER, 'Pärast saadet', 3837, 4200, ['digital silence']),
+  ],
+  timeline: [
+    { start: 0, end: 761.5, title: 'Enne saadet', cut: true },
+    { start: 761.5, end: 2120, title: 'Rahvusooperi tüli', cut: false },
+    { start: 2120, end: 2255, title: 'Reklaamipaus', cut: true },
+    { start: 2255, end: 2700, title: 'Rahvusooperi tüli', cut: false },
+    { start: 2700, end: 3025, title: 'Mis toimub poliitikas?', cut: false },
+    { start: 3025, end: 3137, title: 'Reklaamipaus', cut: true },
+    { start: 3137, end: 3400, title: 'Mis toimub poliitikas?', cut: false },
+    { start: 3400, end: 3837, title: 'President Ülle Madise', cut: false },
+    { start: 3837, end: 4200, title: 'Pärast saadet', cut: true },
+  ],
   ...overrides,
 })
-
-const line = (start: number, end: number, text: string): TranscriptLine => ({
-  start,
-  end,
-  text,
-  words: text.split(' ').map((word, i, all) => ({
-    start: start + ((end - start) * i) / all.length,
-    end: start + ((end - start) * (i + 1)) / all.length,
-    word: ` ${word}`,
-  })),
-})
-
-export const transcript = (): TranscriptLine[] => [
-  line(700, 760, 'Tere päevast, kell on kaksteist.'),
-  line(762, 780, 'Tere, Keskpäevatund on eetris!'),
-  line(2100, 2119, 'Ja siinkohal väike paus.'),
-  line(2256, 2270, 'Ja Keskpäevatund jätkab.'),
-  line(3000, 3024, 'Teeme siin väikese pausi.'),
-  line(3138, 3160, 'Jutt jätkab, Kuku Raadio otsestuudios.'),
-  line(3800, 3836, 'Ja siinkohal lõpetame oma tänase saate.'),
-  line(3900, 3920, 'Tere päevast, kell on üks.'),
-]

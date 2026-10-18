@@ -143,7 +143,7 @@ class RadioEpisodeService(
       spans.zipWithNext().all { (left, right) -> left.second < right.first }
 
   private fun title(status: RecordingStatus): String =
-    "Keskpäevatund ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
+    "$PROGRAMME ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
 
   private fun fail(
     directory: Path,
@@ -163,7 +163,7 @@ class RadioEpisodeService(
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
-    private val READY = setOf("captured", "partial")
+    private val READY = setOf(RecordingState.CAPTURED, RecordingState.PARTIAL)
     private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
   }
 }

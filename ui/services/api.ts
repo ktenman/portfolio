@@ -15,7 +15,7 @@ import {
   type InstrumentDto,
   type InstrumentsResponse,
   type EditList,
-  type KeptSpan,
+  type CutReview,
   type RecordingSummary,
   type TranscriptLine,
   type IntradaySummaryPointDto,
@@ -213,8 +213,8 @@ export const radioService = {
   recordings: () => httpClient.get<RecordingSummary[]>(API_ENDPOINTS.RADIO),
   transcript: (name: string) =>
     httpClient.get<TranscriptLine[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
-  review: (name: string, keep: KeptSpan[]) =>
-    httpClient.put<EditList>(`${API_ENDPOINTS.RADIO}/${name}/cuts`, keep, {
+  review: (name: string, review: CutReview) =>
+    httpClient.put<EditList>(`${API_ENDPOINTS.RADIO}/${name}/cuts`, review, {
       timeout: RADIO_RENDER_TIMEOUT,
     }),
   check: (name: string) =>

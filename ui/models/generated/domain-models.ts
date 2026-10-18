@@ -246,6 +246,7 @@ export interface EnumsResponse {
 
 export interface RecordingSummary {
     name: string;
+    programme: string;
     status: RecordingStatus;
     sizeBytes: number;
     transcribed: boolean;
@@ -253,6 +254,8 @@ export interface RecordingSummary {
     editList: EditList | null;
     failure: EpisodeFailure | null;
     episodeBytes: number | null;
+    cuts: Cut[];
+    timeline: TimelineEntry[];
 }
 
 export interface TranscriptLine {
@@ -262,9 +265,8 @@ export interface TranscriptLine {
     words: TranscriptWord[];
 }
 
-export interface KeptSpan {
-    start: number;
-    end: number;
+export interface CutReview {
+    removed: number[];
 }
 
 export interface Serializable {
@@ -315,7 +317,7 @@ export interface FundWeightDto {
 }
 
 export interface RecordingStatus {
-    state: string;
+    state: RecordingState;
     startedAt: number;
     seconds: number;
     parts: RecordingPart[];
@@ -339,6 +341,23 @@ export interface EpisodeFailure {
     failedAt: string;
 }
 
+export interface Cut {
+    kind: CutKind;
+    title: string;
+    start: number;
+    end: number;
+    methods: string[];
+    review: boolean;
+    removed: boolean;
+}
+
+export interface TimelineEntry {
+    start: number;
+    end: number;
+    title: string;
+    cut: boolean;
+}
+
 export interface TranscriptWord {
     start: number;
     end: number;
@@ -354,6 +373,11 @@ export interface RecordingPart {
     file: string;
     offsetSeconds: number;
     sha256: string | null;
+}
+
+export interface KeptSpan {
+    start: number;
+    end: number;
 }
 
 export interface Boundary {
@@ -463,4 +487,17 @@ export enum TimeRange {
 export enum LiveUpdate {
     PRICES = "PRICES",
     SUMMARY = "SUMMARY",
+}
+
+export enum RecordingState {
+    RECORDING = "recording",
+    CAPTURED = "captured",
+    PARTIAL = "partial",
+    FAILED = "failed",
+}
+
+export enum CutKind {
+    BEFORE = "BEFORE",
+    BREAK = "BREAK",
+    AFTER = "AFTER",
 }
