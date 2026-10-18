@@ -40,7 +40,8 @@ class RadioArchiveService(
     file: String,
   ): Resource? {
     if (!FILE.matches(file)) return null
-    return directory(name, STATUS_FILE)?.let { FileSystemResource(it.resolve(file)) }?.takeIf { it.isReadable }
+    val path = directory(name, STATUS_FILE)?.let { inside(it, file) } ?: return null
+    return FileSystemResource(path).takeIf { it.isReadable }
   }
 
   fun review(
@@ -58,7 +59,21 @@ class RadioArchiveService(
   private fun directory(
     name: String,
     required: String,
-  ): Path? = radioProperties.recordings.resolve(name).takeIf { NAME.matches(name) && Files.exists(it.resolve(required)) }
+  ): Path? {
+    if (!NAME.matches(name)) return null
+    val directory = inside(radioProperties.recordings.normalize(), name) ?: return null
+    if (!Files.exists(directory.resolve(required))) return null
+    return directory
+  }
+
+  private fun inside(
+    parent: Path,
+    child: String,
+  ): Path? {
+    val path = parent.resolve(child).normalize()
+    if (!path.startsWith(parent)) return null
+    return path
+  }
 
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
