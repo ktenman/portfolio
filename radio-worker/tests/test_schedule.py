@@ -1,10 +1,14 @@
 import datetime as dt
 import hashlib
 import json
+import threading
+import time
 
 import pytest
+from support import broadcast, noise, write_recording
 
-from radio_worker import schedule
+from radio_worker import recorder, schedule
+from radio_worker.recorder import read_status
 from radio_worker.schedule import TALLINN, planned
 
 
@@ -185,3 +189,35 @@ def test_fetch_discards_weights_whose_hash_differs(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="SHA-256"):
         schedule.fetch(tmp_path)
     assert list(tmp_path.iterdir()) == []
+
+
+def test_around_the_clock_stays_off_until_switched_on(tmp_path):
+    assert schedule.switched_on(tmp_path) is False
+
+
+def test_around_the_clock_reads_the_switch_the_backend_writes(tmp_path):
+    (tmp_path / "continuous.json").write_text('{"on": true}')
+    assert schedule.switched_on(tmp_path) is True
+
+
+def test_around_the_clock_records_mp3_parts_without_pcm_until_switched_off(tmp_path, monkeypatch):
+    monkeypatch.setattr(schedule, "CHECK_SECONDS", 0.2)
+    monkeypatch.setattr(recorder, "PART_SECONDS", 3)
+    recordings = tmp_path / "recordings"
+    recordings.mkdir()
+    (recordings / "continuous.json").write_text('{"on": true}')
+    with broadcast(tmp_path, 20) as url:
+        threading.Timer(6, lambda: (recordings / "continuous.json").write_text('{"on": false}')).start()
+        schedule.day(recordings, url, time.time)
+    directory = next(recordings.glob("*-pidev"))
+    status = read_status(directory)
+    found = (status["state"] != "recording", status["continuous"], len(status["parts"]) > 1, list(directory.glob("*.pcm")))
+    assert found == (True, True, True, [])
+
+
+def test_around_the_clock_closes_a_recording_a_restart_left_unfinished(tmp_path):
+    directory = tmp_path / "2026-10-18-0000-pidev"
+    directory.mkdir()
+    write_recording(directory, [("raw.mp3", 0.0, noise(4, []), True)], "recording")
+    schedule.settle(directory, time.time())
+    assert read_status(directory)["state"] == "captured"

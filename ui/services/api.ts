@@ -1,6 +1,7 @@
 import { httpClient } from '../utils/http-client'
 import {
   type AiringChoice,
+  type ContinuousChoice,
   type AllocationDto,
   type AnnualWindowsDto,
   BenchmarkIndex,
@@ -247,6 +248,8 @@ export const radioService = {
     httpClient.get<RadioDay>(`${API_ENDPOINTS.RADIO}/schedule`, { params: { date } }),
   record: (id: number, choice: AiringChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/airings/${id}`, choice),
+  continuous: (choice: ContinuousChoice) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/continuous`, choice),
 }
 
 export const liveUpdatesService = {

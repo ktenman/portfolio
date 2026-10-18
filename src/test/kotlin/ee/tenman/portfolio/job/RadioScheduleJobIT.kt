@@ -118,11 +118,14 @@ class RadioScheduleJobIT {
     name: String,
     start: ZonedDateTime,
     seconds: Long,
+    state: String = "captured",
+    continuous: Boolean = false,
   ) {
     val directory = Files.createDirectories(radioProperties.recordings.resolve(name))
     Files.writeString(
       directory.resolve("status.json"),
-      """{"state":"captured","startedAt":${start.toEpochSecond()},"seconds":$seconds,"programmes":["Keskpäevatund"]}""",
+      """{"state":"$state","startedAt":${start.toEpochSecond()},"seconds":$seconds,"programmes":["Keskpäevatund"],""" +
+        """"continuous":$continuous}""",
     )
   }
 
@@ -217,7 +220,7 @@ class RadioScheduleJobIT {
 
   @Test
   fun `should size a day and a week of continuous recording as MP3 alone`() {
-    expect(radioScheduleService.station().continuous).toEqual(ContinuousRecording(2_764_800_000, 19_353_600_000))
+    expect(radioScheduleService.station().continuous).toEqual(ContinuousRecording(false, 2_764_800_000, 19_353_600_000))
   }
 
   @Test
@@ -284,6 +287,25 @@ class RadioScheduleJobIT {
       .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
       .andExpect(jsonPath("$.day[0].airings[0].state").value("RECORDED"))
       .andExpect(jsonPath("$.day[0].airings[0].recording.name").value("$day-1200-keskpaevatund"))
+  }
+
+  @Test
+  fun `should play an airing from its planned recording rather than the continuous one`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    recording("$day-1155-keskpaevatund", at("11:55"), 4200)
+    recording("$day-1200-pidev", at("12:00"), 43200, continuous = true)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.day[0].airings[0].recording.name").value("$day-1155-keskpaevatund"))
+  }
+
+  @Test
+  fun `should not serve a later airing as recorded while the continuous recording runs`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    recording("$day-0000-pidev", at("00:00"), 86400, state = "recording", continuous = true)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.day[0].airings[0].state").value("OPEN"))
   }
 
   @Test

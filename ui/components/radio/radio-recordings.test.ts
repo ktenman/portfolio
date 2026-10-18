@@ -37,6 +37,7 @@ describe('RadioRecordings', () => {
           programmes: ['Keskpäevatund'],
           startedAt: 1792170142,
           lostSeconds: 0,
+          continuous: false,
           seconds: 60,
           parts: [],
         },
@@ -71,6 +72,13 @@ describe('RadioRecordings', () => {
   it('should name each listen link after its recording', async () => {
     const link = (await mount()).find('a[href="/radio/2026-10-17"]')
     expect(link.attributes('aria-label')).toBe('Kuula: Keskpäevatund L 17.10')
+  })
+
+  it('should leave continuous recordings out of the table', async () => {
+    const day = recording({ name: '2026-10-18-0000-pidev' })
+    day.status.continuous = true
+    vi.mocked(radioService.recordings).mockResolvedValue([day])
+    expect((await mount()).find('a[href="/radio/2026-10-18-0000-pidev"]').exists()).toBe(false)
   })
 
   it('should link each recording to its episode page', async () => {
