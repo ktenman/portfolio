@@ -1,32 +1,40 @@
 <template>
   <radio-card v-if="station" title="Pidev salvestus">
     <template #aside>
-      <radio-badge>Väljas</radio-badge>
+      <radio-badge :tone="on ? 'live' : 'plain'">{{ on ? 'Sees' : 'Väljas' }}</radio-badge>
     </template>
-    <p class="mt-0 mb-2 text-sm text-ink-soft">
+    <p v-if="on" class="mt-0 mb-2 text-sm text-ink-soft">
+      Salvestab kogu eetrit ja hoiab seda 7 päeva. Järelkuulamises saab kuulata ka saateid, mida
+      ette ei valitud.
+    </p>
+    <p v-else class="mt-0 mb-2 text-sm text-ink-soft">
       Salvestaks kogu eetri ja hoiaks seda 7 päeva. Siis saaks järele kuulata ka saateid, mida ette
       ei valitud.
     </p>
     <radio-facts :rows="facts" />
-    <app-button class="mt-3" disabled aria-describedby="radio-continuous-note">
-      Lülita sisse
+    <app-button class="mt-3" :disabled="saving" @click="toggle">
+      {{ on ? 'Lülita välja' : 'Lülita sisse' }}
     </app-button>
-    <p id="radio-continuous-note" class="mt-2 mb-0 text-sm text-ink-soft">
-      Saab sisse lülitada, kui salvestusi hoitakse
-      <span class="whitespace-nowrap">S3-s.</span>
-    </p>
   </radio-card>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useRadioStation } from '../../composables/use-radio-recordings'
+import { useToast } from '../../composables/use-toast'
+import { radioService } from '../../services/api'
 import AppButton from '../shared/app-button.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 
 const { data: station } = useRadioStation()
+const queryClient = useQueryClient()
+const toast = useToast()
+const saving = ref(false)
+
+const on = computed(() => station.value?.continuous.on ?? false)
 
 const estimate = (bytes: number) =>
   `≈ ${(bytes / 1e9).toLocaleString('et', { maximumSignificantDigits: 2 })} GB`
@@ -39,4 +47,13 @@ const facts = computed<[string, string][]>(() => {
     ['Vaba ruumi', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
   ]
 })
+
+const toggle = () => {
+  saving.value = true
+  radioService
+    .continuous({ on: !on.value })
+    .then(() => queryClient.invalidateQueries({ queryKey: ['radio-station'] }))
+    .catch(() => toast.error('Pidevat salvestust ei saanud ümber lülitada'))
+    .finally(() => (saving.value = false))
+}
 </script>

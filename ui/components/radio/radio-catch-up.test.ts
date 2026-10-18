@@ -9,7 +9,13 @@ import { AiringState, RecorderState } from '../../models/generated/domain-models
 const player = vi.hoisted(() => ({ load: vi.fn(), playFrom: vi.fn(), listen: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
-  radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn(), station: vi.fn() },
+  radioService: {
+    day: vi.fn(),
+    record: vi.fn(),
+    recordings: vi.fn(),
+    station: vi.fn(),
+    continuous: vi.fn(),
+  },
 }))
 vi.mock('../../composables/use-radio-player', () => ({ useRadioPlayer: () => player }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -48,7 +54,7 @@ describe('RadioCatchUp', () => {
       recorder: RecorderState.WAITING,
       last: null,
       format: null,
-      continuous: { dayBytes: 2_764_800_000, weekBytes: 19_353_600_000 },
+      continuous: { on: false, dayBytes: 2_764_800_000, weekBytes: 19_353_600_000 },
     })
   })
 
@@ -143,10 +149,14 @@ describe('RadioCatchUp', () => {
     expect((await mount()).text()).toContain('Päevas≈ 2,8 GB7 päeva≈ 19 GBVaba ruumi364 GB')
   })
 
-  it('should keep continuous recording off until its storage is ready', async () => {
+  it('should switch continuous recording on', async () => {
+    vi.mocked(radioService.continuous).mockResolvedValue()
     const wrapper = await mount()
-    const toggle = wrapper.findAll('button').find(b => b.text() === 'Lülita sisse')!
-    expect(toggle.attributes('disabled')).toBeDefined()
+    await wrapper
+      .findAll('button')
+      .find(b => b.text() === 'Lülita sisse')!
+      .trigger('click')
+    expect(radioService.continuous).toHaveBeenCalledWith({ on: true })
   })
 
   it('should give the length of an airing in whole hours', async () => {
