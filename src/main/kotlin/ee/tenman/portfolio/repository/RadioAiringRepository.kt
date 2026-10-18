@@ -13,6 +13,14 @@ interface RadioAiringRepository : JpaRepository<RadioAiring, Long> {
 
   fun findByEndsAtAfterOrderByStartsAt(after: Instant): List<RadioAiring>
 
+  fun findByKukuId(kukuId: Long): RadioAiring?
+
+  @Query("SELECT a FROM RadioAiring a WHERE a.startsAt >= :from AND a.startsAt < :until ORDER BY a.startsAt")
+  fun findStarting(
+    from: Instant,
+    until: Instant,
+  ): List<RadioAiring>
+
   @Modifying
   @Query("DELETE FROM RadioAiring a WHERE a.startsAt >= :from AND a.startsAt < :until AND a.kukuId NOT IN :kept")
   fun deleteDropped(

@@ -1,10 +1,13 @@
 import {
+  AiringState,
   type Boundary,
   BoundaryMethod,
   CutKind,
   CutState,
   type CutContext,
+  type DayAiring,
   type EditList,
+  type RadioDay,
   type RecordingSummary,
   RecordingState,
   type TranscriptLine,
@@ -153,3 +156,106 @@ export const transcript = (): TranscriptLine[] => [
   { ...line(2110, 2125, ' Ja nüüd väike paus, ostke'), split: recording().cuts[1] },
   line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
 ]
+
+const at = (hour: number, minute = 0) => Date.UTC(2026, 9, 17, hour - 3, minute) / 1000
+
+const take = (from: number, to: number) => ({
+  name: '2026-10-17',
+  programme: 'Keskpäevatund',
+  start: STARTED,
+  end: STARTED + 4200,
+  from,
+  to,
+})
+
+export const airing = (overrides: Partial<DayAiring> = {}): DayAiring => ({
+  id: 1,
+  name: 'Ilmaparandaja',
+  episode: null,
+  start: at(14),
+  end: at(15),
+  state: AiringState.OPEN,
+  once: false,
+  repeat: false,
+  original: null,
+  recording: null,
+  ...overrides,
+})
+
+const hour = (id: number, start: number, name: string, overrides: Partial<DayAiring> = {}) =>
+  airing({ id, name, start: at(start), end: at(start + 1), ...overrides })
+
+const repeat = (
+  id: number,
+  start: number,
+  name: string,
+  original: DayAiring['original'],
+  overrides: Partial<DayAiring> = {}
+) => hour(id, start, name, { repeat: true, original, ...overrides })
+
+const MISSED = AiringState.MISSED
+const ARCHIVED = { start: at(12), state: AiringState.RECORDED, recording: take(at(12), at(13)) }
+
+export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
+  date: '2026-10-17',
+  today: '2026-10-17',
+  days: ['2026-10-16', '2026-10-17', '2026-10-18'],
+  from: at(0),
+  until: at(24),
+  now: at(13, 20),
+  recorded: [{ start: STARTED, end: STARTED + 4200 }],
+  seconds: 4200,
+  day: [
+    {
+      missed: true,
+      airings: [
+        repeat(1, 5, 'Kukkuv Õun', null, { state: MISSED }),
+        hour(2, 6, 'Laupäevane hommik', { end: at(9), state: MISSED }),
+        hour(3, 9, 'Meretund', { state: MISSED }),
+      ],
+    },
+    {
+      missed: false,
+      airings: [
+        hour(4, 10, 'Neeme Raud. Siin', {
+          end: at(12),
+          state: AiringState.PARTIAL,
+          recording: take(at(11, 55), at(12)),
+        }),
+        hour(5, 12, 'Keskpäevatund', {
+          state: AiringState.RECORDED,
+          recording: take(at(12), at(13)),
+        }),
+        hour(6, 13, 'Tarkade klubi', { state: AiringState.ON_AIR }),
+        hour(7, 14, 'Ilmaparandaja'),
+        hour(8, 15, 'ENNtsüklopeedia', { episode: 'Chuck Berry' }),
+        hour(9, 17, 'Naistejutud Kukus', { episode: '474 · Robin Juhkental' }),
+        repeat(10, 18, 'Keskpäevatund', ARCHIVED, { state: AiringState.ARCHIVED }),
+        hour(11, 19, 'Ringhääling 75', { episode: 'VII saade' }),
+        repeat(12, 20, 'Filmikägu', { start: at(-3), state: MISSED, recording: null }),
+        repeat(13, 21, 'Meretund', { start: at(9), state: MISSED, recording: null }),
+        repeat(14, 22, 'EMALAEV', null, {
+          end: at(24),
+          episode: 'Kristjan Port: süsiniku ja räni, bioloogia ja tehnoloogia kohtumine',
+        }),
+      ],
+    },
+  ],
+  night: [
+    {
+      missed: false,
+      airings: [
+        repeat(
+          15,
+          24,
+          'Neeme Raud. Siin',
+          { start: at(10), state: AiringState.PARTIAL, recording: take(at(11, 55), at(12)) },
+          { end: at(26) }
+        ),
+        repeat(16, 26, 'Keskpäevatund', ARCHIVED, { state: AiringState.ARCHIVED }),
+        repeat(17, 27, 'Tarkade klubi', null, { state: AiringState.PLANNED, once: true }),
+      ],
+    },
+  ],
+  ...overrides,
+})

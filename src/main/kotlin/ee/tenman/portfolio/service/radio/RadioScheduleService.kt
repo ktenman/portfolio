@@ -60,6 +60,18 @@ class RadioScheduleService(
     return true
   }
 
+  fun record(
+    id: Long,
+    choice: AiringChoice,
+  ): Boolean {
+    val airing = radioAiringRepository.findByKukuId(id) ?: return false
+    require(airing.startsAt > clock.instant()) { "Kuku airing $id began at ${airing.startsAt} and can no longer be chosen" }
+    airing.recordOnce = choice.record
+    radioAiringRepository.save(airing)
+    plan()
+    return true
+  }
+
   fun plan() {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return
@@ -111,12 +123,12 @@ class RadioScheduleService(
       JsonMapperFactory.instance.readValue(Files.readString(it), Heartbeat::class.java)
     }
 
-  private fun planned(airings: List<RadioAiring>): List<Capture> {
-    val chosen = radioProgrammeRepository.findByRecordEveryTrue().associateBy { it.id }
+  fun planned(airings: List<RadioAiring>): List<Capture> {
+    val programmes = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associateBy { it.id }
     val planned =
       airings
-        .filter { it.originalId == null }
-        .mapNotNull { airing -> chosen[airing.programmeId]?.let { PlannedAiring(it.name, it.slug, airing.startsAt, airing.endsAt) } }
+        .filter { it.recordOnce || (it.originalId == null && programmes[it.programmeId]?.recordEvery == true) }
+        .map { airing -> programmes.getValue(airing.programmeId).let { PlannedAiring(it.name, it.slug, airing.startsAt, airing.endsAt) } }
     return captures(planned, clock.zone)
   }
 

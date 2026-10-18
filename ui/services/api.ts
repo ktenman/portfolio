@@ -1,5 +1,6 @@
 import { httpClient } from '../utils/http-client'
 import {
+  type AiringChoice,
   type AllocationDto,
   type AnnualWindowsDto,
   BenchmarkIndex,
@@ -20,6 +21,7 @@ import {
   type JingleReview,
   type ManualCut,
   type ProgrammeChoice,
+  type RadioDay,
   type RadioProgrammeDto,
   type RadioStation,
   type RecordingSummary,
@@ -238,6 +240,10 @@ export const radioService = {
   liveUrl: `/api${API_ENDPOINTS.RADIO}/live`,
   choose: (id: number, choice: ProgrammeChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/programmes/${id}`, choice),
+  day: (date: string | null) =>
+    httpClient.get<RadioDay>(`${API_ENDPOINTS.RADIO}/schedule`, { params: { date } }),
+  record: (id: number, choice: AiringChoice) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/airings/${id}`, choice),
 }
 
 export const liveUpdatesService = {

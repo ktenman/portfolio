@@ -47,6 +47,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../components/radio/radio-recordings.vue'),
       },
       {
+        path: 'jarelkuulamine',
+        name: 'RadioCatchUp',
+        component: () => import('../components/radio/radio-catch-up.vue'),
+      },
+      {
         path: ':name',
         component: () => import('../components/radio/radio-episode.vue'),
         children: [

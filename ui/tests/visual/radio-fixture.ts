@@ -1,5 +1,11 @@
 import { API_ENDPOINTS } from '../../constants/api'
-import { contexts, recording, song, transcript } from '../../components/radio/radio-fixture'
+import {
+  contexts,
+  radioDay,
+  recording,
+  song,
+  transcript,
+} from '../../components/radio/radio-fixture'
 import {
   CutState,
   DayOfWeek,
@@ -156,6 +162,9 @@ export const stubRadio: RouteStub = async page => {
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
     route.fulfill({ json: STATION })
+  )
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
+    route.fulfill({ json: radioDay() })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/cuts`), route =>
     route.fulfill({ json: contexts() })
