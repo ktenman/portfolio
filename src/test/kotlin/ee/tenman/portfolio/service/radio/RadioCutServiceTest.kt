@@ -75,6 +75,24 @@ class RadioCutServiceTest {
   }
 
   @Test
+  fun `should snap an end picked by hand to the nearest silence`() {
+    val (_, db) = recording(noise(20.0, listOf(8.0, 12.0)))
+    expect(abs(snap(db, 11.0) - 12.15) <= 0.011).toEqual(true)
+  }
+
+  @Test
+  fun `should keep an end picked by hand where the audio gives nothing nearby`() {
+    val (_, db) = recording(noise(20.0, listOf(4.0)))
+    expect(snap(db, 10.0)).toEqual(10.0)
+  }
+
+  @Test
+  fun `should leave an end picked by hand outside the recording where it is`() {
+    val (_, db) = recording(noise(20.0, listOf(4.0)))
+    expect(snap(db, Double.MAX_VALUE)).toEqual(Double.MAX_VALUE)
+  }
+
+  @Test
   fun `should start a break from the transcript when the audio gives nothing`() {
     val (_, db) = recording(noise(20.0))
     expect(leave(db, 10.0, 6.0)).toEqual(10.2 to "transcript only")

@@ -17,6 +17,7 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.STATION_JINGLE]: 'jaama džingel',
   [BoundaryMethod.LEVEL_DIP]: 'helitaseme langus',
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
+  [BoundaryMethod.MANUAL]: 'käsitsi',
 }
 
 const DAYS = Object.values(DayOfWeek)
@@ -89,6 +90,18 @@ const instant = (startedAt: number, seconds = 0) => new Date((startedAt + second
 
 export const clock = (startedAt: number, seconds: number, withSeconds = false): string =>
   (withSeconds ? TIME_SECONDS : TIME).format(instant(startedAt, seconds))
+
+const daySeconds = (time: string): number | null => {
+  const match = /^(\d{1,2}):(\d{2}):(\d{2})$/.exec(time.trim())
+  return match ? Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) : null
+}
+
+export const offset = (startedAt: number, time: string): number | null => {
+  const at = daySeconds(time)
+  const start = daySeconds(clock(startedAt, 0, true))
+  if (at === null || start === null) return null
+  return (at - start + 86400) % 86400
+}
 
 export const range = (startedAt: number, start: number, end: number, withSeconds = false): string =>
   `${clock(startedAt, start, withSeconds)}–${clock(startedAt, end, withSeconds)}`

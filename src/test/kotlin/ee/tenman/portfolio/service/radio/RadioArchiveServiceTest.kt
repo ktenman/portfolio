@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import io.mockk.every
@@ -362,11 +363,58 @@ class RadioArchiveServiceTest {
     expect(service.jingle("2026-10-17", 1, JingleReview(true))).toEqual(false)
   }
 
+  private fun quiet(): Path {
+    val directory = Files.createDirectories(recordings.resolve("2026-10-24"))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noise(60.0, listOf(20.0, 40.0)))))
+    val status = RecordingStatus(RecordingState.CAPTURED, 1792832100.0, 60.0, listOf(RecordingPart("raw.mp3", 0.0)))
+    Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
+    edited(directory, listOf(KeptSpan(5.0, 60.0)), listOf(Boundary("show starts", 5.0, "digital silence", false)))
+    return directory
+  }
+
+  private fun manual(): List<ManualCut> =
+    JsonMapperFactory.instance.readValue(Files.readString(recordings.resolve("2026-10-24/edit-list.json")), EditList::class.java).manual
+
+  @Test
+  fun `should add a cut by hand with its ends at the nearest silences`() {
+    quiet()
+    service.add("2026-10-24", ManualCut(19.0, 41.0))
+    expect(manual()).toEqual(listOf(ManualCut(20.15, 40.15)))
+  }
+
+  @Test
+  fun `should refuse a cut by hand that overlaps a cut`() {
+    quiet()
+    expect { service.add("2026-10-24", ManualCut(3.0, 10.0)) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should drop a cut made by hand`() {
+    quiet()
+    service.add("2026-10-24", ManualCut(19.0, 41.0))
+    service.drop("2026-10-24", 1)
+    expect(manual()).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should not drop a machine cut`() {
+    quiet()
+    expect(service.drop("2026-10-24", 0)).toEqual(false)
+  }
+
+  @Test
+  fun `should not drop a cut made by hand that the episode leaves out`() {
+    val directory = quiet()
+    edited(directory, listOf(KeptSpan(5.0, 20.0), KeptSpan(40.0, 60.0)), manual = listOf(ManualCut(20.0, 40.0)))
+    expect { service.drop("2026-10-24", 1) }.toThrow<IllegalArgumentException>()
+  }
+
   private fun edited(
     directory: Path,
     keep: List<KeptSpan> = listOf(KeptSpan(761.5, 4200.0)),
     boundaries: List<Boundary> = listOf(Boundary("show starts", 761.5, "digital silence", false)),
     music: List<KeptSpan> = emptyList(),
+    manual: List<ManualCut> = emptyList(),
   ) {
     val edit =
       EditList(
@@ -380,6 +428,7 @@ class RadioArchiveServiceTest {
         reviewed = false,
         renderedAt = "2026-10-17T10:20:00Z",
         music = music,
+        manual = manual,
       )
     Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
   }

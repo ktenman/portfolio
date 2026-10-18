@@ -4,6 +4,7 @@ import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.JingleReview
+import ee.tenman.portfolio.service.radio.ManualCut
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
@@ -16,8 +17,10 @@ import org.springframework.http.CacheControl
 import org.springframework.http.MediaType
 import org.springframework.http.MediaTypeFactory
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -76,6 +79,18 @@ class RadioController(
     @PathVariable name: String,
     @RequestBody review: CutReview,
   ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, review))
+
+  @PostMapping("/{name}/cuts/manual")
+  fun postManualCut(
+    @PathVariable name: String,
+    @RequestBody cut: ManualCut,
+  ): ResponseEntity<Void> = done(radioArchiveService.add(name, cut))
+
+  @DeleteMapping("/{name}/cuts/{index}")
+  fun deleteCut(
+    @PathVariable name: String,
+    @PathVariable index: Int,
+  ): ResponseEntity<Void> = done(radioArchiveService.drop(name, index))
 
   @PutMapping("/{name}/cuts/{index}/jingle")
   fun putJingle(

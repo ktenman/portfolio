@@ -28,13 +28,22 @@
         </app-button>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
-        <app-button
-          :aria-label="`Kuula üleminekut: ${name}`"
-          @click="player.preview(cut.start, cut.end)"
-        >
-          <radio-icon name="play" class="me-1.5" />
-          Kuula üleminekut
-        </app-button>
+        <div class="flex flex-wrap gap-2">
+          <app-button
+            :aria-label="`Kuula üleminekut: ${name}`"
+            @click="player.preview(cut.start, cut.end)"
+          >
+            <radio-icon name="play" class="me-1.5" />
+            Kuula üleminekut
+          </app-button>
+          <app-button
+            v-if="cut.kind === CutKind.MANUAL && !cut.removed"
+            :aria-label="`Kustuta: ${name}`"
+            @click="emit('drop')"
+          >
+            Kustuta
+          </app-button>
+        </div>
         <div class="flex gap-2" role="group" :aria-label="`Otsus: ${name}`">
           <button
             v-for="choice in CHOICES"
@@ -55,6 +64,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { CutKind } from '../../models/generated/domain-models'
 import type { Cut, CutContext, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { clock, length, METHODS, range } from '../../utils/radio'
@@ -69,7 +79,7 @@ const props = defineProps<{
   removed: boolean
 }>()
 
-const emit = defineEmits<{ choose: [removed: boolean]; jingle: [saved: boolean] }>()
+const emit = defineEmits<{ choose: [removed: boolean]; jingle: [saved: boolean]; drop: [] }>()
 
 const CHOICES = [
   { label: 'Eemalda', removed: true },

@@ -14,6 +14,7 @@ enum class BoundaryMethod(
   STATION_JINGLE("station jingle"),
   LEVEL_DIP("level dip"),
   TRANSCRIPT_ONLY(TRANSCRIPT),
+  MANUAL("manual"),
   ;
 
   companion object {
@@ -27,6 +28,7 @@ enum class CutKind(
   BEFORE("Enne saadet"),
   BREAK("Reklaamipaus"),
   AFTER("Pärast saadet"),
+  MANUAL("Käsitsi lõige"),
 }
 
 data class Cut(
@@ -51,6 +53,11 @@ data class TimelineEntry(
   val end: Double,
   val title: String,
   val cut: Boolean,
+)
+
+data class ManualCut(
+  val start: Double,
+  val end: Double,
 )
 
 data class CutReview(
@@ -99,7 +106,25 @@ fun cuts(
   val before = at["show starts"]?.let { cut(CutKind.BEFORE, 0.0, it.seconds, listOf(it), edit.keep) }
   val pauses = (1..count).mapNotNull { pause(at["break $it starts"], at["break $it ends"], edit.keep) }
   val after = at["show ends"]?.let { cut(CutKind.AFTER, it.seconds, total, listOf(it), edit.keep) }
-  return (listOfNotNull(before) + pauses + listOfNotNull(after)).filter { it.end - it.start > SHORTEST }
+  val manual = edit.manual.map { manual(it, edit.keep) }
+  return (listOfNotNull(before) + pauses + listOfNotNull(after)).filter { it.end - it.start > SHORTEST } + manual
+}
+
+private fun manual(
+  span: ManualCut,
+  keep: List<KeptSpan>,
+): Cut {
+  val methods = listOf(BoundaryMethod.MANUAL, BoundaryMethod.MANUAL)
+  return Cut(CutKind.MANUAL, CutKind.MANUAL.title, span.start, span.end, methods, false, removed(span.start, span.end, keep))
+}
+
+private fun removed(
+  start: Double,
+  end: Double,
+  keep: List<KeptSpan>,
+): Boolean {
+  val middle = (start + end) / 2
+  return keep.none { middle >= it.start && middle < it.end }
 }
 
 private fun pause(
@@ -117,19 +142,17 @@ private fun cut(
   end: Double,
   ends: List<Boundary>,
   keep: List<KeptSpan>,
-): Cut {
-  val middle = (start + end) / 2
-  return Cut(
+): Cut =
+  Cut(
     kind = kind,
     title = kind.title,
     start = start,
     end = end,
     methods = ends.map { BoundaryMethod.of(it.method) },
     review = ends.any { it.review },
-    removed = keep.none { middle >= it.start && middle < it.end },
+    removed = removed(start, end, keep),
     match = ends.last().jingle,
   )
-}
 
 fun keep(
   cuts: List<Cut>,
