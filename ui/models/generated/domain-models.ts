@@ -280,6 +280,11 @@ export interface JingleReview {
     saved: boolean;
 }
 
+export interface ManualCut {
+    start: number;
+    end: number;
+}
+
 export interface CutContext {
     before: TranscriptLine | null;
     after: TranscriptLine | null;
@@ -374,6 +379,7 @@ export interface EditList {
     renderedAt: string;
     topics: EpisodeChapter[];
     music: KeptSpan[];
+    manual: ManualCut[];
 }
 
 export interface EpisodeFailure {
@@ -592,6 +598,7 @@ export enum CutKind {
     BEFORE = "BEFORE",
     BREAK = "BREAK",
     AFTER = "AFTER",
+    MANUAL = "MANUAL",
 }
 
 export enum BoundaryMethod {
@@ -599,6 +606,7 @@ export enum BoundaryMethod {
     STATION_JINGLE = "STATION_JINGLE",
     LEVEL_DIP = "LEVEL_DIP",
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
+    MANUAL = "MANUAL",
 }
 
 export enum DayOfWeek {

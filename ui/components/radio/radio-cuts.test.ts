@@ -5,6 +5,7 @@ import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioCuts from './radio-cuts.vue'
 import { contexts, recording } from './radio-fixture'
+import { BoundaryMethod, CutKind } from '../../models/generated/domain-models'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 
 const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
@@ -14,6 +15,8 @@ vi.mock('../../services/api', () => ({
     cuts: vi.fn(),
     review: vi.fn(),
     jingle: vi.fn(),
+    addCut: vi.fn(),
+    dropCut: vi.fn(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -33,6 +36,8 @@ describe('RadioCuts', () => {
     vi.mocked(radioService.cuts).mockResolvedValue(contexts())
     vi.mocked(radioService.review).mockReset().mockResolvedValue(recording().editList!)
     vi.mocked(radioService.jingle).mockReset().mockResolvedValue()
+    vi.mocked(radioService.addCut).mockReset().mockResolvedValue()
+    vi.mocked(radioService.dropCut).mockReset().mockResolvedValue()
     confirm.mockReset()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
@@ -150,6 +155,62 @@ describe('RadioCuts', () => {
     expect(button(await card(1), 'Kinnita džingel')?.attributes('aria-label')).toBe(
       'Kinnita džingel: Reklaamipaus 12:30'
     )
+  })
+
+  const manual = {
+    kind: CutKind.MANUAL,
+    title: 'Käsitsi lõige',
+    start: 2600,
+    end: 2640,
+    methods: [BoundaryMethod.MANUAL, BoundaryMethod.MANUAL],
+    review: false,
+    removed: false,
+    jingle: null,
+  }
+
+  const typed = async (start: string, end: string) => {
+    const wrapper = await render()
+    await wrapper.find('#radio-manual-start').setValue(start)
+    await wrapper.find('#radio-manual-end').setValue(end)
+    return wrapper
+  }
+
+  it('should add a cut typed as clock times', async () => {
+    await (await typed('12:31:05', '12:32:10')).find('form').trigger('submit')
+    expect(radioService.addCut).toHaveBeenCalledWith('2026-10-17', { start: 2165, end: 2230 })
+  })
+
+  it('should not add a cut that ends before it starts', async () => {
+    const wrapper = await typed('12:32:10', '12:31:05')
+    expect(button(wrapper, 'Lisa lõige')?.attributes('disabled')).toBeDefined()
+  })
+
+  it('should take an end of the cut from where the player is', async () => {
+    player.playFrom(2165)
+    audio.dispatchEvent(new Event('timeupdate'))
+    const wrapper = await render()
+    await button(wrapper, 'Praegune koht').trigger('click')
+    expect((wrapper.find('#radio-manual-start').element as HTMLInputElement).value).toBe('12:31:05')
+  })
+
+  it('should show a cut made by hand among the others in recording order', async () => {
+    const cuts = [...recording().cuts, manual]
+    const titles = (await render(recording({ cuts })))
+      .findAll('[data-testid="radio-cut"] h4')
+      .map(title => title.text())
+    expect(titles[2]).toBe('Käsitsi lõige')
+  })
+
+  it('should choose to remove a cut once it is added by hand', async () => {
+    const wrapper = await render()
+    await wrapper.setProps({ recording: recording({ cuts: [...recording().cuts, manual] }) })
+    expect(result(wrapper)).toContain('5 lõiget')
+  })
+
+  it('should delete a cut made by hand', async () => {
+    const cuts = [...recording().cuts, manual]
+    await button(await render(recording({ cuts })), 'Kustuta').trigger('click')
+    expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
   })
 
   it('should play the moment before a cut to hear the transition', async () => {

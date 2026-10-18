@@ -56,6 +56,22 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should list a cut made by hand after the machine cuts`() {
+    val cut = cuts(edit().copy(manual = listOf(ManualCut(1500.0, 1560.0))), 4200.0).last()
+    expect(Triple(cut.kind, cut.start to cut.end, cut.methods)).toEqual(
+      Triple(CutKind.MANUAL, 1500.0 to 1560.0, listOf(BoundaryMethod.MANUAL, BoundaryMethod.MANUAL)),
+    )
+  }
+
+  @Test
+  fun `should leave a removed cut made by hand out of the episode`() {
+    val found = cuts(edit().copy(manual = listOf(ManualCut(1500.0, 1560.0))), 4200.0)
+    expect(keep(found, listOf(0, 1, 2, 3, 4), 4200.0)).toEqual(
+      listOf(KeptSpan(761.5, 1500.0), KeptSpan(1560.0, 2120.0)) + machine.drop(1),
+    )
+  }
+
+  @Test
   fun `should give the methods that placed both boundaries of a cut`() {
     expect(cuts(edit(), 4200.0)[1].methods).toEqual(listOf(BoundaryMethod.LEVEL_DIP, BoundaryMethod.STATION_JINGLE))
   }

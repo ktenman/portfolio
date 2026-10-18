@@ -102,6 +102,7 @@ data class EditList(
   val renderedAt: String,
   val topics: List<EpisodeChapter> = emptyList(),
   val music: List<KeptSpan> = emptyList(),
+  val manual: List<ManualCut> = emptyList(),
 )
 
 data class EpisodeFailure(

@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
 import java.nio.file.Path
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post as mvcPost
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put as mvcPut
 
 @IntegrationTest
@@ -99,6 +100,13 @@ class RadioControllerIT {
           "/api/radio/2026-10-17/cuts",
         ).contentType(APPLICATION_JSON).content("""{"removed":[5]}"""),
       ).andExpect(status().isBadRequest)
+  }
+
+  @Test
+  fun `should not add a cut by hand to a recording without an edit list`() {
+    mockMvc
+      .perform(mvcPost("/api/radio/2026-10-17/cuts/manual").contentType(APPLICATION_JSON).content("""{"start":20.0,"end":40.0}"""))
+      .andExpect(status().isNotFound)
   }
 
   @Test
