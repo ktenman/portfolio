@@ -49,6 +49,13 @@ data class TranscriptLine(
   val words: List<TranscriptWord>,
 )
 
+data class Boundary(
+  val boundary: String,
+  val seconds: Double,
+  val method: String,
+  val review: Boolean,
+)
+
 fun readStatus(directory: Path): RecordingStatus =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve("status.json")), RecordingStatus::class.java)
 
