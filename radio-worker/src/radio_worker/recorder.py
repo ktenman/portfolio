@@ -11,6 +11,7 @@ from pathlib import Path
 KUKU = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000"
 STATES = ("recording", "captured", "partial", "failed")
 START = re.compile(rb"start: (-?\d+\.\d+)")
+RATE = 16000
 WRAP = 2**33 / 90000
 POLL_SECONDS = 0.5
 RETRY_SECONDS = 2
@@ -26,8 +27,7 @@ def prepare(directory: Path, source: str, seconds: float) -> None:
 
 
 def claim(directory: Path, source: str) -> None:
-    file = directory / "status.json"
-    status = json.loads(file.read_text()) if file.exists() else {}
+    status = read_status(directory) if (directory / "status.json").exists() else {}
     if status.get("state") not in STATES:
         raise FileExistsError(f"{directory} exists and holds no recording made by this worker")
     if status["source"] != source:
@@ -39,13 +39,16 @@ def read_status(directory: Path) -> dict:
 
 
 def write_status(directory: Path, status: dict) -> None:
-    temporary = directory / "status.json.tmp"
-    temporary.write_text(json.dumps(status, indent=2) + "\n")
-    temporary.replace(directory / "status.json")
+    save(directory / "status.json", json.dumps(status, indent=2) + "\n")
 
 
-def record(directory: Path, stop: threading.Event | None = None) -> None:
-    stop = stop or threading.Event()
+def save(path: Path, text: str) -> None:
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.replace(path)
+
+
+def record(directory: Path, stop: threading.Event) -> None:
     status = read_status(directory)
     if status["state"] != "recording":
         return
@@ -101,7 +104,7 @@ def command(source: str, remaining: float, base: Path) -> list[str]:
         "ffmpeg", "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n",
         "-rw_timeout", "15000000", "-t", f"{remaining:.3f}", "-i", source,
         "-map", "0:a:0", "-c:a", "copy", "-flush_packets", "1", f"{base}.mp3",
-        "-map", "0:a:0", "-ac", "1", "-ar", "16000", "-f", "s16le", "-flush_packets", "1", f"{base}.pcm",
+        "-map", "0:a:0", "-ac", "1", "-ar", str(RATE), "-f", "s16le", "-flush_packets", "1", f"{base}.pcm",
     ]
 
 

@@ -7,9 +7,8 @@ from typing import Any
 
 import numpy as np
 
-from radio_worker.recorder import read_status
+from radio_worker.recorder import RATE, read_status, save
 
-RATE = 16000
 PAUSE = 0.3
 LOOKBACK = 20
 SHORTEST = 0.1
@@ -26,10 +25,10 @@ def pause_before(window: np.ndarray, start: float) -> float:
     return start + (int(np.argmin(means)) + width / 2) / 100
 
 
-def transcribe(directory: Path, model: Any, name: str, chunk_seconds: float = 300, recording: Callable[[], bool] = lambda: True) -> None:
+def transcribe(directory: Path, load: Callable[[], Any], name: str, chunk_seconds: float, recording: Callable[[], bool]) -> None:
     if (directory / "transcript.json").exists():
         return
-    session = Session(directory, model, chunk_seconds)
+    session = Session(directory, load(), chunk_seconds)
     index = 0
     while True:
         alive = recording()
@@ -69,8 +68,7 @@ class Session:
         return finished
 
     def append(self, part: dict, start: float, end: float, final: bool) -> float:
-        audio = read(pcm(self.directory, part), start, end) if end - start >= SHORTEST else None
-        segments = [] if audio is None else whisper(self.model, audio, part["offsetSeconds"] + start)
+        segments = whisper(self.model, read(pcm(self.directory, part), start, end), part["offsetSeconds"] + start) if end - start >= SHORTEST else []
         chunk = {"part": part["file"], "from": round(start, 3), "to": round(end, 3), "final": final, "segments": segments}
         with (self.directory / "transcript.jsonl").open("a", encoding="utf-8") as file:
             file.write(json.dumps(chunk, ensure_ascii=False) + "\n")
@@ -87,9 +85,7 @@ def load(path: Path) -> list[dict]:
             chunks.append(json.loads(line))
         except json.JSONDecodeError:
             break
-    temporary = path.with_name(f"{path.name}.tmp")
-    temporary.write_text("".join(json.dumps(chunk, ensure_ascii=False) + "\n" for chunk in chunks), encoding="utf-8")
-    temporary.replace(path)
+    save(path, "".join(json.dumps(chunk, ensure_ascii=False) + "\n" for chunk in chunks))
     return chunks
 
 
@@ -138,9 +134,7 @@ def publish(directory: Path, status: dict, chunks: list[dict], name: str, chunk_
         "segments": [{"start": segment["start"], "end": segment["end"], "text": segment["text"]} for segment in segments],
         "words": [word for segment in segments for word in segment["words"]],
     }
-    temporary = directory / "transcript.json.tmp"
-    temporary.write_text(json.dumps(transcript, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(directory / "transcript.json")
+    save(directory / "transcript.json", json.dumps(transcript, ensure_ascii=False, indent=2) + "\n")
 
 
 def cue(number: int, segment: dict) -> str:

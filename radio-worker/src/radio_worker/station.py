@@ -21,8 +21,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 class Station(ThreadingHTTPServer):
-    daemon_threads = True
-
     def __init__(self, recording: Path, directory: Path, port: int, start: float, speed: float, host: str) -> None:
         super().__init__((host, port), functools.partial(Handler, directory=str(directory)))
         self.recording = recording
@@ -61,8 +59,3 @@ class Station(ThreadingHTTPServer):
         if self.process is not None:
             self.process.terminate()
             self.process.wait()
-
-
-def station(recording: Path, directory: Path, port: int = 8770, start: float = 0.0, speed: float = 1.0, host: str = "127.0.0.1") -> Station:
-    directory.mkdir(parents=True, exist_ok=True)
-    return Station(recording, directory, port, start, speed, host)

@@ -1,4 +1,6 @@
 import contextlib
+import hashlib
+import json
 import subprocess
 import threading
 import time
@@ -9,7 +11,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from radio_worker.recorder import write_status
-from radio_worker.station import Station, station
+from radio_worker.station import Station
 
 
 def tone(path: Path, seconds: float) -> Path:
@@ -30,9 +32,14 @@ def serving(server: Station) -> Iterator[str]:
         server.server_close()
 
 
+def replay(directory: Path, seconds: float = 13, start: float = 0.0) -> Station:
+    (directory / "hls").mkdir()
+    return Station(tone(directory / "in.mp3", seconds), directory / "hls", port=0, start=start, speed=4, host="127.0.0.1")
+
+
 @contextlib.contextmanager
-def broadcast(directory: Path, seconds: float = 13, speed: float = 4) -> Iterator[str]:
-    with serving(station(tone(directory / "in.mp3", seconds), directory / "hls", port=0, speed=speed)) as url:
+def broadcast(directory: Path, seconds: float = 13) -> Iterator[str]:
+    with serving(replay(directory, seconds)) as url:
         yield url
 
 
@@ -42,6 +49,14 @@ def wait(condition: Callable[[], bool], seconds: float = 30) -> None:
         if time.monotonic() > deadline:
             raise TimeoutError(f"condition not met within {seconds} s")
         time.sleep(0.1)
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def transcript(directory: Path) -> dict:
+    return json.loads((directory / "transcript.json").read_text())
 
 
 def first_silence(pcm: Path, after: float) -> float:

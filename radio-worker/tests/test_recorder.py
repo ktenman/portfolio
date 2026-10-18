@@ -1,4 +1,3 @@
-import hashlib
 import json
 import shutil
 import socket
@@ -8,9 +7,10 @@ from pathlib import Path
 
 import pytest
 from pytest import approx
-from support import broadcast, first_silence, tone, wait
+from support import broadcast, first_silence, sha256, tone, wait
 
-from radio_worker.recorder import KUKU, prepare, read_status, record, register
+from radio_worker.recorder import KUKU, prepare, read_status, record, register, write_status
+from radio_worker.transcriber import seconds
 
 
 @pytest.fixture(scope="module")
@@ -18,27 +18,17 @@ def recorded(tmp_path_factory: pytest.TempPathFactory) -> Path:
     root = tmp_path_factory.mktemp("recorded")
     with broadcast(root) as url:
         prepare(root / "keskpäevatund", url, 12)
-        record(root / "keskpäevatund")
+        record(root / "keskpäevatund", threading.Event())
     return root / "keskpäevatund"
 
 
-def probe(path: Path) -> dict:
-    command = ["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(path)]
-    return json.loads(subprocess.run(command, capture_output=True, text=True, check=True).stdout)
-
-
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def caught_up(directory: Path, playlist: Path) -> bool:
-    pcm = directory / "raw.pcm"
     listed = playlist.read_text().count(".ts") if playlist.exists() else 0
-    return listed >= 4 and pcm.exists() and pcm.stat().st_size / 32000 >= 6 * listed - 6.5
+    return listed >= 4 and seconds(directory / "raw.pcm") >= 6 * listed - 6.5
 
 
 def test_recorder_copies_the_stream_without_reencoding(recorded):
-    stream = probe(recorded / "raw.mp3")["streams"][0]
+    stream = json.loads((recorded / "raw.probe.json").read_text())["streams"][0]
     assert (stream["codec_name"], stream["sample_rate"], stream["channels"], stream["bit_rate"]) == ("mp3", "48000", 2, "256000")
 
 
@@ -47,7 +37,7 @@ def test_recorder_records_the_requested_length(recorded):
 
 
 def test_recorder_writes_16_khz_mono_pcm_next_to_the_mp3(recorded):
-    assert (recorded / "raw.pcm").stat().st_size / 32000 == approx(12, abs=0.05)
+    assert seconds(recorded / "raw.pcm") == approx(12, abs=0.05)
 
 
 def test_recorder_stores_the_sha256_of_each_part(recorded):
@@ -71,9 +61,9 @@ def test_recorder_carries_on_into_a_new_part_after_a_restart(tmp_path):
         (directory / "raw.pcm").write_bytes(bytes(3 * 32000))
         status = read_status(directory)
         status["parts"].append({"file": "raw.mp3", "streamStart": 1.4, "offsetSeconds": 0.0})
-        (directory / "status.json").write_text(json.dumps(status))
+        write_status(directory, status)
         before = sha256(directory / "raw.mp3")
-        record(directory)
+        record(directory, threading.Event())
     status = read_status(directory)
     assert ([part["file"] for part in status["parts"]], status["state"], sha256(directory / "raw.mp3")) == (["raw.mp3", "raw-part-002.mp3"], "partial", before)
 
@@ -82,7 +72,7 @@ def test_recorder_places_a_part_after_a_drop_at_its_place_in_the_stream(tmp_path
     directory = tmp_path / "rec"
     with broadcast(tmp_path, seconds=60) as url:
         prepare(directory, url, 40)
-        recording = threading.Thread(target=record, args=(directory,))
+        recording = threading.Thread(target=record, args=(directory, threading.Event()))
         recording.start()
         wait(lambda: caught_up(directory, tmp_path / "hls" / "stream.m3u8"))
         subprocess.run(["pkill", "-KILL", "-f", str(directory / "raw.mp3")], check=True)
@@ -112,7 +102,7 @@ def test_recorder_ends_at_its_end_time_when_the_source_never_answers(tmp_path):
         closed.bind(("127.0.0.1", 0))
         port = closed.getsockname()[1]
     prepare(tmp_path / "rec", f"http://127.0.0.1:{port}/stream.m3u8", 3)
-    recording = threading.Thread(target=record, args=(tmp_path / "rec",))
+    recording = threading.Thread(target=record, args=(tmp_path / "rec", threading.Event()))
     recording.start()
     recording.join(10)
     status = read_status(tmp_path / "rec")

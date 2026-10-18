@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from radio_worker.recorder import KUKU, prepare, read_status, record
-from radio_worker.station import station
+from radio_worker.station import Station
 from radio_worker.transcriber import transcribe
 
 
@@ -60,7 +60,7 @@ def build() -> argparse.ArgumentParser:
 
 def broadcast(recording: Path, host: str, port: int, start: float, speed: float) -> int:
     with tempfile.TemporaryDirectory() as directory:
-        server = station(recording, Path(directory), port, start, speed, host)
+        server = Station(recording, Path(directory), port, start, speed, host)
         print(f"On air at http://{host}:{server.server_port}/stream.m3u8", flush=True)
         with contextlib.suppress(KeyboardInterrupt):
             server.serve_forever()
@@ -74,7 +74,7 @@ def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], n
     recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
     recording.start()
     try:
-        transcribe(directory, load(), name, chunk_seconds, recording.is_alive)
+        transcribe(directory, load, name, chunk_seconds, recording.is_alive)
     except KeyboardInterrupt:
         stop.set()
         raise
@@ -94,4 +94,4 @@ def join(recording: threading.Thread, stop: threading.Event) -> None:
 
 def load_whisper(model: Path, threads: int) -> Any:
     from faster_whisper import WhisperModel
-    return WhisperModel(str(model), device="cpu", compute_type="int8", cpu_threads=threads, num_workers=1)
+    return WhisperModel(str(model), device="cpu", compute_type="int8", cpu_threads=threads)
