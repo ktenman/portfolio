@@ -1,9 +1,6 @@
 <template>
   <div>
-    <div class="mt-8 mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h3 class="mb-0 text-heading">Saated</h3>
-      <p class="mb-0 text-sm text-body-secondary">Kordusi ei salvestata topelt</p>
-    </div>
+    <h3 class="mt-8 mb-3 text-heading">Saated</h3>
     <data-table
       :items="programmes ?? []"
       :columns="columns"
@@ -23,9 +20,6 @@
         <span v-for="slot in item.slots" :key="airTime(slot)" class="block whitespace-nowrap">
           {{ airTime(slot) }}
         </span>
-      </template>
-      <template #cell-repeats="{ item }">
-        <span class="text-body-secondary">{{ item.repeats.map(airStart).join(' · ') || '—' }}</span>
       </template>
       <template #cell-recordings="{ item }">
         <span :class="{ 'text-body-secondary': !item.recordings }">
@@ -54,7 +48,7 @@ import type { RadioProgrammeDto } from '../../models/generated/domain-models'
 import { useRadioProgrammes } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { airStart, airTime } from '../../utils/radio'
+import { airTime } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 
 const { data: programmes, isLoading, isError } = useRadioProgrammes()
@@ -64,7 +58,6 @@ const toast = useToast()
 const columns: ColumnDefinition[] = [
   { key: 'name', label: 'Saade' },
   { key: 'slots', label: 'Eetris' },
-  { key: 'repeats', label: 'Kordused' },
   { key: 'recordings', label: 'Arhiivis' },
   { key: 'recordEvery', label: 'Salvestamine' },
 ]

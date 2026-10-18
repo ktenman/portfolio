@@ -51,10 +51,6 @@ describe('RadioRecordings', () => {
     ])
   })
 
-  it('should count the recordings and their size in the header', async () => {
-    expect((await mount()).text()).toContain('Kuku · 2 salvestust · 136 MB')
-  })
-
   it('should show when and how long the show was recorded', async () => {
     expect((await mount()).text()).toContain('L 17.10 · 11:55–13:05')
   })

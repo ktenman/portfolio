@@ -48,6 +48,10 @@ describe('RadioStation', () => {
     expect((await mount(idle)).text()).toContain('≈ 3159 tundi')
   })
 
+  it('should show no free space without a recordings directory', async () => {
+    expect((await mount({ ...idle, freeBytes: null, hours: null })).text()).toContain('Vaba ruumi—')
+  })
+
   it('should say the programme on air is not recorded', async () => {
     const onAir = {
       name: 'Tarkade klubi',

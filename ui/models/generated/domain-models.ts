@@ -288,7 +288,6 @@ export interface RadioProgrammeDto {
     description: string | null;
     recordEvery: boolean;
     slots: AirSlot[];
-    repeats: AirSlot[];
     recordings: number;
 }
 
@@ -300,8 +299,8 @@ export interface RadioStation {
     onAir: StationAiring | null;
     next: StationAiring | null;
     capture: Capture | null;
-    freeBytes: number;
-    hours: number;
+    freeBytes: number | null;
+    hours: number | null;
 }
 
 export interface Serializable {

@@ -47,7 +47,6 @@ const PROGRAMMES = [
     description: 'Nädala tähtsamad teemad poliitikute ja arvamusliidritega',
     recordEvery: true,
     slots: [{ days: [DayOfWeek.SATURDAY], start: '12:00:00', end: '13:00:00' }],
-    repeats: [{ days: [DayOfWeek.SUNDAY], start: '01:00:00', end: '02:00:00' }],
     recordings: 2,
   },
   {
@@ -56,7 +55,6 @@ const PROGRAMMES = [
     description: null,
     recordEvery: false,
     slots: [{ days: [DayOfWeek.SATURDAY], start: '13:00:00', end: '14:00:00' }],
-    repeats: [],
     recordings: 0,
   },
   {
@@ -65,7 +63,6 @@ const PROGRAMMES = [
     description: 'Uudised, ilm ja külalised igal tööpäeval',
     recordEvery: false,
     slots: [{ days: WEEKDAYS, start: '06:00:00', end: '10:00:00' }],
-    repeats: [],
     recordings: 0,
   },
 ]
