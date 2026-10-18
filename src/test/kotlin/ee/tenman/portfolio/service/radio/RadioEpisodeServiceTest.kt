@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
@@ -171,5 +173,79 @@ class RadioEpisodeServiceTest {
     Files.writeString(directory.resolve("episode.tmp.m4a"), "pooleli")
     service.make(directory)
     expect(Files.exists(directory.resolve("episode.tmp.m4a"))).toEqual(false)
+  }
+
+  private fun rendered(): EditList {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    return edit()
+  }
+
+  @Test
+  fun `should store the outline topics on the recording clock`() {
+    expect(rendered().topics).toEqual(listOf(EpisodeChapter(5.0, "Ooperikriis")))
+  }
+
+  @Test
+  fun `should render the reviewed keep list and mark the edit list reviewed`() {
+    rendered()
+    service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(30.0, 40.0)))
+    val duration = probe(directory.resolve("episode.m4a"))["format"]["duration"].asString().toDouble()
+    expect(edit().reviewed to (abs(duration - 20) <= 0.1)).toEqual(true to true)
+  }
+
+  @Test
+  fun `should keep the machine boundaries when the cuts are reviewed`() {
+    val machine = rendered().boundaries
+    service.review(directory, listOf(KeptSpan(10.0, 20.0)))
+    expect(edit().boundaries).toEqual(machine)
+  }
+
+  @Test
+  fun `should reject a keep list whose spans overlap`() {
+    rendered()
+    expect { service.review(directory, listOf(KeptSpan(10.0, 30.0), KeptSpan(20.0, 40.0))) }
+      .toThrow<IllegalArgumentException>()
+      .messageToContain("Keep list")
+  }
+
+  @Test
+  fun `should end a keep list that reaches past the recording at its last sample`() {
+    rendered()
+    service.review(directory, listOf(KeptSpan(50.0, 60.04)))
+    expect(edit().keep).toEqual(listOf(KeptSpan(50.0, 60.0)))
+  }
+
+  @Test
+  fun `should reject a keep list whose spans touch`() {
+    rendered()
+    expect { service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(20.0, 30.0))) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should reject a kept span that no part covers`() {
+    val parts =
+      listOf(
+        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)),
+        FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)),
+      )
+    writeRecording(directory, parts, "partial")
+    transcribed(1.0, 5.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0))
+    service.make(directory)
+    expect { service.review(directory, listOf(KeptSpan(10.0, 20.0), KeptSpan(32.0, 38.0))) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should reject an empty keep list`() {
+    rendered()
+    expect { service.review(directory, emptyList()) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should find no review for a recording without an edit list`() {
+    show()
+    expect(service.review(directory, listOf(KeptSpan(10.0, 20.0)))).toEqual(null)
   }
 }

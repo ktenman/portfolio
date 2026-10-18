@@ -11,6 +11,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 @Service
 class RadioEpisodeService(
@@ -50,9 +51,8 @@ class RadioEpisodeService(
     val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
     val kept = audible(timeline, keep)
     val marks = chapters(kept, agreed.chapters)
-    val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)
     val temporary = directory.resolve(TEMPORARY)
-    radioRenderService.render(timeline, keep, marks, "Keskpäevatund $day", temporary)
+    radioRenderService.render(timeline, keep, marks, title(status), temporary)
     val summary = OutlineSummary(model, reads.size, matched.size, agreed.voters)
     save(directory.resolve(EDIT_LIST), editList(status, placed, keep, kept, marks, agreed, summary))
     return Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE)
@@ -89,7 +89,61 @@ class RadioEpisodeService(
     chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
     reviewed = false,
     renderedAt = now(),
+    topics = agreed.chapters.map { EpisodeChapter(rounded(it.time), it.title) },
   )
+
+  @Synchronized
+  fun review(
+    directory: Path,
+    keep: List<KeptSpan>,
+  ): EditList? {
+    val saved = directory.resolve(EDIT_LIST).takeIf(Files::exists) ?: return null
+    val reviewed = rerender(directory, JsonMapperFactory.instance.readValue<EditList>(Files.readString(saved)), keep)
+    save(saved, reviewed)
+    return reviewed
+  }
+
+  private fun rerender(
+    directory: Path,
+    edit: EditList,
+    keep: List<KeptSpan>,
+  ): EditList {
+    val status = readStatus(directory)
+    val timeline = Timeline(directory, status.parts)
+    val spans = keep.map { it.start to min(it.end, timeline.seconds) }
+    require(ordered(spans) && spans.all { audible(timeline, listOf(it)).isNotEmpty() }) {
+      "Keep list $keep is not ordered audible spans within 0-${timeline.seconds} s"
+    }
+    val kept = audible(timeline, spans)
+    val marks = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) })
+    val temporary = directory.resolve(REVIEWED)
+    runCatching { radioRenderService.render(timeline, spans, marks, title(status), temporary) }
+      .onFailure { Files.deleteIfExists(temporary) }
+      .getOrThrow()
+    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    return reviewed(edit, spans.map { KeptSpan(it.first, it.second) }, kept, marks)
+  }
+
+  private fun reviewed(
+    edit: EditList,
+    keep: List<KeptSpan>,
+    kept: List<Pair<Double, Double>>,
+    marks: List<Pair<Double, String>>,
+  ) = edit.copy(
+    keep = keep,
+    durationSeconds = rounded(kept.sumOf { it.second - it.first }),
+    chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
+    reviewed = true,
+    renderedAt = now(),
+  )
+
+  private fun ordered(spans: List<Pair<Double, Double>>): Boolean =
+    spans.isNotEmpty() &&
+      spans.all { (start, end) -> start >= 0 && start < end } &&
+      spans.zipWithNext().all { (left, right) -> left.second < right.first }
+
+  private fun title(status: RecordingStatus): String =
+    "Keskpäevatund ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
 
   private fun fail(
     directory: Path,
@@ -102,18 +156,10 @@ class RadioEpisodeService(
 
   private fun now(): String = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString()
 
-  private fun save(
-    path: Path,
-    value: Any,
-  ) {
-    val temporary = path.resolveSibling("${path.fileName}.tmp")
-    Files.writeString(temporary, JsonMapperFactory.instance.writerWithDefaultPrettyPrinter().writeValueAsString(value) + "\n")
-    Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-  }
-
   companion object {
     private const val EPISODE = "episode.m4a"
     private const val TEMPORARY = "episode.tmp.m4a"
+    private const val REVIEWED = "episode.review.m4a"
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
