@@ -38,6 +38,7 @@
         :started-at="recording.status.startedAt"
         :removed="removed.includes(i)"
         @choose="choose(i, $event)"
+        @jingle="jingle(i, $event)"
       />
     </div>
     <radio-card title="Tulemus">
@@ -114,6 +115,17 @@ const choose = (index: number, remove: boolean) => {
 }
 
 const reset = () => (removed.value = props.recording.cuts.map((_, i) => i))
+
+const jingle = (index: number, saved: boolean) =>
+  radioService
+    .jingle(props.recording.name, index, { saved })
+    .then(() => {
+      toast.success(saved ? 'Džingel salvestatud' : 'Džingel unustatud')
+      return queryClient.invalidateQueries({ queryKey: ['radio'], exact: true })
+    })
+    .catch(() =>
+      toast.error(saved ? 'Džinglit ei saanud salvestada' : 'Džinglit ei saanud unustada')
+    )
 
 const apply = async () => {
   const confirmed = await confirm({

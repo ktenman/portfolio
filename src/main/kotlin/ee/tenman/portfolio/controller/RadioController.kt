@@ -3,6 +3,7 @@ package ee.tenman.portfolio.controller
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.EditList
+import ee.tenman.portfolio.service.radio.JingleReview
 import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptLine
@@ -49,10 +50,20 @@ class RadioController(
     @RequestBody review: CutReview,
   ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, review))
 
+  @PutMapping("/{name}/cuts/{index}/jingle")
+  fun putJingle(
+    @PathVariable name: String,
+    @PathVariable index: Int,
+    @RequestBody review: JingleReview,
+  ): ResponseEntity<Void> = done(radioArchiveService.jingle(name, index, review))
+
   @PutMapping("/{name}/transcript/checked")
   fun putTranscriptChecked(
     @PathVariable name: String,
-  ): ResponseEntity<Void> = if (radioArchiveService.check(name)) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
+  ): ResponseEntity<Void> = done(radioArchiveService.check(name))
+
+  private fun done(found: Boolean): ResponseEntity<Void> =
+    if (found) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
 
   private fun media(resource: Resource): ResponseEntity<Resource> =
     ResponseEntity

@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+
 const val PROGRAMME = "Keskpäevatund"
 private const val TOPIC_LEAD = 30.0
 private const val SHORTEST = 0.01
@@ -35,6 +37,13 @@ data class Cut(
   val methods: List<BoundaryMethod>,
   val review: Boolean,
   val removed: Boolean,
+  val jingle: CutJingle? = null,
+  @get:JsonIgnore val match: JingleMatch? = null,
+)
+
+data class CutJingle(
+  val r: Double,
+  val saved: Boolean,
 )
 
 data class TimelineEntry(
@@ -46,6 +55,10 @@ data class TimelineEntry(
 
 data class CutReview(
   val removed: List<Int>,
+)
+
+data class JingleReview(
+  val saved: Boolean,
 )
 
 data class CutContext(
@@ -114,6 +127,7 @@ private fun cut(
     methods = ends.map { BoundaryMethod.of(it.method) },
     review = ends.any { it.review },
     removed = keep.none { middle >= it.start && middle < it.end },
+    match = ends.last().jingle,
   )
 }
 

@@ -65,6 +65,22 @@ class RadioArchiveService(
     return radioEpisodeService.review(directory, keep(cuts(edit, total), review.removed, total))
   }
 
+  fun jingle(
+    name: String,
+    index: Int,
+    review: JingleReview,
+  ): Boolean {
+    val directory = directory(name, EDIT_LIST) ?: return false
+    val status = readStatus(directory)
+    val match = cuts(read(directory.resolve(EDIT_LIST)), status.seconds).getOrNull(index)?.match ?: return false
+    val path = stored(directory, index, match)
+    when {
+      !review.saved -> Files.deleteIfExists(path)
+      Files.notExists(path) -> store(path, template(Timeline(directory, status.parts), match.start))
+    }
+    return true
+  }
+
   fun check(name: String): Boolean {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return false
     val check = TranscriptCheck(Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())
@@ -94,7 +110,7 @@ class RadioArchiveService(
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST))
-    val cuts = cuts(edit, status.seconds)
+    val cuts = cutsOf(directory, edit, status.seconds)
     return RecordingSummary(
       name = directory.fileName.toString(),
       programme = PROGRAMME,
@@ -127,6 +143,21 @@ class RadioArchiveService(
   }
 
   private fun cutsOf(directory: Path): List<Cut> = cuts(read(directory.resolve(EDIT_LIST)), readStatus(directory).seconds)
+
+  private fun cutsOf(
+    directory: Path,
+    edit: EditList?,
+    total: Double,
+  ): List<Cut> =
+    cuts(edit, total).mapIndexed { index, cut ->
+      cut.copy(jingle = cut.match?.let { CutJingle(it.r, Files.exists(stored(directory, index, it))) })
+    }
+
+  private fun stored(
+    directory: Path,
+    index: Int,
+    match: JingleMatch,
+  ): Path = pcmOf(radioProperties.jingles, match.saved ?: "${directory.fileName}-$index")
 
   private fun size(path: Path): Long? = path.takeIf(Files::exists)?.let(Files::size)
 

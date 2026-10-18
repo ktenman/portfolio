@@ -17,6 +17,7 @@ import {
   type EditList,
   type CutContext,
   type CutReview,
+  type JingleReview,
   type RecordingSummary,
   type TranscriptLine,
   type IntradaySummaryPointDto,
@@ -221,6 +222,8 @@ export const radioService = {
     }),
   check: (name: string) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/transcript/checked`),
+  jingle: (name: string, cut: number, review: JingleReview) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/${cut}/jingle`, review),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
 }
 

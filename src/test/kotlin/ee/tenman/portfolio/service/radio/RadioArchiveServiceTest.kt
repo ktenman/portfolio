@@ -261,16 +261,102 @@ class RadioArchiveServiceTest {
     expect(service.review("2026-10-31", CutReview(emptyList()))).toEqual(null)
   }
 
+  private fun jingled(saved: String? = null): Path {
+    val directory = Files.createDirectories(recordings.resolve("2026-10-17"))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noise(10.0))))
+    val boundaries =
+      listOf(
+        Boundary("show starts", 1.0, "digital silence", false),
+        Boundary("break 1 starts", 3.0, "digital silence", false),
+        Boundary("break 1 ends", 6.0, "station jingle, r=0.93", false, JingleMatch(6.5, 0.93, saved)),
+      )
+    edited(directory, listOf(KeptSpan(1.0, 3.0), KeptSpan(6.0, 10.0)), boundaries)
+    return directory
+  }
+
+  private fun jingles(): Path = recordings.resolve("jingles")
+
+  private fun pause(): Cut = service.recordings().single().cuts[1]
+
+  @Test
+  fun `should save the jingle that ends a break from the recording`() {
+    val directory = jingled()
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    expect(library(jingles()).single().template.toList()).toEqual(timeline(directory).read(sample(6.5), RATE).toList())
+  }
+
+  @Test
+  fun `should name a saved jingle after its recording and cut`() {
+    jingled()
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    expect(library(jingles()).map { it.name }).toEqual(listOf("2026-10-17-1"))
+  }
+
+  @Test
+  fun `should offer to save the jingle that ends a break`() {
+    jingled()
+    expect(pause().jingle).toEqual(CutJingle(0.93, false))
+  }
+
+  @Test
+  fun `should mark a cut whose jingle is saved`() {
+    jingled()
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    expect(pause().jingle).toEqual(CutJingle(0.93, true))
+  }
+
+  @Test
+  fun `should mark a cut that matched a jingle saved from another recording`() {
+    jingled("2026-10-10-1")
+    store(pcmOf(jingles(), "2026-10-10-1"), DoubleArray(RATE))
+    expect(pause().jingle).toEqual(CutJingle(0.93, true))
+  }
+
+  @Test
+  fun `should never write over a saved jingle`() {
+    jingled()
+    store(pcmOf(jingles(), "2026-10-17-1"), DoubleArray(RATE) { 5.0 })
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    expect(library(jingles()).single().template.distinct()).toEqual(listOf(5.0))
+  }
+
+  @Test
+  fun `should forget a saved jingle`() {
+    jingled()
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    service.jingle("2026-10-17", 1, JingleReview(false))
+    expect(library(jingles())).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should find no jingle at a cut that has none`() {
+    jingled()
+    expect(service.jingle("2026-10-17", 0, JingleReview(true))).toEqual(false)
+  }
+
+  @Test
+  fun `should find no jingle at a cut the recording does not have`() {
+    jingled()
+    expect(service.jingle("2026-10-17", 7, JingleReview(true))).toEqual(false)
+  }
+
+  @Test
+  fun `should find no jingle in a recording without an edit list`() {
+    recording("2026-10-17")
+    expect(service.jingle("2026-10-17", 1, JingleReview(true))).toEqual(false)
+  }
+
   private fun edited(
     directory: Path,
     keep: List<KeptSpan> = listOf(KeptSpan(761.5, 4200.0)),
+    boundaries: List<Boundary> = listOf(Boundary("show starts", 761.5, "digital silence", false)),
   ) {
     val edit =
       EditList(
         keep = keep,
         durationSeconds = 3438.5,
         parts = listOf(RecordingPart("raw.mp3", 0.0)),
-        boundaries = listOf(Boundary("show starts", 761.5, "digital silence", false)),
+        boundaries = boundaries,
         hosts = emptyList(),
         outline = OutlineSummary(null, 1, 1, 1),
         chapters = emptyList(),
