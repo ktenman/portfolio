@@ -60,6 +60,11 @@ const routes: Array<RouteRecordRaw> = [
             name: 'RadioCuts',
             component: () => import('../components/radio/radio-cuts.vue'),
           },
+          {
+            path: 'text',
+            name: 'RadioText',
+            component: () => import('../components/radio/radio-text.vue'),
+          },
         ],
       },
     ],

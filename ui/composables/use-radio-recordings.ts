@@ -19,11 +19,21 @@ export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   return { ...query, recording }
 }
 
-export const useRadioCuts = (recording: MaybeRefOrGetter<RecordingSummary>) => {
+const useTranscribed = <T>(
+  recording: MaybeRefOrGetter<RecordingSummary>,
+  key: string,
+  fetch: (name: string) => Promise<T>
+) => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
-    queryKey: computed(() => ['radio', toValue(recording).name, 'cuts']),
-    queryFn: () => radioService.cuts(toValue(recording).name),
+    queryKey: computed(() => ['radio', toValue(recording).name, key]),
+    queryFn: () => fetch(toValue(recording).name),
     enabled: computed(() => isAuthenticated.value && toValue(recording).transcribed),
   })
 }
+
+export const useRadioCuts = (recording: MaybeRefOrGetter<RecordingSummary>) =>
+  useTranscribed(recording, 'cuts', radioService.cuts)
+
+export const useRadioTranscript = (recording: MaybeRefOrGetter<RecordingSummary>) =>
+  useTranscribed(recording, 'transcript', radioService.transcript)

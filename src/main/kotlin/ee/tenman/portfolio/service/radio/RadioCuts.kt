@@ -40,6 +40,14 @@ data class CutContext(
   val after: TranscriptLine?,
 )
 
+fun mark(
+  lines: List<TranscriptLine>,
+  cuts: List<Cut>,
+): List<TranscriptLine> {
+  val edges = cuts.filter { it.removed }.flatMap { cut -> listOf(cut.start to cut, cut.end to cut) }
+  return lines.map { line -> line.copy(split = edges.firstOrNull { (at) -> firstWord(line) < at && at < lastWord(line) }?.second) }
+}
+
 fun context(
   cut: Cut,
   lines: List<TranscriptLine>,

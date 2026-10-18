@@ -263,6 +263,7 @@ export interface TranscriptLine {
     end: number;
     text: string;
     words: TranscriptWord[];
+    split: Cut | null;
 }
 
 export interface CutReview {

@@ -127,6 +127,31 @@ class RadioCutsTest {
     expect(context(cuts(edit(), 4200.0)[0], lines).before).toEqual(null)
   }
 
+  private fun crossing() =
+    TranscriptLine(
+      2110.0,
+      2125.0,
+      " Ja nüüd väike paus, ostke",
+      listOf(TranscriptWord(2110.0, 2119.5, " Ja nüüd väike paus,"), TranscriptWord(2120.5, 2125.0, " ostke")),
+    )
+
+  @Test
+  fun `should mark a line that a removed cut starts inside`() {
+    expect(mark(listOf(crossing()), cuts(edit(), 4200.0)).single().split?.start).toEqual(2120.0)
+  }
+
+  @Test
+  fun `should not mark a line whose words end before the cut`() {
+    val line = TranscriptLine(2110.0, 2125.0, " Väike paus.", listOf(TranscriptWord(2110.0, 2119.0, " Väike paus.")))
+    expect(mark(listOf(line), cuts(edit(), 4200.0)).single().split).toEqual(null)
+  }
+
+  @Test
+  fun `should not mark a line crossed by a cut the episode keeps`() {
+    val kept = cuts(edit(), 4200.0).map { it.copy(removed = false) }
+    expect(mark(listOf(crossing()), kept).single().split).toEqual(null)
+  }
+
   @Test
   fun `should list the cuts and the topics in recording order`() {
     expect(timeline(edit(), 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(

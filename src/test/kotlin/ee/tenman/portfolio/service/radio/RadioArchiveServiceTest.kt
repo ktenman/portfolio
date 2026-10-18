@@ -101,6 +101,25 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should mark the transcript line the show starts inside`() {
+    val directory = recording("2026-10-17")
+    edited(directory)
+    val transcript =
+      Transcript(
+        listOf(TranscriptSegment(760.0, 763.0, " Tere päevast!")),
+        listOf(TranscriptWord(760.0, 761.0, " Tere"), TranscriptWord(762.0, 763.0, " päevast!")),
+      )
+    Files.writeString(directory.resolve(TRANSCRIPT_FILE), JsonMapperFactory.instance.writeValueAsString(transcript))
+    expect(
+      service
+      .transcript("2026-10-17")
+      ?.single()
+      ?.split
+      ?.kind,
+        ).toEqual(CutKind.BEFORE)
+  }
+
+  @Test
   fun `should find no transcript for a recording that has none`() {
     recording("2026-10-24", RecordingState.RECORDING)
     expect(service.transcript("2026-10-24")).toEqual(null)

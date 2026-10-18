@@ -4,6 +4,7 @@ import {
   type EditList,
   type RecordingSummary,
   RecordingState,
+  type TranscriptLine,
 } from '../../models/generated/domain-models'
 
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
@@ -81,7 +82,13 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   ...overrides,
 })
 
-const line = (start: number, end: number, text: string) => ({ start, end, text, words: [] })
+const line = (start: number, end: number, text: string): TranscriptLine => ({
+  start,
+  end,
+  text,
+  words: [],
+  split: null,
+})
 
 export const contexts = (): CutContext[] => {
   const [before, first, second, after] = recording().cuts
@@ -100,3 +107,16 @@ export const contexts = (): CutContext[] => {
     { cut: after, before: line(3830, 3836.5, ' Ja siinkohal lõpetame.'), after: null },
   ]
 }
+
+export const transcript = (): TranscriptLine[] => [
+  {
+    ...line(762, 765, ' Tere päevast, kell on kaksteist.'),
+    words: [
+      { start: 762, end: 763, word: ' Tere' },
+      { start: 763.2, end: 764, word: ' päevast,' },
+      { start: 764.1, end: 765, word: ' kell on kaksteist.' },
+    ],
+  },
+  { ...line(2110, 2125, ' Ja nüüd väike paus, ostke'), split: recording().cuts[1] },
+  line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
+]
