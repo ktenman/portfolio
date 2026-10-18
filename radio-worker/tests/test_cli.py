@@ -4,9 +4,9 @@ import threading
 import time
 
 import pytest
-from support import Stub, broadcast, sha256, transcript, wait
+from support import Stub, broadcast, sha256, tone, transcript, wait
 
-from radio_worker.cli import main, run
+from radio_worker.cli import main, moment, run, span
 from radio_worker.recorder import read_status, write_status
 
 
@@ -14,6 +14,23 @@ def test_run_records_and_transcribes_a_replay(tmp_path):
     with broadcast(tmp_path) as url:
         state = run(tmp_path / "rec", url, 4, Stub, "stub", 60)
     assert (state, len(transcript(tmp_path / "rec")["words"])) == ("captured", 1)
+
+
+def test_run_records_a_file_once_to_its_end_at_the_time_it_went_on_air(tmp_path):
+    source = str(tone(tmp_path / "in.mp3", 13))
+    state = run(tmp_path / "rec", source, span(source, 60), Stub, "stub", 60, started=moment("2026-10-17T11:55"))
+    status = read_status(tmp_path / "rec")
+    assert (state, len(status["parts"]), status["startedAt"]) == ("captured", 1, 1792227300.0)
+
+
+def test_a_stream_is_recorded_for_the_duration_it_is_given(tmp_path):
+    assert span("http://station:8770/stream.m3u8", 600) == 600
+
+
+def test_model_leaves_a_downloaded_model_in_place(tmp_path):
+    (tmp_path / "ct2").mkdir()
+    (tmp_path / "ct2" / "model.bin").write_bytes(b"weights")
+    assert main(["model", str(tmp_path)]) == 0
 
 
 def test_run_only_finishes_the_transcript_of_an_ended_recording(tmp_path):

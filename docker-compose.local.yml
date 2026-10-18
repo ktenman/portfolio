@@ -111,7 +111,7 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_FLYWAY_ENABLED=true
-      - SCHEDULING_ENABLED=false
+      - SCHEDULING_ENABLED=${SCHEDULING_ENABLED:-false}
       - SERVER_PORT=8081
       - SECURITY_ENABLED=false
       - MINIO_ENDPOINT=${MINIO_ENDPOINT:-http://seaweedfs:9000}
@@ -121,6 +121,8 @@ services:
       - CLOUDFLARE_BYPASS_PROXY_URL=http://cloudflare-bypass-proxy:3000
       - TRADING212_ENABLED=true
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    volumes:
+      - radio_recordings:/recordings
     depends_on:
       - postgres
       - redis
@@ -156,6 +158,16 @@ services:
     networks:
       - portfolio-network
 
+  radio-worker:
+    build: radio-worker
+    container_name: portfolio-radio-worker
+    profiles: [radio]
+    command: ["planned"]
+    stop_grace_period: 90s
+    volumes:
+      - radio_model:/model
+      - radio_recordings:/recordings
+
   app:
     image: caddy:2.8.4-alpine
     container_name: portfolio-caddy
@@ -184,3 +196,5 @@ volumes:
   caddy-data:
   caddy-config:
   seaweedfs-data:
+  radio_model:
+  radio_recordings:

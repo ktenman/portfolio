@@ -1,7 +1,10 @@
 import argparse
 import contextlib
+import datetime as dt
 import functools
+import math
 import signal
+import subprocess
 import sys
 import tempfile
 import threading
@@ -10,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from radio_worker.recorder import KUKU, hold, prepare, read_status, record
-from radio_worker.schedule import planned
+from radio_worker.schedule import TALLINN, fetch, planned, ready
 from radio_worker.station import Station
 from radio_worker.transcriber import transcribe
 
@@ -23,15 +26,20 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"{args.recording} is not a file")
     if args.command == "station":
         return broadcast(args.recording, args.host, args.port, args.start, args.speed)
+    if args.command == "model":
+        return download(args.directory)
     if args.chunk_seconds < 60:
         parser.error("--chunk-seconds must be at least 60")
     if args.command == "planned":
         return follow(args.recordings, args.model, args.source, args.threads, args.chunk_seconds)
     if not (args.model / "model.bin").is_file():
         parser.error(f"{args.model} holds no CTranslate2 model.bin")
+    seconds = span(args.source, args.duration)
+    if seconds is None:
+        parser.error("--duration is required when --source is a stream")
     load = functools.partial(load_whisper, args.model, args.threads)
     try:
-        state = run(args.out, args.source, args.duration, load, str(args.model), args.chunk_seconds)
+        state = run(args.out, args.source, seconds, load, str(args.model), args.chunk_seconds, args.programmes, args.start)
     except FileExistsError as error:
         print(f"{parser.prog}: error: {error}", file=sys.stderr)
         return 2
@@ -51,9 +59,13 @@ def build() -> argparse.ArgumentParser:
     replay.add_argument("--port", type=int, default=8770)
     replay.add_argument("--from", dest="start", type=float, default=0.0, metavar="SECONDS")
     replay.add_argument("--speed", type=float, default=1.0, metavar="FACTOR")
-    live = commands.add_parser("run", help="record a stream and transcribe it while it records")
-    live.add_argument("--source", default=KUKU)
-    live.add_argument("--duration", type=float, required=True, metavar="SECONDS")
+    model = commands.add_parser("model", help="download the pinned TalTech Whisper model into <directory>/ct2")
+    model.add_argument("directory", type=Path)
+    live = commands.add_parser("run", help="record a stream or an MP3 file and transcribe it while it records")
+    live.add_argument("--source", default=KUKU, metavar="URL_OR_FILE")
+    live.add_argument("--duration", type=float, metavar="SECONDS", help="required for a stream; a file is recorded to its end")
+    live.add_argument("--start", type=moment, metavar="ISO_TIME", help="when the recording went on air, Tallinn time unless an offset is given")
+    live.add_argument("--programme", action="append", dest="programmes", metavar="NAME", help="the title in the Raadio tab; repeat for joined programmes")
     live.add_argument("--out", type=Path, required=True, metavar="DIRECTORY")
     live.add_argument("--model", type=Path, required=True, metavar="CT2_DIRECTORY")
     live.add_argument("--threads", type=int, default=2)
@@ -75,6 +87,25 @@ def broadcast(recording: Path, host: str, port: int, start: float, speed: float)
     return 0
 
 
+def download(model: Path) -> int:
+    if not ready(model):
+        fetch(model)
+    print(f"Model ready: {model / 'ct2'}", flush=True)
+    return 0
+
+
+def moment(value: str) -> float:
+    start = dt.datetime.fromisoformat(value)
+    return (start if start.tzinfo else start.replace(tzinfo=TALLINN)).timestamp()
+
+
+def span(source: str, duration: float | None) -> float | None:
+    if not Path(source).is_file():
+        return duration
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", source], capture_output=True, text=True, check=True)
+    return min(duration or math.inf, float(probe.stdout))
+
+
 def follow(recordings: Path, model: Path, source: str, threads: int, chunk_seconds: float) -> int:
     weights = model / "ct2"
     load = functools.partial(load_whisper, weights, threads)
@@ -85,8 +116,8 @@ def follow(recordings: Path, model: Path, source: str, threads: int, chunk_secon
     return 130
 
 
-def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float, programmes: list[str] | None = None) -> str:
-    prepare(directory, source, seconds, programmes)
+def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float, programmes: list[str] | None = None, started: float | None = None) -> str:
+    prepare(directory, source, seconds, programmes, started)
     with hold(directory):
         stop = threading.Event()
         recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
