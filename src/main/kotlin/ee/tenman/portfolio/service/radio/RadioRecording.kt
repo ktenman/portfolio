@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
@@ -42,6 +43,7 @@ data class RecordingStatus(
   val seconds: Double = 0.0,
   val parts: List<RecordingPart> = emptyList(),
   val programmes: List<String> = listOf(PROGRAMME),
+  val lostSeconds: Long = 0,
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")
@@ -50,6 +52,15 @@ data class RecordingPart(
   val file: String,
   val offsetSeconds: Double,
   val sha256: String? = null,
+)
+
+data class AudioFormat(
+  @JsonAlias("codec_name") val codec: String,
+  @JsonAlias("bit_rate") val bitRate: Long,
+)
+
+data class Probe(
+  val streams: List<AudioFormat> = emptyList(),
 )
 
 data class Transcript(
@@ -121,7 +132,11 @@ data class RecordingSummary(
   val cuts: List<Cut>,
   val timeline: List<TimelineEntry>,
   val audible: List<KeptSpan>,
+  val format: AudioFormat?,
 ) {
+  val drops: Int
+    get() = (status.parts.size - 1).coerceAtLeast(0)
+
   val transcriptState: TranscriptState
     get() =
       when {

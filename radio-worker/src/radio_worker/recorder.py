@@ -84,6 +84,7 @@ def record(directory: Path, stop: threading.Event) -> None:
         raise
     if stop.is_set():
         return
+    status["lostSeconds"] = lost(status)
     status["state"] = verdict(status)
     write_status(directory, status)
 
@@ -167,13 +168,18 @@ def finish(directory: Path, status: dict, part: dict, code: int | None) -> None:
     event(directory, f"{part['file']} ended after {part['durationSeconds']} s, exit {code}")
 
 
+def lost(status: dict) -> int:
+    covered, holes = 0.0, 0.0
+    for part in sorted(status["parts"], key=lambda part: part["offsetSeconds"]):
+        holes += max(0.0, part["offsetSeconds"] - covered)
+        covered = max(covered, part["offsetSeconds"] + part["durationSeconds"])
+    return round(holes + max(0.0, status["seconds"] - covered))
+
+
 def verdict(status: dict) -> str:
-    parts = status["parts"]
-    if not parts:
+    if not status["parts"]:
         return "failed"
-    if len(parts) == 1 and parts[0]["durationSeconds"] >= status["seconds"] - 1:
-        return "captured"
-    return "partial"
+    return "partial" if status["lostSeconds"] else "captured"
 
 
 def event(directory: Path, message: str) -> None:

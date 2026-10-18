@@ -29,8 +29,8 @@ describe('RadioListen', () => {
 
   afterEach(() => player.detach())
 
-  const render = () =>
-    mount(RadioListen, { props: { recording: recording() }, global: { plugins: [router] } })
+  const render = (item = recording()) =>
+    mount(RadioListen, { props: { recording: item }, global: { plugins: [router] } })
 
   it('should list the cut suggestions and topics on the timeline', () => {
     expect(render().findAll('[data-testid="radio-timeline-row"]')).toHaveLength(9)
@@ -48,6 +48,16 @@ describe('RadioListen', () => {
 
   it('should speak the position in the recording as a clock', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
+  })
+
+  it('should note how often the stream dropped', () => {
+    expect(render(recording({ drops: 2 })).text()).toContain(
+      'Voog katkes 2 korda, midagi ei kadunud'
+    )
+  })
+
+  it('should not note drops of a stream that never dropped', () => {
+    expect(render().text()).not.toContain('Voog katkes')
   })
 
   it('should show the checksum of each recorded part', () => {

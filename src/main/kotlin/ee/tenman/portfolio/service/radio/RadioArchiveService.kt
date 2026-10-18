@@ -130,8 +130,19 @@ class RadioArchiveService(
       cuts = cuts,
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
+      format = formatOf(directory, status),
     )
   }
+
+  private fun formatOf(
+    directory: Path,
+    status: RecordingStatus,
+  ): AudioFormat? =
+    status.parts
+      .firstOrNull()
+      ?.let { read<Probe>(directory.resolve(it.file.removeSuffix(".mp3") + ".probe.json")) }
+      ?.streams
+      ?.firstOrNull()
 
   private fun timelineOf(
     cuts: List<Cut>,
