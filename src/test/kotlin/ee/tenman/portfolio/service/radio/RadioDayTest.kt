@@ -14,13 +14,13 @@ class RadioDayTest {
 
   @Test
   fun `should cover an airing by the recording that holds most of it`() {
-    val takes = listOf(Take("a", "Ilmaparandaja", 0, 200), Take("b", "Keskpäevatund", 3400, 4000))
+    val takes = listOf(Take("a", "Ilmaparandaja", 0, 200, false), Take("b", "Keskpäevatund", 3400, 4000, false))
     expect(covered(100, 3700, takes)).toEqual(AiringRecording("b", "Keskpäevatund", 3400, 4000, 3400, 3700))
   }
 
   @Test
   fun `should not count a recording that touches an airing for under a minute`() {
-    expect(covered(1000, 4600, listOf(Take("a", "Keskpäevatund", 0, 1030)))).toEqual(null)
+    expect(covered(1000, 4600, listOf(Take("a", "Keskpäevatund", 0, 1030, false)))).toEqual(null)
   }
 
   @Test
@@ -87,7 +87,14 @@ class RadioDayTest {
 
   @Test
   fun `should clip recordings to the day`() {
-    val takes = listOf(Take("b", "Õhtutund", 900, 1100), Take("a", "Keskpäevatund", 50, 150), Take("c", "Öötund", 1200, 1300))
-    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan(100, 150), RecordedSpan(900, 1000)))
+    val takes =
+      listOf(Take("b", "Õhtutund", 900, 1100, false), Take("a", "Keskpäevatund", 50, 150, false), Take("c", "Öötund", 1200, 1300, false))
+    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan(100, 150, false), RecordedSpan(900, 1000, false)))
+  }
+
+  @Test
+  fun `should mark the span of a take still being recorded`() {
+    val takes = listOf(Take("a", "Kuku", 50, 150, false), Take("b", "Kuku", 900, 1100, true))
+    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan(100, 150, false), RecordedSpan(900, 1000, true)))
   }
 }

@@ -482,6 +482,7 @@ export interface LastRecording {
 export interface RecordedSpan {
     start: number;
     end: number;
+    recording: boolean;
 }
 
 export interface DayBlock {

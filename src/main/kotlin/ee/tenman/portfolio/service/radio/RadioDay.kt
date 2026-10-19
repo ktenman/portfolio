@@ -25,6 +25,7 @@ data class RadioDay(
 data class RecordedSpan(
   val start: Long,
   val end: Long,
+  val recording: Boolean,
 )
 
 data class DayBlock(
@@ -69,9 +70,14 @@ data class Take(
   val programme: String,
   val start: Long,
   val end: Long,
+  val recording: Boolean,
 )
 
-fun RecordingSummary.take(): Take = Take(name, programme, status.startedAt.toLong(), (status.startedAt + status.seconds).toLong())
+fun RecordingSummary.take(now: Long): Take {
+  val recording = status.state == RecordingState.RECORDING
+  val end = (status.startedAt + status.seconds).toLong()
+  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording)
+}
 
 fun covered(
   start: Long,
@@ -124,5 +130,5 @@ fun spans(
 ): List<RecordedSpan> =
   takes
     .filter { it.end > from && it.start < until }
-    .map { RecordedSpan(maxOf(it.start, from), minOf(it.end, until)) }
+    .map { RecordedSpan(maxOf(it.start, from), minOf(it.end, until), it.recording) }
     .sortedBy { it.start }

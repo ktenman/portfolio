@@ -6,12 +6,20 @@
     <div
       class="relative h-6 rounded-control border border-hairline bg-surface-sunken"
       role="img"
-      :aria-label="recorded"
+      :aria-label="label"
     >
+      <span
+        v-for="guide in GUIDES"
+        :key="guide"
+        class="absolute inset-y-0 w-px bg-hairline"
+        data-testid="radio-day-guide"
+        :style="{ left: guide }"
+      />
       <span
         v-for="span in radioDay.recorded"
         :key="span.start"
-        class="absolute inset-y-0 rounded-[2px] bg-ink"
+        class="absolute inset-y-0"
+        :class="span.recording ? `rounded-l-[2px] ${STRIPES}` : 'rounded-[2px] bg-umber'"
         data-testid="radio-day-span"
         :style="{ left: part(span.start - radioDay.from), width: part(span.end - span.start) }"
       />
@@ -25,10 +33,17 @@
     <div class="mt-2 flex justify-between text-xs text-ink-soft tabular-nums" aria-hidden="true">
       <span v-for="hour in HOURS" :key="hour">{{ hour }}</span>
     </div>
-    <p class="mt-3 mb-0 flex flex-wrap gap-x-5 gap-y-1 text-sm text-body-secondary">
-      <span class="inline-flex items-center gap-2">
-        <span class="size-3 rounded-[2px] bg-ink" />
-        {{ recorded }}
+    <p
+      class="mt-3 mb-0 flex flex-wrap gap-x-5 gap-y-1 text-sm text-body-secondary"
+      data-testid="radio-day-legend"
+    >
+      <span v-if="finished" class="inline-flex items-center gap-2">
+        <span class="size-3 rounded-[2px] bg-umber" />
+        {{ finished }}
+      </span>
+      <span v-if="running" class="inline-flex items-center gap-2">
+        <span class="size-3 rounded-[2px]" :class="STRIPES" />
+        {{ running }}
       </span>
       <span v-if="current" class="inline-flex items-center gap-2">
         <span class="h-3.5 w-0.5 bg-notice" />
@@ -40,11 +55,14 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { RadioDay } from '../../models/generated/domain-models'
+import type { RadioDay, RecordedSpan } from '../../models/generated/domain-models'
 import { clock, length, range } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 
 const HOURS = ['00', '06', '12', '18', '24']
+const GUIDES = ['25%', '50%', '75%']
+const STRIPES =
+  'bg-[repeating-linear-gradient(135deg,var(--color-umber)_0_3px,var(--color-brass)_3px_6px)]'
 
 const props = defineProps<{ radioDay: RadioDay }>()
 
@@ -55,9 +73,20 @@ const current = computed(
   () => props.radioDay.now >= props.radioDay.from && props.radioDay.now < props.radioDay.until
 )
 
-const recorded = computed(() => {
-  const spans = props.radioDay.recorded
-  if (!spans.length) return 'Midagi pole salvestatud'
-  return `Salvestatud ${spans.map(s => range(s.start, 0, s.end - s.start)).join(', ')}`
+const spans = (recording: boolean): RecordedSpan[] =>
+  props.radioDay.recorded.filter(span => span.recording === recording)
+
+const finished = computed(() => {
+  const done = spans(false)
+  if (done.length)
+    return `Salvestatud ${done.map(s => range(s.start, 0, s.end - s.start)).join(', ')}`
+  return props.radioDay.recorded.length ? null : 'Midagi pole salvestatud'
 })
+
+const running = computed(() => {
+  const live = spans(true)
+  return live.length ? `Salvestab ${live.map(s => `${clock(s.start, 0)}–`).join(', ')}` : null
+})
+
+const label = computed(() => [finished.value, running.value].filter(Boolean).join(', '))
 </script>

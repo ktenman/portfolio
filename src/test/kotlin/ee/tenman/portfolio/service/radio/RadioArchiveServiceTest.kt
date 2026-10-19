@@ -604,4 +604,40 @@ class RadioArchiveServiceTest {
     runCatching { service.delete("2026-10-19-1023-kuku") }
     expect(Files.exists(directory) to Files.exists(recordings.resolve(DELETED_FILE))).toEqual(true to false)
   }
+
+  @Test
+  fun `should take a recording still on air as recording`() {
+    recording("2026-10-19-1055-kuku", RecordingState.RECORDING)
+    expect(
+      service
+      .recordings()
+      .single()
+      .take(1792231500)
+      .recording,
+        ).toEqual(true)
+  }
+
+  @Test
+  fun `should end a take still being recorded at now`() {
+    recording("2026-10-19-1055-kuku", RecordingState.RECORDING)
+    expect(
+      service
+      .recordings()
+      .single()
+      .take(1792231500)
+      .end,
+        ).toEqual(1792231500)
+  }
+
+  @Test
+  fun `should keep the full length of a finished take`() {
+    recording("2026-10-17")
+    expect(
+      service
+      .recordings()
+      .single()
+      .take(1792231500)
+      .end,
+        ).toEqual(1792235100)
+  }
 }
