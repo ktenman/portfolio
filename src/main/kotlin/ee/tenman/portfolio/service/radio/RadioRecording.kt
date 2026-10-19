@@ -171,7 +171,6 @@ data class RecordingSummary(
   val status: RecordingStatus,
   val sizeBytes: Long,
   val transcribed: Boolean,
-  val transcriptCheckedAt: String?,
   val editList: EditList?,
   val failure: EpisodeFailure?,
   val episodeBytes: Long?,
@@ -189,8 +188,7 @@ data class RecordingSummary(
   val transcriptState: TranscriptState
     get() =
       when {
-        transcribed && transcriptCheckedAt != null -> TranscriptState.CHECKED
-        transcribed -> TranscriptState.UNCHECKED
+        transcribed -> TranscriptState.TRANSCRIBED
         status.state == RecordingState.RECORDING -> TranscriptState.RECORDING
         else -> TranscriptState.NONE
       }
@@ -208,8 +206,7 @@ data class RecordingSummary(
 enum class TranscriptState {
   NONE,
   RECORDING,
-  UNCHECKED,
-  CHECKED,
+  TRANSCRIBED,
 }
 
 enum class CutState {
@@ -247,6 +244,3 @@ fun EditList?.found(): Set<String> =
   ?.toSet()
   .orEmpty()
 
-data class TranscriptCheck(
-  val checkedAt: String,
-)
