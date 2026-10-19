@@ -1,5 +1,5 @@
 <template>
-  <section class="card mb-4">
+  <section class="card mb-4" data-testid="radio-player">
     <div class="card-body grid gap-4">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -16,7 +16,7 @@
           <select
             v-model="version"
             aria-label="Versioon"
-            class="form-select form-select-sm min-h-11 w-auto grow md:min-h-0 md:grow-0"
+            class="form-select form-select-sm w-auto grow max-md:py-2.5 md:grow-0"
           >
             <option value="raw">Toorsalvestus · {{ position(recording.status.seconds) }}</option>
             <option v-if="cleaned" value="episode">
@@ -73,7 +73,7 @@
             Kiirus
             <select
               v-model.number="player.rate.value"
-              class="form-select form-select-sm min-h-11 w-auto md:min-h-0"
+              class="form-select form-select-sm w-auto max-md:py-2.5"
             >
               <option v-for="rate in RATES" :key="rate" :value="rate">{{ rate }}×</option>
             </select>

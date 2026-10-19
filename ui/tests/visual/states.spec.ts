@@ -236,14 +236,23 @@ test.describe('desktop states', () => {
     await expect(page.getByTestId('radio-play')).toBeInViewport()
   })
 
-  test('the radio dock leads the text back to the playing line', async ({ page }) => {
+  test('the radio player leads the text back to the playing line', async ({ page }) => {
     await stubRadio(page)
     await openRoute(page, '/radio/2026-10-17/text')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
     await page.mouse.wheel(0, 120)
     await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toBeVisible()
     await settleAndFreeze(page)
-    await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-lost.png')
+    await expect(page.getByTestId('radio-player')).toHaveScreenshot('radio-player-lost.png')
+  })
+
+  test('the raw radio recording shows the cut decisions', async ({ page }) => {
+    await stubRadio(page)
+    await openRoute(page, '/radio/2026-10-17')
+    await page.getByRole('button', { name: 'Muuda lõikeid' }).click()
+    await expect(page.getByTestId('radio-cut').first()).toBeVisible()
+    await settleAndFreeze(page)
+    await expect(page).toHaveScreenshot('radio-raw.png', { fullPage: true })
   })
 
   test('the spoken word is marked by a tint', async ({ page }) => {
@@ -251,7 +260,9 @@ test.describe('desktop states', () => {
     await openRoute(page, '/radio/2026-10-17/text')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
     await settleAndFreeze(page)
-    await expect(page.locator('[aria-current="true"]')).toHaveScreenshot('radio-word-now.png')
+    await expect(
+      page.locator('[data-testid="radio-text-line"][aria-current="true"]')
+    ).toHaveScreenshot('radio-word-now.png')
   })
 
   test('selecting a quick date applies it', async ({ page }) => {
