@@ -73,8 +73,11 @@ data class Take(
   val recording: Boolean,
 )
 
-fun RecordingSummary.take(): Take =
-  Take(name, programme, status.startedAt.toLong(), (status.startedAt + status.seconds).toLong(), status.state == RecordingState.RECORDING)
+fun RecordingSummary.take(now: Long): Take {
+  val recording = status.state == RecordingState.RECORDING
+  val end = (status.startedAt + status.seconds).toLong()
+  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording)
+}
 
 fun covered(
   start: Long,
