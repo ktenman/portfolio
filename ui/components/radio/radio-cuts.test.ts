@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioCuts from './radio-cuts.vue'
-import { contexts, recording } from './radio-fixture'
-import { BoundaryMethod, CutKind, ProgrammeCutState } from '../../models/generated/domain-models'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import { contexts, programme, recording } from './radio-fixture'
+import {
+  BoundaryMethod,
+  CutKind,
+  CutStep,
+  ProgrammeCutState,
+} from '../../models/generated/domain-models'
+import type { ProgrammeCuts, RecordingSummary } from '../../models/generated/domain-models'
 
 const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
 
@@ -215,36 +220,84 @@ describe('RadioCuts', () => {
     expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
   })
 
-  const shared = (state: ProgrammeCutState) =>
+  const searching = (state: ProgrammeCutState, details: Partial<ProgrammeCuts> = {}) =>
     recording({
-      programmeCuts: [
-        { name: 'Keskpäevatund', state: ProgrammeCutState.FOUND },
-        { name: 'Tarkade klubi', state },
-      ],
-    })
-
-  it('should offer to find the cuts of a recording without any', async () => {
-    const target = recording({
       editList: null,
       cuts: [],
-      programmeCuts: [{ name: 'Tarkade klubi', state: ProgrammeCutState.NONE }],
+      programmeCuts: [programme('Tarkade klubi', state, details)],
     })
-    expect(button(await render(target), 'Leia lõiked')?.attributes('aria-label')).toBe(
-      'Leia lõiked: Tarkade klubi'
+
+  const finding = searching(ProgrammeCutState.FINDING, {
+    progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70 },
+  })
+
+  const waiting = searching(ProgrammeCutState.WAITING, {
+    transcript: { writtenSeconds: 3180, totalSeconds: 4200, percent: 75, secondsLeft: 1920 },
+  })
+
+  const bar = (wrapper: VueWrapper) => {
+    const progress = wrapper.find('[role="progressbar"]')
+    return [progress.attributes('aria-valuenow'), progress.attributes('aria-valuetext')]
+  }
+
+  it('should show the step and time left of a running cut search', async () => {
+    expect((await render(finding)).text()).toContain('AI loeb saadet · 1/3~1 min jäänud')
+  })
+
+  it('should give the percent and step of a running cut search to a screen reader', async () => {
+    expect(bar(await render(finding))).toEqual(['36', '36 %, AI loeb saadet · 1/3, ~1 min jäänud'])
+  })
+
+  it('should say which programme a queued cut search waits for', async () => {
+    const target = searching(ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' })
+    expect((await render(target)).text()).toContain('JärjekorrasAlgab pärast saadet Keskpäevatund')
+  })
+
+  it('should say a queued cut search starts at once when nothing runs before it', async () => {
+    expect((await render(searching(ProgrammeCutState.QUEUED))).text()).toContain('Algab kohe')
+  })
+
+  it('should say how much of the transcript a waiting cut search has', async () => {
+    expect((await render(waiting)).text()).toContain('Ootan teksti · 53 / 70 min kirjas')
+  })
+
+  it('should give the transcript written so far to a screen reader', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-19T09:30:00Z'))
+    const read = bar(await render(waiting))
+    vi.useRealTimers()
+    expect(read).toEqual([
+      '75',
+      '75 %, Ootan teksti · 53 / 70 min kirjas, ~32 min jäänud · valmis ~13:02',
+    ])
+  })
+
+  const failed = recording({
+    editList: null,
+    cuts: [],
+    programmeCuts: [programme('Tarkade klubi', ProgrammeCutState.FAILED)],
+    failure: { reason: 'No outline read to vote on', failedAt: '2026-10-19T10:20:00Z' },
+  })
+
+  it('should say when and why a cut search failed', async () => {
+    expect((await render(failed)).text()).toContain(
+      'Otsing katkes kell 13:20No outline read to vote on'
     )
   })
 
-  it('should ask for the cuts of the other programme of a recording', async () => {
-    await button(await render(shared(ProgrammeCutState.NONE)), 'Leia lõiked').trigger('click')
+  it('should look for the cuts of a failed programme again', async () => {
+    await button(await render(failed), 'Proovi uuesti').trigger('click')
     expect(radioService.findCuts).toHaveBeenCalledWith('2026-10-17', { programme: 'Tarkade klubi' })
   })
 
-  it('should say the cuts of a programme are being looked for', async () => {
-    expect((await render(shared(ProgrammeCutState.FINDING))).text()).toContain('Otsin lõikeid…')
+  it('should say there are no suggestions when no cut search is coming', async () => {
+    expect((await render(searching(ProgrammeCutState.NONE))).text()).toContain(
+      'Lõikesoovitusi pole.'
+    )
   })
 
-  it('should not offer to find cuts once every programme has them', async () => {
-    expect(button(await render(), 'Leia lõiked')).toBeUndefined()
+  it('should not show the cut search once every programme has its cuts', async () => {
+    expect((await render()).text()).not.toContain('Leia lõiked')
   })
 
   it('should play the moment before a cut to hear the transition', async () => {

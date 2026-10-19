@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../../constants/api'
 import {
   contexts,
+  programme,
   radioDay,
   recording,
   song,
@@ -38,8 +39,8 @@ const RECORDINGS = [
     transcriptState: TranscriptState.RECORDING,
     cutState: CutState.NONE,
     programmeCuts: [
-      { name: 'Keskpäevatund', state: ProgrammeCutState.FINDING },
-      { name: 'Tarkade klubi', state: ProgrammeCutState.NONE },
+      programme('Keskpäevatund', ProgrammeCutState.FINDING),
+      programme('Tarkade klubi', ProgrammeCutState.NONE),
     ],
   }),
   recording(),
