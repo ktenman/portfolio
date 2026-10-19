@@ -243,4 +243,3 @@ fun EditList?.found(): Set<String> =
   ?.map { it.programme ?: PROGRAMME }
   ?.toSet()
   .orEmpty()
-
