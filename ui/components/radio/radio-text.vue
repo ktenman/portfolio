@@ -35,14 +35,14 @@
         <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
           {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
         </p>
-        <ol v-else class="mb-0 list-none p-0">
+        <ol v-else ref="list" class="mb-0 list-none p-0">
           <li
             v-for="line in shown"
             :key="line.start"
             v-memo="[line, line === current, line === current && spoken]"
             data-testid="radio-text-line"
             :aria-current="line === current ? 'true' : undefined"
-            class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
+            class="grid scroll-mt-20 scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
             :class="{ 'bg-brass-wash': line === current }"
           >
             <button
@@ -58,7 +58,7 @@
                   <template v-for="word in line.words" :key="word.start">
                     <span
                       :data-testid="word === spoken ? 'radio-word-now' : undefined"
-                      :class="{ 'rounded-control bg-surface font-semibold': word === spoken }"
+                      :class="{ 'rounded-[2px] bg-brass/20 box-decoration-clone': word === spoken }"
                     >
                       {{ word.word.trim() }}
                     </span>
@@ -84,9 +84,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import { useEventListener, usePreferredReducedMotion } from '@vueuse/core'
+import type { RecordingSummary, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioTranscript } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
@@ -99,6 +100,8 @@ import RadioCard from './radio-card.vue'
 import RadioIcon from './radio-icon.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
+
+const KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '])
 
 const FILES = [
   { name: 'transcript.srt', label: 'SRT' },
@@ -127,6 +130,39 @@ const current = computed(() => lines.value.find(l => l.start <= at.value && at.v
 const spoken = computed(() =>
   current.value?.words.find(w => w.start <= at.value && at.value < w.end)
 )
+
+const list = useTemplateRef<HTMLElement>('list')
+const motion = usePreferredReducedMotion()
+let jumped = false
+
+const scroll = () =>
+  list.value?.querySelector('[aria-current="true"]')?.scrollIntoView({
+    block: 'center',
+    behavior: motion.value === 'reduce' ? 'auto' : 'smooth',
+  })
+
+const follow = (line?: TranscriptLine) => {
+  if (!line || player.lost.value || search.value.trim()) return
+  if (jumped && !player.playing.value) return
+  jumped = true
+  scroll()
+}
+
+const lose = () => {
+  if (current.value) player.lost.value = true
+}
+
+const typing = (target: EventTarget | null) =>
+  target instanceof Element && target.closest('input, textarea, select, button') !== null
+
+watch(current, follow, { flush: 'post' })
+watch(player.lost, lost => lost || scroll(), { flush: 'post' })
+onMounted(() => follow(current.value))
+onBeforeUnmount(player.rejoin)
+useEventListener(window, ['wheel', 'touchmove'], lose, { passive: true })
+useEventListener(window, 'keydown', (event: KeyboardEvent) => {
+  if (KEYS.has(event.key) && !typing(event.target)) lose()
+})
 
 const check = async () => {
   checking.value = true
