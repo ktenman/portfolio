@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ProgrammeCutState, type KeptSpan } from '../models/generated/domain-models'
+import {
+  ProgrammeCutState,
+  TranscriptState,
+  type KeptSpan,
+} from '../models/generated/domain-models'
 import {
   advance,
   audioFormat,
@@ -17,6 +21,7 @@ import {
   position,
   rawParts,
   recordingTime,
+  textState,
 } from './radio'
 import { programme, recording } from '../components/radio/radio-fixture'
 
@@ -87,6 +92,10 @@ describe('labels', () => {
 
   it('should give the full day of a recording', () => {
     expect(fullDay(STARTED)).toEqual('Laupäev, 17.10.2026')
+  })
+
+  it('should call a finished transcript Olemas', () => {
+    expect(textState(recording({ transcriptState: TranscriptState.TRANSCRIBED }))).toEqual('Olemas')
   })
 })
 

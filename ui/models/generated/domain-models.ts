@@ -250,7 +250,6 @@ export interface RecordingSummary {
     status: RecordingStatus;
     sizeBytes: number;
     transcribed: boolean;
-    transcriptCheckedAt: string | null;
     editList: EditList | null;
     failure: EpisodeFailure | null;
     episodeBytes: number | null;
@@ -261,9 +260,9 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
+    cutState: CutState;
     drops: number;
     transcriptState: TranscriptState;
-    cutState: CutState;
 }
 
 export interface TranscriptLine {
@@ -675,18 +674,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    UNCHECKED = "UNCHECKED",
-    CHECKED = "CHECKED",
-}
-
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
+}
+
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum RecorderState {
