@@ -22,6 +22,8 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.CacheControl
+import org.springframework.http.ContentDisposition
+import org.springframework.http.HttpHeaders.CONTENT_DISPOSITION
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.MediaTypeFactory
@@ -87,12 +89,12 @@ class RadioController(
   @GetMapping("/{name}/transcript.txt", produces = ["text/plain;charset=UTF-8"])
   fun getText(
     @PathVariable name: String,
-  ): ResponseEntity<String> = ResponseEntity.ofNullable(radioArchiveService.text(name))
+  ): ResponseEntity<String> = attachment(radioArchiveService.text(name), radioArchiveService.downloadName(name, "transcript.txt"))
 
   @GetMapping("/{name}/transcript.srt", produces = ["application/x-subrip;charset=UTF-8"])
   fun getSubtitles(
     @PathVariable name: String,
-  ): ResponseEntity<String> = ResponseEntity.ofNullable(radioArchiveService.subtitles(name))
+  ): ResponseEntity<String> = attachment(radioArchiveService.subtitles(name), radioArchiveService.downloadName(name, "transcript.srt"))
 
   @GetMapping("/{name}/cuts")
   fun getCuts(
@@ -103,7 +105,7 @@ class RadioController(
   fun getFile(
     @PathVariable name: String,
     @PathVariable file: String,
-  ): ResponseEntity<Resource> = radioArchiveService.file(name, file)?.let(::media) ?: ResponseEntity.notFound().build()
+  ): ResponseEntity<Resource> = attachment(radioArchiveService.file(name, file), radioArchiveService.downloadName(name, file), ::media)
 
   @PutMapping("/{name}/cuts")
   fun putCuts(
@@ -152,13 +154,22 @@ class RadioController(
   private fun done(found: Boolean): ResponseEntity<Void> =
     if (found) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
 
-  private fun media(resource: Resource): ResponseEntity<Resource> =
+  private fun <T : Any> attachment(
+    body: T?,
+    file: String?,
+    respond: (T) -> ResponseEntity.BodyBuilder = { ResponseEntity.ok() },
+  ): ResponseEntity<T> {
+    if (body == null || file == null) return ResponseEntity.notFound().build()
+    val disposition = ContentDisposition.attachment().filename(file, UTF_8).build()
+    return respond(body).header(CONTENT_DISPOSITION, disposition.toString()).body(body)
+  }
+
+  private fun media(resource: Resource): ResponseEntity.BodyBuilder =
     ResponseEntity
       .ok()
       .contentType(type(resource))
       .lastModified(resource.lastModified())
       .cacheControl(CacheControl.noCache())
-      .body(resource)
 
   private fun type(resource: Resource): MediaType {
     val type = MediaTypeFactory.getMediaType(resource).orElse(MediaType.APPLICATION_OCTET_STREAM)

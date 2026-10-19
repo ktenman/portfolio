@@ -11,6 +11,8 @@ import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.time.Instant
+import java.time.ZoneId
 
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
@@ -53,6 +55,25 @@ data class RecordingStatus(
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")
+
+private val UNSAFE = Regex("""[/\\:*?"<>|]""")
+
+fun downloadName(
+  status: RecordingStatus,
+  file: String,
+  zone: ZoneId,
+): String {
+  val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).toLocalDate()
+  val stem = "${status.title().replace(UNSAFE, "")} $day"
+  val extension = file.substringAfterLast('.')
+  val parts = status.parts.sortedBy { it.offsetSeconds }
+  val part = parts.indexOfFirst { it.file == file }
+  return when {
+    part < 0 -> "$stem.$extension"
+    parts.size == 1 -> "$stem originaal.$extension"
+    else -> "$stem originaal osa ${part + 1}.$extension"
+  }
+}
 
 data class RecordingPart(
   val file: String,
