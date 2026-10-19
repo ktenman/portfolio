@@ -67,20 +67,6 @@ class RadioControllerIT {
   }
 
   @Test
-  fun `should switch continuous recording on for the worker`() {
-    mockMvc.perform(mvcPut("/api/radio/continuous").contentType(APPLICATION_JSON).content("""{"on":true}"""))
-    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(jsonPath("$.continuous.on").value(true))
-  }
-
-  @Test
-  fun `should name the last planned recording rather than the continuous one`() {
-    val continuous = Files.createDirectories(radioProperties.recordings.resolve("2026-10-18-0000-pidev"))
-    val status = RecordingStatus(RecordingState.CAPTURED, 1792270800.0, 86400.0, continuous = true)
-    Files.writeString(continuous.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
-    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(jsonPath("$.last.end").value(1792235100))
-  }
-
-  @Test
   fun `should list the recordings`() {
     mockMvc.perform(mvcGet("/api/radio")).andExpect(status().isOk).andExpect(jsonPath("$[0].name").value("2026-10-17"))
   }

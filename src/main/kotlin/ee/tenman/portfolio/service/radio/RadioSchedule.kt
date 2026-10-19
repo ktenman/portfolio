@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter
 
 const val PLAN_FILE = "plan.json"
 const val HEARTBEAT_FILE = "heartbeat.json"
-const val CONTINUOUS_FILE = "continuous.json"
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
 private val PADDING = Duration.ofMinutes(5)
@@ -29,10 +28,6 @@ data class AirSlot(
   val days: List<DayOfWeek>,
   val start: LocalTime,
   val end: LocalTime,
-)
-
-data class ContinuousChoice(
-  val on: Boolean,
 )
 
 data class ProgrammeChoice(
@@ -62,13 +57,6 @@ data class RadioStation(
   val recorder: RecorderState,
   val last: LastRecording?,
   val format: AudioFormat?,
-  val continuous: ContinuousRecording,
-)
-
-data class ContinuousRecording(
-  val on: Boolean,
-  val dayBytes: Long,
-  val weekBytes: Long,
 )
 
 enum class RecorderState { WAITING, RECORDING, OFF }

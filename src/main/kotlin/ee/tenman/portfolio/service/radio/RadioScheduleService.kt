@@ -78,13 +78,6 @@ class RadioScheduleService(
     save(root.resolve(PLAN_FILE), planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())))
   }
 
-  fun continuous(choice: ContinuousChoice): Boolean {
-    val root = radioProperties.recordings
-    if (!Files.isDirectory(root)) return false
-    save(root.resolve(CONTINUOUS_FILE), choice)
-    return true
-  }
-
   fun station(): RadioStation {
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now)
@@ -93,7 +86,7 @@ class RadioScheduleService(
     val root = radioProperties.recordings
     val free = root.takeIf(Files::isDirectory)?.let { Files.getFileStore(it).usableSpace }
     val recordings = radioArchiveService.recordings()
-    val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING && !it.status.continuous }
+    val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING }
     return RadioStation(
       onAir = onAir,
       next = next,
@@ -103,7 +96,6 @@ class RadioScheduleService(
       recorder = recorder(heartbeat(root), recordings.any { it.status.state == RecordingState.RECORDING }, now),
       last = last?.let { LastRecording(it.programme, (it.status.startedAt + it.status.seconds).toLong()) },
       format = last?.format,
-      continuous = ContinuousRecording(on(root), MP3_BYTES_PER_DAY, MP3_BYTES_PER_DAY * 7),
     )
   }
 
@@ -125,8 +117,6 @@ class RadioScheduleService(
     val names = Files.list(root).use { files -> files.map { it.fileName.toString() }.toList() }.toSet()
     return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), names, heartbeat(root), now)
   }
-
-  private fun on(root: Path): Boolean = read<ContinuousChoice>(root.resolve(CONTINUOUS_FILE))?.on == true
 
   private fun heartbeat(root: Path): Heartbeat? =
     root.resolve(HEARTBEAT_FILE).takeIf(Files::exists)?.let {
@@ -202,6 +192,5 @@ class RadioScheduleService(
 
   companion object {
     private const val BYTES_PER_HOUR = (256_000L / 8 + RATE * 2L) * 3600
-    private const val MP3_BYTES_PER_DAY = 256_000L / 8 * 86_400
   }
 }

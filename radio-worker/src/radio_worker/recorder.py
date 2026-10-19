@@ -20,18 +20,16 @@ RATE = 16000
 WRAP = 2**33 / 90000
 POLL_SECONDS = 0.5
 RETRY_SECONDS = 2
-PART_SECONDS = 3600
 
 
-def prepare(directory: Path, source: str, seconds: float, programmes: list[str] | None = None, started: float | None = None, continuous: bool = False) -> None:
+def prepare(directory: Path, source: str, seconds: float, programmes: list[str] | None = None, started: float | None = None) -> None:
     if directory.exists():
         claim(directory, source)
         return
     directory.mkdir(parents=True)
     now = time.time()
     named = {"programmes": programmes} if programmes else {}
-    kind = {"continuous": True} if continuous else {}
-    write_status(directory, {"state": "recording", "source": source, "startedAt": round(now if started is None else started, 3), "endsAt": round(now + seconds, 3), "seconds": float(seconds), "parts": [], **named, **kind})
+    write_status(directory, {"state": "recording", "source": source, "startedAt": round(now if started is None else started, 3), "endsAt": round(now + seconds, 3), "seconds": float(seconds), "parts": [], **named})
 
 
 def claim(directory: Path, source: str) -> None:
@@ -100,7 +98,7 @@ def adopt(directory: Path, status: dict) -> None:
 
 def capture(directory: Path, status: dict, stop: threading.Event) -> None:
     while (remaining := round(status["endsAt"] - time.time(), 3)) > 0 and not stop.is_set():
-        part = attempt(directory, status, min(remaining, PART_SECONDS) if status.get("continuous") else remaining, stop)
+        part = attempt(directory, status, remaining, stop)
         if part is not None and part["durationSeconds"] >= remaining - 1:
             return
         stop.wait(RETRY_SECONDS)
@@ -109,7 +107,7 @@ def capture(directory: Path, status: dict, stop: threading.Event) -> None:
 def attempt(directory: Path, status: dict, remaining: float, stop: threading.Event) -> dict | None:
     stem = next_stem(directory)
     with (directory / f"{stem}.log").open("ab") as log:
-        process = subprocess.Popen(command(status["source"], remaining, directory / stem, not status.get("continuous")), stderr=log)
+        process = subprocess.Popen(command(status["source"], remaining, directory / stem), stderr=log)
     part = None
     try:
         while process.poll() is None and not stop.wait(POLL_SECONDS):
@@ -134,14 +132,13 @@ def next_stem(directory: Path) -> str:
     return next(stem for stem in stems() if not (directory / f"{stem}.mp3").exists())
 
 
-def command(source: str, remaining: float, base: Path, pcm: bool = True) -> list[str]:
-    copy = [
+def command(source: str, remaining: float, base: Path) -> list[str]:
+    return [
         "ffmpeg", "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n",
         "-rw_timeout", "15000000", "-t", f"{remaining:.3f}", "-i", source,
         "-map", "0:a:0", "-c:a", "copy", "-flush_packets", "1", f"{base}.mp3",
+        "-map", "0:a:0", "-ac", "1", "-ar", str(RATE), "-f", "s16le", "-flush_packets", "1", f"{base}.pcm",
     ]
-    decoded = ["-map", "0:a:0", "-ac", "1", "-ar", str(RATE), "-f", "s16le", "-flush_packets", "1", f"{base}.pcm"]
-    return copy + decoded if pcm else copy
 
 
 def register(directory: Path, status: dict, stem: str) -> dict | None:
