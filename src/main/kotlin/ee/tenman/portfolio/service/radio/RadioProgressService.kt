@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.LiveUpdate
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
@@ -14,6 +16,7 @@ import kotlin.math.roundToInt
 @Service
 class RadioProgressService(
   private val clock: Clock,
+  private val liveUpdateService: LiveUpdateService,
 ) {
   private val runs = ConcurrentHashMap<String, CutRun>()
 
@@ -22,19 +25,24 @@ class RadioProgressService(
     stages: List<CutStage>,
   ) {
     runs[name] = CutRun(stages, 0, Instant.now(clock))
+    liveUpdateService.publish(LiveUpdate.RADIO)
   }
 
   fun next(
     name: String,
     step: CutStep,
   ) {
-    runs.computeIfPresent(name) { _, run ->
-      if (run.stages.getOrNull(run.index)?.step == step) run.copy(index = run.index + 1, since = Instant.now(clock)) else run
-    }
+    val before = runs[name]
+    val after =
+      runs.computeIfPresent(name) { _, run ->
+        if (run.stages.getOrNull(run.index)?.step == step) run.copy(index = run.index + 1, since = Instant.now(clock)) else run
+      }
+    if (after !== before) liveUpdateService.publish(LiveUpdate.RADIO)
   }
 
   fun finish(name: String) {
-    runs.remove(name)
+    runs.remove(name) ?: return
+    liveUpdateService.publish(LiveUpdate.RADIO)
   }
 
   fun programmeCuts(

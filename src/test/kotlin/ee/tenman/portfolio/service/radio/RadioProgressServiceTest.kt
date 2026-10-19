@@ -2,6 +2,10 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.LiveUpdate
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -27,7 +31,9 @@ class RadioProgressServiceTest {
       override fun instant(): Instant = now
     }
 
-  private val service = RadioProgressService(clock)
+  private val updates = mockk<LiveUpdateService>(relaxed = true)
+
+  private val service = RadioProgressService(clock, updates)
 
   private val name = "2026-10-24-1155-keskpaevatund"
 
@@ -169,5 +175,32 @@ class RadioProgressServiceTest {
     Files.writeString(directory.resolve(TRANSCRIPT_FILE), "[]")
     val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), listOf(PROGRAMME))
     expect(service.programmeCuts(directory, status, null, false).map { it.state }).toEqual(listOf(ProgrammeCutState.QUEUED))
+  }
+
+  @Test
+  fun `should announce a radio update when a cut search starts`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.RENDER, 10.0)))
+    verify(exactly = 1) { updates.publish(LiveUpdate.RADIO) }
+  }
+
+  @Test
+  fun `should announce a radio update when a cut search moves to its next step`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.RENDER, 10.0)))
+    service.next(name, CutStep.SILENCE)
+    verify(exactly = 2) { updates.publish(LiveUpdate.RADIO) }
+  }
+
+  @Test
+  fun `should not announce a radio update for a step the search is not on`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.RENDER, 10.0)))
+    service.next(name, CutStep.RENDER)
+    verify(exactly = 1) { updates.publish(LiveUpdate.RADIO) }
+  }
+
+  @Test
+  fun `should announce a radio update when a cut search finishes`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.RENDER, 10.0)))
+    service.finish(name)
+    verify(exactly = 2) { updates.publish(LiveUpdate.RADIO) }
   }
 }

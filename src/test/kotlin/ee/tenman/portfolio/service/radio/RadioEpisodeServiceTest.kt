@@ -7,8 +7,10 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -29,7 +31,9 @@ class RadioEpisodeServiceTest {
 
   private val outlineService = mockk<RadioOutlineService>()
 
-  private val progress = RadioProgressService(Clock.systemUTC())
+  private val updates = mockk<LiveUpdateService>(relaxed = true)
+
+  private val progress = RadioProgressService(Clock.systemUTC(), updates)
 
   private val service =
     RadioEpisodeService(
@@ -108,6 +112,16 @@ class RadioEpisodeServiceTest {
     }
     service.make(directory)
     expect(seen[PROGRAMME]?.let { it.step to it.read }).toEqual(CutStep.READ to 1)
+  }
+
+  @Test
+  fun `should mark a failed cut search before announcing that it finished`() {
+    show()
+    val failed = mutableListOf<Boolean>()
+    every { updates.publish(LiveUpdate.RADIO) } answers { failed += Files.exists(directory.resolve("episode-failed.json")) }
+    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(null, null, null)
+    service.make(directory)
+    expect(failed.last()).toEqual(true)
   }
 
   @Test
