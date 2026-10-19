@@ -20,7 +20,7 @@ class RadioDayService(
     val today = LocalDate.now(clock)
     val shown = date ?: today
     val now = clock.instant().epochSecond
-    val takes = radioArchiveService.recordings().map { it.take() }
+    val takes = radioArchiveService.recordings().map { it.take(now) }
     val from = shown.atStartOfDay(clock.zone).toEpochSecond()
     val until = shown.plusDays(1).atStartOfDay(clock.zone).toEpochSecond()
     val airings = radioAiringRepository.findStarting(start(shown), start(shown.plusDays(1)))

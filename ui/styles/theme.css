@@ -36,6 +36,7 @@
   --color-ink-muted: var(--color-ink-soft);
   --color-body-secondary: var(--color-ink-soft);
 
+  --color-umber: oklch(0.36 0.055 65);
   --color-brass: oklch(0.53 0.098 74);
   --color-brass-deep: oklch(0.46 0.098 74);
   --color-brass-wash: oklch(0.955 0.02 74);
