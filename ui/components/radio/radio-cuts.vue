@@ -1,6 +1,6 @@
 <template>
   <div v-if="!recording.editList" class="grid gap-4">
-    <p class="mb-0 text-ink-soft">Lõikesoovitusi veel pole.</p>
+    <p v-if="!coming" class="mb-0 text-ink-soft">Lõikesoovitusi pole.</p>
     <radio-find-cuts :recording="recording" />
   </div>
   <div v-else class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -65,7 +65,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import { ProgrammeCutState, type RecordingSummary } from '../../models/generated/domain-models'
 import { useConfirm } from '../../composables/use-confirm'
 import { useRadioCuts } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
@@ -102,6 +102,9 @@ const ordered = computed(() =>
   props.recording.cuts.map((cut, i) => ({ cut, i })).sort((a, b) => a.cut.start - b.cut.start)
 )
 
+const coming = computed(() =>
+  props.recording.programmeCuts.some(it => it.state !== ProgrammeCutState.NONE)
+)
 const machine = computed(() => removed.value.length === props.recording.cuts.length)
 const cutSeconds = computed(() =>
   props.recording.cuts

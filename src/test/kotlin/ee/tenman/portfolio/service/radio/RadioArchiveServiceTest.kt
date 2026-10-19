@@ -20,12 +20,17 @@ class RadioArchiveServiceTest {
 
   private val episodeService = mockk<RadioEpisodeService>()
 
+  private val clock = Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC)
+
+  private val progress = RadioProgressService(clock)
+
   private val service by lazy {
     RadioArchiveService(
       episodeService,
       mockk { every { resource(any(), any()) } returns null },
+      progress,
       RadioProperties(recordings = recordings),
-      Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC),
+      clock,
     )
   }
 
@@ -41,13 +46,14 @@ class RadioArchiveServiceTest {
     return directory
   }
 
-  private fun transcribed(directory: Path) {
+  private fun transcribed(directory: Path): Path {
     val transcript =
       Transcript(
         listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")),
         listOf(TranscriptWord(1.0, 1.4, " Tere,"), TranscriptWord(1.5, 2.5, " Keskpäevatund!")),
       )
     Files.writeString(directory.resolve(TRANSCRIPT_FILE), JsonMapperFactory.instance.writeValueAsString(transcript))
+    return directory
   }
 
   private val shared = listOf(PROGRAMME, "Tarkade klubi")
@@ -72,8 +78,8 @@ class RadioArchiveServiceTest {
   }
 
   @Test
-  fun `should look for the cuts of every programme in a recording without being asked`() {
-    recording("2026-10-24-1155-keskpaevatund-tarkade-klubi-ilmaparandaja", programmes = shared + "Ilmaparandaja")
+  fun `should queue the cuts of every programme in a recording without being asked`() {
+    transcribed(recording("2026-10-24-1155-keskpaevatund-tarkade-klubi-ilmaparandaja", programmes = shared + "Ilmaparandaja"))
     expect(
       service
       .recordings()
@@ -81,15 +87,59 @@ class RadioArchiveServiceTest {
       .programmeCuts
       .map { it.state },
         ).toEqual(
-      listOf(ProgrammeCutState.FINDING, ProgrammeCutState.FINDING, ProgrammeCutState.FINDING),
+      listOf(ProgrammeCutState.QUEUED, ProgrammeCutState.QUEUED, ProgrammeCutState.QUEUED),
     )
   }
 
   @Test
-  fun `should offer to look for the cuts of a failed recording again`() {
+  fun `should show a failed search for every programme still to find`() {
     val directory = recording("2026-10-24-1155-keskpaevatund")
     Files.writeString(directory.resolve("episode-failed.json"), """{"reason":"Katki","failedAt":"2026-10-24T11:10:00Z"}""")
-    expect(service.recordings().single().programmeCuts).toEqual(listOf(ProgrammeCuts(PROGRAMME, ProgrammeCutState.NONE)))
+    expect(service.recordings().single().programmeCuts).toEqual(listOf(ProgrammeCuts(PROGRAMME, ProgrammeCutState.FAILED)))
+  }
+
+  @Test
+  fun `should queue a programme behind the one being searched`() {
+    val directory = transcribed(recording("2026-10-24-1155-keskpaevatund-tarkade-klubi", programmes = shared))
+    progress.start(
+      directory.fileName.toString(),
+      listOf(CutStage(PROGRAMME, CutStep.SILENCE, null, 1.0), CutStage("Tarkade klubi", CutStep.BOUNDARIES, null, 1.0)),
+    )
+    expect(
+      service
+        .recordings()
+        .single()
+        .programmeCuts
+        .last(),
+    ).toEqual(ProgrammeCuts("Tarkade klubi", ProgrammeCutState.QUEUED, after = PROGRAMME))
+  }
+
+  @Test
+  fun `should show the progress of the programme being searched`() {
+    val directory = transcribed(recording("2026-10-24-1155-keskpaevatund"))
+    progress.start(directory.fileName.toString(), listOf(CutStage(PROGRAMME, CutStep.SILENCE, null, 1.0)))
+    expect(
+      service
+      .recordings()
+      .single()
+      .programmeCuts
+      .single()
+      .progress
+      ?.step,
+        ).toEqual(CutStep.SILENCE)
+  }
+
+  @Test
+  fun `should wait for the transcript of a recording still being written`() {
+    recording("2026-10-24-1155-keskpaevatund", RecordingState.RECORDING)
+    expect(
+      service
+      .recordings()
+      .single()
+      .programmeCuts
+      .single()
+      .state,
+        ).toEqual(ProgrammeCutState.WAITING)
   }
 
   @Test

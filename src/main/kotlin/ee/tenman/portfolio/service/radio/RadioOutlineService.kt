@@ -17,14 +17,11 @@ class RadioOutlineService(
     show: Show,
     text: String,
     model: AiModel,
+    read: () -> Unit,
   ): List<OutlineRead?> {
     val asked = prompt.replace("{programme}", show.name).replace("{minutes}", "${show.minutes}")
-    return List(READS) { openRouterClient.complete(model, asked, text, schema)?.let(::parse) }
+    return List(OUTLINE_READS) { openRouterClient.complete(model, asked, text, schema)?.let(::parse).also { read() } }
   }
 
   private fun resource(path: String): String = checkNotNull(javaClass.classLoader.getResource(path)) { "Missing resource $path" }.readText()
-
-  companion object {
-    private const val READS = 3
-  }
 }

@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit
 class RadioArchiveService(
   private val radioEpisodeService: RadioEpisodeService,
   private val radioStorageService: RadioStorageService,
+  private val radioProgressService: RadioProgressService,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
@@ -169,26 +170,8 @@ class RadioArchiveService(
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
       format = formatOf(directory, status),
-      programmeCuts = programmeCuts(status, edit, failure != null),
+      programmeCuts = radioProgressService.programmeCuts(directory, status, edit, failure != null),
     )
-  }
-
-  private fun programmeCuts(
-    status: RecordingStatus,
-    edit: EditList?,
-    failed: Boolean,
-  ): List<ProgrammeCuts> {
-    val found = edit.found()
-    val finding = !failed && status.state != RecordingState.FAILED
-    return status.programmes.map { name ->
-      val state =
-        when {
-          name in found -> ProgrammeCutState.FOUND
-          finding -> ProgrammeCutState.FINDING
-          else -> ProgrammeCutState.NONE
-        }
-      ProgrammeCuts(name, state)
-    }
   }
 
   private fun formatOf(

@@ -28,6 +28,8 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
   { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
   { path: '/radio/2026-10-24/cuts', name: 'radio-find-cuts', stub: stubRadio },
+  { path: '/radio/2026-10-25/cuts', name: 'radio-wait-cuts', stub: stubRadio },
+  { path: '/radio/2026-10-26/cuts', name: 'radio-failed-cuts', stub: stubRadio },
   { path: '/radio/2026-10-17/text', name: 'radio-text', stub: stubRadio },
 ]
 

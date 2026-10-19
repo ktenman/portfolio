@@ -443,6 +443,9 @@ export interface AudioFormat {
 export interface ProgrammeCuts {
     name: string;
     state: ProgrammeCutState;
+    progress: CutProgress | null;
+    transcript: TranscriptProgress | null;
+    after: string | null;
 }
 
 export interface TranscriptWord {
@@ -522,6 +525,20 @@ export interface EpisodeChapter {
 export interface CutJingle {
     r: number;
     saved: boolean;
+}
+
+export interface CutProgress {
+    step: CutStep;
+    read: number | null;
+    percent: number;
+    secondsLeft: number;
+}
+
+export interface TranscriptProgress {
+    writtenSeconds: number;
+    totalSeconds: number;
+    percent: number;
+    secondsLeft: number;
 }
 
 export interface DayAiring {
@@ -694,6 +711,9 @@ export enum BoundaryMethod {
 export enum ProgrammeCutState {
     FOUND = "FOUND",
     FINDING = "FINDING",
+    QUEUED = "QUEUED",
+    WAITING = "WAITING",
+    FAILED = "FAILED",
     NONE = "NONE",
 }
 
@@ -705,6 +725,14 @@ export enum DayOfWeek {
     FRIDAY = "FRIDAY",
     SATURDAY = "SATURDAY",
     SUNDAY = "SUNDAY",
+}
+
+export enum CutStep {
+    DECODE = "DECODE",
+    SILENCE = "SILENCE",
+    READ = "READ",
+    BOUNDARIES = "BOUNDARIES",
+    RENDER = "RENDER",
 }
 
 export enum AiringState {

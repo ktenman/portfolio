@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import type { KeptSpan } from '../models/generated/domain-models'
+import { ProgrammeCutState, type KeptSpan } from '../models/generated/domain-models'
 import {
   audioFormat,
   clock,
   day,
   dropNote,
   fullDay,
+  left,
   length,
   megabytes,
   minutes,
   offset,
+  poll,
   position,
   recordingTime,
 } from './radio'
-import { recording } from '../components/radio/radio-fixture'
+import { programme, recording } from '../components/radio/radio-fixture'
 
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
@@ -99,5 +101,43 @@ describe('stream', () => {
 
   it('should give the length lost when the stream dropped', () => {
     expect(dropNote(dropped(20, 4))).toEqual('Voog katkes 20 korda, 4 s jäi salvestamata')
+  })
+})
+
+describe('left', () => {
+  it.each([
+    [45, '~45 s jäänud'],
+    [42, '~40 s jäänud'],
+    [3, '~5 s jäänud'],
+    [90, '~2 min jäänud'],
+  ])('should round %i seconds left to %s', (seconds, text) => {
+    expect(left(seconds)).toBe(text)
+  })
+
+  it('should add the clock time once more than ten minutes are left', () => {
+    expect(left(1920, new Date('2026-10-19T09:30:00Z'))).toBe('~32 min jäänud · valmis ~13:02')
+  })
+})
+
+describe('poll', () => {
+  const recordings = (...states: ProgrammeCutState[]) => [
+    recording(),
+    recording({ programmeCuts: states.map(state => programme('Digitund', state)) }),
+  ]
+
+  it('should ask every second while a cut search runs', () => {
+    expect(poll(recordings(ProgrammeCutState.QUEUED, ProgrammeCutState.FINDING))).toBe(1000)
+  })
+
+  it('should ask every two seconds while a cut search waits its turn', () => {
+    expect(poll(recordings(ProgrammeCutState.WAITING, ProgrammeCutState.QUEUED))).toBe(2000)
+  })
+
+  it('should ask every half minute while a cut search waits for the text', () => {
+    expect(poll(recordings(ProgrammeCutState.WAITING))).toBe(30_000)
+  })
+
+  it('should stop asking once no cut search is coming', () => {
+    expect(poll(recordings(ProgrammeCutState.FAILED, ProgrammeCutState.NONE))).toBe(false)
   })
 })

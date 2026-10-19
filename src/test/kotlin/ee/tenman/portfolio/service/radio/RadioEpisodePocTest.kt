@@ -101,7 +101,16 @@ class RadioEpisodePocTest {
   fun `should render the proof of concept episode from the saved reads`() {
     prepare(Path.of(System.getenv("RADIO_WORKER_POC")))
     val service =
-      RadioEpisodeService(mockk(), RadioCutService(), RadioRenderService(), airings(), programmes(), RadioProperties(), Clock.systemUTC())
+      RadioEpisodeService(
+        mockk(),
+        RadioCutService(),
+        RadioRenderService(),
+        RadioProgressService(Clock.systemUTC()),
+        airings(),
+        programmes(),
+        RadioProperties(),
+        Clock.systemUTC(),
+      )
     val started = System.nanoTime()
     service.make(directory)
     val episode = directory.resolve("episode.m4a")
