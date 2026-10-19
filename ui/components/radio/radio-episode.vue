@@ -56,7 +56,8 @@ watch(
   value => {
     if (!value) return
     const same = player.recording.value?.name === value.name
-    player.load(value, same && value.episodeBytes ? player.version.value : 'raw')
+    const start = value.editList && value.episodeBytes ? 'episode' : 'raw'
+    player.load(value, same && value.episodeBytes ? player.version.value : start)
   },
   { immediate: true }
 )

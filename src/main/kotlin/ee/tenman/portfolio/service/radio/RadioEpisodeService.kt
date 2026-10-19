@@ -56,12 +56,11 @@ class RadioEpisodeService(
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline)
-    if (todo.any { it != PROGRAMME }) return save(directory.resolve(EDIT_LIST), edit)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
     radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found()), temporary)
     save(directory.resolve(EDIT_LIST), edit)
-    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE)
+    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }
 
   private fun findings(

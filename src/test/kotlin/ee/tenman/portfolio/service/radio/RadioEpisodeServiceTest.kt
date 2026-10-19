@@ -295,14 +295,14 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should find the cuts of another programme on request without rendering them`() {
+  fun `should render the episode again with another programme found on request`() {
     shared()
     service.make(directory)
     val episode = Files.readAllBytes(directory.resolve("episode.m4a"))
     asked(outline(65.0, 70.0, 110.0))
     service.make(directory)
     expect(edit().found() to Files.readAllBytes(directory.resolve("episode.m4a")).contentEquals(episode))
-      .toEqual(setOf(PROGRAMME, "Tarkade klubi") to true)
+      .toEqual(setOf(PROGRAMME, "Tarkade klubi") to false)
   }
 
   @Test
@@ -316,13 +316,13 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should not render a recording whose only programme was found on request`() {
+  fun `should render a recording whose only programme was found on request`() {
     shared()
     save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf("Tarkade klubi", "Ilmaparandaja")))
     Files.writeString(directory.resolve("outline.json"), JsonMapperFactory.instance.writeValueAsString(listOf(outline(65.0, 70.0, 110.0))))
     save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
     service.make(directory)
-    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf("Tarkade klubi") to false)
+    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf("Tarkade klubi") to true)
   }
 
   @Test

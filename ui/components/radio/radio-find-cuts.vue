@@ -1,7 +1,7 @@
 <template>
   <radio-card v-if="open.length" title="Leia lõiked">
     <p class="mt-0 mb-3 text-sm text-ink-soft">
-      Leitud lõiked jäävad soovitusteks, kuni need siin üle vaatad ja rakendad.
+      Leitud lõigetest tehakse kohe puhastatud versioon. Lõikeid saad siin üle vaadata ja muuta.
     </p>
     <ul class="m-0 grid list-none gap-2 p-0">
       <li
