@@ -9,6 +9,7 @@ import {
 } from '../../components/radio/radio-fixture'
 import {
   CutState,
+  CutStep,
   DayOfWeek,
   ProgrammeCutState,
   RecorderState,
@@ -19,28 +20,61 @@ import { apiRoute, type RouteStub } from './stub'
 
 const NAME = '2026-10-17'
 
+const capture = (at: string, programmes: string[], seconds = 4200) => ({
+  state: RecordingState.CAPTURED,
+  programmes,
+  startedAt: Date.parse(at) / 1000,
+  seconds,
+  parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
+  lostSeconds: 0,
+})
+
+const searching = {
+  editList: null,
+  episodeBytes: null,
+  cuts: [],
+  timeline: [],
+  transcriptState: TranscriptState.UNCHECKED,
+  cutState: CutState.NONE,
+}
+
 const RECORDINGS = [
   recording({
-    name: '2026-10-24',
+    ...searching,
+    name: '2026-10-26',
+    programme: 'Digitund',
+    status: capture('2026-10-26T08:55:00Z', ['Digitund']),
+    failure: { reason: 'No outline read to vote on', failedAt: '2026-10-26T11:20:00Z' },
+    cutState: CutState.FAILED,
+    programmeCuts: [programme('Digitund', ProgrammeCutState.FAILED)],
+  }),
+  recording({
+    ...searching,
+    name: '2026-10-25',
+    programme: 'Digitund',
     status: {
+      ...capture('2026-10-25T08:55:00Z', ['Digitund']),
       state: RecordingState.RECORDING,
-      programmes: ['Keskpäevatund', 'Tarkade klubi'],
-      startedAt: Date.UTC(2026, 9, 24, 8, 55, 0) / 1000,
-      seconds: 1260,
-      parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
-      lostSeconds: 0,
+      seconds: 3180,
     },
-    sizeBytes: 40_300_000,
+    sizeBytes: 101_800_000,
     transcribed: false,
-    editList: null,
-    episodeBytes: null,
-    cuts: [],
-    timeline: [],
     transcriptState: TranscriptState.RECORDING,
-    cutState: CutState.NONE,
     programmeCuts: [
-      programme('Keskpäevatund', ProgrammeCutState.FINDING),
-      programme('Tarkade klubi', ProgrammeCutState.NONE),
+      programme('Digitund', ProgrammeCutState.WAITING, {
+        transcript: { writtenSeconds: 3180, totalSeconds: 4200, percent: 75, secondsLeft: 540 },
+      }),
+    ],
+  }),
+  recording({
+    ...searching,
+    name: '2026-10-24',
+    status: capture('2026-10-24T08:55:00Z', ['Keskpäevatund', 'Tarkade klubi'], 7800),
+    programmeCuts: [
+      programme('Keskpäevatund', ProgrammeCutState.FINDING, {
+        progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70 },
+      }),
+      programme('Tarkade klubi', ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' }),
     ],
   }),
   recording(),
@@ -172,6 +206,7 @@ export const stubRadio: RouteStub = async page => {
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
     route.fulfill({ json: radioDay() })
   )
+  await page.route(/\/api\/radio\/[^/]+\/cuts(\?|$)/, route => route.fulfill({ json: [] }))
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/cuts`), route =>
     route.fulfill({ json: contexts() })
   )
