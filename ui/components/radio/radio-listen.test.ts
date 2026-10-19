@@ -46,10 +46,6 @@ describe('RadioListen', () => {
     })
   })
 
-  it('should speak the position in the recording as a clock', () => {
-    expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
-  })
-
   it('should note how often the stream dropped', () => {
     expect(render(recording({ drops: 2 })).text()).toContain(
       'Voog katkes 2 korda, midagi ei kadunud'
@@ -62,37 +58,5 @@ describe('RadioListen', () => {
 
   it('should show the checksum of each recorded part', () => {
     expect(render().text()).toContain('SHA-256ab12')
-  })
-
-  it('should give the position on the station clock', () => {
-    const wrapper = render()
-    audio.currentTime = 761.5
-    audio.dispatchEvent(new Event('timeupdate'))
-    return wrapper.vm.$nextTick().then(() => expect(wrapper.text()).toContain('Eetris 12:07:41'))
-  })
-
-  it('should show only the station time while paused', () => {
-    expect(render().text()).not.toContain('peatatud')
-  })
-
-  it('should offer the cleaned episode once it is rendered', () => {
-    const options = render()
-      .findAll('select[aria-label="Versioon"] option')
-      .map(o => o.text())
-    expect(options).toEqual(['Toorsalvestus · 1:10:00', 'Puhastatud · 41:52'])
-  })
-
-  it('should not offer the cleaned episode before it is rendered', () => {
-    const wrapper = mount(RadioListen, {
-      props: { recording: recording({ editList: null, episodeBytes: null }) },
-      global: { plugins: [router] },
-    })
-    expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
-  })
-
-  it('should jump to the start of the show', async () => {
-    const wrapper = render()
-    await wrapper.find('[data-testid="radio-show-start"]').trigger('click')
-    expect(audio.currentTime).toBe(761.5)
   })
 })

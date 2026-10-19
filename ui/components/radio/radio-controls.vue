@@ -30,18 +30,26 @@
       30
       <radio-icon name="forward" />
     </button>
-    <label class="ml-2 hidden items-center gap-1.5 text-ink-soft md:flex">
-      <radio-icon name="volume" />
+    <div class="ml-1 flex items-center gap-1.5 text-ink-soft">
+      <button
+        type="button"
+        class="inline-flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep md:size-8"
+        aria-label="Vaigista"
+        :aria-pressed="player.muted.value"
+        @click="player.muted.value = !player.muted.value"
+      >
+        <radio-icon :name="player.muted.value ? 'muted' : 'volume'" />
+      </button>
       <input
         v-model.number="player.volume.value"
         type="range"
-        class="w-20 cursor-pointer accent-brass"
+        class="hidden w-20 cursor-pointer accent-brass md:block"
         min="0"
         max="1"
         step="0.05"
         aria-label="Helitugevus"
       />
-    </label>
+    </div>
   </div>
 </template>
 

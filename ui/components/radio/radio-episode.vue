@@ -27,6 +27,7 @@
           {{ tab.label }}
         </router-link>
       </nav>
+      <radio-player :recording="recording" />
       <router-view :recording="recording" />
     </template>
   </div>
@@ -39,10 +40,10 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
 import { fullDay, span } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
+import RadioPlayer from './radio-player.vue'
 
 const TABS = [
   { path: '', label: 'Kuula' },
-  { path: '/cuts', label: 'Lõiked' },
   { path: '/text', label: 'Tekst' },
 ]
 

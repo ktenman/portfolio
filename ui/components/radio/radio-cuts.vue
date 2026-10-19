@@ -103,7 +103,7 @@ import { useConfirm } from '../../composables/use-confirm'
 import { useElapsed, useRadioCuts } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { advance, left, position, span } from '../../utils/radio'
+import { advance, HATCH, left, position, span } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
@@ -113,9 +113,6 @@ import RadioIcon from './radio-icon.vue'
 import RadioManualCut from './radio-manual-cut.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
-
-const HATCH =
-  'bg-[repeating-linear-gradient(135deg,var(--color-hairline-strong)_0_1px,transparent_1px_6px)]'
 
 const contexts = useRadioCuts(() => props.recording)
 const queryClient = useQueryClient()

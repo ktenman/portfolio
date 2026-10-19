@@ -24,7 +24,6 @@
           </span>
         </router-link>
         <radio-controls />
-        <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
         <radio-scrubber
           v-if="!player.live.value"
           class="w-full md:w-auto md:grow"
@@ -45,7 +44,6 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
 import type { StationAiring } from '../../models/generated/domain-models'
 import { position, range } from '../../utils/radio'
-import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 

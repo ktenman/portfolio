@@ -25,9 +25,6 @@ describe('RadioDock', () => {
       global: { stubs: { RadioControls: true, RadioScrubber: true, RouterLink: true } },
     })
 
-  const back = (wrapper: ReturnType<typeof render>) =>
-    wrapper.findAll('button').find(button => button.text() === 'Tagasi praegusele')
-
   beforeEach(() => {
     route.params = {}
     vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
@@ -57,21 +54,5 @@ describe('RadioDock', () => {
     player.listen()
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="radio-dock"]').exists()).toBe(true)
-  })
-
-  it('should offer to go back to the playing line while the text lost it', async () => {
-    const wrapper = render()
-    player.load(recording())
-    player.lost.value = true
-    await wrapper.vm.$nextTick()
-    await back(wrapper)?.trigger('click')
-    expect(player.lost.value).toBe(false)
-  })
-
-  it('should not offer to go back while the text follows the playing line', async () => {
-    const wrapper = render()
-    player.load(recording())
-    await wrapper.vm.$nextTick()
-    expect(back(wrapper)).toBeUndefined()
   })
 })
