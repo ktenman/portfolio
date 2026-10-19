@@ -13,6 +13,7 @@ import {
   type RecordingSummary,
   RecordingState,
   type TranscriptLine,
+  type TranscriptSection,
   TranscriptState,
 } from '../../models/generated/domain-models'
 
@@ -167,6 +168,32 @@ export const transcript = (): TranscriptLine[] => [
   { ...line(2110, 2125, ' Ja nüüd väike paus, ostke'), split: recording().cuts[1] },
   line(2256, 2262, ' Ja Keskpäevatund jätkab.'),
 ]
+
+const index = (item: RecordingSummary, entry: { start: number; end: number }) => {
+  const found = item.cuts.findIndex(c => c.start === entry.start && c.end === entry.end)
+  return found < 0 ? null : found
+}
+
+const EPISODE: Record<number, number> = {
+  761.5: 0,
+  2255: 1358.5,
+  2700: 1803.5,
+  3137: 2128.5,
+  3400: 2391.5,
+}
+
+export const sections = (
+  lines: TranscriptLine[] = transcript(),
+  item: RecordingSummary = recording()
+): TranscriptSection[] =>
+  item.timeline.map(entry => ({
+    start: entry.start,
+    end: entry.end,
+    title: entry.title,
+    cut: entry.cut ? index(item, entry) : null,
+    episodeStart: entry.cut ? null : (EPISODE[entry.start] ?? null),
+    lines: lines.filter(l => entry.start <= l.start && l.start < entry.end),
+  }))
 
 const at = (hour: number, minute = 0) => Date.UTC(2026, 9, 17, hour - 3, minute) / 1000
 

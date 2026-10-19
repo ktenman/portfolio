@@ -143,6 +143,15 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should serve the transcript grouped by topic`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript"))
+      .andExpect(jsonPath("$[0].lines[0].text").value("Tere, Keskpäevatund!"))
+  }
+
+  @Test
   fun `should not find the transcript of a recording without one`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/transcript")).andExpect(status().isNotFound)
   }

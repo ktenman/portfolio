@@ -56,6 +56,15 @@ data class TimelineEntry(
   val cut: Boolean,
 )
 
+data class TranscriptSection(
+  val start: Double,
+  val end: Double,
+  val title: String,
+  val cut: Int?,
+  val episodeStart: Double?,
+  val lines: List<TranscriptLine>,
+)
+
 data class ManualCut(
   val start: Double,
   val end: Double,
@@ -208,4 +217,30 @@ private fun split(
   val marks = listOf(opening) + topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
   val ends = marks.drop(1).map { it.start } + kept.end
   return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false) }
+}
+
+fun sections(
+  timeline: List<TimelineEntry>,
+  cuts: List<Cut>,
+  audible: List<KeptSpan>,
+  lines: List<TranscriptLine>,
+): List<TranscriptSection> =
+  timeline.mapIndexed { index, entry ->
+    val last = index == timeline.lastIndex
+    TranscriptSection(
+      start = entry.start,
+      end = entry.end,
+      title = entry.title,
+      cut = if (entry.cut) cuts.indexOfFirst { it.start == entry.start && it.end == entry.end }.takeIf { it >= 0 } else null,
+      episodeStart = episodeStart(entry, audible),
+      lines = lines.filter { it.start >= entry.start && (last || it.start < entry.end) },
+    )
+  }
+
+private fun episodeStart(
+  entry: TimelineEntry,
+  audible: List<KeptSpan>,
+): Double? {
+  val span = audible.firstOrNull { it.end > entry.start && it.start < entry.end } ?: return null
+  return audible.takeWhile { it !== span }.sumOf { it.end - it.start } + maxOf(0.0, entry.start - span.start)
 }

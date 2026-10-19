@@ -14,6 +14,7 @@ import {
   RecorderState,
   type RecordingSummary,
   RecordingState,
+  type TranscriptSection,
   TranscriptState,
 } from '../models/generated/domain-models'
 import type { BadgeTone } from '../components/radio/radio-badge.vue'
@@ -153,6 +154,9 @@ export const offset = (startedAt: number, time: string): number | null => {
   if (at === null || start === null) return null
   return (at - start + 86400) % 86400
 }
+
+export const sectionTime = (section: TranscriptSection, raw: boolean, startedAt: number): string =>
+  raw ? clock(startedAt, section.start) : position(section.episodeStart ?? 0)
 
 export const range = (startedAt: number, start: number, end: number, withSeconds = false): string =>
   `${clock(startedAt, start, withSeconds)}–${clock(startedAt, end, withSeconds)}`

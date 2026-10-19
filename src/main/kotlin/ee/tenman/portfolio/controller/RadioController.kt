@@ -16,7 +16,7 @@ import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
-import ee.tenman.portfolio.service.radio.TranscriptLine
+import ee.tenman.portfolio.service.radio.TranscriptSection
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
 import org.springframework.format.annotation.DateTimeFormat
@@ -83,7 +83,7 @@ class RadioController(
   @GetMapping("/{name}/transcript")
   fun getTranscript(
     @PathVariable name: String,
-  ): ResponseEntity<List<TranscriptLine>> = ResponseEntity.ofNullable(radioArchiveService.transcript(name))
+  ): ResponseEntity<List<TranscriptSection>> = ResponseEntity.ofNullable(radioArchiveService.sections(name))
 
   @GetMapping("/{name}/transcript.txt", produces = ["text/plain;charset=UTF-8"])
   fun getText(

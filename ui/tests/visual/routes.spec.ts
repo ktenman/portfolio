@@ -30,7 +30,6 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/radio/2026-10-23', name: 'radio-render-cuts', stub: stubRadioStill },
   { path: '/radio/2026-10-25', name: 'radio-wait-cuts', stub: stubRadio },
   { path: '/radio/2026-10-26', name: 'radio-failed-cuts', stub: stubRadio },
-  { path: '/radio/2026-10-17/text', name: 'radio-text', stub: stubRadio },
 ]
 
 const BREAKDOWN_ROUTES = ROUTES.filter(route =>

@@ -274,6 +274,15 @@ export interface TranscriptLine {
     music: boolean;
 }
 
+export interface TranscriptSection {
+    start: number;
+    end: number;
+    title: string;
+    cut: number | null;
+    episodeStart: number | null;
+    lines: TranscriptLine[];
+}
+
 export interface CutReview {
     removed: number[];
 }

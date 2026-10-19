@@ -16,19 +16,8 @@
           {{ fullDay(recording.status.startedAt) }} · Kuku · {{ span(recording) }}
         </p>
       </div>
-      <nav class="mb-4 flex gap-2" aria-label="Saate vaated">
-        <router-link
-          v-for="tab in TABS"
-          :key="tab.path"
-          :to="`/radio/${name}${tab.path}`"
-          class="platform-btn"
-          exact-active-class="active"
-        >
-          {{ tab.label }}
-        </router-link>
-      </nav>
       <radio-player :recording="recording" />
-      <router-view :recording="recording" />
+      <radio-text :recording="recording" />
     </template>
   </div>
 </template>
@@ -41,11 +30,7 @@ import { useRadioRecording } from '../../composables/use-radio-recordings'
 import { fullDay, span } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 import RadioPlayer from './radio-player.vue'
-
-const TABS = [
-  { path: '', label: 'Kuula' },
-  { path: '/text', label: 'Tekst' },
-]
+import RadioText from './radio-text.vue'
 
 const route = useRoute()
 const name = route.params.name as string
