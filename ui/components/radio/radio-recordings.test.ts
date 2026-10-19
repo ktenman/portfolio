@@ -5,14 +5,19 @@ import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
 import { recording } from './radio-fixture'
 import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
+import { toasts } from '../../composables/use-toast'
+
+const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
+    deleteRecording: vi.fn(),
     programmes: vi.fn().mockResolvedValue([]),
     station: vi.fn().mockResolvedValue(null),
   },
 }))
+vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm }) }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -26,8 +31,18 @@ const mount = async () => {
   return wrapper
 }
 
+const remove = async () => {
+  const wrapper = await mount()
+  await wrapper.find('button[aria-label="Kustuta: Keskpäevatund L 17.10"]').trigger('click')
+  await flushPromises()
+  return wrapper
+}
+
 describe('RadioRecordings', () => {
   beforeEach(() => {
+    confirm.mockReset().mockResolvedValue(true)
+    vi.mocked(radioService.deleteRecording).mockReset().mockResolvedValue()
+    toasts.value = []
     vi.mocked(radioService.recordings).mockResolvedValue([
       recording(),
       recording({
@@ -76,5 +91,48 @@ describe('RadioRecordings', () => {
   it('should link each recording to its episode page', async () => {
     const links = (await mount()).findAll('a[href^="/radio/"]').map(a => a.attributes('href'))
     expect(links).toContain('/radio/2026-10-17')
+  })
+
+  it('should ask before deleting a recording', async () => {
+    await remove()
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Kustuta salvestus?',
+        message: expect.stringContaining('Keskpäevatund, L 17.10 · 11:55–13:05'),
+        confirmText: 'Kustuta',
+        cancelText: 'Loobu',
+      })
+    )
+  })
+
+  it('should keep the recording when the user cancels the delete', async () => {
+    confirm.mockResolvedValue(false)
+    await remove()
+    expect(radioService.deleteRecording).not.toHaveBeenCalled()
+  })
+
+  it('should delete the recording once the user confirms', async () => {
+    await remove()
+    expect(radioService.deleteRecording).toHaveBeenCalledWith('2026-10-17')
+  })
+
+  it('should list the recordings again after a delete', async () => {
+    await remove()
+    expect(radioService.recordings).toHaveBeenCalledTimes(2)
+  })
+
+  it('should say so when a recording cannot be deleted', async () => {
+    vi.mocked(radioService.deleteRecording).mockRejectedValue(new Error('409'))
+    await remove()
+    expect(toasts.value.map(toast => [toast.message, toast.type])).toEqual([
+      ['Salvestust ei saanud kustutada', 'error'],
+    ])
+  })
+
+  it('should offer no delete for a recording still being recorded', async () => {
+    const labels = (await mount())
+      .findAll('button[aria-label^="Kustuta"]')
+      .map(button => button.attributes('aria-label'))
+    expect(new Set(labels)).toEqual(new Set(['Kustuta: Keskpäevatund L 17.10']))
   })
 })
