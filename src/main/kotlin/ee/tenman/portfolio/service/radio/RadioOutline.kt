@@ -182,22 +182,34 @@ fun describe(
 }
 
 private fun nearest(
-  starts: List<Double>,
+  lines: List<TranscriptLine>,
   time: Double,
-): Double? = starts.minByOrNull { abs(it - time) }?.takeIf { abs(it - time) <= 1 }
+  edge: (TranscriptLine) -> Double,
+): TranscriptLine? = lines.minByOrNull { abs(edge(it) - time) }?.takeIf { abs(edge(it) - time) <= 1 }
+
+private fun printed(
+  lines: List<TranscriptLine>,
+  time: Double,
+): Double? = (nearest(lines, time) { it.start } ?: nearest(lines, time) { it.end })?.start
+
+private fun spoken(
+  lines: List<TranscriptLine>,
+  time: Double,
+): Double =
+  printed(lines, time)
+    ?: checkNotNull(lines.filter { it.start <= time }.maxOfOrNull { it.start }) { "No transcript line starts before $time" }
 
 fun match(
   read: OutlineRead,
   lines: List<TranscriptLine>,
 ): OutlineRead? =
   runCatching {
-    val starts = lines.map { it.start }.sorted()
-    val snap = { time: Double -> checkNotNull(nearest(starts, time)) { "No transcript line starts within 1 s of $time" } }
+    val snap = { time: Double -> checkNotNull(printed(lines, time)) { "No transcript line starts or ends within 1 s of $time" } }
     read.copy(
       showStart = with(read.showStart) { copy(lastNonShowLineTime = snap(lastNonShowLineTime), firstSpeechTime = snap(firstSpeechTime)) },
       breaks = read.breaks.map { it.copy(lastShowLineTime = snap(it.lastShowLineTime), firstShowLineTime = snap(it.firstShowLineTime)) },
       showEnd = read.showEnd.copy(lastShowLineTime = snap(read.showEnd.lastShowLineTime)),
-      chapters = read.chapters.map { it.copy(time = snap(it.time)) },
+      chapters = read.chapters.map { it.copy(time = spoken(lines, it.time)) },
     )
   }.getOrNull()
 
