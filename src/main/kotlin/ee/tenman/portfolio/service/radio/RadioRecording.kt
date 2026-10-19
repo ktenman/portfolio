@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption
 
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
+const val DELETED_FILE = "deleted.json"
 val NAME = Regex("[0-9a-z][0-9a-z-]*")
 
 @ConfigurationProperties(prefix = "radio")

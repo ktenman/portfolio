@@ -1,11 +1,15 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.exception.RecordingInProgressException
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -24,10 +28,16 @@ class RadioArchiveServiceTest {
 
   private val progress = RadioProgressService(clock)
 
+  private val storage =
+    mockk<RadioStorageService> {
+      every { resource(any(), any()) } returns null
+      every { delete(any()) } just runs
+    }
+
   private val service by lazy {
     RadioArchiveService(
       episodeService,
-      mockk { every { resource(any(), any()) } returns null },
+      storage,
       progress,
       RadioProperties(recordings = recordings),
       clock,
@@ -560,5 +570,38 @@ class RadioArchiveServiceTest {
       "1\n00:12:36,800 --> 00:12:40,900\nVälismääraja paneb kokku Neeme Raud.\n\n" +
         "2\n00:15:28,000 --> 00:15:38,000\nTere, siin Keskpäevatund.\n\n",
     )
+  }
+
+  @Test
+  fun `should delete the directory of a recording`() {
+    val directory = recording("2026-10-19-1023-kuku")
+    service.delete("2026-10-19-1023-kuku")
+    expect(Files.exists(directory)).toEqual(false)
+  }
+
+  @Test
+  fun `should refuse to delete a recording still on air`() {
+    recording("2026-10-19-1023-kuku", RecordingState.RECORDING)
+    expect { service.delete("2026-10-19-1023-kuku") }.toThrow<RecordingInProgressException>()
+  }
+
+  @Test
+  fun `should keep the name of a deleted recording known`() {
+    recording("2026-10-19-1023-kuku")
+    service.delete("2026-10-19-1023-kuku")
+    expect(recorded(recordings)).toContain("2026-10-19-1023-kuku")
+  }
+
+  @Test
+  fun `should delete nothing outside the recordings`() {
+    expect(service.delete("..")).toEqual(false)
+  }
+
+  @Test
+  fun `should keep the recording when its stored objects cannot be removed`() {
+    val directory = recording("2026-10-19-1023-kuku")
+    every { storage.delete(any()) } throws IllegalStateException("MinIO ei vasta")
+    runCatching { service.delete("2026-10-19-1023-kuku") }
+    expect(Files.exists(directory) to Files.exists(recordings.resolve(DELETED_FILE))).toEqual(true to false)
   }
 }

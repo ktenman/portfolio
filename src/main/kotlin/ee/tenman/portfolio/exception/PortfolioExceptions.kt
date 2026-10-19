@@ -16,3 +16,7 @@ class XirrCalculationException(
 class PriceRefreshException(
   message: String,
 ) : IllegalStateException(message)
+
+class RecordingInProgressException(
+  name: String,
+) : IllegalStateException("Recording $name is still being recorded")

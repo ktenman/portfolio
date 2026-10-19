@@ -140,4 +140,12 @@ class RadioStorageServiceIT {
     radioStorageService.store()
     expect(keys("2026-10-07-1200-tarkade-klubi").map { it.substringAfter('/') }).toEqual(listOf("raw.mp3", STATUS_FILE, TRANSCRIPT_FILE))
   }
+
+  @Test
+  fun `should remove the stored objects of a deleted recording`() {
+    val directory = recording("2026-10-08-1200-tarkade-klubi")
+    radioStorageService.store()
+    radioStorageService.delete(directory)
+    expect(keys("2026-10-08-1200-tarkade-klubi")).toEqual(emptyList())
+  }
 }
