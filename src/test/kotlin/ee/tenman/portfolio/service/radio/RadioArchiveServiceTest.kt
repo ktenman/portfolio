@@ -26,7 +26,7 @@ class RadioArchiveServiceTest {
 
   private val clock = Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC)
 
-  private val progress = RadioProgressService(clock)
+  private val progress = RadioProgressService(clock, mockk(relaxed = true))
 
   private val storage =
     mockk<RadioStorageService> {

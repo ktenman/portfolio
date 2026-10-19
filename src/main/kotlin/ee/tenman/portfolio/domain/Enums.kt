@@ -55,6 +55,7 @@ enum class BenchmarkIndex {
 enum class LiveUpdate {
   PRICES,
   SUMMARY,
+  RADIO,
 }
 
 enum class SectorSource {

@@ -228,7 +228,7 @@ describe('RadioCuts', () => {
     })
 
   const finding = searching(ProgrammeCutState.FINDING, {
-    progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70 },
+    progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70, stepSecondsLeft: 50 },
   })
 
   const waiting = searching(ProgrammeCutState.WAITING, {
@@ -246,6 +246,54 @@ describe('RadioCuts', () => {
 
   it('should give the percent and step of a running cut search to a screen reader', async () => {
     expect(bar(await render(finding))).toEqual(['36', '36 %, AI loeb saadet · 1/3, ~1 min jäänud'])
+  })
+
+  it("should move a running cut search's percent on between updates", async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    const wrapper = await render(finding)
+    vi.advanceTimersByTime(35_000)
+    await flushPromises()
+    vi.useRealTimers()
+    expect(bar(wrapper)[0]).toBe('68')
+  })
+
+  it('should not pass the end of the current step however long it waits', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    const wrapper = await render(
+      searching(ProgrammeCutState.FINDING, {
+        progress: {
+          step: CutStep.READ,
+          read: 1,
+          percent: 36,
+          secondsLeft: 70,
+          stepSecondsLeft: 10,
+        },
+      })
+    )
+    vi.advanceTimersByTime(600_000)
+    await flushPromises()
+    vi.useRealTimers()
+    expect(bar(wrapper)[0]).toBe('45')
+  })
+
+  it("should start again from a new update's percent", async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    const wrapper = await render(finding)
+    vi.advanceTimersByTime(35_000)
+    await wrapper.setProps({
+      recording: searching(ProgrammeCutState.FINDING, {
+        progress: {
+          step: CutStep.RENDER,
+          read: null,
+          percent: 50,
+          secondsLeft: 60,
+          stepSecondsLeft: 50,
+        },
+      }),
+    })
+    await flushPromises()
+    vi.useRealTimers()
+    expect(bar(wrapper)[0]).toBe('50')
   })
 
   it('should say which programme a queued cut search waits for', async () => {
