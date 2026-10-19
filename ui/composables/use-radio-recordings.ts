@@ -42,7 +42,6 @@ export const useRadioDay = (date: MaybeRefOrGetter<string | null>) => {
     queryFn: () => radioService.day(toValue(date)),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
-    placeholderData: keepPreviousData,
   })
 }
 
@@ -59,9 +58,13 @@ const useTranscribed = <T>(
 ) => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
-    queryKey: computed(() => ['radio', toValue(recording).name, key]),
+    queryKey: computed(() => {
+      const { name, timeline, audible } = toValue(recording)
+      return ['radio', name, key, timeline, audible]
+    }),
     queryFn: () => fetch(toValue(recording).name),
     enabled: computed(() => isAuthenticated.value && toValue(recording).transcribed),
+    placeholderData: keepPreviousData,
     staleTime: Infinity,
     shallow: true,
   })

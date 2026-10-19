@@ -27,7 +27,7 @@ describe('RadioText', () => {
 
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn()
-    vi.mocked(radioService.transcript).mockResolvedValue(sections())
+    vi.mocked(radioService.transcript).mockReset().mockResolvedValue(sections())
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     player.attach(audio)
@@ -104,6 +104,20 @@ describe('RadioText', () => {
     expect(wrapper.find('[data-testid="radio-section"][aria-current="true"]').text()).toContain(
       'Praegu'
     )
+  })
+
+  it('should regroup the text once the episode is cut again', async () => {
+    const wrapper = await render()
+    await wrapper.setProps({ recording: recording({ audible: [{ start: 761.5, end: 3837 }] }) })
+    await flushPromises()
+    expect(radioService.transcript).toHaveBeenCalledTimes(2)
+  })
+
+  it('should keep the text on screen while it is regrouped', async () => {
+    const wrapper = await render()
+    vi.mocked(radioService.transcript).mockReturnValue(new Promise(() => {}))
+    await wrapper.setProps({ recording: recording({ timeline: recording().timeline.slice(1) }) })
+    expect(lines(wrapper)).toHaveLength(3)
   })
 
   it('should list each topic once in Teemad with its length', async () => {

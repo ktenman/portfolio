@@ -35,6 +35,18 @@ class RadioSectionsTest {
   }
 
   @Test
+  fun `should give a kept cut its start in the episode`() {
+    val kept = sections(timeline, listOf(cut.copy(removed = false)), listOf(KeptSpan(0.0, 300.0)), emptyList())
+    expect(kept.map { it.episodeStart }).toEqual(listOf(0.0, 100.0, 160.0))
+  }
+
+  @Test
+  fun `should leave the episode start empty for a topic inside a gap in the episode`() {
+    val found = sections(timeline, listOf(cut), listOf(KeptSpan(0.0, 90.0), KeptSpan(310.0, 400.0)), emptyList())
+    expect(found.last().episodeStart).toEqual(null)
+  }
+
+  @Test
   fun `should leave the episode start empty for a topic outside the episode`() {
     val found = sections(timeline, listOf(cut), listOf(KeptSpan(0.0, 100.0)), emptyList())
     expect(found.last().episodeStart).toEqual(null)

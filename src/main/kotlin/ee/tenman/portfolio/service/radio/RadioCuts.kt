@@ -232,15 +232,15 @@ fun sections(
       end = entry.end,
       title = entry.title,
       cut = if (entry.cut) cuts.indexOfFirst { it.start == entry.start && it.end == entry.end }.takeIf { it >= 0 } else null,
-      episodeStart = if (entry.cut) null else episodeStart(entry.start, audible),
+      episodeStart = episodeStart(entry, audible),
       lines = lines.filter { it.start >= entry.start && (last || it.start < entry.end) },
     )
   }
 
 private fun episodeStart(
-  start: Double,
+  entry: TimelineEntry,
   audible: List<KeptSpan>,
 ): Double? {
-  val span = audible.firstOrNull { it.end > start } ?: return null
-  return audible.takeWhile { it !== span }.sumOf { it.end - it.start } + maxOf(0.0, start - span.start)
+  val span = audible.firstOrNull { it.end > entry.start && it.start < entry.end } ?: return null
+  return audible.takeWhile { it !== span }.sumOf { it.end - it.start } + maxOf(0.0, entry.start - span.start)
 }
