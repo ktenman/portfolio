@@ -188,4 +188,24 @@ describe('useRadioPlayer', () => {
     player.playFrom(762)
     expect([player.version.value, audio.currentTime]).toEqual(['raw', 762])
   })
+
+  it('should stop being lost after a seek', () => {
+    player.load(recording())
+    player.lost.value = true
+    player.seek(120)
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should stop being lost after playing from a line', () => {
+    player.load(recording())
+    player.lost.value = true
+    player.playFrom(120)
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should forget being lost when the player is detached', () => {
+    player.lost.value = true
+    player.detach()
+    expect(player.lost.value).toBe(false)
+  })
 })

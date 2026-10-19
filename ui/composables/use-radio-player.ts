@@ -16,6 +16,7 @@ const current = ref(0)
 const playing = ref(false)
 const rate = ref(1)
 const volume = ref(1)
+const lost = ref(false)
 let loaded = ''
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
@@ -54,6 +55,7 @@ const resume = () => {
 const seek = (to: number) => {
   const audio = element.value
   if (!audio || !recording.value) return
+  lost.value = false
   const target = Math.min(Math.max(0, to), total.value)
   if (version.value === 'episode') {
     audio.currentTime = target
@@ -152,6 +154,8 @@ const follow = () => {
   }
 }
 
+const rejoin = () => (lost.value = false)
+
 const listeners: Record<string, () => void> = {
   timeupdate: () => {
     current.value = element.value?.currentTime ?? 0
@@ -193,6 +197,7 @@ const detach = () => {
   part.value = 0
   current.value = 0
   playing.value = false
+  lost.value = false
   plan = null
 }
 
@@ -214,6 +219,8 @@ export const useRadioPlayer = () => ({
   playing,
   rate,
   volume,
+  lost,
+  rejoin,
   attach,
   detach,
   load,
