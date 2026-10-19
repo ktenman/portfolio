@@ -13,7 +13,7 @@ import {
 } from '../../models/generated/domain-models'
 import type { ProgrammeCuts, RecordingSummary } from '../../models/generated/domain-models'
 
-const { confirm, success } = vi.hoisted(() => ({ confirm: vi.fn(), success: vi.fn() }))
+const { success } = vi.hoisted(() => ({ success: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -26,7 +26,6 @@ vi.mock('../../services/api', () => ({
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
-vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm }) }))
 vi.mock('../../composables/use-toast', () => ({ useToast: () => ({ success, error: vi.fn() }) }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
@@ -46,7 +45,6 @@ describe('RadioCuts', () => {
     vi.mocked(radioService.addCut).mockReset().mockResolvedValue()
     vi.mocked(radioService.dropCut).mockReset().mockResolvedValue()
     vi.mocked(radioService.findCuts).mockReset().mockResolvedValue()
-    confirm.mockReset()
     success.mockReset()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
@@ -69,10 +67,9 @@ describe('RadioCuts', () => {
   const card = async (index: number) => (await render()).findAll('[data-testid="radio-cut"]')[index]
 
   const button = (wrapper: { findAll: (s: string) => any[] }, text: string) =>
-    wrapper.findAll('button').find(b => b.text().includes(text))
-
-  const result = (wrapper: { find: (s: string) => any }) =>
-    wrapper.find('[data-testid="radio-cut-result"]').text()
+    wrapper
+      .findAll('button')
+      .find(b => b.text().includes(text) || b.attributes('aria-label')?.startsWith(text))
 
   it('should show a card for each suggested cut', async () => {
     expect((await render()).findAll('[data-testid="radio-cut"]')).toHaveLength(4)
@@ -98,99 +95,19 @@ describe('RadioCuts', () => {
     expect((await card(1)).text()).toContain('helitaseme langus · jaama džingel')
   })
 
-  it('should add up what the suggested cuts remove', async () => {
-    expect(result(await render())).toContain('22:51 · 4 lõiget')
-  })
-
-  it('should start from the cuts the episode already leaves in', async () => {
-    const cuts = recording().cuts.map((cut, i) => ({ ...cut, removed: i !== 1 }))
-    expect(result(await render(recording({ cuts })))).toContain('20:36 · 3 lõiget')
-  })
-
-  it('should leave a kept break in the episode', async () => {
+  it('should save a decision without a button', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await render()
     await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
-    expect(result(wrapper)).toContain('Puhastatud49:23')
-  })
-
-  it('should restore the machine choice', async () => {
-    const wrapper = await render()
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
-    await button(wrapper, 'Lähtesta').trigger('click')
-    expect(result(wrapper)).toContain('22:51 · 4 lõiget')
-  })
-
-  it('should send the cuts to remove once the user confirms', async () => {
-    confirm.mockResolvedValue(true)
-    const wrapper = await render()
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
-    await button(wrapper, 'Rakenda lõiked').trigger('click')
-    await flushPromises()
-    expect(radioService.review).toHaveBeenCalledWith('2026-10-17', { removed: [0, 2, 3] })
-  })
-
-  it('should not touch the episode when the user cancels', async () => {
-    confirm.mockResolvedValue(false)
-    await button(await render(), 'Rakenda lõiked').trigger('click')
-    await flushPromises()
-    expect(radioService.review).not.toHaveBeenCalled()
-  })
-
-  it('should not say the cuts are applied when they are only sent', async () => {
-    confirm.mockResolvedValue(true)
-    await button(await render(), 'Rakenda lõiked').trigger('click')
-    await flushPromises()
-    expect(success).not.toHaveBeenCalled()
-  })
-
-  const rendering = recording({ render: { percent: 57, secondsLeft: 40 } })
-
-  const meter = (wrapper: VueWrapper) =>
-    wrapper.find('[aria-label="Puhastatud versioon"]').attributes('aria-valuenow')
-
-  it("should show the render's percent and step in Tulemus", async () => {
-    const wrapper = await render(rendering)
-    expect([meter(wrapper), wrapper.text().includes('Teen saatefaili')]).toEqual(['57', true])
-  })
-
-  it('should not let the cuts be applied or reset while the episode renders', async () => {
-    const wrapper = await render(rendering)
-    expect(
-      ['Rakenda lõiked', 'Lähtesta'].map(text => button(wrapper, text).attributes('disabled'))
-    ).toEqual(['', ''])
-  })
-
-  it('should not pass the next tenth before the render reports it', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
-    const wrapper = await render(recording({ render: { percent: 57, secondsLeft: 10 } }))
-    vi.advanceTimersByTime(600_000)
-    await flushPromises()
+    vi.advanceTimersByTime(3000)
     vi.useRealTimers()
-    expect(meter(wrapper)).toBe('59')
+    expect(vi.mocked(radioService.review).mock.calls).toEqual([
+      ['2026-10-17', { removed: [0, 2, 3] }],
+    ])
   })
 
-  it('should say the cuts are applied once the render finishes', async () => {
-    const wrapper = await render(rendering)
-    await wrapper.setProps({ recording: recording() })
-    await wrapper.setProps({ recording: recording() })
-    expect(success.mock.calls).toEqual([['Lõiked rakendatud']])
-  })
-
-  it('should not say the cuts are applied when the render fails', async () => {
-    const wrapper = await render(rendering)
-    await wrapper.setProps({
-      recording: recording({ renderFailure: { reason: 'FFmpeg exited with 1', failedAt: '' } }),
-    })
-    expect(success).not.toHaveBeenCalled()
-  })
-
-  it('should show why the render failed', async () => {
-    const failed = recording({
-      renderFailure: { reason: 'FFmpeg exited with 1 – õ', failedAt: '2026-10-17T12:00:00Z' },
-    })
-    expect((await render(failed)).text()).toContain(
-      'Puhastatud versiooni ei saanud teha: FFmpeg exited with 1 – õ'
-    )
+  it('should offer no button to apply the cuts', async () => {
+    expect(button(await render(), 'Rakenda')).toBeUndefined()
   })
 
   it('should show the jingle that ends a break and how well it matched', async () => {
@@ -267,15 +184,32 @@ describe('RadioCuts', () => {
     expect(titles[2]).toBe('Käsitsi lõige')
   })
 
-  it('should choose to remove a cut once it is added by hand', async () => {
+  it('should remove a cut as soon as it is added by hand', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await render()
     await wrapper.setProps({ recording: recording({ cuts: [...recording().cuts, manual] }) })
-    expect(result(wrapper)).toContain('5 lõiget')
+    vi.advanceTimersByTime(3000)
+    vi.useRealTimers()
+    expect(vi.mocked(radioService.review).mock.calls).toEqual([
+      ['2026-10-17', { removed: [0, 1, 2, 3, 4] }],
+    ])
+  })
+
+  it('should save the decisions before a cut made by hand is deleted', async () => {
+    const calls: string[] = []
+    vi.mocked(radioService.review).mockImplementation(async () => void calls.push('review'))
+    vi.mocked(radioService.dropCut).mockImplementation(async () => void calls.push('drop'))
+    const wrapper = await render(recording({ cuts: [...recording().cuts, manual, manual] }))
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
+    await button(wrapper, 'Kustuta').trigger('click')
+    await flushPromises()
+    expect(calls).toEqual(['review', 'drop'])
   })
 
   it('should delete a cut made by hand', async () => {
     const cuts = [...recording().cuts, manual]
     await button(await render(recording({ cuts })), 'Kustuta').trigger('click')
+    await flushPromises()
     expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
   })
 

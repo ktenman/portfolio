@@ -1,65 +1,63 @@
 <template>
-  <section class="card" data-testid="radio-cut">
-    <div class="card-body grid gap-3">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
+  <div class="grid gap-2 border-b border-hairline py-3 last:border-b-0" data-testid="radio-cut">
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <button
+        type="button"
+        class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-control-border bg-surface-sunken text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep md:size-9"
+        :aria-label="`Kuula üleminekut: ${name}`"
+        :title="`Kuula üleminekut: ${name}`"
+        @click="player.preview(cut.start, cut.end)"
+      >
+        <radio-icon name="play" />
+      </button>
+      <div class="min-w-0 grow">
+        <div class="flex flex-wrap items-center gap-2">
           <h4 class="mb-0 text-base font-semibold">{{ cut.title }}</h4>
-          <p class="mb-0 text-sm text-ink-soft tabular-nums">
-            {{ range(startedAt, cut.start, cut.end, true) }} ·
-            {{ length(cut.end - cut.start) }}
-          </p>
+          <radio-badge v-if="cut.review" tone="warn">Kontrolli</radio-badge>
         </div>
-        <radio-badge v-if="cut.review" tone="warn">Kontrolli</radio-badge>
+        <p class="mb-0 text-sm text-ink-soft tabular-nums">
+          {{ range(startedAt, cut.start, cut.end, true) }} ·
+          {{ length(cut.end - cut.start) }}
+        </p>
       </div>
-      <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
-      <p class="mb-0 text-sm text-ink-soft">
-        Piir: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
-      </p>
-      <div v-if="cut.jingle" class="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span class="text-ink-soft">
-          Džingel r = {{ cut.jingle.r.toFixed(2).replace('.', ',') }} ·
-          {{ cut.jingle.saved ? 'salvestatud' : 'kinnitamata' }}
-        </span>
-        <app-button
-          :aria-label="`${jingleAction}: ${name}`"
-          @click="emit('jingle', !cut.jingle.saved)"
+      <div
+        class="grid w-full grid-cols-2 gap-2 md:flex md:w-auto"
+        role="group"
+        :aria-label="`Otsus: ${name}`"
+      >
+        <button
+          v-for="choice in CHOICES"
+          :key="choice.label"
+          type="button"
+          class="platform-btn min-h-11 justify-center md:min-h-0"
+          :class="{ active: removed === choice.removed }"
+          :aria-pressed="removed === choice.removed"
+          @click="emit('choose', choice.removed)"
         >
-          {{ jingleAction }}
-        </app-button>
-      </div>
-      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
-        <div class="flex flex-wrap gap-2">
-          <app-button
-            :aria-label="`Kuula üleminekut: ${name}`"
-            @click="player.preview(cut.start, cut.end)"
-          >
-            <radio-icon name="play" class="me-1.5" />
-            Kuula üleminekut
-          </app-button>
-          <app-button
-            v-if="cut.kind === CutKind.MANUAL && !cut.removed"
-            :aria-label="`Kustuta: ${name}`"
-            @click="emit('drop')"
-          >
-            Kustuta
-          </app-button>
-        </div>
-        <div class="flex gap-2" role="group" :aria-label="`Otsus: ${name}`">
-          <button
-            v-for="choice in CHOICES"
-            :key="choice.label"
-            type="button"
-            class="platform-btn"
-            :class="{ active: removed === choice.removed }"
-            :aria-pressed="removed === choice.removed"
-            @click="emit('choose', choice.removed)"
-          >
-            {{ choice.label }}
-          </button>
-        </div>
+          {{ choice.label }}
+        </button>
       </div>
     </div>
-  </section>
+    <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
+    <p class="mb-0 text-sm text-ink-soft">
+      Piir: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
+    </p>
+    <div v-if="cut.jingle" class="flex flex-wrap items-center justify-between gap-2 text-sm">
+      <span class="text-ink-soft">
+        Džingel r = {{ cut.jingle.r.toFixed(2).replace('.', ',') }} ·
+        {{ cut.jingle.saved ? 'salvestatud' : 'kinnitamata' }}
+      </span>
+      <app-button
+        :aria-label="`${jingleAction}: ${name}`"
+        @click="emit('jingle', !cut.jingle.saved)"
+      >
+        {{ jingleAction }}
+      </app-button>
+    </div>
+    <div v-if="cut.kind === CutKind.MANUAL && !cut.removed">
+      <app-button :aria-label="`Kustuta: ${name}`" @click="emit('drop')">Kustuta</app-button>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
