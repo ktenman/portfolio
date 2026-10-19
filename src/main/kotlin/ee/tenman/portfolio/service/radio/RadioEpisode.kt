@@ -1,5 +1,8 @@
 package ee.tenman.portfolio.service.radio
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -7,6 +10,7 @@ import kotlin.math.round
 
 const val FADE = 0.015
 private const val ESCAPED = "\\=;#"
+private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
 data class Piece(
   val index: Int,
@@ -116,3 +120,22 @@ data class EpisodeFailure(
   val reason: String,
   val failedAt: String,
 )
+
+data class RenderProgress(
+  val percent: Int,
+  val secondsLeft: Int,
+)
+
+fun names(
+  status: RecordingStatus,
+  done: Set<String>,
+): String {
+  val shown = status.programmes.filter { it in done }
+  return shown.ifEmpty { done.toList() }.joinToString(", ")
+}
+
+fun title(
+  status: RecordingStatus,
+  done: Set<String>,
+  zone: ZoneId,
+): String = "${names(status, done)} ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).format(DAY)}"

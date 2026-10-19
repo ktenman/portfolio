@@ -22,7 +22,7 @@ class RadioArchiveServiceTest {
   @TempDir
   lateinit var recordings: Path
 
-  private val episodeService = mockk<RadioEpisodeService>()
+  private val reviewService = mockk<RadioReviewService>()
 
   private val clock = Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC)
 
@@ -36,7 +36,7 @@ class RadioArchiveServiceTest {
 
   private val service by lazy {
     RadioArchiveService(
-      episodeService,
+      reviewService,
       storage,
       progress,
       RadioProperties(recordings = recordings),
@@ -287,9 +287,8 @@ class RadioArchiveServiceTest {
   fun `should keep what lies between the removed cuts`() {
     val directory = recording("2026-10-17")
     edited(directory)
-    val edit = mockk<EditList>()
-    every { episodeService.review(directory, listOf(KeptSpan(761.5, 4200.0))) } returns edit
-    expect(service.review("2026-10-17", CutReview(listOf(0)))).toEqual(edit)
+    every { reviewService.review(directory, listOf(KeptSpan(761.5, 4200.0))) } returns true
+    expect(service.review("2026-10-17", CutReview(listOf(0)))).toEqual(true)
   }
 
   @Test
@@ -339,7 +338,7 @@ class RadioArchiveServiceTest {
   @Test
   fun `should find no review for a recording without an edit list`() {
     recording("2026-10-17")
-    expect(service.review("2026-10-17", CutReview(emptyList()))).toEqual(null)
+    expect(service.review("2026-10-17", CutReview(emptyList()))).toEqual(false)
   }
 
   @Test
@@ -379,7 +378,7 @@ class RadioArchiveServiceTest {
 
   @Test
   fun `should find no review for an unknown recording`() {
-    expect(service.review("2026-10-31", CutReview(emptyList()))).toEqual(null)
+    expect(service.review("2026-10-31", CutReview(emptyList()))).toEqual(false)
   }
 
   private fun jingled(saved: String? = null): Path {

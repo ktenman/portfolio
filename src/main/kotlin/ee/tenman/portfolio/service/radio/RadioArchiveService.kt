@@ -15,7 +15,7 @@ import kotlin.io.path.deleteRecursively
 
 @Service
 class RadioArchiveService(
-  private val radioEpisodeService: RadioEpisodeService,
+  private val radioReviewService: RadioReviewService,
   private val radioStorageService: RadioStorageService,
   private val radioProgressService: RadioProgressService,
   private val radioProperties: RadioProperties,
@@ -66,11 +66,11 @@ class RadioArchiveService(
   fun review(
     name: String,
     review: CutReview,
-  ): EditList? {
-    val directory = directory(name, STATUS_FILE) ?: return null
-    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return null
+  ): Boolean {
+    val directory = directory(name, STATUS_FILE) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
     val total = readStatus(directory).seconds
-    return radioEpisodeService.review(directory, keep(cuts(edit, total), review.removed, total))
+    return radioReviewService.review(directory, keep(cuts(edit, total), review.removed, total))
   }
 
   fun jingle(
