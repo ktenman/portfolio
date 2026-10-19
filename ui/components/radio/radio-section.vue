@@ -16,9 +16,11 @@
       <span class="w-14 shrink-0 text-sm text-ink-soft tabular-nums">
         {{ sectionTime(section, raw, startedAt) }}
       </span>
-      <span class="min-w-0 grow font-semibold">{{ section.title }}</span>
-      <radio-badge v-if="playing" tone="live">Praegu</radio-badge>
-      <span class="text-sm text-ink-soft tabular-nums">
+      <span class="min-w-0 grow font-semibold break-words">
+        {{ section.title }}
+        <radio-badge v-if="playing" class="ml-1" tone="live">Praegu</radio-badge>
+      </span>
+      <span class="shrink-0 text-sm whitespace-nowrap text-ink-soft tabular-nums">
         {{ minutes(section.end - section.start) }}
       </span>
     </button>

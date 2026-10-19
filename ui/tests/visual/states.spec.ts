@@ -224,11 +224,24 @@ test('the radio dock takes over once the player card scrolls away', async ({ pag
   await stubEnums(page)
   await stubRadio(page)
   await page.setViewportSize({ width: page.viewportSize()!.width, height: 600 })
-  await openRoute(page, '/radio/2026-10-17/text')
+  await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   await expect(page.getByTestId('radio-dock')).toBeInViewport()
   await settleAndFreeze(page)
   await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
+})
+
+test('the raw radio recording shows the cut decisions', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-17')
+  await page.getByRole('button', { name: 'Muuda lõikeid' }).click()
+  await expect(page.getByTestId('radio-cut').first()).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await settleAndFreeze(page)
+  await expect(page).toHaveScreenshot('radio-raw.png', { fullPage: true })
 })
 
 test('the radio dock keeps every control at least 44 px tall on a phone', async ({
@@ -238,7 +251,7 @@ test('the radio dock keeps every control at least 44 px tall on a phone', async 
   await stubBuildInfo(page)
   await stubEnums(page)
   await stubRadio(page)
-  await openRoute(page, '/radio/2026-10-17/text')
+  await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   const dock = page.getByTestId('radio-dock')
   await expect(dock).toBeInViewport()
@@ -255,7 +268,7 @@ test('the radio dock shows while the navbar covers the card controls', async ({
   await stubEnums(page)
   await stubRadio(page)
   await page.setViewportSize({ width: 1440, height: 600 })
-  await openRoute(page, '/radio/2026-10-17/text')
+  await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => {
     const navbar = document.querySelector('nav.navbar')!.getBoundingClientRect().height
     const row = document
@@ -287,9 +300,9 @@ test.describe('desktop states', () => {
   test('the radio player leads the text back to the playing line', async ({ page }) => {
     await stubRadio(page)
     await page.setViewportSize({ width: 1440, height: 600 })
-    await openRoute(page, '/radio/2026-10-17/text')
+    await openRoute(page, '/radio/2026-10-17')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
-    await page.mouse.wheel(0, 1200)
+    await page.mouse.wheel(0, 600)
     await expect(
       page.getByTestId('radio-dock').getByRole('button', { name: 'Tagasi praegusele' })
     ).toBeInViewport()
@@ -298,18 +311,9 @@ test.describe('desktop states', () => {
     await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-player-lost.png')
   })
 
-  test('the raw radio recording shows the cut decisions', async ({ page }) => {
-    await stubRadio(page)
-    await openRoute(page, '/radio/2026-10-17')
-    await page.getByRole('button', { name: 'Muuda lõikeid' }).click()
-    await expect(page.getByTestId('radio-cut').first()).toBeVisible()
-    await settleAndFreeze(page)
-    await expect(page).toHaveScreenshot('radio-raw.png', { fullPage: true })
-  })
-
   test('the spoken word is marked by a tint', async ({ page }) => {
     await stubRadio(page)
-    await openRoute(page, '/radio/2026-10-17/text')
+    await openRoute(page, '/radio/2026-10-17')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
     await page.mouse.move(0, 0)
     await settleAndFreeze(page)
