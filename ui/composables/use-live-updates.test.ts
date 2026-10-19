@@ -94,6 +94,12 @@ describe('useLiveUpdates', () => {
     ])
   })
 
+  it('refreshes the recordings list when radio progress changes', async () => {
+    const invalidate = render()
+    await push(LiveUpdate.RADIO)
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio'], exact: true }]])
+  })
+
   it('refreshes again when the same update arrives twice', async () => {
     const invalidate = render()
     await push(LiveUpdate.PRICES)

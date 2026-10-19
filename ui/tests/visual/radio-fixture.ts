@@ -216,3 +216,8 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: [transcript()[0], song(), ...transcript().slice(1)] })
   )
 }
+
+export const stubRadioStill: RouteStub = async page => {
+  await page.clock.setFixedTime(Date.now())
+  await stubRadio(page)
+}
