@@ -183,6 +183,19 @@ describe('useRadioPlayer', () => {
     expect(player.recordingSeconds.value).toBe(1592)
   })
 
+  it('should mute the audio without losing its level', async () => {
+    player.volume.value = 0.6
+    player.muted.value = true
+    await nextTick()
+    expect([audio.muted, audio.volume]).toEqual([true, 0.6])
+  })
+
+  it('should play the cleaned episode from a chapter start', () => {
+    player.load(recording(), 'raw')
+    player.playFrom(120, 'episode')
+    expect([player.version.value, audio.currentTime]).toEqual(['episode', 120])
+  })
+
   it('should play the raw recording from a moment chosen in the episode version', () => {
     player.load(recording(), 'episode')
     player.playFrom(762)

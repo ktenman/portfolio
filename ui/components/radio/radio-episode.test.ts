@@ -37,20 +37,46 @@ describe('RadioEpisode', () => {
         {
           path: '/radio/:name',
           component: RadioEpisode,
-          children: [{ path: '', component: { template: '<div />' } }],
+          children: [
+            { path: '', component: { template: '<div />' } },
+            { path: 'text', component: { template: '<div />' } },
+          ],
         },
       ],
     })
     await router.push(`/radio/${item.name}`)
-    mount({ template: '<router-view />' }, { global: { plugins: [router] } })
-    return player.version.value
+    const wrapper = mount(
+      { template: '<router-view />' },
+      { global: { plugins: [router], stubs: { RadioPlayer: true } } }
+    )
+    return { router, wrapper }
   }
 
   it('should open a recording on its cut version', async () => {
-    expect(await open(recording())).toBe('episode')
+    await open(recording())
+    expect(player.version.value).toBe('episode')
   })
 
   it('should open a recording without a cut version on the raw recording', async () => {
-    expect(await open(recording({ editList: null, episodeBytes: null }))).toBe('raw')
+    await open(recording({ editList: null, episodeBytes: null }))
+    expect(player.version.value).toBe('raw')
+  })
+
+  it('should show Kuula and Tekst only', async () => {
+    const { wrapper } = await open(recording())
+    expect(wrapper.findAll('nav a').map(a => a.text())).toEqual(['Kuula', 'Tekst'])
+  })
+
+  it('should keep the player when switching to Tekst', async () => {
+    const { router, wrapper } = await open(recording())
+    const before = wrapper.find('radio-player-stub').element
+    await router.push('/radio/2026-10-17/text')
+    expect(wrapper.find('radio-player-stub').element).toBe(before)
+  })
+
+  it('should send old cuts links to Kuula', async () => {
+    const { default: app } = await import('../../router')
+    await app.push('/radio/2026-10-17/cuts')
+    expect(app.currentRoute.value.fullPath).toBe('/radio/2026-10-17')
   })
 })
