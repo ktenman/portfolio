@@ -174,25 +174,39 @@ class RadioArchiveService(
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST))
-    val cuts = cutsOf(directory, edit, status.seconds)
+    val decided = decided(directory, edit)
+    val cuts = cutsOf(directory, decided, status.seconds)
     val failure = read<EpisodeFailure>(directory.resolve(FAILED))
     return RecordingSummary(
       name = directory.fileName.toString(),
       programme = status.title(),
       status = status,
-      sizeBytes = status.parts.sumOf { size(directory, it.file) ?: 0 },
+      sizeBytes = sizeOf(directory, status),
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
       transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
       failure = failure,
       episodeBytes = size(directory, EPISODE),
       cuts = cuts,
-      timeline = timelineOf(cuts, edit, status),
+      timeline = timelineOf(cuts, decided, status),
       audible = audibleOf(directory, status, edit),
       format = formatOf(directory, status),
       programmeCuts = radioProgressService.programmeCuts(directory, status, edit, failure != null),
-    )
+    ).rendering()
   }
+
+  private fun RecordingSummary.rendering(): RecordingSummary =
+    copy(render = radioReviewService.progress(name), renderFailure = radioReviewService.failure(name))
+
+  private fun sizeOf(
+    directory: Path,
+    status: RecordingStatus,
+  ): Long = status.parts.sumOf { size(directory, it.file) ?: 0 }
+
+  private fun decided(
+    directory: Path,
+    edit: EditList?,
+  ): EditList? = radioReviewService.pending(directory)?.let { edit?.copy(keep = it) } ?: edit
 
   private fun formatOf(
     directory: Path,

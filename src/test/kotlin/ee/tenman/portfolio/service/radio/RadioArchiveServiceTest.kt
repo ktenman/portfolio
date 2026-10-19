@@ -22,7 +22,12 @@ class RadioArchiveServiceTest {
   @TempDir
   lateinit var recordings: Path
 
-  private val reviewService = mockk<RadioReviewService>()
+  private val reviewService =
+    mockk<RadioReviewService> {
+      every { pending(any()) } returns null
+      every { progress(any()) } returns null
+      every { failure(any()) } returns null
+    }
 
   private val clock = Clock.fixed(Instant.parse("2026-10-18T10:00:00Z"), ZoneOffset.UTC)
 
@@ -510,6 +515,25 @@ class RadioArchiveServiceTest {
     val directory = quiet()
     edited(directory, listOf(KeptSpan(5.0, 20.0), KeptSpan(40.0, 60.0)), manual = listOf(ManualCut(20.0, 40.0)))
     expect { service.drop("2026-10-24", 1) }.toThrow<IllegalArgumentException>()
+  }
+
+  @Test
+  fun `should show pending decisions in the cuts while the old episode plays`() {
+    val directory = Files.createDirectories(recordings.resolve("2026-10-17"))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, constant(30.0, 0))))
+    edited(directory, listOf(KeptSpan(2.0, 28.0)), listOf(Boundary("show starts", 2.0, "digital silence", false)))
+    every { reviewService.pending(directory) } returns listOf(KeptSpan(0.0, 28.0))
+    val summary = service.recordings().single()
+    expect(summary.cuts.first().removed to summary.audible).toEqual(false to listOf(KeptSpan(2.0, 28.0)))
+  }
+
+  @Test
+  fun `should carry the render's progress and failure`() {
+    recording("2026-10-17")
+    every { reviewService.progress("2026-10-17") } returns RenderProgress(57, 40)
+    every { reviewService.failure("2026-10-17") } returns EpisodeFailure("FFmpeg exited with 1 – õ", "2026-10-18T10:00:00Z")
+    val summary = service.recordings().single()
+    expect(summary.render to summary.renderFailure?.reason).toEqual(RenderProgress(57, 40) to "FFmpeg exited with 1 – õ")
   }
 
   private fun edited(
