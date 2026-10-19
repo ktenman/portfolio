@@ -185,14 +185,28 @@ describe('RadioCuts', () => {
   })
 
   it('should remove a cut as soon as it is added by hand', async () => {
+    const wrapper = await typed('12:31:05', '12:32:10')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    await wrapper.unmount()
+    expect(vi.mocked(radioService.review).mock.calls).toEqual([
+      ['2026-10-17', { removed: [0, 1, 2, 3, 4] }],
+    ])
+  })
+
+  it('should not decide on a cut the machine adds', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await render()
     await wrapper.setProps({ recording: recording({ cuts: [...recording().cuts, manual] }) })
     vi.advanceTimersByTime(3000)
     vi.useRealTimers()
-    expect(vi.mocked(radioService.review).mock.calls).toEqual([
-      ['2026-10-17', { removed: [0, 1, 2, 3, 4] }],
-    ])
+    expect(radioService.review).not.toHaveBeenCalled()
+  })
+
+  it('should not offer to delete a cut made by hand once it is chosen for removal', async () => {
+    const wrapper = await render(recording({ cuts: [...recording().cuts, manual] }))
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[2], 'Eemalda').trigger('click')
+    expect(button(wrapper, 'Kustuta')).toBeUndefined()
   })
 
   it('should save the decisions before a cut made by hand is deleted', async () => {

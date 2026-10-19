@@ -15,6 +15,17 @@ const unsaved = shallowRef<Unsaved | null>(null)
 let timer: ReturnType<typeof setTimeout> | undefined
 let pending: (() => Promise<void>) | null = null
 
+const flush = () => {
+  clearTimeout(timer)
+  return pending ? pending() : Promise.resolve()
+}
+
+window.addEventListener('beforeunload', event => {
+  if (!pending) return
+  event.preventDefault()
+  void flush()
+})
+
 export const useRadioDecisions = (recording: MaybeRefOrGetter<RecordingSummary>) => {
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -35,15 +46,10 @@ export const useRadioDecisions = (recording: MaybeRefOrGetter<RecordingSummary>)
     await radioService
       .review(decided.name, { removed: decided.removed })
       .then(() => queryClient.invalidateQueries({ queryKey: ['radio'], exact: true }))
-      .then(() => {
+      .catch(() => toast.error('Lõikeid ei saanud salvestada'))
+      .finally(() => {
         if (unsaved.value === decided) unsaved.value = null
       })
-      .catch(() => toast.error('Lõikeid ei saanud salvestada'))
-  }
-
-  const flush = () => {
-    clearTimeout(timer)
-    return pending ? pending() : Promise.resolve()
   }
 
   const decide = (list: number[]) => {

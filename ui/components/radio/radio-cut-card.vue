@@ -54,7 +54,7 @@
         {{ jingleAction }}
       </app-button>
     </div>
-    <div v-if="cut.kind === CutKind.MANUAL && !cut.removed">
+    <div v-if="cut.kind === CutKind.MANUAL && !removed">
       <app-button :aria-label="`Kustuta: ${name}`" @click="emit('drop')">Kustuta</app-button>
     </div>
   </div>

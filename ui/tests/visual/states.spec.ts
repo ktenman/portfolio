@@ -240,10 +240,12 @@ test.describe('desktop states', () => {
     await stubRadio(page)
     await openRoute(page, '/radio/2026-10-17/text')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
-    await page.mouse.wheel(0, 120)
-    await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toBeVisible()
+    await page.mouse.wheel(0, 1200)
+    await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toBeInViewport()
     await settleAndFreeze(page)
-    await expect(page.getByTestId('radio-player')).toHaveScreenshot('radio-player-lost.png')
+    await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toHaveScreenshot(
+      'radio-player-lost.png'
+    )
   })
 
   test('the raw radio recording shows the cut decisions', async ({ page }) => {

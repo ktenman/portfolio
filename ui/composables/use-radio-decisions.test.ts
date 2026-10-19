@@ -3,9 +3,10 @@ import { ref } from 'vue'
 import { useRadioDecisions } from './use-radio-decisions'
 import { recording } from '../components/radio/radio-fixture'
 
-const { review } = vi.hoisted(() => ({ review: vi.fn() }))
+const { review, error } = vi.hoisted(() => ({ review: vi.fn(), error: vi.fn() }))
 
 vi.mock('../services/api', () => ({ radioService: { review } }))
+vi.mock('./use-toast', () => ({ useToast: () => ({ error }) }))
 vi.mock('@tanstack/vue-query', () => ({
   useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }),
 }))
@@ -62,6 +63,26 @@ describe('useRadioDecisions', () => {
     const before = decisions.waiting.value
     await decisions.flush()
     expect([before, decisions.waiting.value]).toEqual([true, false])
+  })
+
+  it('should show what the server has when a save fails', async () => {
+    review.mockRejectedValue(new Error('offline'))
+    decisions.choose(2, false)
+    await decisions.flush()
+    expect([decisions.removed.value, decisions.waiting.value]).toEqual([[0, 1, 2, 3], false])
+  })
+
+  it('should save a waiting decision when the page is closed', () => {
+    decisions.choose(2, false)
+    window.dispatchEvent(new Event('beforeunload', { cancelable: true }))
+    expect(review.mock.calls).toEqual([['2026-10-17', { removed: [0, 1, 3] }]])
+  })
+
+  it('should ask before the page closes while a decision waits', () => {
+    decisions.choose(2, false)
+    const event = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
   })
 
   it('should remove every cut on reset', () => {

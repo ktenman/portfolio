@@ -60,7 +60,13 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
         <div class="flex flex-wrap items-center gap-2">
-          <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
+          <app-button
+            v-if="player.lost.value"
+            class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-20 -translate-x-1/2 shadow-card"
+            @click="player.rejoin"
+          >
+            Tagasi praegusele
+          </app-button>
           <app-button
             v-if="raw && showStart !== null"
             data-testid="radio-show-start"

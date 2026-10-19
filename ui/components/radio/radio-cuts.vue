@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { ProgrammeCutState, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
@@ -50,13 +50,6 @@ const contexts = useRadioCuts(() => props.recording)
 const decisions = useRadioDecisions(() => props.recording)
 const queryClient = useQueryClient()
 const toast = useToast()
-
-watch(
-  () => props.recording.cuts.length,
-  (now, before) => {
-    if (now === before + 1) decisions.choose(before, true)
-  }
-)
 
 onBeforeUnmount(decisions.flush)
 
