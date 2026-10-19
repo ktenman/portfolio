@@ -58,6 +58,11 @@ class RadioArchiveService(
     return radioStorageService.resource(directory, file)
   }
 
+  fun downloadName(
+    name: String,
+    file: String,
+  ): String? = directory(name, STATUS_FILE)?.let { downloadName(name, readStatus(it), file, clock.zone) }
+
   fun review(
     name: String,
     review: CutReview,

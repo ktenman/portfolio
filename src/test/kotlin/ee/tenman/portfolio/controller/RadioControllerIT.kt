@@ -16,6 +16,7 @@ import ee.tenman.portfolio.service.radio.ffmpeg
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders.CONTENT_DISPOSITION
 import org.springframework.http.HttpHeaders.CONTENT_RANGE
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.HttpHeaders.RANGE
@@ -92,6 +93,32 @@ class RadioControllerIT {
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
       .andExpect(header().string(CONTENT_TYPE, "text/plain;charset=UTF-8"))
+  }
+
+  @Test
+  fun `should save the text transcript under the programme and its day`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
+      .andExpect(
+        header().string(
+          CONTENT_DISPOSITION,
+          "attachment; filename=\"Keskpaeevatund 2026-10-17.txt\"; filename*=UTF-8''Keskp%C3%A4evatund%202026-10-17.txt",
+        ),
+      )
+  }
+
+  @Test
+  fun `should save a byte range of the episode under the programme and its day`() {
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/episode.m4a").header(RANGE, "bytes=0-3"))
+      .andExpect(
+        header().string(
+          CONTENT_DISPOSITION,
+          "attachment; filename=\"Keskpaeevatund 2026-10-17.m4a\"; filename*=UTF-8''Keskp%C3%A4evatund%202026-10-17.m4a",
+        ),
+      )
   }
 
   @Test
