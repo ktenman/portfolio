@@ -26,6 +26,7 @@ describe('RadioText', () => {
   let audio: HTMLAudioElement
 
   beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.transcript).mockResolvedValue(transcript())
     vi.mocked(radioService.check).mockReset().mockResolvedValue()
     audio = document.createElement('audio')
@@ -48,6 +49,16 @@ describe('RadioText', () => {
 
   const lines = (wrapper: Awaited<ReturnType<typeof render>>) =>
     wrapper.findAll('[data-testid="radio-text-line"]')
+
+  const scrolled = () => vi.mocked(Element.prototype.scrollIntoView).mock.contexts
+
+  const play = () => audio.dispatchEvent(new Event('play'))
+
+  const hear = async (wrapper: Awaited<ReturnType<typeof render>>, seconds: number) => {
+    audio.currentTime = seconds
+    audio.dispatchEvent(new Event('timeupdate'))
+    await wrapper.vm.$nextTick()
+  }
 
   it('should list each topic with its length', async () => {
     const topics = (await render()).findAll('[data-testid="radio-topic"]').map(t => t.text())
@@ -140,5 +151,143 @@ describe('RadioText', () => {
       '/api/radio/2026-10-17/transcript.srt',
       '/api/radio/2026-10-17/transcript.txt',
     ])
+  })
+
+  it('should follow the playing line while playing', async () => {
+    const wrapper = await render()
+    play()
+    await hear(wrapper, 762.5)
+    await hear(wrapper, 2257)
+    expect(scrolled()).toEqual([lines(wrapper)[0].element, lines(wrapper)[2].element])
+  })
+
+  it('should center the playing line', async () => {
+    const wrapper = await render()
+    play()
+    await hear(wrapper, 762.5)
+    expect(vi.mocked(Element.prototype.scrollIntoView)).toHaveBeenCalledWith({
+      block: 'center',
+      behavior: 'smooth',
+    })
+  })
+
+  it('should not follow while paused after the first jump', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    await hear(wrapper, 2257)
+    expect(scrolled()).toEqual([lines(wrapper)[0].element])
+  })
+
+  it('should jump once to the current line when opened while paused', async () => {
+    audio.currentTime = 2257
+    audio.dispatchEvent(new Event('timeupdate'))
+    const wrapper = await render()
+    expect(scrolled()).toEqual([lines(wrapper)[2].element])
+  })
+
+  it('should not follow while the search filters the text', async () => {
+    const wrapper = await render()
+    play()
+    await wrapper.find('input[type="search"]').setValue('Tere')
+    await hear(wrapper, 762.5)
+    expect(scrolled()).toEqual([])
+  })
+
+  it('should stop following after a wheel scroll', async () => {
+    const wrapper = await render()
+    play()
+    await hear(wrapper, 762.5)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    await hear(wrapper, 2257)
+    expect(scrolled()).toEqual([lines(wrapper)[0].element])
+  })
+
+  it('should stop following after a page key', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'PageDown' }))
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should not stop following on keys typed into the search box', async () => {
+    const wrapper = mount(RadioText, {
+      props: { recording: recording() },
+      attachTo: document.body,
+      global: { plugins: [[VueQueryPlugin, { queryClient: new QueryClient() }]] },
+    })
+    await flushPromises()
+    await hear(wrapper, 762.5)
+    await wrapper.find('input[type="search"]').trigger('keydown', { key: ' ' })
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should not lose a line that is not playing', async () => {
+    await render()
+    window.dispatchEvent(new WheelEvent('wheel'))
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should follow again after going back to the playing line', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    await wrapper.vm.$nextTick()
+    player.rejoin()
+    await wrapper.vm.$nextTick()
+    expect(scrolled()).toEqual([lines(wrapper)[0].element, lines(wrapper)[0].element])
+  })
+
+  it('should forget a lost line when the tab closes', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    wrapper.unmount()
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should mark the spoken word without changing its weight', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 763.5)
+    const word = wrapper.find('[data-testid="radio-word-now"]')
+    expect(word.classes().filter(name => name.startsWith('font-'))).toEqual([])
+  })
+
+  const touch = (type: string, y: number) =>
+    window.dispatchEvent(Object.assign(new Event(type), { touches: [{ clientY: y }] }))
+
+  it('should stop following after a scroll in a pause between lines', async () => {
+    const wrapper = await render()
+    play()
+    await hear(wrapper, 1000)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should stop following after an arrow key on a focused time', async () => {
+    const wrapper = mount(RadioText, {
+      props: { recording: recording() },
+      attachTo: document.body,
+      global: { plugins: [[VueQueryPlugin, { queryClient: new QueryClient() }]] },
+    })
+    await flushPromises()
+    await hear(wrapper, 762.5)
+    await lines(wrapper)[0].find('button').trigger('keydown', { key: 'ArrowDown' })
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should keep following after a finger jitters on a tap', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    touch('touchstart', 300)
+    touch('touchmove', 304)
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should stop following after a finger drags the text', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    touch('touchstart', 300)
+    touch('touchmove', 240)
+    expect(player.lost.value).toBe(true)
   })
 })
