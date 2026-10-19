@@ -203,9 +203,11 @@ export const stubRadio: RouteStub = async page => {
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
     route.fulfill({ json: STATION })
   )
-  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
-    route.fulfill({ json: radioDay() })
-  )
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route => {
+    const day = radioDay()
+    const running = { start: day.now - 600, end: day.now, recording: true }
+    route.fulfill({ json: { ...day, recorded: [...day.recorded, running] } })
+  })
   await page.route(/\/api\/radio\/[^/]+\/cuts(\?|$)/, route => route.fulfill({ json: [] }))
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/cuts`), route =>
     route.fulfill({ json: contexts() })
