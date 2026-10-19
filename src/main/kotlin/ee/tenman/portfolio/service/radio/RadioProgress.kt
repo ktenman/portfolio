@@ -41,6 +41,7 @@ data class CutProgress(
   val read: Int?,
   val percent: Int,
   val secondsLeft: Int,
+  val stepSecondsLeft: Int,
 )
 
 data class TranscriptProgress(

@@ -119,12 +119,25 @@ const STEPS: Record<CutStep, string> = {
 export const stepLabel = ({ step, read }: CutProgress): string =>
   step === CutStep.READ ? `${STEPS[step]} · ${read}/3` : STEPS[step]
 
-export const poll = (recordings: RecordingSummary[]): number | false => {
-  const states = new Set(recordings.flatMap(it => it.programmeCuts.map(cuts => cuts.state)))
-  if (states.has(ProgrammeCutState.FINDING)) return 1000
-  if (states.has(ProgrammeCutState.QUEUED)) return 2000
-  if (states.has(ProgrammeCutState.WAITING)) return 30_000
-  return false
+const COMING = new Set([
+  ProgrammeCutState.FINDING,
+  ProgrammeCutState.QUEUED,
+  ProgrammeCutState.WAITING,
+])
+
+export const poll = (recordings: RecordingSummary[]): number | false =>
+  recordings.some(it => it.programmeCuts.some(cuts => COMING.has(cuts.state))) ? 60_000 : false
+
+export const advance = (
+  progress: { percent: number; secondsLeft: number },
+  elapsed: number
+): { percent: number; secondsLeft: number } => {
+  if (elapsed <= 0) return progress
+  const done = (100 - progress.percent) * Math.min(1, elapsed / progress.secondsLeft)
+  return {
+    percent: Math.min(99, Math.round(progress.percent + done)),
+    secondsLeft: Math.max(1, Math.ceil(progress.secondsLeft - elapsed)),
+  }
 }
 
 const daySeconds = (time: string): number | null => {

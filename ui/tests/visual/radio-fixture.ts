@@ -72,7 +72,13 @@ const RECORDINGS = [
     status: capture('2026-10-24T08:55:00Z', ['Keskpäevatund', 'Tarkade klubi'], 7800),
     programmeCuts: [
       programme('Keskpäevatund', ProgrammeCutState.FINDING, {
-        progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70 },
+        progress: {
+          step: CutStep.READ,
+          read: 1,
+          percent: 36,
+          secondsLeft: 70,
+          stepSecondsLeft: 50,
+        },
       }),
       programme('Tarkade klubi', ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' }),
     ],
@@ -215,4 +221,9 @@ export const stubRadio: RouteStub = async page => {
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/transcript`), route =>
     route.fulfill({ json: [transcript()[0], song(), ...transcript().slice(1)] })
   )
+}
+
+export const stubRadioStill: RouteStub = async page => {
+  await page.clock.setFixedTime(Date.now())
+  await stubRadio(page)
 }

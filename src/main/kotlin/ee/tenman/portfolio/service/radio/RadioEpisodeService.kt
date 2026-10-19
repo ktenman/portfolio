@@ -33,7 +33,7 @@ class RadioEpisodeService(
     if (todo.isEmpty()) return
     val name = directory.fileName.toString()
     radioProgressService.start(name, plan(directory, todo))
-    runCatching { cut(directory, todo) }.also { radioProgressService.finish(name) }.onFailure { fail(directory, it) }
+    runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }.also { radioProgressService.finish(name) }
   }
 
   private fun plan(

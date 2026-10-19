@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProgrammeCutState, type KeptSpan } from '../models/generated/domain-models'
 import {
+  advance,
   audioFormat,
   clock,
   day,
@@ -125,19 +126,33 @@ describe('poll', () => {
     recording({ programmeCuts: states.map(state => programme('Digitund', state)) }),
   ]
 
-  it('should ask every second while a cut search runs', () => {
-    expect(poll(recordings(ProgrammeCutState.QUEUED, ProgrammeCutState.FINDING))).toBe(1000)
+  it('should ask once a minute while a cut search runs', () => {
+    expect(poll(recordings(ProgrammeCutState.QUEUED, ProgrammeCutState.FINDING))).toBe(60_000)
   })
 
-  it('should ask every two seconds while a cut search waits its turn', () => {
-    expect(poll(recordings(ProgrammeCutState.WAITING, ProgrammeCutState.QUEUED))).toBe(2000)
+  it('should ask once a minute while a cut search waits its turn', () => {
+    expect(poll(recordings(ProgrammeCutState.NONE, ProgrammeCutState.QUEUED))).toBe(60_000)
   })
 
-  it('should ask every half minute while a cut search waits for the text', () => {
-    expect(poll(recordings(ProgrammeCutState.WAITING))).toBe(30_000)
+  it('should ask once a minute while a cut search waits for the text', () => {
+    expect(poll(recordings(ProgrammeCutState.WAITING))).toBe(60_000)
   })
 
   it('should stop asking once no cut search is coming', () => {
     expect(poll(recordings(ProgrammeCutState.FAILED, ProgrammeCutState.NONE))).toBe(false)
+  })
+})
+
+describe('advance', () => {
+  it('should move the percent on by the share of the time left that passed', () => {
+    expect(advance({ percent: 36, secondsLeft: 70 }, 35)).toEqual({ percent: 68, secondsLeft: 35 })
+  })
+
+  it('should stop short of done however long it waits', () => {
+    expect(advance({ percent: 90, secondsLeft: 10 }, 600)).toEqual({ percent: 99, secondsLeft: 1 })
+  })
+
+  it('should leave the progress alone when no time passed', () => {
+    expect(advance({ percent: 36, secondsLeft: 70 }, 0)).toEqual({ percent: 36, secondsLeft: 70 })
   })
 })

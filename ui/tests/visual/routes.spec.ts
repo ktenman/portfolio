@@ -8,7 +8,7 @@ import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubMonitoring } from './monitoring-fixture'
-import { stubRadio } from './radio-fixture'
+import { stubRadio, stubRadioStill } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -27,7 +27,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/radio/jarelkuulamine', name: 'radio-catch-up', stub: stubRadio },
   { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
   { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
-  { path: '/radio/2026-10-24/cuts', name: 'radio-find-cuts', stub: stubRadio },
+  { path: '/radio/2026-10-24/cuts', name: 'radio-find-cuts', stub: stubRadioStill },
   { path: '/radio/2026-10-25/cuts', name: 'radio-wait-cuts', stub: stubRadio },
   { path: '/radio/2026-10-26/cuts', name: 'radio-failed-cuts', stub: stubRadio },
   { path: '/radio/2026-10-17/text', name: 'radio-text', stub: stubRadio },

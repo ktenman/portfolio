@@ -105,7 +105,7 @@ class RadioEpisodePocTest {
         mockk(),
         RadioCutService(),
         RadioRenderService(),
-        RadioProgressService(Clock.systemUTC()),
+        RadioProgressService(Clock.systemUTC(), mockk(relaxed = true)),
         airings(),
         programmes(),
         RadioProperties(),

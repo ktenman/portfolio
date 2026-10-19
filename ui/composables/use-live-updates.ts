@@ -1,6 +1,6 @@
 import { computed, watch } from 'vue'
 import { useDocumentVisibility, useEventListener, useEventSource, useTimeoutFn } from '@vueuse/core'
-import { useQueryClient, type QueryKey } from '@tanstack/vue-query'
+import { useQueryClient, type InvalidateQueryFilters } from '@tanstack/vue-query'
 import { useAuthState } from './use-auth-state'
 import { liveUpdatesService } from '../services/api'
 import { LiveUpdate } from '../models/generated/domain-models'
@@ -9,18 +9,19 @@ const RETRY_DELAY = 15 * 1000
 
 const SILENCE_TIMEOUT = 3 * 60 * 1000
 
-const QUERIES: Record<LiveUpdate, QueryKey[]> = {
+const QUERIES: Record<LiveUpdate, InvalidateQueryFilters[]> = {
   [LiveUpdate.PRICES]: [
-    ['instruments'],
-    ['portfolio-summary', 'current'],
-    ['portfolio-summary', 'range-change'],
+    { queryKey: ['instruments'] },
+    { queryKey: ['portfolio-summary', 'current'] },
+    { queryKey: ['portfolio-summary', 'range-change'] },
   ],
   [LiveUpdate.SUMMARY]: [
-    ['portfolio-summary', 'current'],
-    ['portfolio-summary', 'intraday'],
-    ['portfolio-summary', 'range-change'],
-    ['instruments'],
+    { queryKey: ['portfolio-summary', 'current'] },
+    { queryKey: ['portfolio-summary', 'intraday'] },
+    { queryKey: ['portfolio-summary', 'range-change'] },
+    { queryKey: ['instruments'] },
   ],
+  [LiveUpdate.RADIO]: [{ queryKey: ['radio'], exact: true }],
 }
 
 export function useLiveUpdates() {
@@ -42,7 +43,7 @@ export function useLiveUpdates() {
   Object.values(LiveUpdate).forEach(topic =>
     useEventListener(eventSource, topic, () => {
       arm()
-      QUERIES[topic].forEach(queryKey => queryClient.invalidateQueries({ queryKey }))
+      QUERIES[topic].forEach(filters => queryClient.invalidateQueries(filters))
     })
   )
 }

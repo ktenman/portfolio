@@ -533,6 +533,7 @@ export interface CutProgress {
     read: number | null;
     percent: number;
     secondsLeft: number;
+    stepSecondsLeft: number;
 }
 
 export interface TranscriptProgress {
@@ -664,6 +665,7 @@ export enum TimeRange {
 export enum LiveUpdate {
     PRICES = "PRICES",
     SUMMARY = "SUMMARY",
+    RADIO = "RADIO",
 }
 
 export enum TranscriptState {
