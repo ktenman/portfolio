@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
@@ -93,6 +95,11 @@ fun recorder(
     recording -> RecorderState.RECORDING
     else -> RecorderState.WAITING
   }
+
+fun recorded(root: Path): Set<String> {
+  val names = Files.list(root).use { files -> files.map { it.fileName.toString() }.toList() }
+  return names.toSet() + read<List<String>>(root.resolve(DELETED_FILE)).orEmpty()
+}
 
 fun missed(
   captures: List<Capture>,

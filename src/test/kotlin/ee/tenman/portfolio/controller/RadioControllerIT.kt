@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
 import java.nio.file.Path
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete as mvcDelete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post as mvcPost
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put as mvcPut
@@ -167,5 +168,17 @@ class RadioControllerIT {
   @Test
   fun `should not mark a missing transcript checked`() {
     mockMvc.perform(mvcPut("/api/radio/2026-10-17/transcript/checked")).andExpect(status().isNotFound)
+  }
+
+  @Test
+  fun `should delete a recording`() {
+    mockMvc.perform(mvcDelete("/api/radio/2026-10-17")).andExpect(status().isNoContent)
+  }
+
+  @Test
+  fun `should refuse to delete a recording on air`() {
+    val onAir = RecordingStatus(RecordingState.RECORDING, 1792230900.0, 60.0, listOf(RecordingPart("raw.mp3", 0.0)))
+    Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(onAir))
+    mockMvc.perform(mvcDelete("/api/radio/2026-10-17")).andExpect(status().isConflict)
   }
 }

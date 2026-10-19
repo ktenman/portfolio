@@ -114,8 +114,7 @@ class RadioScheduleService(
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return emptyList()
     val now = clock.instant()
-    val names = Files.list(root).use { files -> files.map { it.fileName.toString() }.toList() }.toSet()
-    return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), names, heartbeat(root), now)
+    return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), recorded(root), heartbeat(root), now)
   }
 
   private fun heartbeat(root: Path): Heartbeat? =

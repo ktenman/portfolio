@@ -1,10 +1,14 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDateTime
@@ -150,5 +154,22 @@ class RadioScheduleTest {
   @Test
   fun `should forget a missed capture a day after it ended`() {
     expect(missed(listOf(ended), emptySet(), null, at("2026-10-25T13:06"))).toHaveSize(0)
+  }
+
+  @Test
+  fun `should count a deleted recording as recorded`(
+    @TempDir root: Path,
+  ) {
+    Files.createDirectory(root.resolve("2026-10-18-1155-keskpaevatund"))
+    Files.writeString(root.resolve(DELETED_FILE), """["2026-10-19-1023-kuku"]""")
+    expect(recorded(root)).toContain("2026-10-18-1155-keskpaevatund", "2026-10-19-1023-kuku")
+  }
+
+  @Test
+  fun `should not report a deleted capture as missed`(
+    @TempDir root: Path,
+  ) {
+    Files.writeString(root.resolve(DELETED_FILE), """["${ended.name}"]""")
+    expect(missed(listOf(ended), recorded(root), null, afterwards)).toHaveSize(0)
   }
 }

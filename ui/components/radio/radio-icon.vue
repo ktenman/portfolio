@@ -25,6 +25,7 @@ export type IconName =
   | 'check'
   | 'volume'
   | 'alert'
+  | 'trash'
 
 defineProps<{ name: IconName }>()
 
@@ -40,6 +41,11 @@ const PATHS: Record<IconName, string[]> = {
   download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'm7 10 5 5 5-5', 'M12 15V3'],
   check: ['M20 6 9 17l-5-5'],
   alert: ['M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', 'M12 8v4', 'M12 16h.01'],
+  trash: [
+    'M3 6h18',
+    'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6',
+    'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+  ],
   volume: [
     'M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z',
     'M16 9a5 5 0 0 1 0 6',

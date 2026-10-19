@@ -235,6 +235,7 @@ export const radioService = {
     httpClient.post<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/find`, choice),
   dropCut: (name: string, cut: number) =>
     httpClient.delete<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/${cut}`),
+  deleteRecording: (name: string) => httpClient.delete<void>(`${API_ENDPOINTS.RADIO}/${name}`),
   jingle: (name: string, cut: number, review: JingleReview) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/${cut}/jingle`, review),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
