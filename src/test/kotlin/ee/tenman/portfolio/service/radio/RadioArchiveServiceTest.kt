@@ -53,13 +53,6 @@ class RadioArchiveServiceTest {
   private val shared = listOf(PROGRAMME, "Tarkade klubi")
 
   @Test
-  fun `should ask for the cuts of a programme in a recording`() {
-    val directory = recording("2026-10-24-1155-keskpaevatund-tarkade-klubi", programmes = shared)
-    service.find(directory.fileName.toString(), CutChoice("Tarkade klubi"))
-    expect(read<CutRequest>(directory.resolve(CUT_REQUEST))).toEqual(CutRequest(listOf("Tarkade klubi")))
-  }
-
-  @Test
   fun `should refuse the cuts of a programme the recording does not hold`() {
     recording("2026-10-24-1155-keskpaevatund")
     expect { service.find("2026-10-24-1155-keskpaevatund", CutChoice("Tarkade klubi")) }.toThrow<IllegalArgumentException>()
@@ -79,9 +72,8 @@ class RadioArchiveServiceTest {
   }
 
   @Test
-  fun `should show which programmes of a recording have their cuts looked for`() {
-    val directory = recording("2026-10-24-1155-keskpaevatund-tarkade-klubi-ilmaparandaja", programmes = shared + "Ilmaparandaja")
-    service.find(directory.fileName.toString(), CutChoice("Ilmaparandaja"))
+  fun `should look for the cuts of every programme in a recording without being asked`() {
+    recording("2026-10-24-1155-keskpaevatund-tarkade-klubi-ilmaparandaja", programmes = shared + "Ilmaparandaja")
     expect(
       service
       .recordings()
@@ -89,7 +81,7 @@ class RadioArchiveServiceTest {
       .programmeCuts
       .map { it.state },
         ).toEqual(
-      listOf(ProgrammeCutState.FINDING, ProgrammeCutState.NONE, ProgrammeCutState.FINDING),
+      listOf(ProgrammeCutState.FINDING, ProgrammeCutState.FINDING, ProgrammeCutState.FINDING),
     )
   }
 

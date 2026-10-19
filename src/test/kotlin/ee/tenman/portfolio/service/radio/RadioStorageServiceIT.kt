@@ -80,8 +80,9 @@ class RadioStorageServiceIT {
   }
 
   @Test
-  fun `should delete the pcm once no cuts are pending`() {
+  fun `should delete the pcm once the cut search has failed`() {
     val directory = recording("2026-10-03-1200-tarkade-klubi")
+    Files.writeString(directory.resolve("episode-failed.json"), "{}")
     radioStorageService.store()
     expect(Files.exists(directory.resolve("raw.pcm"))).toEqual(false)
   }

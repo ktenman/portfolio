@@ -117,8 +117,6 @@ class RadioArchiveService(
   ): Boolean {
     val directory = directory(name, STATUS_FILE) ?: return false
     require(choice.programme in readStatus(directory).programmes) { "Recording $name holds no programme ${choice.programme}" }
-    val asked = read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty()
-    save(directory.resolve(CUT_REQUEST), CutRequest((asked + choice.programme).distinct()))
     Files.deleteIfExists(directory.resolve(FAILED))
     return true
   }
@@ -171,24 +169,22 @@ class RadioArchiveService(
       timeline = timelineOf(cuts, edit, status),
       audible = audibleOf(directory, status, edit),
       format = formatOf(directory, status),
-      programmeCuts = programmeCuts(directory, status, edit, failure != null),
+      programmeCuts = programmeCuts(status, edit, failure != null),
     )
   }
 
   private fun programmeCuts(
-    directory: Path,
     status: RecordingStatus,
     edit: EditList?,
     failed: Boolean,
   ): List<ProgrammeCuts> {
     val found = edit.found()
-    val wanted = wanted(status, read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty())
     val finding = !failed && status.state != RecordingState.FAILED
     return status.programmes.map { name ->
       val state =
         when {
           name in found -> ProgrammeCutState.FOUND
-          finding && name in wanted -> ProgrammeCutState.FINDING
+          finding -> ProgrammeCutState.FINDING
           else -> ProgrammeCutState.NONE
         }
       ProgrammeCuts(name, state)
