@@ -102,6 +102,7 @@ import RadioIcon from './radio-icon.vue'
 const props = defineProps<{ recording: RecordingSummary }>()
 
 const KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '])
+const DRAG = 10
 
 const FILES = [
   { name: 'transcript.srt', label: 'SRT' },
@@ -134,6 +135,7 @@ const spoken = computed(() =>
 const list = useTemplateRef<HTMLElement>('list')
 const motion = usePreferredReducedMotion()
 let jumped = false
+let touched = 0
 
 const scroll = () =>
   list.value?.querySelector('[aria-current="true"]')?.scrollIntoView({
@@ -149,19 +151,32 @@ const follow = (line?: TranscriptLine) => {
 }
 
 const lose = () => {
-  if (current.value) player.lost.value = true
+  if (current.value || (player.playing.value && at.value >= 0)) player.lost.value = true
 }
 
-const typing = (target: EventTarget | null) =>
-  target instanceof Element && target.closest('input, textarea, select, button') !== null
+const typing = ({ key, target }: KeyboardEvent) =>
+  target instanceof Element &&
+  target.closest(key === ' ' ? 'input, textarea, select, button' : 'input, textarea, select') !==
+    null
+
+const finger = (event: TouchEvent) => event.touches[0]?.clientY ?? touched
 
 watch(current, follow, { flush: 'post' })
 watch(player.lost, lost => lost || scroll(), { flush: 'post' })
 onMounted(() => follow(current.value))
 onBeforeUnmount(player.rejoin)
-useEventListener(window, ['wheel', 'touchmove'], lose, { passive: true })
+useEventListener(window, 'wheel', lose, { passive: true })
+useEventListener(window, 'touchstart', (event: TouchEvent) => (touched = finger(event)), {
+  passive: true,
+})
+useEventListener(
+  window,
+  'touchmove',
+  (event: TouchEvent) => Math.abs(finger(event) - touched) > DRAG && lose(),
+  { passive: true }
+)
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
-  if (KEYS.has(event.key) && !typing(event.target)) lose()
+  if (KEYS.has(event.key) && !typing(event)) lose()
 })
 
 const check = async () => {

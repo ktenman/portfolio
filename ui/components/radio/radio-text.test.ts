@@ -251,4 +251,43 @@ describe('RadioText', () => {
     const word = wrapper.find('[data-testid="radio-word-now"]')
     expect(word.classes().filter(name => name.startsWith('font-'))).toEqual([])
   })
+
+  const touch = (type: string, y: number) =>
+    window.dispatchEvent(Object.assign(new Event(type), { touches: [{ clientY: y }] }))
+
+  it('should stop following after a scroll in a pause between lines', async () => {
+    const wrapper = await render()
+    play()
+    await hear(wrapper, 1000)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should stop following after an arrow key on a focused time', async () => {
+    const wrapper = mount(RadioText, {
+      props: { recording: recording() },
+      attachTo: document.body,
+      global: { plugins: [[VueQueryPlugin, { queryClient: new QueryClient() }]] },
+    })
+    await flushPromises()
+    await hear(wrapper, 762.5)
+    await lines(wrapper)[0].find('button').trigger('keydown', { key: 'ArrowDown' })
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should keep following after a finger jitters on a tap', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    touch('touchstart', 300)
+    touch('touchmove', 304)
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should stop following after a finger drags the text', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    touch('touchstart', 300)
+    touch('touchmove', 240)
+    expect(player.lost.value).toBe(true)
+  })
 })
