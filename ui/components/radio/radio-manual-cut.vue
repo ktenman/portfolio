@@ -43,6 +43,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { RecordingSummary } from '../../models/generated/domain-models'
+import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
@@ -59,6 +60,7 @@ const ENDS = [
 ] as const
 
 const player = useRadioPlayer()
+const decisions = useRadioDecisions(() => props.recording)
 const queryClient = useQueryClient()
 const toast = useToast()
 const times = reactive({ start: '', end: '' })
@@ -86,6 +88,7 @@ const add = async () => {
   await radioService
     .addCut(props.recording.name, span.value)
     .then(() => {
+      decisions.choose(props.recording.cuts.length, true)
       Object.assign(times, { start: '', end: '' })
       toast.success('Lõige lisatud')
       return queryClient.invalidateQueries({ queryKey: ['radio'] })

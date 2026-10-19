@@ -6,6 +6,7 @@ import {
   clock,
   day,
   dropNote,
+  episodeParts,
   fullDay,
   left,
   length,
@@ -14,6 +15,7 @@ import {
   offset,
   poll,
   position,
+  rawParts,
   recordingTime,
 } from './radio'
 import { programme, recording } from '../components/radio/radio-fixture'
@@ -158,5 +160,29 @@ describe('advance', () => {
 
   it('should leave the progress alone when no time passed', () => {
     expect(advance({ percent: 36, secondsLeft: 70 }, 0)).toEqual({ percent: 36, secondsLeft: 70 })
+  })
+})
+
+describe('rawParts', () => {
+  it('should name each part by its title, clock span and fate', () => {
+    expect(
+      rawParts(recording(), [1])
+        .slice(0, 3)
+        .map(part => part.label)
+    ).toEqual([
+      'Enne saadet 11:55–12:07 · Jääb alles',
+      'Rahvusooperi tüli 12:07–12:30 · Jääb alles',
+      'Reklaamipaus 12:30–12:32 · Eemaldatakse',
+    ])
+  })
+})
+
+describe('episodeParts', () => {
+  it('should lay the heard spans end to end in episode time', () => {
+    expect(episodeParts(recording()).map(({ start, end }) => [start, end])).toEqual([
+      [0, 1358.5],
+      [1358.5, 2128.5],
+      [2128.5, 2828.5],
+    ])
   })
 })

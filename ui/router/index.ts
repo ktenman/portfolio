@@ -62,8 +62,7 @@ const routes: Array<RouteRecordRaw> = [
           },
           {
             path: 'cuts',
-            name: 'RadioCuts',
-            component: () => import('../components/radio/radio-cuts.vue'),
+            redirect: to => `/radio/${String(to.params.name)}`,
           },
           {
             path: 'text',

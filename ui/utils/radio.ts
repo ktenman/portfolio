@@ -264,3 +264,36 @@ export const dropNote = ({ drops, status }: RecordingSummary): string => {
 
 export const span = (recording: RecordingSummary): string =>
   range(recording.status.startedAt, 0, recording.status.seconds)
+
+export const HATCH =
+  'bg-[repeating-linear-gradient(135deg,var(--color-hairline-strong)_0_1px,transparent_1px_6px)]'
+
+export interface StripPart {
+  start: number
+  end: number
+  removed: boolean
+  label: string
+}
+
+export const rawParts = (
+  { timeline, cuts, status }: RecordingSummary,
+  removed: number[]
+): StripPart[] =>
+  timeline.map(({ start, end, title, cut }) => {
+    const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
+    const fate = out ? 'Eemaldatakse' : 'Jääb alles'
+    return {
+      start,
+      end,
+      removed: out,
+      label: `${title} ${range(status.startedAt, start, end)} · ${fate}`,
+    }
+  })
+
+export const episodeParts = ({ audible }: RecordingSummary): StripPart[] =>
+  audible.reduce<StripPart[]>((parts, { start, end }, i) => {
+    const from = parts[i - 1]?.end ?? 0
+    const to = from + end - start
+    const label = `Osa ${i + 1} ${position(from)}–${position(to)}`
+    return [...parts, { start: from, end: to, removed: false, label }]
+  }, [])
