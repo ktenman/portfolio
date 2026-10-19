@@ -37,6 +37,7 @@ describe('useRadioPlayer', () => {
     vi.spyOn(audio, 'pause').mockImplementation(() => {})
     vi.spyOn(audio, 'load').mockImplementation(() => {})
     player.rate.value = 1
+    player.volume.value = 1
     player.attach(audio)
   })
 
@@ -63,6 +64,13 @@ describe('useRadioPlayer', () => {
     player.listen()
     player.load(split())
     expect(player.live.value).toBe(false)
+  })
+
+  it('should play at the volume chosen on the slider', async () => {
+    player.listen()
+    player.volume.value = 0.35
+    await nextTick()
+    expect(audio.volume).toBe(0.35)
   })
 
   it('should play the station at normal speed', () => {

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="contents">
     <audio ref="audio" preload="metadata" />
     <div
       v-if="visible && (player.recording.value || player.live.value)"
