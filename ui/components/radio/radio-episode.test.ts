@@ -33,21 +33,12 @@ describe('RadioEpisode', () => {
     shown.value = item
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [
-        {
-          path: '/radio/:name',
-          component: RadioEpisode,
-          children: [
-            { path: '', component: { template: '<div />' } },
-            { path: 'text', component: { template: '<div />' } },
-          ],
-        },
-      ],
+      routes: [{ path: '/radio/:name', component: RadioEpisode }],
     })
     await router.push(`/radio/${item.name}`)
     const wrapper = mount(
       { template: '<router-view />' },
-      { global: { plugins: [router], stubs: { RadioPlayer: true } } }
+      { global: { plugins: [router], stubs: { RadioPlayer: true, RadioText: true } } }
     )
     return { router, wrapper }
   }
@@ -62,19 +53,23 @@ describe('RadioEpisode', () => {
     expect(player.version.value).toBe('raw')
   })
 
-  it('should show Kuula and Tekst only', async () => {
+  it('should show no view tabs', async () => {
     const { wrapper } = await open(recording())
-    expect(wrapper.findAll('nav a').map(a => a.text())).toEqual(['Kuula', 'Tekst'])
+    expect(wrapper.find('nav[aria-label="Saate vaated"]').exists()).toBe(false)
   })
 
-  it('should keep the player when switching to Tekst', async () => {
-    const { router, wrapper } = await open(recording())
-    const before = wrapper.find('radio-player-stub').element
-    await router.push('/radio/2026-10-17/text')
-    expect(wrapper.find('radio-player-stub').element).toBe(before)
+  it('should show the text under the player', async () => {
+    const { wrapper } = await open(recording())
+    expect(wrapper.find('radio-text-stub').exists()).toBe(true)
   })
 
-  it('should send old cuts links to Kuula', async () => {
+  it('should send old text links to the recording', async () => {
+    const { default: app } = await import('../../router')
+    await app.push('/radio/2026-10-17/text')
+    expect(app.currentRoute.value.fullPath).toBe('/radio/2026-10-17')
+  })
+
+  it('should send old cuts links to the recording', async () => {
     const { default: app } = await import('../../router')
     await app.push('/radio/2026-10-17/cuts')
     expect(app.currentRoute.value.fullPath).toBe('/radio/2026-10-17')

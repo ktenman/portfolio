@@ -1,32 +1,5 @@
 <template>
   <div class="grid gap-4">
-    <radio-card title="Teemad">
-      <template #aside>
-        <span class="text-sm text-ink-soft">Masinanalüüs</span>
-      </template>
-      <p v-if="!topics.length" class="mb-0 text-ink-soft">Teemasid veel pole.</p>
-      <ul v-else class="mb-0 list-none p-0">
-        <li
-          v-for="topic in topics"
-          :key="topic.start"
-          class="grid grid-cols-[3.5rem_minmax(0,1fr)_auto] items-baseline gap-3 border-b border-hairline py-2.5 last:border-b-0"
-          data-testid="radio-topic"
-        >
-          <button
-            type="button"
-            class="text-left text-ink-soft tabular-nums hover:text-ink"
-            :aria-label="`Kuula: ${topic.title}`"
-            @click="player.playFrom(topic.start)"
-          >
-            {{ clock(recording.status.startedAt, topic.start) }}
-          </button>
-          <span class="font-semibold">{{ topic.title }}</span>
-          <span class="text-sm text-ink-soft tabular-nums">
-            {{ minutes(topic.end - topic.start) }}
-          </span>
-        </li>
-      </ul>
-    </radio-card>
     <radio-card title="Reklaam" data-testid="radio-ads">
       <template #aside>
         <radio-badge tone="plain">{{ breaks.length ? 'Leitud' : 'Ei leitud' }}</radio-badge>
@@ -44,17 +17,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
-import { useRadioPlayer } from '../../composables/use-radio-player'
-import { clock, length, minutes, range } from '../../utils/radio'
+import { length, range } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
-
-const player = useRadioPlayer()
-
-const topics = computed(() => props.recording.timeline.filter(entry => !entry.cut))
 
 const breaks = computed<[string, string][]>(() =>
   props.recording.cuts

@@ -1,6 +1,15 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-    <div class="grid gap-4">
+    <div class="grid min-w-0 gap-4">
+      <radio-topics
+        class="lg:hidden"
+        chips
+        :sections="topics"
+        :started-at="recording.status.startedAt"
+        :raw="raw"
+        :playing="playing"
+        @pick="pick"
+      />
       <div class="flex flex-wrap items-center gap-2">
         <input
           v-model="search"
@@ -14,71 +23,63 @@
           {{ file.label }}
         </a>
       </div>
-      <radio-card title="Tekst">
+      <radio-card title="Tekst" data-testid="radio-transcript">
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
           {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
         </p>
-        <ol v-else ref="list" class="mb-0 list-none p-0">
-          <li
-            v-for="line in shown"
-            :key="line.start"
-            v-memo="[line, line === current, line === current && spoken]"
-            data-testid="radio-text-line"
-            :aria-current="line === current ? 'true' : undefined"
-            class="grid scroll-mt-20 scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
-            :class="{ 'bg-brass-wash': line === current }"
-          >
-            <button
-              type="button"
-              class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink"
-              @click="player.playFrom(line.start)"
-            >
-              {{ clock(recording.status.startedAt, line.start, true) }}
-            </button>
-            <div>
-              <p class="mb-0" :class="{ 'text-ink-soft': line.music }">
-                <template v-if="line === current && line.words.length">
-                  <template v-for="word in line.words" :key="word.start">
-                    <span
-                      :data-testid="word === spoken ? 'radio-word-now' : undefined"
-                      :class="{ 'rounded-[2px] bg-brass/20 box-decoration-clone': word === spoken }"
-                    >
-                      {{ word.word.trim() }}
-                    </span>
-                    {{ ' ' }}
-                  </template>
-                </template>
-                <template v-else>{{ line.music ? 'Muusika' : line.text.trim() }}</template>
-              </p>
-              <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
-                <radio-badge tone="warn">Lõige poolitab lause</radio-badge>
-                <span class="text-ink-soft">
-                  {{ line.split.title }}
-                  {{ range(recording.status.startedAt, line.split.start, line.split.end) }}
-                </span>
-              </p>
-            </div>
-          </li>
-        </ol>
+        <div v-else ref="list">
+          <radio-section
+            v-for="section in shown"
+            :key="section.start"
+            :section="section"
+            :started-at="recording.status.startedAt"
+            :raw="raw"
+            :playing="section.start === playing?.start"
+            :current="current"
+            :spoken="spoken"
+            @play="play(section, $event)"
+          />
+        </div>
       </radio-card>
     </div>
-    <radio-analysis :recording="recording" />
+    <div class="grid gap-4">
+      <radio-topics
+        class="max-lg:hidden"
+        :sections="topics"
+        :started-at="recording.status.startedAt"
+        :raw="raw"
+        :playing="playing"
+        @pick="pick"
+      />
+      <radio-result v-if="recording.editList" :recording="recording" />
+      <radio-cuts v-if="raw" :recording="recording" />
+      <radio-analysis :recording="recording" />
+      <radio-details :recording="recording" />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useEventListener, usePreferredReducedMotion } from '@vueuse/core'
-import type { RecordingSummary, TranscriptLine } from '../../models/generated/domain-models'
+import type {
+  RecordingSummary,
+  TranscriptLine,
+  TranscriptSection,
+} from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioTranscript } from '../../composables/use-radio-recordings'
 import { radioService } from '../../services/api'
-import { clock, LINK, range } from '../../utils/radio'
+import { LINK } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
-import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
+import RadioCuts from './radio-cuts.vue'
+import RadioDetails from './radio-details.vue'
 import RadioIcon from './radio-icon.vue'
+import RadioResult from './radio-result.vue'
+import RadioSection from './radio-section.vue'
+import RadioTopics from './radio-topics.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
@@ -95,11 +96,21 @@ const player = useRadioPlayer()
 const search = ref('')
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
-const lines = computed(() => transcript.data.value ?? [])
+const raw = computed(() => player.version.value === 'raw')
+const sections = computed(() => transcript.data.value ?? [])
+const topics = computed(() =>
+  raw.value ? sections.value : sections.value.filter(section => section.episodeStart !== null)
+)
+const lines = computed(() => sections.value.flatMap(section => section.lines))
 const shown = computed(() => {
   const needle = search.value.trim().toLocaleLowerCase('et')
-  if (!needle) return lines.value
-  return lines.value.filter(line => line.text.toLocaleLowerCase('et').includes(needle))
+  if (!needle) return topics.value
+  return topics.value
+    .map(section => ({
+      ...section,
+      lines: section.lines.filter(line => line.text.toLocaleLowerCase('et').includes(needle)),
+    }))
+    .filter(section => section.lines.length)
 })
 
 const at = computed(() =>
@@ -109,17 +120,34 @@ const current = computed(() => lines.value.find(l => l.start <= at.value && at.v
 const spoken = computed(() =>
   current.value?.words.find(w => w.start <= at.value && at.value < w.end)
 )
+const playing = computed(() => topics.value.find(s => s.start <= at.value && at.value < s.end))
 
 const list = useTemplateRef<HTMLElement>('list')
 const motion = usePreferredReducedMotion()
 let jumped = false
 let touched = 0
 
+const behavior = () => (motion.value === 'reduce' ? 'auto' : 'smooth')
+
+const play = (section: TranscriptSection, from: number) =>
+  raw.value
+    ? player.playFrom(from)
+    : player.playFrom((section.episodeStart ?? 0) + from - section.start, 'episode')
+
+const pick = (section: TranscriptSection) => {
+  play(section, section.start)
+  list.value
+    ?.querySelector(`[data-start="${section.start}"]`)
+    ?.scrollIntoView({ block: 'start', behavior: behavior() })
+}
+
 const scroll = () =>
-  list.value?.querySelector('[aria-current="true"]')?.scrollIntoView({
-    block: 'center',
-    behavior: motion.value === 'reduce' ? 'auto' : 'smooth',
-  })
+  list.value
+    ?.querySelector('[data-testid="radio-text-line"][aria-current="true"]')
+    ?.scrollIntoView({
+      block: 'center',
+      behavior: behavior(),
+    })
 
 const follow = (line?: TranscriptLine) => {
   if (!line || player.lost.value || search.value.trim()) return
