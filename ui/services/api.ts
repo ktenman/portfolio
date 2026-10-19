@@ -223,8 +223,6 @@ export const radioService = {
   cuts: (name: string) => httpClient.get<CutContext[]>(`${API_ENDPOINTS.RADIO}/${name}/cuts`),
   review: (name: string, review: CutReview) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts`, review),
-  check: (name: string) =>
-    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/transcript/checked`),
   addCut: (name: string, cut: ManualCut) =>
     httpClient.post<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts/manual`, cut),
   findCuts: (name: string, choice: CutChoice) =>

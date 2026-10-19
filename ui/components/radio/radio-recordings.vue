@@ -20,9 +20,7 @@
             <span :class="{ 'font-semibold': !item.editList?.reviewed }">{{ cutState(item) }}</span>
           </template>
           <template #cell-text="{ item }">
-            <span :class="{ 'font-semibold': item.transcribed && !item.transcriptCheckedAt }">
-              {{ textState(item) }}
-            </span>
+            <span data-testid="radio-transcript">{{ textState(item) }}</span>
           </template>
           <template #cell-state="{ item }">
             <radio-badge :tone="STATES[item.status.state].tone">

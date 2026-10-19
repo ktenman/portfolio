@@ -90,7 +90,6 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   },
   sizeBytes: 134_400_000,
   transcribed: true,
-  transcriptCheckedAt: null,
   editList: editList(),
   failure: null,
   render: null,
@@ -127,7 +126,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   format: { codec: 'mp3', bitRate: 256_000 },
   programmeCuts: [programme('Keskpäevatund', ProgrammeCutState.FOUND)],
   drops: 0,
-  transcriptState: TranscriptState.UNCHECKED,
+  transcriptState: TranscriptState.TRANSCRIBED,
   cutState: CutState.SUGGESTED,
   ...overrides,
 })

@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
 
@@ -142,13 +140,6 @@ class RadioArchiveService(
     return true
   }
 
-  fun check(name: String): Boolean {
-    val directory = directory(name, TRANSCRIPT_FILE) ?: return false
-    val check = TranscriptCheck(Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())
-    save(directory.resolve(CHECKED), check)
-    return true
-  }
-
   private fun <T> readable(
     directory: Path,
     read: (Path) -> T,
@@ -183,7 +174,6 @@ class RadioArchiveService(
       status = status,
       sizeBytes = sizeOf(directory, status),
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
-      transcriptCheckedAt = read<TranscriptCheck>(directory.resolve(CHECKED))?.checkedAt,
       editList = edit,
       failure = failure,
       episodeBytes = size(directory, EPISODE),
@@ -260,6 +250,5 @@ class RadioArchiveService(
     private const val EPISODE = "episode.m4a"
     private const val EDIT_LIST = "edit-list.json"
     private const val FAILED = "episode-failed.json"
-    private const val CHECKED = "transcript-checked.json"
   }
 }

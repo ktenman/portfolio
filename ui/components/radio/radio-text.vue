@@ -9,28 +9,12 @@
           aria-label="Otsi tekstist"
           class="min-w-48 grow rounded-container border border-control-border bg-surface px-3 py-1.5 text-ink shadow-control focus-visible:outline-2 focus-visible:outline-brass-deep"
         />
-        <app-button
-          :disabled="Boolean(recording.transcriptCheckedAt)"
-          :loading="checking"
-          @click="check"
-        >
-          <radio-icon name="check" class="me-1.5" />
-          Märgi kontrollituks
-        </app-button>
         <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">
           <radio-icon name="download" />
           {{ file.label }}
         </a>
       </div>
       <radio-card title="Tekst">
-        <template #aside>
-          <radio-badge
-            data-testid="radio-text-state"
-            :tone="recording.transcriptCheckedAt ? 'plain' : 'warn'"
-          >
-            {{ textState(recording) }}
-          </radio-badge>
-        </template>
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
           {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
@@ -85,15 +69,12 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useQueryClient } from '@tanstack/vue-query'
 import { useEventListener, usePreferredReducedMotion } from '@vueuse/core'
 import type { RecordingSummary, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioTranscript } from '../../composables/use-radio-recordings'
-import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { clock, LINK, range, textState } from '../../utils/radio'
-import AppButton from '../shared/app-button.vue'
+import { clock, LINK, range } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
@@ -111,10 +92,7 @@ const FILES = [
 
 const transcript = useRadioTranscript(() => props.recording)
 const player = useRadioPlayer()
-const queryClient = useQueryClient()
-const toast = useToast()
 const search = ref('')
-const checking = ref(false)
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
 const lines = computed(() => transcript.data.value ?? [])
@@ -178,13 +156,4 @@ useEventListener(
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
   if (KEYS.has(event.key) && !typing(event)) lose()
 })
-
-const check = async () => {
-  checking.value = true
-  await radioService
-    .check(props.recording.name)
-    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'], exact: true }))
-    .catch(() => toast.error('Teksti ei saanud kontrollituks märkida'))
-    .finally(() => (checking.value = false))
-}
 </script>

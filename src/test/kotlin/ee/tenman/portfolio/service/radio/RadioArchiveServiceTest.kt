@@ -276,19 +276,6 @@ class RadioArchiveServiceTest {
   }
 
   @Test
-  fun `should mark the transcript checked`() {
-    transcribed(recording("2026-10-17"))
-    service.check("2026-10-17")
-    expect(service.recordings().single().transcriptCheckedAt).toEqual("2026-10-18T10:00:00Z")
-  }
-
-  @Test
-  fun `should not mark a missing transcript checked`() {
-    recording("2026-10-24", RecordingState.RECORDING)
-    expect(service.check("2026-10-24")).toEqual(false)
-  }
-
-  @Test
   fun `should keep what lies between the removed cuts`() {
     val directory = recording("2026-10-17")
     edited(directory)
@@ -358,9 +345,16 @@ class RadioArchiveServiceTest {
   }
 
   @Test
-  fun `should say a transcript nobody has checked is unchecked`() {
+  fun `should say a transcribed recording has its transcript`() {
     transcribed(recording("2026-10-17"))
-    expect(service.recordings().single().transcriptState).toEqual(TranscriptState.UNCHECKED)
+    expect(service.recordings().single().transcriptState).toEqual(TranscriptState.TRANSCRIBED)
+  }
+
+  @Test
+  fun `should ignore an old transcript check`() {
+    val directory = transcribed(recording("2026-10-17"))
+    Files.writeString(directory.resolve("transcript-checked.json"), """{"checkedAt":"2026-10-18T10:00:00Z"}""")
+    expect(service.recordings().single().transcriptState).toEqual(TranscriptState.TRANSCRIBED)
   }
 
   @Test

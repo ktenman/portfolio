@@ -194,13 +194,6 @@ describe('api services', () => {
       undefined,
     ],
     [
-      'radio.check',
-      () => radioService.check('2026-10-17'),
-      'put',
-      '/radio/2026-10-17/transcript/checked',
-      undefined,
-    ],
-    [
       'radio.jingle',
       () => radioService.jingle('2026-10-17', 1, { saved: true }),
       'put',

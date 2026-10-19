@@ -145,11 +145,6 @@ class RadioController(
   @ExceptionHandler(RecordingInProgressException::class)
   fun handleRecordingInProgress(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.CONFLICT).build()
 
-  @PutMapping("/{name}/transcript/checked")
-  fun putTranscriptChecked(
-    @PathVariable name: String,
-  ): ResponseEntity<Void> = done(radioArchiveService.check(name))
-
   private fun done(found: Boolean): ResponseEntity<Void> =
     if (found) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
 
