@@ -261,6 +261,7 @@ test.describe('desktop states', () => {
     await stubRadio(page)
     await openRoute(page, '/radio/2026-10-17/text')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
+    await page.mouse.move(0, 0)
     await settleAndFreeze(page)
     await expect(
       page.locator('[data-testid="radio-text-line"][aria-current="true"]')
