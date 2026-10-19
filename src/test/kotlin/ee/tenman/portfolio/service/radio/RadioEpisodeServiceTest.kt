@@ -162,15 +162,6 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should leave a recording of another programme alone`() {
-    show()
-    val status = readStatus(directory).copy(programmes = listOf("Tarkade klubi"))
-    Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
-    service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
-  }
-
-  @Test
   fun `should ask for no reads when it cannot write into the recording`() {
     show()
     Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))
@@ -282,24 +273,26 @@ class RadioEpisodeServiceTest {
     saved(outline(1.0, 5.0, 50.0))
   }
 
-  private fun asked(read: OutlineRead) {
-    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
+  private fun second(read: OutlineRead) {
     Files.writeString(directory.resolve("outline-2.json"), JsonMapperFactory.instance.writeValueAsString(listOf(read)))
   }
 
   @Test
-  fun `should cut only the programme it knows in a recording shared with another`() {
+  fun `should find the cuts of every programme in a recording without being asked`() {
     shared()
+    second(outline(65.0, 70.0, 110.0))
     service.make(directory)
-    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf(PROGRAMME) to true)
+    expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf(PROGRAMME, "Tarkade klubi") to true)
   }
 
   @Test
-  fun `should render the episode again with another programme found on request`() {
+  fun `should render the episode again when another programme joins one already cut`() {
     shared()
+    save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf(PROGRAMME)))
     service.make(directory)
     val episode = Files.readAllBytes(directory.resolve("episode.m4a"))
-    asked(outline(65.0, 70.0, 110.0))
+    save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf(PROGRAMME, "Tarkade klubi")))
+    second(outline(65.0, 70.0, 110.0))
     service.make(directory)
     expect(edit().found() to Files.readAllBytes(directory.resolve("episode.m4a")).contentEquals(episode))
       .toEqual(setOf(PROGRAMME, "Tarkade klubi") to false)
@@ -308,19 +301,17 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should cut between two programmes found in one recording`() {
     shared()
-    service.make(directory)
-    asked(outline(65.0, 70.0, 110.0))
+    second(outline(65.0, 70.0, 110.0))
     service.make(directory)
     val between = cuts(edit(), 120.0).single { it.kind == CutKind.BETWEEN }
     expect(between.start to between.end).toEqual(57.2 to 69.7)
   }
 
   @Test
-  fun `should render a recording whose only programme was found on request`() {
+  fun `should render a recording without Keskpäevatund`() {
     shared()
-    save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf("Tarkade klubi", "Ilmaparandaja")))
+    save(directory.resolve("status.json"), readStatus(directory).copy(programmes = listOf("Tarkade klubi")))
     Files.writeString(directory.resolve("outline.json"), JsonMapperFactory.instance.writeValueAsString(listOf(outline(65.0, 70.0, 110.0))))
-    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
     service.make(directory)
     expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf("Tarkade klubi") to true)
   }
@@ -328,7 +319,7 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should mark the recording failed when two programmes overlap`() {
     shared()
-    asked(outline(1.0, 5.0, 50.0))
+    second(outline(1.0, 5.0, 50.0))
     service.make(directory)
     expect(failure()).toContain("Programmes overlap")
   }
@@ -336,7 +327,6 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should ask for the outline of a programme with its air time from the schedule`() {
     shared()
-    save(directory.resolve("cuts-requested.json"), CutRequest(listOf("Tarkade klubi")))
     val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
     val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
     every { outlineService.reads(any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))

@@ -15,7 +15,6 @@ import java.nio.file.StandardCopyOption
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
 val NAME = Regex("[0-9a-z][0-9a-z-]*")
-const val CUT_REQUEST = "cuts-requested.json"
 
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
@@ -203,18 +202,9 @@ data class ProgrammeCuts(
   val state: ProgrammeCutState,
 )
 
-data class CutRequest(
-  val programmes: List<String>,
-)
-
 data class CutChoice(
   val programme: String,
 )
-
-fun wanted(
-  status: RecordingStatus,
-  requested: List<String>,
-): List<String> = status.programmes.filter { it == PROGRAMME || it in requested }
 
 fun EditList?.found(): Set<String> =
   this

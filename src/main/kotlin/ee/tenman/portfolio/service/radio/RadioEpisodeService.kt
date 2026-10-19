@@ -42,8 +42,7 @@ class RadioEpisodeService(
   fun todo(directory: Path): List<String> {
     if (!ready(directory)) return emptyList()
     val status = readStatus(directory)
-    val requested = read<CutRequest>(directory.resolve(CUT_REQUEST))?.programmes.orEmpty()
-    val todo = wanted(status, requested) - read<EditList>(directory.resolve(EDIT_LIST)).found()
+    val todo = status.programmes - read<EditList>(directory.resolve(EDIT_LIST)).found()
     if (todo.isEmpty() || Files.isWritable(directory)) return todo
     log.warn("Cannot write the radio episode into $directory")
     return emptyList()
