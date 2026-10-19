@@ -201,4 +201,63 @@ class RadioReviewServiceTest {
     waitFor { service.pending(directory) == null && service.progress(name()) == null }
     verify(atLeast = 2) { updates.publish(LiveUpdate.RADIO) }
   }
+
+  @Test
+  fun `should finish the render when the same decisions arrive again as it ends`() {
+    recorded()
+    val keep = listOf(KeptSpan(10.0, 20.0))
+    val calls = AtomicInteger()
+    lateinit var service: RadioReviewService
+    val render =
+      mockk<RadioRenderService> {
+        every { render(any(), any(), any(), any(), any(), any()) } answers {
+          arg<(Double) -> Unit>(5)(0.5)
+          Files.writeString(arg<Path>(4), "uus")
+          if (calls.incrementAndGet() == 1) service.review(directory, keep)
+        }
+      }
+    service = service(render)
+    service.review(directory, keep)
+    waitFor { calls.get() == 2 && service.pending(directory) == null }
+    waitFor { service.progress(name()) == null }
+    expect(service.progress(name())).toEqual(null)
+  }
+
+  @Test
+  fun `should not report the failure of a render that newer decisions replaced`() {
+    recorded()
+    val calls = AtomicInteger()
+    val latch = CountDownLatch(1)
+    val render =
+      mockk<RadioRenderService> {
+        every { render(any(), any(), any(), any(), any(), any()) } answers {
+          if (calls.incrementAndGet() == 1) {
+            runCatching { latch.await(10, TimeUnit.SECONDS) }
+            error("Channel closed by interrupt")
+          }
+          Files.writeString(arg<Path>(4), "uus")
+        }
+      }
+    val service = service(render)
+    service.review(directory, listOf(KeptSpan(10.0, 20.0)))
+    waitFor { calls.get() == 1 }
+    service.review(directory, listOf(KeptSpan(30.0, 40.0)))
+    waitFor { edit().keep == listOf(KeptSpan(30.0, 40.0)) && service.progress(name()) == null }
+    expect(service.failure(name())).toEqual(null)
+  }
+
+  @Test
+  fun `should keep a manual cut added while the episode renders`() {
+    recorded()
+    val render =
+      mockk<RadioRenderService> {
+        every { render(any(), any(), any(), any(), any(), any()) } answers {
+          save(directory.resolve("edit-list.json"), edit().copy(manual = listOf(ManualCut(41.0, 45.5))))
+          Files.writeString(arg<Path>(4), "uus")
+        }
+      }
+    service(render).review(directory, listOf(KeptSpan(10.0, 20.0)))
+    waitFor { edit().reviewed }
+    expect(edit().manual).toEqual(listOf(ManualCut(41.0, 45.5)))
+  }
 }

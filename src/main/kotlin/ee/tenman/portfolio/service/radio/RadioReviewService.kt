@@ -14,6 +14,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.ceil
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -29,6 +30,8 @@ class RadioReviewService(
   private val runs = ConcurrentHashMap<String, Future<*>>()
   private val running = ConcurrentHashMap<String, RenderProgress>()
   private val failures = ConcurrentHashMap<String, EpisodeFailure>()
+  private val latest = ConcurrentHashMap<String, Long>()
+  private val generations = AtomicLong()
 
   @Synchronized
   fun review(
@@ -42,8 +45,10 @@ class RadioReviewService(
     save(directory.resolve(REVIEW), spans)
     failures.remove(name)
     running[name] = RenderProgress(0, ceil(RENDER_PACE * status.seconds / 60).toInt())
+    val generation = generations.incrementAndGet()
+    latest[name] = generation
     runs[name]?.cancel(true)
-    runs[name] = executor.submit { render(directory, spans) }
+    runs[name] = executor.submit { render(directory, spans, generation) }
     liveUpdateService.publish(LiveUpdate.RADIO)
     return true
   }
@@ -57,20 +62,25 @@ class RadioReviewService(
   private fun render(
     directory: Path,
     keep: List<KeptSpan>,
+    generation: Long,
   ) {
     val name = directory.fileName.toString()
     val started = System.nanoTime()
-    runCatching { rerender(directory, keep) { share -> advanced(name, share, started) } }
-      .onSuccess { finished(directory, keep, it) }
-      .onFailure { failed(directory, keep, it) }
+    runCatching { rerender(directory, keep) { share -> advanced(name, generation, share, started) } }
+      .onSuccess { finished(directory, generation, it) }
+      .onFailure { failed(directory, generation, it) }
   }
 
+  @Synchronized
   private fun advanced(
     name: String,
+    generation: Long,
     share: Double,
     started: Long,
   ) {
-    if (Thread.currentThread().isInterrupted) throw CancellationException("Review render of $name was replaced")
+    if (Thread.currentThread().isInterrupted || latest[name] != generation) {
+      throw CancellationException("Review render of $name was replaced")
+    }
     if (share <= 0) return
     val elapsed = (System.nanoTime() - started) / 1e9
     val percent = min(MOST, (share * 100).roundToInt())
@@ -78,35 +88,47 @@ class RadioReviewService(
     if (before == null || percent / STEP > before.percent / STEP) liveUpdateService.publish(LiveUpdate.RADIO)
   }
 
+  @Synchronized
   private fun finished(
     directory: Path,
-    keep: List<KeptSpan>,
+    generation: Long,
     edit: EditList,
   ) {
-    save(directory.resolve(EDIT_LIST), edit)
-    settled(directory, keep)
+    val current = read<EditList>(directory.resolve(EDIT_LIST)) ?: edit
+    val saved =
+      current.copy(
+        keep = edit.keep,
+        durationSeconds = edit.durationSeconds,
+        chapters = edit.chapters,
+        reviewed = edit.reviewed,
+        renderedAt = edit.renderedAt,
+      )
+    save(directory.resolve(EDIT_LIST), saved)
+    settled(directory, generation)
   }
 
+  @Synchronized
   private fun failed(
     directory: Path,
-    keep: List<KeptSpan>,
+    generation: Long,
     failure: Throwable,
   ) {
-    if (failure is CancellationException || failure is InterruptedException) return
-    log.error("Review render of $directory failed", failure)
     val name = directory.fileName.toString()
+    if (failure is CancellationException || failure is InterruptedException || latest[name] != generation) return
+    log.error("Review render of $directory failed", failure)
     val reason = failure.message ?: failure.javaClass.simpleName
     failures[name] = EpisodeFailure(reason, Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString())
-    settled(directory, keep)
+    settled(directory, generation)
   }
 
   private fun settled(
     directory: Path,
-    keep: List<KeptSpan>,
+    generation: Long,
   ) {
-    if (pending(directory) != keep) return
-    if (directory.resolve(EDIT_LIST).let { read<EditList>(it)?.keep } == keep) Files.deleteIfExists(directory.resolve(REVIEW))
-    running.remove(directory.fileName.toString())
+    val name = directory.fileName.toString()
+    if (latest[name] != generation) return
+    if (pending(directory) == read<EditList>(directory.resolve(EDIT_LIST))?.keep) Files.deleteIfExists(directory.resolve(REVIEW))
+    running.remove(name)
     liveUpdateService.publish(LiveUpdate.RADIO)
   }
 

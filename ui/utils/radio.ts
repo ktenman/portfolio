@@ -126,7 +126,9 @@ const COMING = new Set([
 ])
 
 export const poll = (recordings: RecordingSummary[]): number | false =>
-  recordings.some(it => it.programmeCuts.some(cuts => COMING.has(cuts.state))) ? 60_000 : false
+  recordings.some(it => it.render != null || it.programmeCuts.some(cuts => COMING.has(cuts.state)))
+    ? 60_000
+    : false
 
 export const advance = (
   progress: { percent: number; secondsLeft: number },
