@@ -1,67 +1,19 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="grid gap-4">
-      <section class="card">
-        <div class="card-body grid gap-4">
-          <div class="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p class="mb-0 text-3xl font-semibold tabular-nums">
-                {{ position(player.seconds.value) }}
-                <span class="text-ink-soft">/ {{ position(player.total.value) }}</span>
-              </p>
-              <p class="mb-0 text-sm text-ink-soft">
-                Eetris {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
-              </p>
-            </div>
-            <label class="flex items-center gap-2 text-sm text-ink-soft">
-              Versioon
-              <select
-                v-model="version"
-                aria-label="Versioon"
-                class="form-select form-select-sm w-auto"
-              >
-                <option value="raw">
-                  Toorsalvestus · {{ position(recording.status.seconds) }}
-                </option>
-                <option v-if="cleaned" value="episode">
-                  Puhastatud · {{ position(recording.editList?.durationSeconds ?? 0) }}
-                </option>
-              </select>
-            </label>
-          </div>
-          <radio-scrubber
-            :value="player.seconds.value"
-            :total="player.total.value"
-            :parts="player.version.value === 'raw' ? recording.timeline : undefined"
-            :ticks="ticks"
-            label="Asukoht salvestuses"
-            @seek="player.seek"
-          />
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <radio-controls large />
-            <div class="flex flex-wrap items-center gap-2">
-              <app-button
-                v-if="showStart !== null"
-                data-testid="radio-show-start"
-                @click="player.playFrom(showStart)"
-              >
-                Saate algusesse · {{ clock(recording.status.startedAt, showStart) }}
-              </app-button>
-              <label class="flex items-center gap-2 text-sm text-ink-soft">
-                Kiirus
-                <select
-                  v-model.number="player.rate.value"
-                  class="form-select form-select-sm w-auto"
-                >
-                  <option v-for="rate in RATES" :key="rate" :value="rate">{{ rate }}×</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </div>
-      </section>
       <radio-card title="Ajajoon">
-        <template #aside><span class="text-sm text-ink-soft">Masinteksti järgi</span></template>
+        <template #aside>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm text-ink-soft">Masinteksti järgi</span>
+            <app-button
+              v-if="showStart !== null"
+              data-testid="radio-show-start"
+              @click="player.playFrom(showStart)"
+            >
+              Saate algusesse · {{ clock(recording.status.startedAt, showStart) }}
+            </app-button>
+          </div>
+        </template>
         <ol class="mb-0 list-none p-0">
           <li
             v-for="segment in recording.timeline"
@@ -149,7 +101,7 @@ import {
   type RecordingSummary,
   type TimelineEntry,
 } from '../../models/generated/domain-models'
-import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 import { radioService } from '../../services/api'
 import {
   audioFormat,
@@ -169,23 +121,14 @@ import {
 import AppButton from '../shared/app-button.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
-import RadioControls from './radio-controls.vue'
 import RadioFacts from './radio-facts.vue'
 import RadioIcon from './radio-icon.vue'
-import RadioScrubber, { type Tick } from './radio-scrubber.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
-
-const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
-const cleaned = computed(() => Boolean(props.recording.editList && props.recording.episodeBytes))
-const version = computed({
-  get: () => player.version.value,
-  set: (value: Version) => player.load(props.recording, value),
-})
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null
 )
@@ -193,17 +136,6 @@ const showEnd = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.AFTER)?.start ?? null
 )
 const state = computed(() => STATES[props.recording.status.state])
-
-const ticks = computed<Tick[]>(() => {
-  if (player.version.value !== 'raw') return []
-  const { startedAt, seconds } = props.recording.status
-  const marks = [showStart.value, showEnd.value].filter((at): at is number => at !== null)
-  return [
-    { at: 0, text: clock(startedAt, 0), phone: true },
-    ...marks.map(at => ({ at, text: clock(startedAt, at) })),
-    { at: seconds, text: clock(startedAt, seconds), phone: true },
-  ]
-})
 
 const now = (segment: TimelineEntry) =>
   player.recording.value?.name === props.recording.name &&
