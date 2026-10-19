@@ -30,6 +30,18 @@
       30
       <radio-icon name="forward" />
     </button>
+    <label class="ml-2 hidden items-center gap-1.5 text-ink-soft md:flex">
+      <radio-icon name="volume" />
+      <input
+        v-model.number="player.volume.value"
+        type="range"
+        class="w-20 cursor-pointer accent-brass"
+        min="0"
+        max="1"
+        step="0.05"
+        aria-label="Helitugevus"
+      />
+    </label>
   </div>
 </template>
 

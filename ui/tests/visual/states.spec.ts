@@ -9,6 +9,7 @@ import { stubDiversification, stubDiversificationWithLongFundName } from './dive
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
+import { stubRadio } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 import { stubWindows } from './windows-fixture'
@@ -225,6 +226,14 @@ test.describe('desktop states', () => {
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
     await stubEnums(page)
+  })
+
+  test('the radio player bar stays in view while the station plays', async ({ page }) => {
+    await stubRadio(page)
+    await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/live`), route => route.abort())
+    await openRoute(page, '/radio')
+    await page.getByRole('button', { name: 'Kuula otse' }).click()
+    await expect(page.getByTestId('radio-play')).toBeInViewport()
   })
 
   test('selecting a quick date applies it', async ({ page }) => {
