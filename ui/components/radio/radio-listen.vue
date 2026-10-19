@@ -11,7 +11,6 @@
               </p>
               <p class="mb-0 text-sm text-ink-soft">
                 Eetris {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
-                <template v-if="!player.playing.value">· peatatud</template>
               </p>
             </div>
             <label class="flex items-center gap-2 text-sm text-ink-soft">
