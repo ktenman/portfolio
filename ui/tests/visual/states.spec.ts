@@ -218,6 +218,19 @@ test('summary chart marks the high and low of total profit when total value is h
   )
 })
 
+test('the radio dock takes over once the player card scrolls away', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 600 })
+  await openRoute(page, '/radio/2026-10-17/text')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  await expect(page.getByTestId('radio-dock')).toBeInViewport()
+  await settleAndFreeze(page)
+  await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
+})
+
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop')
@@ -238,14 +251,16 @@ test.describe('desktop states', () => {
 
   test('the radio player leads the text back to the playing line', async ({ page }) => {
     await stubRadio(page)
+    await page.setViewportSize({ width: 1440, height: 600 })
     await openRoute(page, '/radio/2026-10-17/text')
     await page.getByTestId('radio-text-line').first().getByRole('button').click()
     await page.mouse.wheel(0, 1200)
-    await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toBeInViewport()
+    await expect(
+      page.getByTestId('radio-dock').getByRole('button', { name: 'Tagasi praegusele' })
+    ).toBeInViewport()
+    await page.mouse.move(0, 0)
     await settleAndFreeze(page)
-    await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toHaveScreenshot(
-      'radio-player-lost.png'
-    )
+    await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-player-lost.png')
   })
 
   test('the raw radio recording shows the cut decisions', async ({ page }) => {

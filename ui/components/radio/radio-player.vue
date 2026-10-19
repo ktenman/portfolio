@@ -1,5 +1,5 @@
 <template>
-  <section ref="card" class="card mb-4" data-testid="radio-player">
+  <section class="card mb-4" data-testid="radio-player">
     <div class="card-body grid gap-4">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -57,7 +57,7 @@
         label="Asukoht salvestuses"
         @seek="player.seek"
       />
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
         <div class="flex flex-wrap items-center gap-2">
           <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
@@ -102,7 +102,7 @@ const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
-const shown = useElementVisibility(useTemplateRef<HTMLElement>('card'))
+const shown = useElementVisibility(useTemplateRef<HTMLElement>('controls'))
 
 watchEffect(() => (player.cardInView.value = shown.value))
 onBeforeUnmount(() => {
