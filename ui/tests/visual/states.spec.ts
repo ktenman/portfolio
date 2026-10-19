@@ -231,6 +231,41 @@ test('the radio dock takes over once the player card scrolls away', async ({ pag
   await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
 })
 
+test('the radio dock keeps every control at least 44 px tall on a phone', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-17/text')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const dock = page.getByTestId('radio-dock')
+  await expect(dock).toBeInViewport()
+  const targets = [dock.getByTestId('radio-dock-line'), ...(await dock.getByRole('button').all())]
+  const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
+  expect(Math.min(...heights)).toBeGreaterThanOrEqual(44)
+})
+
+test('the radio dock shows while the navbar covers the card controls', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await page.setViewportSize({ width: 1440, height: 600 })
+  await openRoute(page, '/radio/2026-10-17/text')
+  await page.evaluate(() => {
+    const navbar = document.querySelector('nav.navbar')!.getBoundingClientRect().height
+    const row = document
+      .querySelector('[data-testid="radio-player"] [data-testid="radio-play"]')!
+      .parentElement!.parentElement!.getBoundingClientRect()
+    window.scrollTo(0, scrollY + row.bottom - navbar + 8)
+  })
+  await expect(page.getByTestId('radio-dock')).toBeInViewport()
+})
+
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop')

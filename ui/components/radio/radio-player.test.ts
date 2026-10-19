@@ -103,6 +103,12 @@ describe('RadioPlayer', () => {
     expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
   })
 
+  it('should count the card as in view while it first appears', () => {
+    player.cardInView.value = false
+    render()
+    expect(player.cardInView.value).toBe(true)
+  })
+
   it("should clear the card's place in view when it closes", () => {
     const wrapper = render()
     player.cardInView.value = true

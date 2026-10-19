@@ -9,14 +9,15 @@
     >
       <div
         v-if="visible && (player.recording.value || player.live.value)"
-        class="sticky bottom-0 z-10 mt-6 border-t border-hairline bg-surface px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-card"
+        class="sticky bottom-0 z-10 mt-6 border-t border-hairline bg-surface px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-card"
+        :class="player.live.value ? 'pt-2' : 'pt-8 md:pt-2'"
         data-testid="radio-dock"
       >
         <div v-if="!player.live.value" class="absolute inset-x-0 -top-px h-1 bg-hairline">
           <div class="h-full bg-brass" :style="{ width: `${share}%` }" />
           <input
             type="range"
-            class="absolute inset-x-0 -top-1.5 h-4 w-full cursor-pointer opacity-0"
+            class="absolute inset-x-0 -top-3 h-11 w-full cursor-pointer opacity-0 md:-top-1.5 md:h-4"
             min="0"
             :max="player.total.value"
             step="1"

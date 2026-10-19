@@ -102,7 +102,10 @@ const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
-const shown = useElementVisibility(useTemplateRef<HTMLElement>('controls'))
+const shown = useElementVisibility(useTemplateRef<HTMLElement>('controls'), {
+  initialValue: true,
+  rootMargin: '-56px 0px 0px 0px',
+})
 
 watchEffect(() => (player.cardInView.value = shown.value))
 onBeforeUnmount(() => {
