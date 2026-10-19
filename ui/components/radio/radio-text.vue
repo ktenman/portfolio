@@ -15,11 +15,6 @@
         </a>
       </div>
       <radio-card title="Tekst">
-        <template #aside>
-          <radio-badge data-testid="radio-text-state" tone="plain">
-            {{ textState(recording) }}
-          </radio-badge>
-        </template>
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!shown.length" class="mb-0 text-ink-soft">
           {{ search ? 'Otsingule vastavat rida pole.' : 'Teksti veel pole.' }}
@@ -79,7 +74,7 @@ import type { RecordingSummary, TranscriptLine } from '../../models/generated/do
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioTranscript } from '../../composables/use-radio-recordings'
 import { radioService } from '../../services/api'
-import { clock, LINK, range, textState } from '../../utils/radio'
+import { clock, LINK, range } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'

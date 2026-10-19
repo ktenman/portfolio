@@ -128,6 +128,10 @@ describe('RadioText', () => {
     expect((await render()).text()).not.toContain('Märgi kontrollituks')
   })
 
+  it('should not label a transcript that is there', async () => {
+    expect((await render()).text()).not.toContain('Olemas')
+  })
+
   it('should offer the transcript as subtitles and as text', async () => {
     const links = (await render()).findAll('a[download]').map(a => a.attributes('href'))
     expect(links).toEqual([
