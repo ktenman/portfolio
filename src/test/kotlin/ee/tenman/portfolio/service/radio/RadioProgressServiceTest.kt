@@ -44,8 +44,8 @@ class RadioProgressServiceTest {
         stage(CutStep.RENDER, 10.0),
       ),
     )
-    service.next(name)
-    service.next(name)
+    service.next(name, CutStep.SILENCE)
+    service.next(name, CutStep.READ)
     now = now.plusSeconds(1)
     expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 2, 28, 17)))
   }
@@ -68,9 +68,16 @@ class RadioProgressServiceTest {
         stage(CutStep.RENDER, 1.0, programme = "Tarkade klubi"),
       ),
     )
-    service.next(name)
-    service.next(name)
+    service.next(name, CutStep.SILENCE)
+    service.next(name, CutStep.BOUNDARIES)
     expect(service.done(name) to service.current()).toEqual(setOf(PROGRAMME) to "Tarkade klubi")
+  }
+
+  @Test
+  fun `should stay on a stage when told another step is done`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.BOUNDARIES, 1.0)))
+    service.next(name, CutStep.DECODE)
+    expect(service.progress(name).getValue(PROGRAMME).step).toEqual(CutStep.SILENCE)
   }
 
   @Test

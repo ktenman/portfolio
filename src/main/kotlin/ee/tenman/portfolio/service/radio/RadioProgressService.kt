@@ -22,8 +22,13 @@ class RadioProgressService(
     runs[name] = CutRun(stages, 0, Instant.now(clock))
   }
 
-  fun next(name: String) {
-    runs.computeIfPresent(name) { _, run -> run.copy(index = run.index + 1, since = Instant.now(clock)) }
+  fun next(
+    name: String,
+    step: CutStep,
+  ) {
+    runs.computeIfPresent(name) { _, run ->
+      if (run.stages.getOrNull(run.index)?.step == step) run.copy(index = run.index + 1, since = Instant.now(clock)) else run
+    }
   }
 
   fun finish(name: String) {

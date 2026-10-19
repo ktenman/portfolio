@@ -29,11 +29,14 @@ class RadioEpisodeServiceTest {
 
   private val outlineService = mockk<RadioOutlineService>()
 
+  private val progress = RadioProgressService(Clock.systemUTC())
+
   private val service =
     RadioEpisodeService(
       outlineService,
       RadioCutService(),
       RadioRenderService(),
+      progress,
       airings(),
       programmes(),
       RadioProperties(),
@@ -88,7 +91,7 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should read the outline three times and render the show`() {
     show()
-    every { outlineService.reads(any(), any(), AiModel.GEMINI_3_5_FLASH_LITE) } returns List(3) { outline(1.0, 5.0, 50.0) }
+    every { outlineService.reads(any(), any(), AiModel.GEMINI_3_5_FLASH_LITE, any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
     service.make(directory)
     val found = edit()
     expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
@@ -96,17 +99,37 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
+  fun `should report the first read while asking for the outline`() {
+    show()
+    var seen = emptyMap<String, CutProgress>()
+    every { outlineService.reads(any(), any(), any(), any()) } answers {
+      seen = progress.progress(directory.fileName.toString())
+      List(3) { outline(1.0, 5.0, 50.0) }
+    }
+    service.make(directory)
+    expect(seen[PROGRAMME]?.let { it.step to it.read }).toEqual(CutStep.READ to 1)
+  }
+
+  @Test
+  fun `should forget the search once the recording has failed`() {
+    show()
+    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(null, null, null)
+    service.make(directory)
+    expect(progress.progress(directory.fileName.toString())).toEqual(emptyMap())
+  }
+
+  @Test
   fun `should reuse saved reads instead of asking again`() {
     show()
     saved(outline(1.0, 5.0, 50.0))
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any(), any()) }
   }
 
   @Test
   fun `should vote with the reads that came back when one request fails`() {
     show()
-    every { outlineService.reads(any(), any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
+    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
     service.make(directory)
     val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
     expect(Triple(reads.first(), edit().outline.matched, Files.exists(directory.resolve("episode.m4a")))).toEqual(Triple(null, 2, true))
@@ -115,7 +138,7 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should save no reads and mark the recording failed when every read fails`() {
     show()
-    every { outlineService.reads(any(), any(), any()) } returns listOf(null, null, null)
+    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(null, null, null)
     service.make(directory)
     expect(Files.exists(directory.resolve("outline.json")) to ("No outline read came back" in failure())).toEqual(false to true)
   }
@@ -150,7 +173,7 @@ class RadioEpisodeServiceTest {
   fun `should skip a recording whose transcript is not finished`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), "captured")
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any(), any()) }
   }
 
   @Test
@@ -158,7 +181,7 @@ class RadioEpisodeServiceTest {
     show()
     Files.writeString(directory.resolve("episode-failed.json"), "{}")
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any(), any()) }
   }
 
   @Test
@@ -166,7 +189,7 @@ class RadioEpisodeServiceTest {
     show()
     Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("r-xr-xr-x"))
     service.make(directory)
-    verify(exactly = 0) { outlineService.reads(any(), any(), any()) }
+    verify(exactly = 0) { outlineService.reads(any(), any(), any(), any()) }
   }
 
   @Test
@@ -258,6 +281,7 @@ class RadioEpisodeServiceTest {
       outlineService,
       RadioCutService(),
       RadioRenderService(),
+      progress,
       airings(),
       programmes(),
       properties,
@@ -329,18 +353,19 @@ class RadioEpisodeServiceTest {
     shared()
     val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
     val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
-    every { outlineService.reads(any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
+    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
     val clock = Clock.systemUTC()
     RadioEpisodeService(
       outlineService,
       RadioCutService(),
       RadioRenderService(),
+      progress,
       airings(airing),
       programmes(klubi),
       RadioProperties(),
       clock,
     ).make(directory)
-    verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any()) }
+    verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any()) }
   }
 
   @Test
