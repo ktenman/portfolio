@@ -39,36 +39,25 @@ class RadioStorageServiceIT {
     startedAt: Double = Instant.now(clock).epochSecond.toDouble(),
     state: RecordingState = RecordingState.CAPTURED,
     programmes: List<String> = listOf("Tarkade klubi"),
-    continuous: Boolean = false,
   ): Path {
     val directory = Files.createDirectories(radioProperties.recordings.resolve(name))
-    val parts = listOf(RecordingPart("raw.mp3", 0.0))
-    save(directory.resolve(STATUS_FILE), RecordingStatus(state, startedAt, 60.0, parts, programmes, continuous = continuous))
+    save(directory.resolve(STATUS_FILE), RecordingStatus(state, startedAt, 60.0, listOf(RecordingPart("raw.mp3", 0.0)), programmes))
     Files.writeString(directory.resolve("raw.mp3"), "Kuku õhtu")
     Files.writeString(directory.resolve("raw.pcm"), "pcm")
     Files.writeString(directory.resolve(TRANSCRIPT_FILE), "{}")
     return directory
   }
 
-  private fun keys(name: String): List<String> {
-    val args =
-      ListObjectsArgs
+  private fun keys(name: String): List<String> =
+    minioClient
+      .listObjects(
+        ListObjectsArgs
         .builder()
         .bucket(radioProperties.bucket)
         .prefix("$name/")
-        .build()
-    return minioClient.listObjects(args).map { it.get().objectName() }.sorted()
-  }
-
-  private fun text(key: String): String {
-    val args =
-      GetObjectArgs
-        .builder()
-        .bucket(radioProperties.bucket)
-        .`object`(key)
-        .build()
-    return minioClient.getObject(args).use { String(it.readAllBytes()) }
-  }
+        .build(),
+          ).map { it.get().objectName() }
+      .sorted()
 
   @Test
   fun `should upload the audio and the json of a finished recording but not its pcm`() {
@@ -126,7 +115,19 @@ class RadioStorageServiceIT {
     Files.writeString(directory.resolve("edit-list.json"), "{\"reviewed\":true}")
     Files.setLastModifiedTime(directory.resolve("edit-list.json"), FileTime.from(Instant.now(clock).plusSeconds(60)))
     radioStorageService.store()
-    expect(text("2026-10-06-1200-tarkade-klubi/edit-list.json")).toEqual("{\"reviewed\":true}")
+    val key = "2026-10-06-1200-tarkade-klubi/edit-list.json"
+    val stored =
+      minioClient
+        .getObject(
+        GetObjectArgs
+      .builder()
+      .bucket(radioProperties.bucket)
+      .`object`(key)
+      .build(),
+          ).use {
+      String(it.readAllBytes())
+    }
+    expect(stored).toEqual("{\"reviewed\":true}")
   }
 
   @Test
@@ -137,26 +138,5 @@ class RadioStorageServiceIT {
     Files.delete(directory.resolve("episode-failed.json"))
     radioStorageService.store()
     expect(keys("2026-10-07-1200-tarkade-klubi").map { it.substringAfter('/') }).toEqual(listOf("raw.mp3", STATUS_FILE, TRANSCRIPT_FILE))
-  }
-
-  @Test
-  fun `should keep a continuous recording out of the bucket`() {
-    recording("2026-10-08-0000-pidev", continuous = true)
-    radioStorageService.store()
-    expect(keys("2026-10-08-0000-pidev")).toEqual(emptyList())
-  }
-
-  @Test
-  fun `should delete a continuous recording a week after it ends`() {
-    val directory = recording("2026-09-02-0000-pidev", startedAt = 1788339600.0, continuous = true)
-    radioStorageService.store()
-    expect(Files.exists(directory)).toEqual(false)
-  }
-
-  @Test
-  fun `should keep a continuous recording within its week`() {
-    val directory = recording("2026-10-09-0000-pidev", continuous = true)
-    radioStorageService.store()
-    expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(true)
   }
 }

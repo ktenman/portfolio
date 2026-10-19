@@ -80,7 +80,6 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     seconds: 4200,
     parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
     lostSeconds: 0,
-    continuous: false,
   },
   sizeBytes: 134_400_000,
   transcribed: true,

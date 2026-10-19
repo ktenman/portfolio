@@ -48,7 +48,6 @@ class RadioStorageService(
   private fun store(directory: Path) {
     val status = readStatus(directory)
     if (status.state == RecordingState.RECORDING) return
-    if (status.continuous) return expire(directory, status)
     sync(directory)
     if (processed(directory)) pcm(directory).forEach(Files::delete)
     if (old(status)) offload(directory)
@@ -69,15 +68,6 @@ class RadioStorageService(
     val saved = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
     (audio + pcm(directory)).forEach(Files::delete)
-  }
-
-  private fun expire(
-    directory: Path,
-    status: RecordingStatus,
-  ) {
-    if (!old(status)) return
-    directory.toFile().deleteRecursively()
-    log.info("Deleted continuous radio recording $directory")
   }
 
   private fun upload(

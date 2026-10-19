@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from radio_worker.recorder import KUKU, hold, prepare, read_status, record
-from radio_worker.schedule import TALLINN, around_the_clock, fetch, planned, ready
+from radio_worker.schedule import TALLINN, fetch, planned, ready
 from radio_worker.station import Station
 from radio_worker.transcriber import transcribe
 
@@ -109,7 +109,6 @@ def span(source: str, duration: float | None) -> float | None:
 def follow(recordings: Path, model: Path, source: str, threads: int, chunk_seconds: float) -> int:
     weights = model / "ct2"
     load = functools.partial(load_whisper, weights, threads)
-    threading.Thread(target=around_the_clock, args=(recordings, source), daemon=True).start()
     try:
         planned(recordings, model, lambda directory, seconds, programmes: run(directory, source, seconds, load, str(weights), chunk_seconds, programmes))
     except KeyboardInterrupt:

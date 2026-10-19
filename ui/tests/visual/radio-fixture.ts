@@ -28,7 +28,6 @@ const RECORDINGS = [
       seconds: 1260,
       parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
       lostSeconds: 0,
-      continuous: false,
     },
     sizeBytes: 40_300_000,
     transcribed: false,
@@ -158,7 +157,6 @@ const STATION = {
   recorder: RecorderState.WAITING,
   last: { programme: 'Keskpäevatund', end: Date.UTC(2026, 9, 17, 10, 5, 0) / 1000 },
   format: { codec: 'mp3', bitRate: 256_000 },
-  continuous: { on: false, dayBytes: 2_764_800_000, weekBytes: 19_353_600_000 },
 }
 
 export const stubRadio: RouteStub = async page => {

@@ -3,19 +3,16 @@ import hashlib
 import json
 import os
 import shutil
-import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from .recorder import hold, prepare, read_status, record, save, write_status
+from .recorder import save
 
 TALLINN = ZoneInfo("Europe/Tallinn")
 PLAN = "plan.json"
 HEARTBEAT = "heartbeat.json"
-CONTINUOUS = "continuous.json"
-AROUND_THE_CLOCK = "Pidev salvestus"
 CHECK_SECONDS = 60
 RETRY_SECONDS = 3600
 REPOSITORY = "TalTechNLP/whisper-large-v3-turbo-et-verbatim-2604"
@@ -78,67 +75,6 @@ def planned(
         else:
             say(f"Skipping {directory}: {model} holds no verified model")
         pause(capture["end"], clock, sleep)
-
-
-def around_the_clock(recordings: Path, source: str, clock: Callable[[], float] = time.time, sleep: Callable[[float], None] = time.sleep) -> None:
-    while True:
-        for directory in unfinished(recordings):
-            if not switched_on(recordings) or read_status(directory)["endsAt"] <= clock():
-                attempt(lambda: settle(directory, clock()), f"Closing {directory}")
-        if not switched_on(recordings):
-            sleep(CHECK_SECONDS)
-            continue
-        try:
-            if day(recordings, source, clock) == "failed":
-                sleep(CHECK_SECONDS)
-        except Exception as error:
-            say(f"Recording around the clock failed: {error!r}")
-            sleep(CHECK_SECONDS)
-
-
-def switched_on(recordings: Path) -> bool:
-    try:
-        return json.loads((recordings / CONTINUOUS).read_text())["on"] is True
-    except (OSError, ValueError, KeyError, TypeError):
-        return False
-
-
-def unfinished(recordings: Path) -> list[Path]:
-    found = sorted(recordings.glob("*-pidev/status.json"))
-    return [status.parent for status in found if read_status(status.parent)["state"] == "recording"]
-
-
-def day(recordings: Path, source: str, clock: Callable[[], float]) -> str:
-    now = clock()
-    local = dt.datetime.fromtimestamp(now, TALLINN)
-    midnight = (local.replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days=1)).timestamp()
-    directory = next(iter(unfinished(recordings)), recordings / f"{local:%Y-%m-%d-%H%M}-pidev")
-    say(f"Recording around the clock into {directory} until {shown(midnight)}")
-    prepare(directory, source, midnight - now, [AROUND_THE_CLOCK], continuous=True)
-    with hold(directory):
-        stop = threading.Event()
-        recording = threading.Thread(target=record, args=(directory, stop), daemon=True)
-        recording.start()
-        while recording.is_alive() and switched_on(recordings):
-            recording.join(CHECK_SECONDS)
-        stop.set()
-        recording.join()
-        if read_status(directory)["state"] == "recording":
-            close(directory, clock())
-    return read_status(directory)["state"]
-
-
-def settle(directory: Path, now: float) -> None:
-    with hold(directory):
-        close(directory, now)
-
-
-def close(directory: Path, now: float) -> None:
-    status = read_status(directory)
-    ended = min(now, status["endsAt"])
-    status.update(endsAt=ended, seconds=round(ended - status["startedAt"], 3))
-    write_status(directory, status)
-    record(directory, threading.Event())
 
 
 def beat(recordings: Path, now: float, until: float) -> None:
