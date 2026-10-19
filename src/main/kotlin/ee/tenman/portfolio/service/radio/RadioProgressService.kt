@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.service.radio
 
 import org.springframework.stereotype.Service
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -33,6 +35,34 @@ class RadioProgressService(
 
   fun finish(name: String) {
     runs.remove(name)
+  }
+
+  fun programmeCuts(
+    directory: Path,
+    status: RecordingStatus,
+    edit: EditList?,
+    failed: Boolean,
+  ): List<ProgrammeCuts> {
+    val name = directory.fileName.toString()
+    val found = edit.found() + done(name)
+    val progress = progress(name)
+    val transcript =
+      transcriptProgress(
+      directory,
+      status,
+      Instant.now(clock),
+    ).takeIf { Files.notExists(directory.resolve(TRANSCRIPT_FILE)) }
+    val after = runs[name]?.let { it.stages.getOrNull(it.index)?.programme } ?: current()
+    return status.programmes.map { programme ->
+      when {
+        programme in found -> ProgrammeCuts(programme, ProgrammeCutState.FOUND)
+        failed -> ProgrammeCuts(programme, ProgrammeCutState.FAILED)
+        status.state == RecordingState.FAILED -> ProgrammeCuts(programme, ProgrammeCutState.NONE)
+        transcript != null -> ProgrammeCuts(programme, ProgrammeCutState.WAITING, transcript = transcript)
+        programme in progress -> ProgrammeCuts(programme, ProgrammeCutState.FINDING, progress = progress[programme])
+        else -> ProgrammeCuts(programme, ProgrammeCutState.QUEUED, after = after)
+      }
+    }
   }
 
   fun current(): String? = runs.values.firstNotNullOfOrNull { it.stages.getOrNull(it.index)?.programme }

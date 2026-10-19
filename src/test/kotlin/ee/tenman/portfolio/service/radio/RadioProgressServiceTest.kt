@@ -3,12 +3,18 @@ package ee.tenman.portfolio.service.radio
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 
 class RadioProgressServiceTest {
+  @TempDir
+  lateinit var directory: Path
+
   private var now = Instant.parse("2026-10-24T10:00:00Z")
 
   private val clock =
@@ -109,5 +115,42 @@ class RadioProgressServiceTest {
           CutStep.RENDER to 22.0,
         ),
       )
+  }
+
+  private fun chunks(vararg lines: String): RecordingStatus {
+    Files.writeString(directory.resolve("transcript.jsonl"), lines.joinToString("\n", postfix = "\n"))
+    return RecordingStatus(
+      RecordingState.RECORDING,
+      1000.0,
+      4200.0,
+      listOf(RecordingPart("raw.mp3", 0.0), RecordingPart("raw-part-002.mp3", 300.0)),
+      listOf("Digitund"),
+    )
+  }
+
+  @Test
+  fun `should measure the transcript written so far and the time it needs to finish`() {
+    val status =
+      chunks(
+        """{"part": "raw.mp3", "from": 0.0, "to": 299.18, "final": false, "segments": [{"text": "Mürgistus"}]}""",
+        """{"part": "raw-part-002.mp3", "from": 5.999, "to": 592.65, "final": false, "segments": []}""",
+      )
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(892.65, 4200.0, 21, 3706))
+  }
+
+  @Test
+  fun `should skip a half-written line of the transcript chunks`() {
+    val status =
+      chunks(
+        """{"part": "raw-part-002.mp3", "from": 5.999, "to": 592.65, "final": false, "segments": []}""",
+        """{"part": "raw-part-002.mp3", "from": 592.65, "to": 88""",
+      )
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000)).writtenSeconds).toEqual(892.65)
+  }
+
+  @Test
+  fun `should wait the whole recording when no transcript is written yet`() {
+    val status = chunks().also { Files.delete(directory.resolve("transcript.jsonl")) }
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(0.0, 4200.0, 0, 4200))
   }
 }
