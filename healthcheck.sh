@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DISK_LIMIT=${DISK_LIMIT:-85}
-SWAP_LIMIT=${SWAP_LIMIT:-50}
+SWAP_LIMIT=${SWAP_LIMIT:-75}
 
 disk_percent() {
   df -P / | awk 'NR==2 {sub("%", "", $5); print $5}'
