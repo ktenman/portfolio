@@ -71,6 +71,10 @@ describe('RadioListen', () => {
     return wrapper.vm.$nextTick().then(() => expect(wrapper.text()).toContain('Eetris 12:07:41'))
   })
 
+  it('should show only the station time while paused', () => {
+    expect(render().text()).not.toContain('peatatud')
+  })
+
   it('should offer the cleaned episode once it is rendered', () => {
     const options = render()
       .findAll('select[aria-label="Versioon"] option')
