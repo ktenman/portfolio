@@ -72,7 +72,13 @@ const RECORDINGS = [
     status: capture('2026-10-24T08:55:00Z', ['Keskpäevatund', 'Tarkade klubi'], 7800),
     programmeCuts: [
       programme('Keskpäevatund', ProgrammeCutState.FINDING, {
-        progress: { step: CutStep.READ, read: 1, percent: 36, secondsLeft: 70 },
+        progress: {
+          step: CutStep.READ,
+          read: 1,
+          percent: 36,
+          secondsLeft: 70,
+          stepSecondsLeft: 50,
+        },
       }),
       programme('Tarkade klubi', ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' }),
     ],

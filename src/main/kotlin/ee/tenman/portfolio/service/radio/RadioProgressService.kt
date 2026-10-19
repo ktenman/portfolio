@@ -84,11 +84,13 @@ class RadioProgressService(
     val run = runs[name] ?: return emptyMap()
     val stage = run.stages.getOrNull(run.index) ?: return emptyMap()
     val own = run.stages.withIndex().filter { it.value.programme == stage.programme }
-    val elapsed = min(Duration.between(run.since, Instant.now(clock)).toMillis() / 1000.0, STAGE_CAP * stage.seconds)
+    val cap = STAGE_CAP * stage.seconds
+    val elapsed = min(Duration.between(run.since, Instant.now(clock)).toMillis() / 1000.0, cap)
     val finished = own.filter { it.index < run.index }.sumOf { it.value.seconds } + elapsed
     val total = own.sumOf { it.value.seconds }
     val percent = (finished / total * 100).roundToInt().coerceAtMost(MOST)
-    return mapOf(stage.programme to CutProgress(stage.step, stage.read, percent, ceil(total - finished).toInt().coerceAtLeast(1)))
+    val left = ceil(total - finished).toInt().coerceAtLeast(1)
+    return mapOf(stage.programme to CutProgress(stage.step, stage.read, percent, left, (cap - elapsed).toInt()))
   }
 
   companion object {

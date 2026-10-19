@@ -60,14 +60,22 @@ class RadioProgressServiceTest {
     service.next(name, CutStep.SILENCE)
     service.next(name, CutStep.READ)
     now = now.plusSeconds(1)
-    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 2, 28, 17)))
+    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 2, 28, 17, 2)))
+  }
+
+  @Test
+  fun `should say how long the current step may run before its bar waits`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.READ, 10.0, 1)))
+    service.next(name, CutStep.SILENCE)
+    now = now.plusSeconds(3)
+    expect(service.progress(name)[PROGRAMME]?.stepSecondsLeft).toEqual(6)
   }
 
   @Test
   fun `should cap a stage that overruns its estimate`() {
     service.start(name, listOf(stage(CutStep.READ, 3.5, 1)))
     now = now.plusSeconds(60)
-    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 1, 95, 1)))
+    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 1, 95, 1, 0)))
   }
 
   @Test

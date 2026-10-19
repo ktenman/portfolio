@@ -96,7 +96,8 @@ const SHOWN = new Set([
 
 const meter = ({ name, progress, transcript }: ProgrammeCuts) => {
   if (progress) {
-    const { percent, secondsLeft } = advance(progress, (now.value.getTime() - since.value) / 1000)
+    const elapsed = Math.min((now.value.getTime() - since.value) / 1000, progress.stepSecondsLeft)
+    const { percent, secondsLeft } = advance(progress, elapsed)
     return {
       label: `${name}: lõigete otsing`,
       percent,

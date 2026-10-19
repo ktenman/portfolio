@@ -533,6 +533,7 @@ export interface CutProgress {
     read: number | null;
     percent: number;
     secondsLeft: number;
+    stepSecondsLeft: number;
 }
 
 export interface TranscriptProgress {
