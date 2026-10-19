@@ -274,6 +274,7 @@ def check_host_gates():
         cases = {
             'disk_percent() { echo 10; }; redis_saves() { true; }': 'swap 75% used',
             'disk_percent() { echo 91; }; redis_saves() { true; }': 'disk 91% used',
+            'disk_percent() { echo 10; }; swap_percent() { echo 74; }; redis_saves() { true; }': '',
             'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { false; }': 'Redis cannot save',
             'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { true; }': '',
         }
