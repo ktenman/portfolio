@@ -66,7 +66,7 @@ describe('RadioText', () => {
     wrapper.find('[data-testid="radio-topics"]').findAll('[data-testid="radio-topic"]')
 
   it('should show a heading for each topic with its time and length', async () => {
-    expect(headings(await render())[1]).toBe('12:07Rahvusooperi tüli23 min')
+    expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli23 min')
   })
 
   it('should hide cut sections in the cleaned version', async () => {
@@ -88,7 +88,7 @@ describe('RadioText', () => {
 
   it('should play a topic from its heading', async () => {
     const wrapper = await render()
-    await wrapper.findAll('[data-testid="radio-section-heading"]')[3].trigger('click')
+    await wrapper.findAll('[data-testid="radio-section-heading"]')[1].trigger('click')
     expect(audio.currentTime).toBe(2255)
   })
 

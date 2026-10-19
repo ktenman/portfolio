@@ -5,7 +5,9 @@
     :aria-current="playing ? 'true' : undefined"
     class="scroll-mt-20 border-b border-hairline py-2 last:border-b-0"
   >
+    <slot name="heading" />
     <button
+      v-if="!$slots.heading"
       type="button"
       data-testid="radio-section-heading"
       class="flex min-h-11 w-full cursor-pointer items-baseline gap-3 rounded-container px-2 py-2 text-left transition-colors hover:bg-surface-hover"
@@ -22,13 +24,13 @@
     </button>
     <ol class="mb-0 list-none p-0">
       <li
-        v-for="line in section.lines"
+        v-for="line in visible"
         :key="line.start"
         v-memo="[line, line === current, line === current && spoken]"
         data-testid="radio-text-line"
         :aria-current="line === current ? 'true' : undefined"
         class="grid scroll-mt-20 scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
-        :class="{ 'bg-brass-wash': line === current }"
+        :class="{ 'bg-brass-wash': line === current, 'opacity-60': cut }"
       >
         <button
           type="button"
@@ -62,10 +64,20 @@
         </div>
       </li>
     </ol>
+    <button
+      v-if="hidden"
+      type="button"
+      data-testid="radio-section-more"
+      class="min-h-11 cursor-pointer px-2 text-sm font-semibold text-ink-soft hover:text-ink"
+      @click="open = true"
+    >
+      Näita veel {{ hidden }} rida
+    </button>
   </section>
 </template>
 
 <script lang="ts" setup>
+import { computed, ref } from 'vue'
 import type {
   TranscriptLine,
   TranscriptSection,
@@ -74,7 +86,7 @@ import type {
 import { clock, minutes, range, sectionTime } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 
-defineProps<{
+const props = defineProps<{
   section: TranscriptSection
   startedAt: number
   raw: boolean
@@ -84,4 +96,14 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ play: [at: number] }>()
+
+const FOLD = 3
+
+const open = ref(false)
+const cut = computed(() => props.section.cut !== null)
+const folded = computed(() => cut.value && !open.value && props.section.lines.length > FOLD)
+const visible = computed(() =>
+  folded.value ? props.section.lines.slice(0, FOLD) : props.section.lines
+)
+const hidden = computed(() => props.section.lines.length - visible.value.length)
 </script>

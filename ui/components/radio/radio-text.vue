@@ -39,7 +39,21 @@
             :current="current"
             :spoken="spoken"
             @play="play(section, $event)"
-          />
+          >
+            <template v-if="raw && cutOf(section)" #heading>
+              <div :class="HATCH" class="rounded-container px-3">
+                <radio-cut-card
+                  :cut="cutOf(section)!"
+                  :context="contexts.data.value?.[section.cut!]"
+                  :started-at="recording.status.startedAt"
+                  :removed="decisions.removed.value.includes(section.cut!)"
+                  @choose="decisions.choose(section.cut!, $event)"
+                  @jingle="jingle(section.cut!, $event)"
+                  @drop="drop(section.cut!)"
+                />
+              </div>
+            </template>
+          </radio-section>
         </div>
       </radio-card>
     </div>
@@ -63,17 +77,21 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useEventListener, usePreferredReducedMotion } from '@vueuse/core'
+import { useQueryClient } from '@tanstack/vue-query'
 import type {
   RecordingSummary,
   TranscriptLine,
   TranscriptSection,
 } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { useRadioTranscript } from '../../composables/use-radio-recordings'
+import { useRadioDecisions } from '../../composables/use-radio-decisions'
+import { useRadioCuts, useRadioTranscript } from '../../composables/use-radio-recordings'
+import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { LINK } from '../../utils/radio'
+import { HATCH, LINK } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioCard from './radio-card.vue'
+import RadioCutCard from './radio-cut-card.vue'
 import RadioCuts from './radio-cuts.vue'
 import RadioDetails from './radio-details.vue'
 import RadioIcon from './radio-icon.vue'
@@ -92,6 +110,31 @@ const FILES = [
 ]
 
 const transcript = useRadioTranscript(() => props.recording)
+const contexts = useRadioCuts(() => props.recording)
+const decisions = useRadioDecisions(() => props.recording)
+const queryClient = useQueryClient()
+const toast = useToast()
+
+const cutOf = (section: TranscriptSection) =>
+  section.cut === null ? undefined : props.recording.cuts[section.cut]
+
+const jingle = (index: number, saved: boolean) =>
+  radioService
+    .jingle(props.recording.name, index, { saved })
+    .then(() => {
+      toast.success(saved ? 'Džingel salvestatud' : 'Džingel unustatud')
+      return queryClient.invalidateQueries({ queryKey: ['radio'], exact: true })
+    })
+    .catch(() =>
+      toast.error(saved ? 'Džinglit ei saanud salvestada' : 'Džinglit ei saanud unustada')
+    )
+
+const drop = (index: number) =>
+  decisions
+    .flush()
+    .then(() => radioService.dropCut(props.recording.name, index))
+    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
+    .catch(() => toast.error('Lõiget ei saanud kustutada'))
 const player = useRadioPlayer()
 const search = ref('')
 
@@ -171,6 +214,7 @@ watch(current, follow, { flush: 'post' })
 watch(player.lost, lost => lost || scroll(), { flush: 'post' })
 onMounted(() => follow(current.value))
 onBeforeUnmount(player.rejoin)
+onBeforeUnmount(decisions.flush)
 useEventListener(window, 'wheel', lose, { passive: true })
 useEventListener(window, 'touchstart', (event: TouchEvent) => (touched = finger(event)), {
   passive: true,
