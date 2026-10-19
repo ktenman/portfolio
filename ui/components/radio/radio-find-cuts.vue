@@ -60,7 +60,7 @@
 
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
-import { useNow } from '@vueuse/core'
+import { useIntervalFn, useNow } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import {
   ProgrammeCutState,
@@ -79,7 +79,7 @@ const props = defineProps<{ recording: RecordingSummary }>()
 const queryClient = useQueryClient()
 const toast = useToast()
 const asking = ref<string | null>(null)
-const now = useNow({ interval: 1000 })
+const now = useNow({ scheduler: tick => useIntervalFn(tick, 1000) })
 const since = ref(Date.now())
 
 watch(
