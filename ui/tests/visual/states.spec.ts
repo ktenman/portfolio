@@ -243,7 +243,10 @@ test.describe('desktop states', () => {
     await page.mouse.wheel(0, 120)
     await expect(page.getByRole('button', { name: 'Tagasi praegusele' })).toBeVisible()
     await settleAndFreeze(page)
-    await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-lost.png')
+    const dock = await page.getByTestId('radio-dock').boundingBox()
+    if (!dock) throw new Error('Radio dock has no box')
+    const clip = { x: dock.x, y: dock.y - 56, width: dock.width, height: dock.height + 56 }
+    await expect(page).toHaveScreenshot('radio-dock-lost.png', { clip })
   })
 
   test('the spoken word is marked by a tint', async ({ page }) => {

@@ -28,7 +28,7 @@ const boundary = (name: string, seconds: number, method: string): Boundary => ({
   programme: 'Keskpäevatund',
 })
 
-const editList = (overrides: Partial<EditList> = {}): EditList => ({
+export const editList = (overrides: Partial<EditList> = {}): EditList => ({
   keep: [
     { start: 761.5, end: 2120 },
     { start: 2255, end: 3025 },

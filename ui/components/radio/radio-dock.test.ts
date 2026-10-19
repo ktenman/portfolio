@@ -4,7 +4,7 @@ import { nextTick, ref } from 'vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioDock from './radio-dock.vue'
 import RadioScrubber from './radio-scrubber.vue'
-import { recording } from './radio-fixture'
+import { editList, recording } from './radio-fixture'
 
 vi.mock('../../composables/use-radio-recordings', () => ({
   useRadioStation: () => ({ data: ref(undefined) }),
@@ -68,11 +68,18 @@ describe('RadioDock', () => {
     expect(wrapper.findComponent(RadioScrubber).props('parts')).toEqual(recording().timeline)
   })
 
-  it('should draw the cleaned episode without cut shading', async () => {
+  it('should mark the chapters of the cleaned episode on the timeline', async () => {
     const wrapper = await loaded()
-    player.load(recording(), 'episode')
+    const chapters = [
+      { start: 0, title: 'Enne saadet' },
+      { start: 600, title: 'Rahvusooperi tüli' },
+    ]
+    player.load(recording({ editList: editList({ chapters }) }), 'episode')
     await nextTick()
-    expect(wrapper.findComponent(RadioScrubber).props('parts')).toBeUndefined()
+    expect(wrapper.findComponent(RadioScrubber).props('parts')).toEqual([
+      { start: 0, end: 600, cut: false },
+      { start: 600, end: 2512.5, cut: false },
+    ])
   })
 
   it('should switch to the cleaned version', async () => {
