@@ -313,7 +313,6 @@ export interface RadioStation {
     recorder: RecorderState;
     last: LastRecording | null;
     format: AudioFormat | null;
-    continuous: ContinuousRecording;
 }
 
 export interface RadioDay {
@@ -331,10 +330,6 @@ export interface RadioDay {
 
 export interface AiringChoice {
     record: boolean;
-}
-
-export interface ContinuousChoice {
-    on: boolean;
 }
 
 export interface CutChoice {
@@ -395,7 +390,6 @@ export interface RecordingStatus {
     parts: RecordingPart[];
     programmes: string[];
     lostSeconds: number;
-    continuous: boolean;
 }
 
 export interface EditList {
@@ -480,12 +474,6 @@ export interface Capture {
 export interface LastRecording {
     programme: string;
     end: number;
-}
-
-export interface ContinuousRecording {
-    on: boolean;
-    dayBytes: number;
-    weekBytes: number;
 }
 
 export interface RecordedSpan {

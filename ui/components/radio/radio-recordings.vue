@@ -5,7 +5,7 @@
       <div class="min-w-0">
         <h3 class="mb-3 text-heading">Salvestused</h3>
         <data-table
-          :items="(recordings ?? []).filter(r => !r.status.continuous)"
+          :items="recordings ?? []"
           :columns="columns"
           key-field="name"
           :is-loading="isLoading"
