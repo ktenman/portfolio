@@ -61,7 +61,7 @@ class RadioArchiveService(
   fun downloadName(
     name: String,
     file: String,
-  ): String? = directory(name, STATUS_FILE)?.let { downloadName(readStatus(it), file, clock.zone) }
+  ): String? = directory(name, STATUS_FILE)?.let { downloadName(name, readStatus(it), file, clock.zone) }
 
   fun review(
     name: String,

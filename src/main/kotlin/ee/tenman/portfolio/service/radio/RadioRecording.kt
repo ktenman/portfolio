@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 const val STATUS_FILE = "status.json"
@@ -59,11 +60,14 @@ fun RecordingStatus.title(): String = programmes.joinToString(", ")
 private val UNSAFE = Regex("""[/\\:*?"<>|]""")
 
 fun downloadName(
+  name: String,
   status: RecordingStatus,
   file: String,
   zone: ZoneId,
 ): String {
-  val day = Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).toLocalDate()
+  val day =
+    runCatching { LocalDate.parse(name.take(10)) }
+      .getOrElse { Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).toLocalDate() }
   val stem = "${status.title().replace(UNSAFE, "")} $day"
   val extension = file.substringAfterLast('.')
   val parts = status.parts.sortedBy { it.offsetSeconds }
