@@ -11,9 +11,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import kotlin.math.min
 
 @Service
 class RadioEpisodeService(
@@ -74,7 +72,7 @@ class RadioEpisodeService(
     val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
-    radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found()), temporary)
+    radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found(), clock.zone), temporary)
     save(directory.resolve(EDIT_LIST), edit)
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }
@@ -194,77 +192,6 @@ class RadioEpisodeService(
   private fun music(finding: Finding): KeptSpan? =
     KeptSpan(finding.placed.first().seconds, finding.agreed.firstSpeechTime).takeIf { finding.agreed.opensWithMusic }
 
-  @Synchronized
-  fun review(
-    directory: Path,
-    keep: List<KeptSpan>,
-  ): EditList? {
-    val saved = directory.resolve(EDIT_LIST).takeIf(Files::exists) ?: return null
-    val reviewed = rerender(directory, JsonMapperFactory.instance.readValue<EditList>(Files.readString(saved)), keep)
-    save(saved, reviewed)
-    return reviewed
-  }
-
-  private fun rerender(
-    directory: Path,
-    edit: EditList,
-    keep: List<KeptSpan>,
-  ): EditList {
-    val status = readStatus(directory)
-    val timeline = Timeline(directory, status.parts)
-    val spans = spans(timeline, keep)
-    val kept = audible(timeline.spans, spans)
-    val marks = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) }, names(status, edit.found()))
-    val temporary = directory.resolve(REVIEWED)
-    runCatching { radioRenderService.render(timeline, spans, marks, title(status, edit.found()), temporary) }
-      .onFailure { Files.deleteIfExists(temporary) }
-      .getOrThrow()
-    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    return reviewed(edit, spans.map { KeptSpan(it.first, it.second) }, kept, marks)
-  }
-
-  private fun spans(
-    timeline: Timeline,
-    keep: List<KeptSpan>,
-  ): List<Pair<Double, Double>> {
-    val spans = keep.map { it.start to min(it.end, timeline.seconds) }
-    require(ordered(spans) && spans.all { audible(timeline.spans, listOf(it)).isNotEmpty() }) {
-      "Keep list $keep is not ordered audible spans within 0-${timeline.seconds} s"
-    }
-    return spans
-  }
-
-  private fun reviewed(
-    edit: EditList,
-    keep: List<KeptSpan>,
-    kept: List<Pair<Double, Double>>,
-    marks: List<Pair<Double, String>>,
-  ) = edit.copy(
-    keep = keep,
-    durationSeconds = rounded(kept.sumOf { it.second - it.first }),
-    chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
-    reviewed = true,
-    renderedAt = now(),
-  )
-
-  private fun ordered(spans: List<Pair<Double, Double>>): Boolean =
-    spans.isNotEmpty() &&
-      spans.all { (start, end) -> start >= 0 && start < end } &&
-      spans.zipWithNext().all { (left, right) -> left.second < right.first }
-
-  private fun names(
-    status: RecordingStatus,
-    done: Set<String>,
-  ): String {
-    val shown = status.programmes.filter { it in done }
-    return shown.ifEmpty { done.toList() }.joinToString(", ")
-  }
-
-  private fun title(
-    status: RecordingStatus,
-    done: Set<String>,
-  ): String = "${names(status, done)} ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(clock.zone).format(DAY)}"
-
   private fun fail(
     directory: Path,
     failure: Throwable,
@@ -279,11 +206,9 @@ class RadioEpisodeService(
   companion object {
     private const val EPISODE = "episode.m4a"
     private const val TEMPORARY = "episode.tmp.m4a"
-    private const val REVIEWED = "episode.review.m4a"
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
     private const val EDIT_LIST = "edit-list.json"
     private val READY = setOf(RecordingState.CAPTURED, RecordingState.PARTIAL)
-    private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
   }
 }

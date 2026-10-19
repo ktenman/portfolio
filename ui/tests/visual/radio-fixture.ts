@@ -83,6 +83,11 @@ const RECORDINGS = [
       programme('Tarkade klubi', ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' }),
     ],
   }),
+  recording({
+    name: '2026-10-23',
+    status: capture('2026-10-23T08:55:00Z', ['Keskpäevatund']),
+    render: { percent: 57, secondsLeft: 40 },
+  }),
   recording(),
 ]
 

@@ -5,7 +5,6 @@ import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.CutChoice
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
-import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.JingleReview
 import ee.tenman.portfolio.service.radio.ManualCut
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
@@ -111,7 +110,7 @@ class RadioController(
   fun putCuts(
     @PathVariable name: String,
     @RequestBody review: CutReview,
-  ): ResponseEntity<EditList> = ResponseEntity.ofNullable(radioArchiveService.review(name, review))
+  ): ResponseEntity<Void> = done(radioArchiveService.review(name, review))
 
   @PostMapping("/{name}/cuts/manual")
   fun postManualCut(
