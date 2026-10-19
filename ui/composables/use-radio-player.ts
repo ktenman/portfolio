@@ -18,6 +18,7 @@ const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
+const cardInView = ref(false)
 let loaded = ''
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
@@ -228,6 +229,7 @@ export const useRadioPlayer = () => ({
   volume,
   muted,
   lost,
+  cardInView,
   rejoin,
   attach,
   detach,

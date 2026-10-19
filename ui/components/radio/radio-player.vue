@@ -57,16 +57,10 @@
         label="Asukoht salvestuses"
         @seek="player.seek"
       />
-      <div class="flex flex-wrap items-center justify-between gap-3">
+      <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
         <div class="flex flex-wrap items-center gap-2">
-          <app-button
-            v-if="player.lost.value"
-            class="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-20 -translate-x-1/2 shadow-card"
-            @click="player.rejoin"
-          >
-            Tagasi praegusele
-          </app-button>
+          <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
           <app-button
             v-if="raw && showStart !== null"
             data-testid="radio-show-start"
@@ -91,7 +85,8 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, useTemplateRef, watchEffect } from 'vue'
+import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
@@ -107,8 +102,16 @@ const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
+const shown = useElementVisibility(useTemplateRef<HTMLElement>('controls'), {
+  initialValue: true,
+  rootMargin: '-56px 0px 0px 0px',
+})
 
-onBeforeUnmount(decisions.flush)
+watchEffect(() => (player.cardInView.value = shown.value))
+onBeforeUnmount(() => {
+  player.cardInView.value = false
+  void decisions.flush()
+})
 
 const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => Boolean(props.recording.editList && props.recording.episodeBytes))

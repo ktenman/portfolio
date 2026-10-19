@@ -13,7 +13,7 @@
     <button
       type="button"
       class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
-      :class="large ? 'size-13' : 'size-10'"
+      :class="large ? 'size-13' : 'size-11 md:size-10'"
       :aria-label="player.playing.value ? 'Peata' : 'Mängi'"
       data-testid="radio-play"
       @click="player.toggle()"
@@ -60,7 +60,7 @@ import RadioIcon from './radio-icon.vue'
 defineProps<{ large?: boolean }>()
 
 const SKIP =
-  'inline-flex cursor-pointer items-center gap-1.5 rounded-container border border-control-border bg-surface-sunken px-2.5 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+  'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-container border border-control-border bg-surface-sunken px-2.5 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep md:min-h-0'
 
 const player = useRadioPlayer()
 </script>
