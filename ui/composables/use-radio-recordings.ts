@@ -1,4 +1,5 @@
-import { computed, type MaybeRefOrGetter, toValue } from 'vue'
+import { computed, type MaybeRefOrGetter, ref, toValue, watch, type WatchSource } from 'vue'
+import { useIntervalFn, useNow } from '@vueuse/core'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
@@ -71,3 +72,10 @@ export const useRadioCuts = (recording: MaybeRefOrGetter<RecordingSummary>) =>
 
 export const useRadioTranscript = (recording: MaybeRefOrGetter<RecordingSummary>) =>
   useTranscribed(recording, 'transcript', radioService.transcript)
+
+export const useElapsed = (source: WatchSource) => {
+  const now = useNow({ scheduler: tick => useIntervalFn(tick, 1000) })
+  const since = ref(Date.now())
+  watch(source, () => (since.value = Date.now()))
+  return computed(() => (now.value.getTime() - since.value) / 1000)
+}

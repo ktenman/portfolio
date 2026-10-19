@@ -11,7 +11,7 @@ private const val DECODE_PACE = 0.31
 private const val SILENCE_PACE = 0.02
 private const val READ_SECONDS = 3.5
 private const val BOUNDARIES_SECONDS = 1.0
-private const val RENDER_PACE = 2.2
+const val RENDER_PACE = 2.2
 private const val TRANSCRIPT_CHUNKS = "transcript.jsonl"
 private const val MOST_PERCENT = 99
 

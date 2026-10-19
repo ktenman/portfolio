@@ -93,6 +93,8 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   transcriptCheckedAt: null,
   editList: editList(),
   failure: null,
+  render: null,
+  renderFailure: null,
   episodeBytes: 34_000_000,
   cuts: [
     cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, [DIGITAL]),

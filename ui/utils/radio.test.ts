@@ -138,6 +138,10 @@ describe('poll', () => {
     expect(poll(recordings(ProgrammeCutState.WAITING))).toBe(60_000)
   })
 
+  it('should ask once a minute while an episode renders', () => {
+    expect(poll([recording({ render: { percent: 30, secondsLeft: 70 } })])).toBe(60_000)
+  })
+
   it('should stop asking once no cut search is coming', () => {
     expect(poll(recordings(ProgrammeCutState.FAILED, ProgrammeCutState.NONE))).toBe(false)
   })

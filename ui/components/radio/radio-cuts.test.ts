@@ -13,7 +13,7 @@ import {
 } from '../../models/generated/domain-models'
 import type { ProgrammeCuts, RecordingSummary } from '../../models/generated/domain-models'
 
-const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
+const { confirm, success } = vi.hoisted(() => ({ confirm: vi.fn(), success: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -27,6 +27,7 @@ vi.mock('../../services/api', () => ({
   },
 }))
 vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm }) }))
+vi.mock('../../composables/use-toast', () => ({ useToast: () => ({ success, error: vi.fn() }) }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -40,12 +41,13 @@ describe('RadioCuts', () => {
 
   beforeEach(() => {
     vi.mocked(radioService.cuts).mockResolvedValue(contexts())
-    vi.mocked(radioService.review).mockReset().mockResolvedValue(recording().editList!)
+    vi.mocked(radioService.review).mockReset().mockResolvedValue()
     vi.mocked(radioService.jingle).mockReset().mockResolvedValue()
     vi.mocked(radioService.addCut).mockReset().mockResolvedValue()
     vi.mocked(radioService.dropCut).mockReset().mockResolvedValue()
     vi.mocked(radioService.findCuts).mockReset().mockResolvedValue()
     confirm.mockReset()
+    success.mockReset()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     player.attach(audio)
@@ -132,6 +134,63 @@ describe('RadioCuts', () => {
     await button(await render(), 'Rakenda lõiked').trigger('click')
     await flushPromises()
     expect(radioService.review).not.toHaveBeenCalled()
+  })
+
+  it('should not say the cuts are applied when they are only sent', async () => {
+    confirm.mockResolvedValue(true)
+    await button(await render(), 'Rakenda lõiked').trigger('click')
+    await flushPromises()
+    expect(success).not.toHaveBeenCalled()
+  })
+
+  const rendering = recording({ render: { percent: 57, secondsLeft: 40 } })
+
+  const meter = (wrapper: VueWrapper) =>
+    wrapper.find('[aria-label="Puhastatud versioon"]').attributes('aria-valuenow')
+
+  it("should show the render's percent and step in Tulemus", async () => {
+    const wrapper = await render(rendering)
+    expect([meter(wrapper), wrapper.text().includes('Teen saatefaili')]).toEqual(['57', true])
+  })
+
+  it('should not let the cuts be applied or reset while the episode renders', async () => {
+    const wrapper = await render(rendering)
+    expect(
+      ['Rakenda lõiked', 'Lähtesta'].map(text => button(wrapper, text).attributes('disabled'))
+    ).toEqual(['', ''])
+  })
+
+  it('should not pass the next tenth before the render reports it', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    const wrapper = await render(recording({ render: { percent: 57, secondsLeft: 10 } }))
+    vi.advanceTimersByTime(600_000)
+    await flushPromises()
+    vi.useRealTimers()
+    expect(meter(wrapper)).toBe('59')
+  })
+
+  it('should say the cuts are applied once the render finishes', async () => {
+    const wrapper = await render(rendering)
+    await wrapper.setProps({ recording: recording() })
+    await wrapper.setProps({ recording: recording() })
+    expect(success.mock.calls).toEqual([['Lõiked rakendatud']])
+  })
+
+  it('should not say the cuts are applied when the render fails', async () => {
+    const wrapper = await render(rendering)
+    await wrapper.setProps({
+      recording: recording({ renderFailure: { reason: 'FFmpeg exited with 1', failedAt: '' } }),
+    })
+    expect(success).not.toHaveBeenCalled()
+  })
+
+  it('should show why the render failed', async () => {
+    const failed = recording({
+      renderFailure: { reason: 'FFmpeg exited with 1 – õ', failedAt: '2026-10-17T12:00:00Z' },
+    })
+    expect((await render(failed)).text()).toContain(
+      'Puhastatud versiooni ei saanud teha: FFmpeg exited with 1 – õ'
+    )
   })
 
   it('should show the jingle that ends a break and how well it matched', async () => {

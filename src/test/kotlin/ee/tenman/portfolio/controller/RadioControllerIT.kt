@@ -13,6 +13,7 @@ import ee.tenman.portfolio.service.radio.RecordingStatus
 import ee.tenman.portfolio.service.radio.Transcript
 import ee.tenman.portfolio.service.radio.TranscriptSegment
 import ee.tenman.portfolio.service.radio.ffmpeg
+import ee.tenman.portfolio.service.radio.taped
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -144,6 +145,17 @@ class RadioControllerIT {
   @Test
   fun `should not find the transcript of a recording without one`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/transcript")).andExpect(status().isNotFound)
+  }
+
+  @Test
+  fun `should accept a review with no content`() {
+    taped(directory, "raw", 60)
+    val outline = OutlineSummary(null, 1, 1, 1)
+    val edit = EditList(listOf(KeptSpan(761.5, 3837.38)), 3075.88, emptyList(), emptyList(), emptyList(), outline, emptyList(), false, "")
+    Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
+    mockMvc
+      .perform(mvcPut("/api/radio/2026-10-17/cuts").contentType(APPLICATION_JSON).content("""{"removed":[]}"""))
+      .andExpect(status().isNoContent)
   }
 
   @Test

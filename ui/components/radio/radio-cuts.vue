@@ -51,9 +51,42 @@
       <div data-testid="radio-cut-result">
         <radio-facts :rows="facts" />
       </div>
+      <div v-if="rendered" class="mt-3 grid gap-2">
+        <div
+          role="progressbar"
+          aria-label="Puhastatud versioon"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuenow="rendered.percent"
+          :aria-valuetext="`${rendered.percent} %, Teen saatefaili, ${left(rendered.secondsLeft)}`"
+          class="h-1.5 overflow-hidden rounded-full bg-hairline"
+        >
+          <div
+            class="h-full rounded-full bg-brass transition-[width] duration-700 ease-out motion-reduce:transition-none"
+            :style="{ width: `${rendered.percent}%` }"
+          />
+        </div>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
+          <span>Teen saatefaili · {{ rendered.percent }} %</span>
+          <span class="text-ink-soft tabular-nums">{{ left(rendered.secondsLeft) }}</span>
+        </div>
+      </div>
+      <p v-if="recording.renderFailure" class="mt-3 mb-0 flex items-center gap-1.5 text-sm">
+        <radio-icon name="alert" />
+        Puhastatud versiooni ei saanud teha: {{ recording.renderFailure.reason }}
+      </p>
       <div class="mt-3 flex flex-wrap gap-2">
-        <app-button variant="primary" :loading="saving" @click="apply">Rakenda lõiked</app-button>
-        <app-button :disabled="saving || machine" @click="reset">Lähtesta</app-button>
+        <app-button
+          variant="primary"
+          :loading="saving"
+          :disabled="!!recording.render"
+          @click="apply"
+        >
+          Rakenda lõiked
+        </app-button>
+        <app-button :disabled="saving || machine || !!recording.render" @click="reset">
+          Lähtesta
+        </app-button>
       </div>
       <p class="mt-3 mb-0 text-sm text-ink-soft">
         Toorsalvestus jääb muutmata. Otsused salvestatakse lõikeloendisse.
@@ -67,15 +100,16 @@ import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { ProgrammeCutState, type RecordingSummary } from '../../models/generated/domain-models'
 import { useConfirm } from '../../composables/use-confirm'
-import { useRadioCuts } from '../../composables/use-radio-recordings'
+import { useElapsed, useRadioCuts } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { position, span } from '../../utils/radio'
+import { advance, left, position, span } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioFacts from './radio-facts.vue'
 import RadioFindCuts from './radio-find-cuts.vue'
+import RadioIcon from './radio-icon.vue'
 import RadioManualCut from './radio-manual-cut.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
@@ -96,6 +130,20 @@ watch(
   (cuts, before) =>
     (removed.value =
       cuts.length === before.length + 1 ? [...removed.value, before.length] : saved())
+)
+
+const elapsed = useElapsed(() => props.recording.render)
+const rendered = computed(() => {
+  const render = props.recording.render
+  if (!render) return null
+  const { percent, secondsLeft } = advance(render, elapsed.value)
+  return { percent: Math.min(percent, Math.floor(render.percent / 10) * 10 + 9), secondsLeft }
+})
+watch(
+  () => props.recording.render,
+  (now, before) => {
+    if (before && !now && !props.recording.renderFailure) toast.success('Lõiked rakendatud')
+  }
 )
 
 const ordered = computed(() =>
@@ -161,10 +209,7 @@ const apply = async () => {
   saving.value = true
   await radioService
     .review(props.recording.name, { removed: removed.value })
-    .then(() => {
-      toast.success('Lõiked rakendatud')
-      return queryClient.invalidateQueries({ queryKey: ['radio'] })
-    })
+    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'], exact: true }))
     .catch(() => toast.error('Lõikeid ei saanud rakendada'))
     .finally(() => (saving.value = false))
 }

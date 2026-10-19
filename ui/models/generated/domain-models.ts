@@ -259,6 +259,8 @@ export interface RecordingSummary {
     audible: KeptSpan[];
     format: AudioFormat | null;
     programmeCuts: ProgrammeCuts[];
+    render: RenderProgress | null;
+    renderFailure: EpisodeFailure | null;
     drops: number;
     transcriptState: TranscriptState;
     cutState: CutState;
@@ -446,6 +448,11 @@ export interface ProgrammeCuts {
     progress: CutProgress | null;
     transcript: TranscriptProgress | null;
     after: string | null;
+}
+
+export interface RenderProgress {
+    percent: number;
+    secondsLeft: number;
 }
 
 export interface TranscriptWord {

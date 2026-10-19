@@ -59,14 +59,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue'
-import { useIntervalFn, useNow } from '@vueuse/core'
+import { computed, ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import {
   ProgrammeCutState,
   type ProgrammeCuts,
   type RecordingSummary,
 } from '../../models/generated/domain-models'
+import { useElapsed } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
 import { advance, clock, left, stepLabel } from '../../utils/radio'
@@ -79,13 +79,7 @@ const props = defineProps<{ recording: RecordingSummary }>()
 const queryClient = useQueryClient()
 const toast = useToast()
 const asking = ref<string | null>(null)
-const now = useNow({ scheduler: tick => useIntervalFn(tick, 1000) })
-const since = ref(Date.now())
-
-watch(
-  () => props.recording.programmeCuts,
-  () => (since.value = Date.now())
-)
+const elapsed = useElapsed(() => props.recording.programmeCuts)
 
 const SHOWN = new Set([
   ProgrammeCutState.FINDING,
@@ -96,8 +90,10 @@ const SHOWN = new Set([
 
 const meter = ({ name, progress, transcript }: ProgrammeCuts) => {
   if (progress) {
-    const elapsed = Math.min((now.value.getTime() - since.value) / 1000, progress.stepSecondsLeft)
-    const { percent, secondsLeft } = advance(progress, elapsed)
+    const { percent, secondsLeft } = advance(
+      progress,
+      Math.min(elapsed.value, progress.stepSecondsLeft)
+    )
     return {
       label: `${name}: lõigete otsing`,
       percent,

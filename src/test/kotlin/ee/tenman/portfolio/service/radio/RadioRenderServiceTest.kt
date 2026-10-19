@@ -75,4 +75,14 @@ class RadioRenderServiceTest {
     service.render(timeline(directory), listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
     expect(abs(duration(episode) - 5.0) <= 0.05).toEqual(true)
   }
+
+  @Test
+  fun `should report how far FFmpeg has got`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30))))
+    val shares = mutableListOf<Double>()
+    service.render(timeline(directory), listOf(2.0 to 28.0), listOf(0.0 to "Uudised"), "Keskpäevatund", directory.resolve("episode.m4a")) {
+      shares += it
+    }
+    expect(shares.zipWithNext().all { (a, b) -> a <= b } to (shares.last() >= 0.9)).toEqual(true to true)
+  }
 }
