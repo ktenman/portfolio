@@ -103,6 +103,13 @@ describe('RadioPlayer', () => {
     expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
   })
 
+  it("should clear the card's place in view when it closes", () => {
+    const wrapper = render()
+    player.cardInView.value = true
+    wrapper.unmount()
+    expect(player.cardInView.value).toBe(false)
+  })
+
   it('should offer to go back to the playing line while the text lost it', async () => {
     const wrapper = render()
     player.lost.value = true
