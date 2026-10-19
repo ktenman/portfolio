@@ -77,8 +77,14 @@ describe('RadioRecordings', () => {
     expect((await mount()).text()).toContain('4 soovitust')
   })
 
-  it('should say a transcript nobody has checked is unchecked', async () => {
-    expect((await mount()).text()).toContain('Kontrollimata')
+  it('should say a transcribed recording has its transcript', async () => {
+    expect((await mount()).text()).toContain('Olemas')
+  })
+
+  it('should not bold a transcript', async () => {
+    expect((await mount()).find('[data-testid="radio-transcript"]').classes()).not.toContain(
+      'font-semibold'
+    )
   })
 
   it('should say a recording in progress is being recorded', async () => {

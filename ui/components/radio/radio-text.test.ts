@@ -5,12 +5,11 @@ import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioText from './radio-text.vue'
 import { recording, song, transcript } from './radio-fixture'
-import { type RecordingSummary, TranscriptState } from '../../models/generated/domain-models'
+import type { RecordingSummary } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
     transcript: vi.fn(),
-    check: vi.fn(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -28,7 +27,6 @@ describe('RadioText', () => {
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.transcript).mockResolvedValue(transcript())
-    vi.mocked(radioService.check).mockReset().mockResolvedValue()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     player.attach(audio)
@@ -126,23 +124,8 @@ describe('RadioText', () => {
     )
   })
 
-  it('should mark the transcript checked', async () => {
-    const wrapper = await render()
-    await wrapper
-      .findAll('button')
-      .find(b => b.text().includes('Märgi kontrollituks'))!
-      .trigger('click')
-    expect(radioService.check).toHaveBeenCalledWith('2026-10-17')
-  })
-
-  it('should say a checked transcript is checked', async () => {
-    const wrapper = await render(
-      recording({
-        transcriptCheckedAt: '2026-10-18T09:00:00Z',
-        transcriptState: TranscriptState.CHECKED,
-      })
-    )
-    expect(wrapper.find('[data-testid="radio-text-state"]').text()).toBe('Kontrollitud')
+  it('should not offer to mark the transcript checked', async () => {
+    expect((await render()).text()).not.toContain('Märgi kontrollituks')
   })
 
   it('should offer the transcript as subtitles and as text', async () => {

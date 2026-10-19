@@ -234,8 +234,7 @@ export const RECORDER_STATES: Record<RecorderState, { label: string; tone: Badge
 const TEXT_STATES: Record<TranscriptState, string> = {
   [TranscriptState.NONE]: '—',
   [TranscriptState.RECORDING]: 'Salvestamisel',
-  [TranscriptState.UNCHECKED]: 'Kontrollimata',
-  [TranscriptState.CHECKED]: 'Kontrollitud',
+  [TranscriptState.TRANSCRIBED]: 'Olemas',
 }
 
 export const textState = (recording: RecordingSummary): string =>
