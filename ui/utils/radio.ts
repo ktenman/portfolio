@@ -122,7 +122,8 @@ export const stepLabel = ({ step, read }: CutProgress): string =>
 export const poll = (recordings: RecordingSummary[]): number | false => {
   const states = new Set(recordings.flatMap(it => it.programmeCuts.map(cuts => cuts.state)))
   if (states.has(ProgrammeCutState.FINDING)) return 1000
-  if (states.has(ProgrammeCutState.QUEUED) || states.has(ProgrammeCutState.WAITING)) return 30_000
+  if (states.has(ProgrammeCutState.QUEUED)) return 2000
+  if (states.has(ProgrammeCutState.WAITING)) return 30_000
   return false
 }
 

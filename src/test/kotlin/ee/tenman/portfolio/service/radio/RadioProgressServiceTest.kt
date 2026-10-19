@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -152,5 +153,21 @@ class RadioProgressServiceTest {
   fun `should wait the whole recording when no transcript is written yet`() {
     val status = chunks().also { Files.delete(directory.resolve("transcript.jsonl")) }
     expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(0.0, 4200.0, 0, 4200))
+  }
+
+  @Test
+  fun `should skip a line cut inside a multi-byte character`() {
+    val status = chunks("""{"part": "raw.mp3", "from": 0.0, "to": 299.18, "final": false, "segments": []}""")
+    val cut = """{"part": "raw.mp3", "from": 299.18, "to": 300.0, "segments": [{"text": "M""".toByteArray() + 0xC3.toByte()
+    Files.write(directory.resolve("transcript.jsonl"), cut, StandardOpenOption.APPEND)
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000)).writtenSeconds).toEqual(299.18)
+  }
+
+  @Test
+  fun `should leave the transcript chunks unread once the transcript is done`() {
+    Files.createDirectory(directory.resolve("transcript.jsonl"))
+    Files.writeString(directory.resolve(TRANSCRIPT_FILE), "[]")
+    val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), listOf(PROGRAMME))
+    expect(service.programmeCuts(directory, status, null, false).map { it.state }).toEqual(listOf(ProgrammeCutState.QUEUED))
   }
 }

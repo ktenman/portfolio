@@ -129,7 +129,11 @@ describe('poll', () => {
     expect(poll(recordings(ProgrammeCutState.QUEUED, ProgrammeCutState.FINDING))).toBe(1000)
   })
 
-  it('should ask every half minute while a cut search waits its turn or the text', () => {
+  it('should ask every two seconds while a cut search waits its turn', () => {
+    expect(poll(recordings(ProgrammeCutState.WAITING, ProgrammeCutState.QUEUED))).toBe(2000)
+  })
+
+  it('should ask every half minute while a cut search waits for the text', () => {
     expect(poll(recordings(ProgrammeCutState.WAITING))).toBe(30_000)
   })
 

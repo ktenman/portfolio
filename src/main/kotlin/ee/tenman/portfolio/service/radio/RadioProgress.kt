@@ -87,7 +87,10 @@ private fun written(
   if (Files.notExists(chunks)) return 0.0
   val offsets = status.parts.associate { it.file to it.offsetSeconds }
   return Files
-    .readAllLines(chunks)
+    .readAllBytes(chunks)
+    .decodeToString()
+    .lineSequence()
+    .filter { it.isNotBlank() }
     .mapNotNull { line -> runCatching { JsonMapperFactory.instance.readTree(line) }.getOrNull() }
     .mapNotNull { chunk -> offsets[chunk.path("part").asString()]?.plus(chunk.path("to").asDouble()) }
     .maxOrNull() ?: 0.0

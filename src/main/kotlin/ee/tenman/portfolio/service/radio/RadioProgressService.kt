@@ -47,11 +47,7 @@ class RadioProgressService(
     val found = edit.found() + done(name)
     val progress = progress(name)
     val transcript =
-      transcriptProgress(
-      directory,
-      status,
-      Instant.now(clock),
-    ).takeIf { Files.notExists(directory.resolve(TRANSCRIPT_FILE)) }
+      if (Files.exists(directory.resolve(TRANSCRIPT_FILE))) null else transcriptProgress(directory, status, Instant.now(clock))
     val after = runs[name]?.let { it.stages.getOrNull(it.index)?.programme } ?: current()
     return status.programmes.map { programme ->
       when {
