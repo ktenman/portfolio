@@ -1,0 +1,53 @@
+package ee.tenman.portfolio.service.radio
+
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
+import org.junit.jupiter.api.Test
+
+class RadioSectionsTest {
+  private val cut = Cut(CutKind.BREAK, "Reklaamipaus", 100.0, 160.0, emptyList(), review = false, removed = true)
+
+  private val timeline =
+    listOf(
+      TimelineEntry(0.0, 100.0, "Ooperi tüli", false),
+      TimelineEntry(100.0, 160.0, "Reklaamipaus", true),
+      TimelineEntry(160.0, 300.0, "Šokolaadi hind", false),
+    )
+
+  private val audible = listOf(KeptSpan(0.0, 100.0), KeptSpan(160.0, 300.0))
+
+  private fun line(start: Double) = TranscriptLine(start, start + 5, "Tere $start", emptyList())
+
+  @Test
+  fun `should put each line under the topic it starts in`() {
+    val found = sections(timeline, listOf(cut), audible, listOf(line(10.0), line(170.0)))
+    expect(found.map { section -> section.lines.map { it.start } }).toEqual(listOf(listOf(10.0), emptyList(), listOf(170.0)))
+  }
+
+  @Test
+  fun `should give a cut section the index of its cut`() {
+    expect(sections(timeline, listOf(cut), audible, emptyList()).map { it.cut }).toEqual(listOf(null, 0, null))
+  }
+
+  @Test
+  fun `should give a topic its start in the episode`() {
+    expect(sections(timeline, listOf(cut), audible, emptyList()).map { it.episodeStart }).toEqual(listOf(0.0, null, 100.0))
+  }
+
+  @Test
+  fun `should leave the episode start empty for a topic outside the episode`() {
+    val found = sections(timeline, listOf(cut), listOf(KeptSpan(0.0, 100.0)), emptyList())
+    expect(found.last().episodeStart).toEqual(null)
+  }
+
+  @Test
+  fun `should keep lines past the last end in the last section`() {
+    expect(sections(timeline, listOf(cut), audible, listOf(line(300.0))).last().lines.size).toEqual(1)
+  }
+
+  @Test
+  fun `should keep a section without lines`() {
+    expect(sections(timeline, listOf(cut), audible, emptyList()).map { it.title })
+      .toEqual(listOf("Ooperi tüli", "Reklaamipaus", "Šokolaadi hind"))
+  }
+}
