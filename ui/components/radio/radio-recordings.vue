@@ -92,7 +92,13 @@ const remove = async (item: RecordingSummary) => {
   if (!confirmed) return
   await radioService
     .deleteRecording(item.name)
-    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
+    .then(() =>
+      Promise.all(
+        ['radio', 'radio-programmes', 'radio-station'].map(key =>
+          queryClient.invalidateQueries({ queryKey: [key] })
+        )
+      )
+    )
     .catch(() => toast.error('Salvestust ei saanud kustutada'))
 }
 

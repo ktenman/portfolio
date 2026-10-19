@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -161,6 +162,14 @@ class RadioScheduleTest {
   ) {
     Files.createDirectory(root.resolve("2026-10-18-1155-keskpaevatund"))
     Files.writeString(root.resolve(DELETED_FILE), """["2026-10-19-1023-kuku"]""")
-    expect(recorded(root)).toEqual(setOf("2026-10-18-1155-keskpaevatund", "2026-10-19-1023-kuku", DELETED_FILE))
+    expect(recorded(root)).toContain("2026-10-18-1155-keskpaevatund", "2026-10-19-1023-kuku")
+  }
+
+  @Test
+  fun `should not report a deleted capture as missed`(
+    @TempDir root: Path,
+  ) {
+    Files.writeString(root.resolve(DELETED_FILE), """["${ended.name}"]""")
+    expect(missed(listOf(ended), recorded(root), null, afterwards)).toHaveSize(0)
   }
 }

@@ -43,6 +43,8 @@ describe('RadioRecordings', () => {
     confirm.mockReset().mockResolvedValue(true)
     vi.mocked(radioService.deleteRecording).mockReset().mockResolvedValue()
     toasts.value = []
+    vi.mocked(radioService.programmes).mockClear()
+    vi.mocked(radioService.station).mockClear()
     vi.mocked(radioService.recordings).mockResolvedValue([
       recording(),
       recording({
@@ -119,6 +121,14 @@ describe('RadioRecordings', () => {
   it('should list the recordings again after a delete', async () => {
     await remove()
     expect(radioService.recordings).toHaveBeenCalledTimes(2)
+  })
+
+  it('should count the archive and the last recording again after a delete', async () => {
+    await remove()
+    const calls = [radioService.programmes, radioService.station].map(
+      it => vi.mocked(it).mock.calls.length
+    )
+    expect(calls).toEqual([2, 2])
   })
 
   it('should say so when a recording cannot be deleted', async () => {
