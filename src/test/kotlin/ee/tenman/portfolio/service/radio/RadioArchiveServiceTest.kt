@@ -227,6 +227,12 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should group a transcript without an edit list under the programme title`() {
+    transcribed(recording("2026-10-17"))
+    expect(service.sections("2026-10-17")?.map { it.title to it.lines.size }).toEqual(listOf(PROGRAMME to 1))
+  }
+
+  @Test
   fun `should mark the transcript line the show starts inside`() {
     val directory = recording("2026-10-17")
     edited(directory)

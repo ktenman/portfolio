@@ -3,8 +3,8 @@ import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from '@vue/t
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import RadioCuts from './radio-cuts.vue'
-import { contexts, programme, recording } from './radio-fixture'
+import RadioText from './radio-text.vue'
+import { contexts, programme, recording, sections, transcript } from './radio-fixture'
 import {
   BoundaryMethod,
   CutKind,
@@ -17,6 +17,7 @@ const { success } = vi.hoisted(() => ({ success: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
   radioService: {
+    transcript: vi.fn(),
     cuts: vi.fn(),
     review: vi.fn(),
     jingle: vi.fn(),
@@ -34,11 +35,12 @@ vi.mock('../../composables/use-auth-state', async () => {
 
 enableAutoUnmount(afterEach)
 
-describe('RadioCuts', () => {
+describe('Radio cuts', () => {
   const player = useRadioPlayer()
   let audio: HTMLAudioElement
 
   beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.cuts).mockResolvedValue(contexts())
     vi.mocked(radioService.review).mockReset().mockResolvedValue()
     vi.mocked(radioService.jingle).mockReset().mockResolvedValue()
@@ -56,7 +58,8 @@ describe('RadioCuts', () => {
 
   const render = async (target: RecordingSummary = recording()) => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const wrapper = mount(RadioCuts, {
+    vi.mocked(radioService.transcript).mockResolvedValue(sections(transcript(), target))
+    const wrapper = mount(RadioText, {
       props: { recording: target },
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     })
@@ -140,6 +143,15 @@ describe('RadioCuts', () => {
     )
   })
 
+  const handmade = (...added: (typeof manual)[]) =>
+    recording({
+      cuts: [...recording().cuts, ...added],
+      timeline: [
+        ...recording().timeline,
+        ...added.map(cut => ({ start: cut.start, end: cut.end, title: cut.title, cut: true })),
+      ].sort((a, b) => a.start - b.start),
+    })
+
   const manual = {
     kind: CutKind.MANUAL,
     title: 'Käsitsi lõige',
@@ -177,8 +189,7 @@ describe('RadioCuts', () => {
   })
 
   it('should show a cut made by hand among the others in recording order', async () => {
-    const cuts = [...recording().cuts, manual]
-    const titles = (await render(recording({ cuts })))
+    const titles = (await render(handmade(manual)))
       .findAll('[data-testid="radio-cut"] h4')
       .map(title => title.text())
     expect(titles[2]).toBe('Käsitsi lõige')
@@ -204,7 +215,7 @@ describe('RadioCuts', () => {
   })
 
   it('should not offer to delete a cut made by hand once it is chosen for removal', async () => {
-    const wrapper = await render(recording({ cuts: [...recording().cuts, manual] }))
+    const wrapper = await render(handmade(manual))
     await button(wrapper.findAll('[data-testid="radio-cut"]')[2], 'Eemalda').trigger('click')
     expect(button(wrapper, 'Kustuta')).toBeUndefined()
   })
@@ -213,7 +224,7 @@ describe('RadioCuts', () => {
     const calls: string[] = []
     vi.mocked(radioService.review).mockImplementation(async () => void calls.push('review'))
     vi.mocked(radioService.dropCut).mockImplementation(async () => void calls.push('drop'))
-    const wrapper = await render(recording({ cuts: [...recording().cuts, manual, manual] }))
+    const wrapper = await render(handmade(manual, manual))
     await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
     await button(wrapper, 'Kustuta').trigger('click')
     await flushPromises()
@@ -221,8 +232,7 @@ describe('RadioCuts', () => {
   })
 
   it('should delete a cut made by hand', async () => {
-    const cuts = [...recording().cuts, manual]
-    await button(await render(recording({ cuts })), 'Kustuta').trigger('click')
+    await button(await render(handmade(manual)), 'Kustuta').trigger('click')
     await flushPromises()
     expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
   })
@@ -353,6 +363,28 @@ describe('RadioCuts', () => {
 
   it('should not show the cut search once every programme has its cuts', async () => {
     expect((await render()).text()).not.toContain('Leia lõiked')
+  })
+
+  const section = async (index: number) =>
+    (await render()).findAll('[data-testid="radio-section"]')[index]
+
+  it('should show each cut above its own lines in the text', async () => {
+    expect((await section(2)).find('[data-testid="radio-cut"] h4').text()).toBe('Reklaamipaus')
+  })
+
+  it('should save a decision from a cut in the text', async () => {
+    const wrapper = await render()
+    await button(wrapper.findAll('[data-testid="radio-section"]')[2], 'Jäta alles').trigger('click')
+    wrapper.unmount()
+    await flushPromises()
+    expect(vi.mocked(radioService.review).mock.calls).toEqual([
+      ['2026-10-17', { removed: [0, 2, 3] }],
+    ])
+  })
+
+  it('should show no cut cards in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    expect((await render()).find('[data-testid="radio-cut"]').exists()).toBe(false)
   })
 
   it('should play the moment before a cut to hear the transition', async () => {

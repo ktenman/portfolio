@@ -54,22 +54,10 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: ':name',
         component: () => import('../components/radio/radio-episode.vue'),
-        children: [
-          {
-            path: '',
-            name: 'RadioListen',
-            component: () => import('../components/radio/radio-listen.vue'),
-          },
-          {
-            path: 'cuts',
-            redirect: to => `/radio/${String(to.params.name)}`,
-          },
-          {
-            path: 'text',
-            name: 'RadioText',
-            component: () => import('../components/radio/radio-text.vue'),
-          },
-        ],
+      },
+      {
+        path: ':name/:view(text|cuts)',
+        redirect: to => `/radio/${String(to.params.name)}`,
       },
     ],
   },

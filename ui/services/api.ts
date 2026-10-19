@@ -25,7 +25,7 @@ import {
   type RadioProgrammeDto,
   type RadioStation,
   type RecordingSummary,
-  type TranscriptLine,
+  type TranscriptSection,
   type IntradaySummaryPointDto,
   type PortfolioSummaryDto,
   type RangeChangeDto,
@@ -219,7 +219,7 @@ export const monitoringService = {
 export const radioService = {
   recordings: () => httpClient.get<RecordingSummary[]>(API_ENDPOINTS.RADIO),
   transcript: (name: string) =>
-    httpClient.get<TranscriptLine[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
+    httpClient.get<TranscriptSection[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
   cuts: (name: string) => httpClient.get<CutContext[]>(`${API_ENDPOINTS.RADIO}/${name}/cuts`),
   review: (name: string, review: CutReview) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/cuts`, review),

@@ -4,12 +4,13 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import RadioText from './radio-text.vue'
-import { recording, song, transcript } from './radio-fixture'
+import { recording, sections, song, transcript } from './radio-fixture'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
     transcript: vi.fn(),
+    cuts: () => Promise.resolve([]),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -26,7 +27,7 @@ describe('RadioText', () => {
 
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn()
-    vi.mocked(radioService.transcript).mockResolvedValue(transcript())
+    vi.mocked(radioService.transcript).mockReset().mockResolvedValue(sections())
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     player.attach(audio)
@@ -58,9 +59,85 @@ describe('RadioText', () => {
     await wrapper.vm.$nextTick()
   }
 
-  it('should list each topic with its length', async () => {
-    const topics = (await render()).findAll('[data-testid="radio-topic"]').map(t => t.text())
-    expect(topics[0]).toBe('12:07Rahvusooperi tüli23 min')
+  const headings = (wrapper: Awaited<ReturnType<typeof render>>) =>
+    wrapper.findAll('[data-testid="radio-section-heading"]').map(h => h.text())
+
+  const rail = (wrapper: Awaited<ReturnType<typeof render>>) =>
+    wrapper.find('[data-testid="radio-topics"]').findAll('[data-testid="radio-topic"]')
+
+  it('should show a heading for each topic with its time and length', async () => {
+    expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli 23 min')
+  })
+
+  it('should hide cut sections in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    expect(headings(await render())).toHaveLength(5)
+  })
+
+  it('should show the episode time on headings in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    expect(headings(await render())[1]).toBe('22:38Rahvusooperi tüli 7 min')
+  })
+
+  it('should play the episode from a line in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    const wrapper = await render()
+    await lines(wrapper)[2].find('button').trigger('click')
+    expect(player.seconds.value).toBe(1359.5)
+  })
+
+  it('should play a topic from its heading', async () => {
+    const wrapper = await render()
+    await wrapper.findAll('[data-testid="radio-section-heading"]')[1].trigger('click')
+    expect(audio.currentTime).toBe(2255)
+  })
+
+  it('should drop headings without matching lines when searching', async () => {
+    const wrapper = await render()
+    await wrapper.find('input[type="search"]').setValue('jätkab')
+    expect(headings(wrapper)).toEqual(['12:32Rahvusooperi tüli 7 min'])
+  })
+
+  it('should mark the playing topic Praegu', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 2257)
+    expect(wrapper.find('[data-testid="radio-section"][aria-current="true"]').text()).toContain(
+      'Praegu'
+    )
+  })
+
+  it('should regroup the text once the episode is cut again', async () => {
+    const wrapper = await render()
+    await wrapper.setProps({ recording: recording({ audible: [{ start: 761.5, end: 3837 }] }) })
+    await flushPromises()
+    expect(radioService.transcript).toHaveBeenCalledTimes(2)
+  })
+
+  it('should keep the text on screen while it is regrouped', async () => {
+    const wrapper = await render()
+    vi.mocked(radioService.transcript).mockReturnValue(new Promise(() => {}))
+    await wrapper.setProps({ recording: recording({ timeline: recording().timeline.slice(1) }) })
+    expect(lines(wrapper)).toHaveLength(3)
+  })
+
+  it('should list each topic once in Teemad with its length', async () => {
+    expect(rail(await render())[1].text()).toBe('12:07Rahvusooperi tüli 23 min')
+  })
+
+  it('should mark a cut lõige in Teemad on the raw recording', async () => {
+    expect(rail(await render())[0].text()).toContain('lõige')
+  })
+
+  it('should play and scroll to a topic picked from Teemad', async () => {
+    const wrapper = await render()
+    await rail(wrapper)[3].trigger('click')
+    await wrapper.vm.$nextTick()
+    expect([audio.currentTime, scrolled().length > 0]).toEqual([2255, true])
+  })
+
+  it('should offer Teemad as chips above the search', async () => {
+    const chips = (await render()).find('[data-testid="radio-topic-chips"]')
+    expect(chips.findAll('[data-testid="radio-topic"]')).toHaveLength(9)
   })
 
   it('should list the ad breaks the machine found', async () => {
@@ -86,12 +163,12 @@ describe('RadioText', () => {
 
   it('should show a run of music as one Muusika row with its time', async () => {
     const [first, ...rest] = transcript()
-    vi.mocked(radioService.transcript).mockResolvedValue([first, song(), ...rest])
+    vi.mocked(radioService.transcript).mockResolvedValue(sections([first, song(), ...rest]))
     expect(lines(await render())[1].text()).toBe('12:08:15Muusika')
   })
 
   it('should leave music out of the search', async () => {
-    vi.mocked(radioService.transcript).mockResolvedValue([song()])
+    vi.mocked(radioService.transcript).mockResolvedValue(sections([song()]))
     const wrapper = await render()
     await wrapper.find('input[type="search"]').setValue('Muusika')
     expect(lines(wrapper)).toHaveLength(0)
@@ -129,11 +206,14 @@ describe('RadioText', () => {
   })
 
   it('should not label a transcript that is there', async () => {
-    expect((await render()).text()).not.toContain('Olemas')
+    expect((await render()).find('[data-testid="radio-transcript"]').text()).not.toContain('Olemas')
   })
 
   it('should offer the transcript as subtitles and as text', async () => {
-    const links = (await render()).findAll('a[download]').map(a => a.attributes('href'))
+    const links = (await render())
+      .findAll('a[download]')
+      .map(a => a.attributes('href'))
+      .filter(href => href?.includes('transcript'))
     expect(links).toEqual([
       '/api/radio/2026-10-17/transcript.srt',
       '/api/radio/2026-10-17/transcript.txt',

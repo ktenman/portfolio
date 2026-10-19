@@ -31,6 +31,16 @@ class RadioArchiveService(
     return mark(music(lines(readTranscript(directory)), music), cutsOf(directory))
   }
 
+  fun sections(name: String): List<TranscriptSection>? {
+    val lines = transcript(name) ?: return null
+    val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    val status = readStatus(directory)
+    val edit = read<EditList>(directory.resolve(EDIT_LIST))
+    val decided = decided(directory, edit)
+    val cuts = cuts(decided, status.seconds)
+    return sections(timelineOf(cuts, decided, status), cuts, audibleOf(directory, status, edit), lines)
+  }
+
   fun text(name: String): String? = spoken(name)?.joinToString("") { "${it.text.trim()}\n" }
 
   fun subtitles(name: String): String? = spoken(name)?.let(::subtitles)

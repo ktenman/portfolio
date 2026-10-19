@@ -5,6 +5,7 @@ import {
   radioDay,
   recording,
   song,
+  sections,
   transcript,
 } from '../../components/radio/radio-fixture'
 import {
@@ -224,7 +225,7 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: contexts() })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/transcript`), route =>
-    route.fulfill({ json: [transcript()[0], song(), ...transcript().slice(1)] })
+    route.fulfill({ json: sections([transcript()[0], song(), ...transcript().slice(1)]) })
   )
 }
 
