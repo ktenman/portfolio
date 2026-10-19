@@ -5,9 +5,12 @@ import {
   type DayAiring,
   type AudioFormat,
   BoundaryMethod,
+  type CutProgress,
   CutState,
+  CutStep,
   DayOfWeek,
   type KeptSpan,
+  ProgrammeCutState,
   RecorderState,
   type RecordingSummary,
   RecordingState,
@@ -95,6 +98,34 @@ const instant = (startedAt: number, seconds = 0) => new Date((startedAt + second
 
 export const clock = (startedAt: number, seconds: number, withSeconds = false): string =>
   (withSeconds ? TIME_SECONDS : TIME).format(instant(startedAt, seconds))
+
+export const left = (seconds: number, now = new Date()): string => {
+  const text =
+    seconds >= 60
+      ? `~${Math.round(seconds / 60)} min jäänud`
+      : `~${Math.max(5, Math.round(seconds / 5) * 5)} s jäänud`
+  if (seconds <= 600) return text
+  return `${text} · valmis ~${TIME.format(new Date(now.getTime() + seconds * 1000))}`
+}
+
+const STEPS: Record<CutStep, string> = {
+  [CutStep.DECODE]: 'Loen helifaili',
+  [CutStep.SILENCE]: 'Otsin vaikuseid',
+  [CutStep.READ]: 'AI loeb saadet',
+  [CutStep.BOUNDARIES]: 'Panen lõiked paika',
+  [CutStep.RENDER]: 'Teen saatefaili',
+}
+
+export const stepLabel = ({ step, read }: CutProgress): string =>
+  step === CutStep.READ ? `${STEPS[step]} · ${read}/3` : STEPS[step]
+
+export const poll = (recordings: RecordingSummary[]): number | false => {
+  const states = new Set(recordings.flatMap(it => it.programmeCuts.map(cuts => cuts.state)))
+  if (states.has(ProgrammeCutState.FINDING)) return 1000
+  if (states.has(ProgrammeCutState.QUEUED)) return 2000
+  if (states.has(ProgrammeCutState.WAITING)) return 30_000
+  return false
+}
 
 const daySeconds = (time: string): number | null => {
   const match = /^(\d{1,2}):(\d{2}):(\d{2})$/.exec(time.trim())

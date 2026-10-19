@@ -20,6 +20,7 @@ class RadioEpisodeService(
   private val radioOutlineService: RadioOutlineService,
   private val radioCutService: RadioCutService,
   private val radioRenderService: RadioRenderService,
+  private val radioProgressService: RadioProgressService,
   private val radioAiringRepository: RadioAiringRepository,
   private val radioProgrammeRepository: RadioProgrammeRepository,
   private val radioProperties: RadioProperties,
@@ -30,8 +31,24 @@ class RadioEpisodeService(
   fun make(directory: Path) {
     val todo = todo(directory)
     if (todo.isEmpty()) return
-    runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }
+    val name = directory.fileName.toString()
+    radioProgressService.start(name, plan(directory, todo))
+    runCatching { cut(directory, todo) }.also { radioProgressService.finish(name) }.onFailure { fail(directory, it) }
   }
+
+  private fun plan(
+    directory: Path,
+    todo: List<String>,
+  ): List<CutStage> {
+    val status = readStatus(directory)
+    val decode = status.parts.any { Files.notExists(pcmOf(directory, it.file)) }
+    return stages(status, todo, decode) { Files.exists(directory.resolve(outline(status, it))) }
+  }
+
+  private fun passed(
+    directory: Path,
+    step: CutStep,
+  ) = radioProgressService.next(directory.fileName.toString(), step)
 
   private fun ready(directory: Path): Boolean {
     val files =
@@ -53,7 +70,7 @@ class RadioEpisodeService(
     todo: List<String>,
   ) {
     val status = readStatus(directory)
-    val timeline = Timeline(directory, status.parts)
+    val timeline = Timeline(directory, status.parts).also { passed(directory, CutStep.DECODE) }
     val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
@@ -69,7 +86,7 @@ class RadioEpisodeService(
     todo: List<String>,
   ): List<Finding> {
     val lines = lines(readTranscript(directory))
-    val db = loudness(timeline)
+    val db = loudness(timeline).also { passed(directory, CutStep.SILENCE) }
     val slots = slots(status)
     return todo.map { find(directory, status, show(status, it, slots[it]), lines, timeline, db) }
   }
@@ -109,6 +126,7 @@ class RadioEpisodeService(
     check(matched.isNotEmpty()) { "No outline read in $saved matches the transcript" }
     val agreed = consensus(matched)
     val placed = radioCutService.boundaries(timeline, db, agreed, lines, library(radioProperties.jingles))
+    passed(directory, CutStep.BOUNDARIES)
     return Finding(agreed, placed.map { it.copy(programme = show.name) }, OutlineSummary(model, reads.size, matched.size, agreed.voters))
   }
 
@@ -143,7 +161,7 @@ class RadioEpisodeService(
   ): Pair<List<OutlineRead?>, String?> {
     if (Files.exists(saved)) return JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(saved)) to null
     val model = radioProperties.outlineModel
-    val reads = radioOutlineService.reads(show, text(), model)
+    val reads = radioOutlineService.reads(show, text(), model) { passed(saved.parent, CutStep.READ) }
     check(reads.any { it != null }) { "No outline read came back from ${model.modelId} for $saved" }
     save(saved, reads)
     return reads to model.modelId

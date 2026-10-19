@@ -5,6 +5,7 @@ import {
   CutKind,
   CutState,
   ProgrammeCutState,
+  type ProgrammeCuts,
   type CutContext,
   type DayAiring,
   type EditList,
@@ -70,6 +71,12 @@ const cut = (
   review = false
 ) => ({ kind, title, start, end, methods, review, removed: true, jingle: null })
 
+export const programme = (
+  name: string,
+  state: ProgrammeCutState,
+  details: Partial<ProgrammeCuts> = {}
+): ProgrammeCuts => ({ name, state, progress: null, transcript: null, after: null, ...details })
+
 export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingSummary => ({
   name: '2026-10-17',
   programme: 'Keskpäevatund',
@@ -116,7 +123,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
     { start: 3137, end: 3837 },
   ],
   format: { codec: 'mp3', bitRate: 256_000 },
-  programmeCuts: [{ name: 'Keskpäevatund', state: ProgrammeCutState.FOUND }],
+  programmeCuts: [programme('Keskpäevatund', ProgrammeCutState.FOUND)],
   drops: 0,
   transcriptState: TranscriptState.UNCHECKED,
   cutState: CutState.SUGGESTED,

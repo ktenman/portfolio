@@ -2,6 +2,7 @@ import { computed, type MaybeRefOrGetter, toValue } from 'vue'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
+import { poll } from '../utils/radio'
 import { useAuthState } from './use-auth-state'
 
 export const useRadioRecordings = () => {
@@ -10,6 +11,7 @@ export const useRadioRecordings = () => {
     queryKey: ['radio'],
     queryFn: radioService.recordings,
     enabled: isAuthenticated,
+    refetchInterval: query => poll(query.state.data ?? []),
   })
 }
 

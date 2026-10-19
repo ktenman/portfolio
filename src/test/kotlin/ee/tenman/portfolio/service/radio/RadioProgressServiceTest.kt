@@ -1,0 +1,173 @@
+package ee.tenman.portfolio.service.radio
+
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
+
+class RadioProgressServiceTest {
+  @TempDir
+  lateinit var directory: Path
+
+  private var now = Instant.parse("2026-10-24T10:00:00Z")
+
+  private val clock =
+    object : Clock() {
+      override fun getZone(): ZoneId = ZoneOffset.UTC
+
+      override fun withZone(zone: ZoneId): Clock = this
+
+      override fun instant(): Instant = now
+    }
+
+  private val service = RadioProgressService(clock)
+
+  private val name = "2026-10-24-1155-keskpaevatund"
+
+  private fun stage(
+    step: CutStep,
+    seconds: Double,
+    read: Int? = null,
+    programme: String = PROGRAMME,
+  ) = CutStage(programme, step, read, seconds)
+
+  @Test
+  fun `should report the read a programme is on with its percent and time left`() {
+    service.start(
+      name,
+      listOf(
+        stage(CutStep.SILENCE, 2.0),
+        stage(CutStep.READ, 3.5, 1),
+        stage(CutStep.READ, 3.5, 2),
+        stage(CutStep.READ, 3.5, 3),
+        stage(CutStep.BOUNDARIES, 1.0),
+        stage(CutStep.RENDER, 10.0),
+      ),
+    )
+    service.next(name, CutStep.SILENCE)
+    service.next(name, CutStep.READ)
+    now = now.plusSeconds(1)
+    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 2, 28, 17)))
+  }
+
+  @Test
+  fun `should cap a stage that overruns its estimate`() {
+    service.start(name, listOf(stage(CutStep.READ, 3.5, 1)))
+    now = now.plusSeconds(60)
+    expect(service.progress(name)).toEqual(mapOf(PROGRAMME to CutProgress(CutStep.READ, 1, 95, 1)))
+  }
+
+  @Test
+  fun `should show a programme whose stages are done while the run goes on`() {
+    service.start(
+      name,
+      listOf(
+        stage(CutStep.SILENCE, 1.0),
+        stage(CutStep.BOUNDARIES, 1.0),
+        stage(CutStep.BOUNDARIES, 1.0, programme = "Tarkade klubi"),
+        stage(CutStep.RENDER, 1.0, programme = "Tarkade klubi"),
+      ),
+    )
+    service.next(name, CutStep.SILENCE)
+    service.next(name, CutStep.BOUNDARIES)
+    expect(service.done(name) to service.current()).toEqual(setOf(PROGRAMME) to "Tarkade klubi")
+  }
+
+  @Test
+  fun `should stay on a stage when told another step is done`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 2.0), stage(CutStep.BOUNDARIES, 1.0)))
+    service.next(name, CutStep.DECODE)
+    expect(service.progress(name).getValue(PROGRAMME).step).toEqual(CutStep.SILENCE)
+  }
+
+  @Test
+  fun `should forget a run once it finishes`() {
+    service.start(name, listOf(stage(CutStep.SILENCE, 1.0)))
+    service.finish(name)
+    expect(service.progress(name) to service.current()).toEqual(emptyMap<String, CutProgress>() to null)
+  }
+
+  @Test
+  fun `should leave the reads out of the plan for a programme with a saved outline`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), listOf(PROGRAMME))
+    expect(stages(status, listOf(PROGRAMME), decode = false) { true }.map { it.step })
+      .toEqual(listOf(CutStep.SILENCE, CutStep.BOUNDARIES, CutStep.RENDER))
+  }
+
+  @Test
+  fun `should plan the decoding three reads and the render of a recording without pcm`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 600.0, listOf(RecordingPart("raw.mp3", 0.0)), listOf(PROGRAMME))
+    expect(stages(status, listOf(PROGRAMME), decode = true) { false }.map { it.step to it.seconds })
+      .toEqual(
+        listOf(
+          CutStep.DECODE to 3.1,
+          CutStep.SILENCE to 0.2,
+          CutStep.READ to 3.5,
+          CutStep.READ to 3.5,
+          CutStep.READ to 3.5,
+          CutStep.BOUNDARIES to 1.0,
+          CutStep.RENDER to 22.0,
+        ),
+      )
+  }
+
+  private fun chunks(vararg lines: String): RecordingStatus {
+    Files.writeString(directory.resolve("transcript.jsonl"), lines.joinToString("\n", postfix = "\n"))
+    return RecordingStatus(
+      RecordingState.RECORDING,
+      1000.0,
+      4200.0,
+      listOf(RecordingPart("raw.mp3", 0.0), RecordingPart("raw-part-002.mp3", 300.0)),
+      listOf("Digitund"),
+    )
+  }
+
+  @Test
+  fun `should measure the transcript written so far and the time it needs to finish`() {
+    val status =
+      chunks(
+        """{"part": "raw.mp3", "from": 0.0, "to": 299.18, "final": false, "segments": [{"text": "Mürgistus"}]}""",
+        """{"part": "raw-part-002.mp3", "from": 5.999, "to": 592.65, "final": false, "segments": []}""",
+      )
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(892.65, 4200.0, 21, 3706))
+  }
+
+  @Test
+  fun `should skip a half-written line of the transcript chunks`() {
+    val status =
+      chunks(
+        """{"part": "raw-part-002.mp3", "from": 5.999, "to": 592.65, "final": false, "segments": []}""",
+        """{"part": "raw-part-002.mp3", "from": 592.65, "to": 88""",
+      )
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000)).writtenSeconds).toEqual(892.65)
+  }
+
+  @Test
+  fun `should wait the whole recording when no transcript is written yet`() {
+    val status = chunks().also { Files.delete(directory.resolve("transcript.jsonl")) }
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(0.0, 4200.0, 0, 4200))
+  }
+
+  @Test
+  fun `should skip a line cut inside a multi-byte character`() {
+    val status = chunks("""{"part": "raw.mp3", "from": 0.0, "to": 299.18, "final": false, "segments": []}""")
+    val cut = """{"part": "raw.mp3", "from": 299.18, "to": 300.0, "segments": [{"text": "M""".toByteArray() + 0xC3.toByte()
+    Files.write(directory.resolve("transcript.jsonl"), cut, StandardOpenOption.APPEND)
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000)).writtenSeconds).toEqual(299.18)
+  }
+
+  @Test
+  fun `should leave the transcript chunks unread once the transcript is done`() {
+    Files.createDirectory(directory.resolve("transcript.jsonl"))
+    Files.writeString(directory.resolve(TRANSCRIPT_FILE), "[]")
+    val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), listOf(PROGRAMME))
+    expect(service.programmeCuts(directory, status, null, false).map { it.state }).toEqual(listOf(ProgrammeCutState.QUEUED))
+  }
+}
