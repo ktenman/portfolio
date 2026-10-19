@@ -39,6 +39,11 @@ class RadioStorageService(
     return StoredResource(minioClient, upload.bucket, key(directory, file), stored)
   }
 
+  fun delete(directory: Path) {
+    val upload = read<Upload>(directory.resolve(UPLOAD)) ?: return
+    (upload.files.keys + "").forEach { remove(directory, it) }
+  }
+
   private fun prepare() {
     val bucket = radioProperties.bucket
     if (minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) return

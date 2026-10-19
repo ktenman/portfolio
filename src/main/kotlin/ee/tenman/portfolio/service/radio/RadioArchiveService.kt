@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.exception.RecordingInProgressException
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
@@ -9,6 +10,8 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.deleteRecursively
 
 @Service
 class RadioArchiveService(
@@ -119,6 +122,18 @@ class RadioArchiveService(
     val directory = directory(name, STATUS_FILE) ?: return false
     require(choice.programme in readStatus(directory).programmes) { "Recording $name holds no programme ${choice.programme}" }
     Files.deleteIfExists(directory.resolve(FAILED))
+    return true
+  }
+
+  @Synchronized
+  @OptIn(ExperimentalPathApi::class)
+  fun delete(name: String): Boolean {
+    val directory = directory(name, STATUS_FILE) ?: return false
+    if (readStatus(directory).state == RecordingState.RECORDING) throw RecordingInProgressException(name)
+    radioStorageService.delete(directory)
+    val deleted = radioProperties.recordings.resolve(DELETED_FILE)
+    save(deleted, read<List<String>>(deleted).orEmpty() + name)
+    directory.deleteRecursively()
     return true
   }
 

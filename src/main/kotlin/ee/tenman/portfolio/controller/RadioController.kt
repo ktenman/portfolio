@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.exception.RecordingInProgressException
 import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.CutChoice
 import ee.tenman.portfolio.service.radio.CutContext
@@ -21,10 +22,12 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.CacheControl
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.MediaTypeFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -132,6 +135,14 @@ class RadioController(
     @PathVariable index: Int,
     @RequestBody review: JingleReview,
   ): ResponseEntity<Void> = done(radioArchiveService.jingle(name, index, review))
+
+  @DeleteMapping("/{name}")
+  fun deleteRecording(
+    @PathVariable name: String,
+  ): ResponseEntity<Void> = done(radioArchiveService.delete(name))
+
+  @ExceptionHandler(RecordingInProgressException::class)
+  fun handleRecordingInProgress(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.CONFLICT).build()
 
   @PutMapping("/{name}/transcript/checked")
   fun putTranscriptChecked(
