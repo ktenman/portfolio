@@ -56,7 +56,7 @@ const { data: station } = useRadioStation()
 
 const airing = (a: StationAiring) => range(a.start, 0, a.end - a.start)
 
-const visible = computed(() => route.name !== 'RadioListen')
+const visible = computed(() => player.live.value || !route.params.name)
 
 onMounted(() => audio.value && player.attach(audio.value))
 onBeforeUnmount(player.detach)

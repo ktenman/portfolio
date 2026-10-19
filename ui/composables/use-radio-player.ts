@@ -16,6 +16,7 @@ const current = ref(0)
 const playing = ref(false)
 const rate = ref(1)
 const volume = ref(1)
+const muted = ref(false)
 const lost = ref(false)
 let loaded = ''
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
@@ -129,8 +130,8 @@ const toggle = () => {
 
 const skip = (by: number) => seek(seconds.value + by)
 
-const playFrom = (at: number) => {
-  if (recording.value && version.value !== 'raw') load(recording.value, 'raw')
+const playFrom = (at: number, wanted: Version = 'raw') => {
+  if (recording.value && version.value !== wanted) load(recording.value, wanted)
   plan = null
   seek(at)
   play()
@@ -178,6 +179,7 @@ const attach = (audio: HTMLAudioElement) => {
   Object.entries(listeners).forEach(([name, listener]) => audio.addEventListener(name, listener))
   speed(audio, rate.value)
   audio.volume = volume.value
+  audio.muted = muted.value
   open()
 }
 
@@ -198,6 +200,7 @@ const detach = () => {
   current.value = 0
   playing.value = false
   lost.value = false
+  muted.value = false
   plan = null
 }
 
@@ -207,6 +210,10 @@ watch(rate, value => {
 
 watch(volume, value => {
   if (element.value) element.value.volume = value
+})
+
+watch(muted, value => {
+  if (element.value) element.value.muted = value
 })
 
 export const useRadioPlayer = () => ({
@@ -219,6 +226,7 @@ export const useRadioPlayer = () => ({
   playing,
   rate,
   volume,
+  muted,
   lost,
   rejoin,
   attach,
