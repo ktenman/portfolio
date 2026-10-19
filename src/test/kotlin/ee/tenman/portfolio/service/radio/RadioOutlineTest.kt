@@ -78,8 +78,21 @@ class RadioOutlineTest {
   }
 
   @Test
-  fun `should reject a read whose answer starts no line`() {
-    expect(match(outline(5.0, 50.0, listOf(70.0 to 80.0), 90.0), linesAt(5.0, 48.5, 70.0, 80.0, 90.0))).toEqual(null)
+  fun `should reject a read whose answer starts or ends no line`() {
+    expect(match(outline(5.0, 50.0, listOf(70.0 to 80.0), 90.0), linesAt(5.0, 47.5, 70.0, 80.0, 90.0))).toEqual(null)
+  }
+
+  @Test
+  fun `should move an answer given as the end of a line to that line`() {
+    val lines = linesAt(5.0, 50.0, 70.0, 80.0) + TranscriptLine(85.0, 92.3, "Kohtume nädala pärast.", emptyList())
+    expect(match(outline(5.0, 50.0, listOf(70.0 to 80.0), 92.3), lines)?.showEnd?.lastShowLineTime).toEqual(85.0)
+  }
+
+  @Test
+  fun `should move a topic starting inside a line to that line`() {
+    val read = outline(5.0, 50.0, listOf(70.0 to 80.0), 90.0).copy(chapters = listOf(OutlineChapter(75.5, "Skeletonist sai ükssarvik")))
+    val lines = linesAt(5.0, 50.0) + TranscriptLine(70.0, 79.0, "Lähme kohalike uudiste juurde.", emptyList()) + linesAt(80.0, 90.0)
+    expect(match(read, lines)?.chapters?.map { it.time }).toEqual(listOf(70.0))
   }
 
   @Test
