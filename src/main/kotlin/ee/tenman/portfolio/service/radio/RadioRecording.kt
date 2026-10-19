@@ -194,12 +194,18 @@ enum class CutState {
 enum class ProgrammeCutState {
   FOUND,
   FINDING,
+  QUEUED,
+  WAITING,
+  FAILED,
   NONE,
 }
 
 data class ProgrammeCuts(
   val name: String,
   val state: ProgrammeCutState,
+  val progress: CutProgress? = null,
+  val transcript: TranscriptProgress? = null,
+  val after: String? = null,
 )
 
 data class CutChoice(
