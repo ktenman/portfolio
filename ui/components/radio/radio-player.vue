@@ -1,22 +1,29 @@
 <template>
   <section class="card mb-4" data-testid="radio-player">
     <div class="card-body grid gap-4">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p class="mb-0 text-3xl font-semibold tabular-nums">
+      <div
+        class="flex flex-wrap items-end justify-between gap-3 max-md:grid max-md:grid-cols-[1fr_auto] max-md:items-center max-md:gap-y-4"
+      >
+        <div class="max-md:contents">
+          <p class="mb-0 text-3xl font-semibold tabular-nums max-md:col-span-2 max-md:row-start-2">
             {{ position(player.seconds.value) }}
-            <span class="text-ink-soft">/ {{ position(player.total.value) }}</span>
+            <span class="text-ink-soft max-md:text-lg max-md:font-normal">
+              / {{ position(player.total.value) }}
+            </span>
           </p>
-          <p class="mb-0 text-sm text-ink-soft">
-            Eetris {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
+          <p class="mb-0 text-sm text-ink-soft max-md:row-start-1">
+            Eetris
+            <span class="max-md:font-medium max-md:text-ink">
+              {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
+            </span>
           </p>
         </div>
-        <label class="flex w-full items-center gap-2 text-sm text-ink-soft md:w-auto">
-          Versioon
+        <label class="flex items-center gap-2 text-sm text-ink-soft max-md:row-start-1">
+          <span class="max-md:hidden">Versioon</span>
           <select
             v-model="version"
             aria-label="Versioon"
-            class="form-select form-select-sm w-auto grow max-md:py-2.5 md:grow-0"
+            class="form-select form-select-sm w-auto max-md:min-h-11 max-md:rounded-full max-md:py-2.5 max-md:font-medium"
           >
             <option value="raw">Toorsalvestus · {{ position(recording.status.seconds) }}</option>
             <option v-if="cleaned" value="episode">
@@ -62,17 +69,22 @@
       />
       <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
-        <div class="flex flex-wrap items-center gap-2">
-          <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
+        <div
+          class="flex flex-wrap items-center gap-2 max-md:w-full"
+          :class="{ 'max-md:hidden': !player.lost.value && !offerStart }"
+        >
+          <app-button v-if="player.lost.value" class="max-md:grow" @click="player.rejoin">
+            Tagasi praegusele
+          </app-button>
           <app-button
             v-if="raw && showStart !== null"
             data-testid="radio-show-start"
-            class="min-h-11 md:min-h-0"
+            class="min-h-11 max-md:grow md:min-h-0"
             @click="player.playFrom(showStart)"
           >
             Saate algusesse · {{ clock(recording.status.startedAt, showStart) }}
           </app-button>
-          <label class="flex items-center gap-2 text-sm text-ink-soft">
+          <label class="flex items-center gap-2 text-sm text-ink-soft max-md:hidden">
             Kiirus
             <select
               v-model.number="player.rate.value"
@@ -92,7 +104,7 @@ import { computed, onBeforeUnmount, useTemplateRef, watchEffect } from 'vue'
 import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
@@ -100,8 +112,6 @@ import RadioScrubber, { type Tick } from './radio-scrubber.vue'
 import RadioStrip from './radio-strip.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
-
-const RATES = [1, 1.25, 1.5, 2]
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
@@ -135,6 +145,7 @@ const chapter = computed(() => {
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null
 )
+const offerStart = computed(() => raw.value && showStart.value !== null)
 const showEnd = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.AFTER)?.start ?? null
 )

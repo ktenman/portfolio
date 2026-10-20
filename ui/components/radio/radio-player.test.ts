@@ -107,6 +107,24 @@ describe('RadioPlayer', () => {
     ]).toEqual(['true', true])
   })
 
+  it('should step the speed from the chip', async () => {
+    const wrapper = render()
+    player.rate.value = 1
+    const rates = []
+    for (let tap = 0; tap < 4; tap++) {
+      await wrapper.get('[data-testid="radio-speed"]').trigger('click')
+      rates.push(player.rate.value)
+    }
+    expect(rates).toEqual([1.25, 1.5, 2, 1])
+  })
+
+  it('should step an unlisted speed back to normal', async () => {
+    const wrapper = render()
+    player.rate.value = 1.75
+    await wrapper.get('[data-testid="radio-speed"]').trigger('click')
+    expect(player.rate.value).toBe(1)
+  })
+
   it('should speak the position in the recording as a clock', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
