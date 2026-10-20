@@ -110,19 +110,4 @@ describe('RadioResult', () => {
       'Puhastatud versiooni ei saanud teha: FFmpeg exited with 1 – õ'
     )
   })
-
-  it('should sum up the applied cuts on the cleaned episode', () => {
-    expect(render(recording(), 'episode').text()).toContain(
-      '4 lõiget rakendatud, kokku 22:51 eemaldatud. Puhastatud saade on 41:52.'
-    )
-  })
-
-  it('should switch to the raw recording from Muuda lõikeid', async () => {
-    await button(render(recording(), 'episode'), 'Muuda lõikeid')!.trigger('click')
-    expect(player.version.value).toBe('raw')
-  })
-
-  it('should show the render percent on the cleaned episode too', () => {
-    expect(meter(render(rendering, 'episode'))).toBe('57')
-  })
 })

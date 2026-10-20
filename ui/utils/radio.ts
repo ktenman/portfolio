@@ -258,14 +258,6 @@ export const cutState = (recording: RecordingSummary): string =>
 export const audioFormat = (format: AudioFormat | null): string =>
   format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
 
-export const dropNote = ({ drops, status }: RecordingSummary): string => {
-  const times = drops === 1 ? 'korra' : `${drops} korda`
-  const lost = status.lostSeconds
-    ? `${length(status.lostSeconds)} jäi salvestamata`
-    : 'midagi ei kadunud'
-  return `Voog katkes ${times}, ${lost}`
-}
-
 export const span = (recording: RecordingSummary): string =>
   range(recording.status.startedAt, 0, recording.status.seconds)
 
@@ -293,12 +285,15 @@ export const rawParts = (
   { timeline, cuts, status }: RecordingSummary,
   removed: number[]
 ): StripPart[] =>
-  timeline.map(entry => {
+  timeline.map((entry, i) => {
     const { start, end, title, cut } = entry
     const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
     const fate = out ? 'Eemaldatakse' : 'Jääb alles'
+    const before = timeline.slice(0, i).filter(e => !e.cut)
+    const resumed = !cut && before[before.length - 1]?.title === title
     return {
       ...named(entry),
+      ...(resumed && { name: null }),
       start,
       end,
       removed: out,

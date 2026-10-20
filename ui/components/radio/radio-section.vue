@@ -1,7 +1,6 @@
 <template>
   <section
     data-testid="radio-section"
-    :data-start="section.start"
     :aria-current="playing ? 'true' : undefined"
     class="scroll-mt-20 border-b border-hairline py-2 last:border-b-0"
   >

@@ -36,11 +36,6 @@ class RadioDownloadTest {
   }
 
   @Test
-  fun `should name the transcript after the programme and its day`() {
-    expect(downloadName("2026-10-17", status(), "transcript.srt", tallinn)).toEqual("Keskpäevatund 2026-10-17.srt")
-  }
-
-  @Test
   fun `should name a joined recording after every programme`() {
     val joined = status(programmes = listOf("Keskpäevatund", "Tarkade klubi"))
     expect(downloadName("2026-10-17", joined, "episode.m4a", tallinn)).toEqual("Keskpäevatund, Tarkade klubi 2026-10-17.m4a")

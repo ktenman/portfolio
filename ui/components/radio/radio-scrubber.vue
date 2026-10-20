@@ -1,23 +1,42 @@
 <template>
   <div>
     <div
-      class="relative h-4 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass max-md:h-7"
+      v-if="named.length"
+      data-testid="radio-timeline-labels"
+      class="mb-2 flex gap-0.5 max-md:hidden"
     >
-      <div class="absolute inset-x-0 top-1.5 h-1 rounded-full bg-hairline-strong max-md:hidden" />
       <div
-        class="pointer-events-none absolute top-1.5 left-0 h-1 rounded-full bg-ink max-md:hidden"
-        :style="{ width: `${share}%` }"
-      />
-      <div
-        class="pointer-events-none absolute top-0 size-4 -translate-x-1/2 rounded-full border-2 border-surface bg-ink shadow-control max-md:hidden"
-        :style="{ left: `${share}%` }"
-      />
-      <div class="absolute inset-x-0 top-2 flex h-3 gap-0.5 md:hidden">
+        v-for="part in parts"
+        :key="part.start"
+        class="@container min-w-0 basis-0"
+        :style="{ flexGrow: part.end - part.start }"
+      >
+        <button
+          v-if="part.name"
+          type="button"
+          data-testid="radio-timeline-label"
+          class="grid max-w-full cursor-pointer pr-2 text-left focus-visible:outline-2 focus-visible:outline-brass-deep @max-[2.5rem]:hidden"
+          :title="part.summary ?? undefined"
+          :aria-label="`${part.time} ${part.name}`"
+          :aria-current="now(part) ? 'true' : undefined"
+          @click="emit('play', part.start)"
+        >
+          <span class="text-label text-ink-soft tabular-nums">{{ part.time }}</span>
+          <span class="truncate text-sm @max-[6rem]:hidden" :class="tone(part)">
+            {{ part.name }}
+          </span>
+        </button>
+      </div>
+    </div>
+    <div
+      class="relative h-7 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass"
+    >
+      <div class="absolute inset-x-0 top-2 flex h-3 gap-0.5 md:top-2.5 md:h-2">
         <div
           v-for="part in parts"
           :key="part.start"
           data-testid="radio-timeline-part"
-          class="relative overflow-hidden rounded-sm"
+          class="relative min-w-0 basis-0 overflow-hidden rounded-sm"
           :class="part.removed ? HATCH : 'bg-hairline-strong'"
           :style="{ flexGrow: part.end - part.start }"
         >
@@ -29,7 +48,7 @@
         </div>
       </div>
       <div
-        class="pointer-events-none absolute top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface md:hidden"
+        class="pointer-events-none absolute top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface"
         :style="{ left: `${share}%` }"
       />
       <input
@@ -45,24 +64,6 @@
         @click="tap"
       />
     </div>
-    <div v-if="ticks?.length" class="relative mt-2 h-4 text-label text-ink-soft">
-      <span
-        v-if="caption"
-        data-testid="radio-timeline-caption"
-        class="absolute left-1/2 -translate-x-1/2 whitespace-nowrap md:hidden"
-      >
-        {{ caption }}
-      </span>
-      <span
-        v-for="tick in ticks"
-        :key="tick.at"
-        class="absolute whitespace-nowrap"
-        :class="[tick.phone ? '' : 'hidden md:inline', place(tick.at)]"
-        :style="{ left: `${(tick.at / total) * 100}%` }"
-      >
-        {{ tick.text }}
-      </span>
-    </div>
   </div>
 </template>
 
@@ -70,37 +71,45 @@
 import { computed } from 'vue'
 import { HATCH, position, type StripPart } from '../../utils/radio'
 
-export interface Tick {
-  at: number
-  text: string
-  phone?: boolean
-}
-
 const props = defineProps<{
   value: number
   total: number
   label: string
-  parts?: StripPart[]
-  caption?: string
-  ticks?: Tick[]
+  parts: StripPart[]
 }>()
 
-const emit = defineEmits<{ seek: [seconds: number] }>()
+const emit = defineEmits<{ seek: [seconds: number]; play: [start: number] }>()
 
-const at = (seconds: number) => (props.total ? Math.min(100, (seconds / props.total) * 100) : 0)
-const share = computed(() => at(props.value))
+const named = computed(() => props.parts.filter(part => part.name !== null))
+
+const share = computed(() => (props.total ? Math.min(100, (props.value / props.total) * 100) : 0))
+
+const here = computed(() =>
+  props.parts.find(part => part.start <= props.value && props.value < part.end)
+)
+
+const end = (part: StripPart) => {
+  const next = named.value.find(other => other.start > part.start)?.start ?? Infinity
+  const stretches = props.parts.filter(
+    other => other.title === part.title && other.start >= part.start && other.start < next
+  )
+  return Math.max(...stretches.map(stretch => stretch.end))
+}
+
+const now = (part: StripPart) =>
+  here.value?.title === part.title && part.start <= props.value && props.value < end(part)
 
 const played = (part: StripPart) =>
   Math.min(100, Math.max(0, ((props.value - part.start) / (part.end - part.start)) * 100))
+
+const tone = (part: StripPart) => {
+  if (now(part)) return 'font-semibold text-brass-deep'
+  return props.value >= end(part) ? 'text-ink-soft' : 'text-ink'
+}
 
 const tap = (event: MouseEvent) => {
   const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
   if (!box.width) return
   emit('seek', Math.round(((event.clientX - box.left) / box.width) * props.total))
-}
-
-const place = (at: number) => {
-  if (at <= 0) return ''
-  return at >= props.total ? '-translate-x-full' : '-translate-x-1/2'
 }
 </script>

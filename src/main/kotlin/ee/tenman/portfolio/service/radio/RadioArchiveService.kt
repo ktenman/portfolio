@@ -41,12 +41,6 @@ class RadioArchiveService(
     return sections(timelineOf(cuts, decided, status), cuts, audibleOf(directory, status, edit), lines)
   }
 
-  fun text(name: String): String? = spoken(name)?.joinToString("") { "${it.text.trim()}\n" }
-
-  fun subtitles(name: String): String? = spoken(name)?.let(::subtitles)
-
-  private fun spoken(name: String): List<TranscriptLine>? = transcript(name)?.filterNot { it.music }
-
   fun contexts(name: String): List<CutContext>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
     val cuts = cutsOf(directory)

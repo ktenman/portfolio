@@ -122,16 +122,6 @@ private fun sung(
   return letters.count { Character.UnicodeScript.of(it.code) != Character.UnicodeScript.LATIN } * 2 > letters.length
 }
 
-fun subtitles(lines: List<TranscriptLine>): String =
-  lines.withIndex().joinToString("") { (index, line) ->
-    "${index + 1}\n${timestamp(line.start)} --> ${timestamp(line.end)}\n${line.text.trim()}\n\n"
-  }
-
-private fun timestamp(seconds: Double): String {
-  val millis = round(seconds * 1000).toLong()
-  return "%02d:%02d:%02d,%03d".format(Locale.ROOT, millis / 3_600_000, millis / 60_000 % 60, millis / 1000 % 60, millis % 1000)
-}
-
 private fun fixed(
   value: Double,
   digits: Int,

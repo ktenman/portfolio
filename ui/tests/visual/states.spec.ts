@@ -231,7 +231,7 @@ test('the radio dock takes over once the player card scrolls away', async ({ pag
   await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
 })
 
-test('the radio topics stay in view while the text scrolls', async ({ page }, testInfo) => {
+test('the radio rail stays in view while the text scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await stubBuildInfo(page)
   await stubEnums(page)
@@ -239,9 +239,9 @@ test('the radio topics stay in view while the text scrolls', async ({ page }, te
   await page.setViewportSize({ width: 1280, height: 800 })
   await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
-  await expect(page.getByTestId('radio-topics')).toBeInViewport()
+  await expect(page.getByTestId('radio-detection')).toBeInViewport()
   await settleAndFreeze(page)
-  await expect(page).toHaveScreenshot('radio-topics-pinned.png')
+  await expect(page).toHaveScreenshot('radio-rail-pinned.png')
 })
 
 test('the raw radio recording shows the cut decisions', async ({ page }, testInfo) => {
@@ -250,7 +250,7 @@ test('the raw radio recording shows the cut decisions', async ({ page }, testInf
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
-  await page.getByRole('button', { name: 'Muuda lõikeid' }).click()
+  await page.getByLabel('Versioon').selectOption('raw')
   await expect(page.getByTestId('radio-cut').first()).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
   await settleAndFreeze(page)
