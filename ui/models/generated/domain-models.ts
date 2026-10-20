@@ -263,6 +263,7 @@ export interface RecordingSummary {
     cutState: CutState;
     drops: number;
     transcriptState: TranscriptState;
+    topics: TimelineEntry[];
 }
 
 export interface TranscriptLine {

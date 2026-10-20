@@ -242,6 +242,28 @@ fun sections(
     )
   }
 
+fun heard(
+  timeline: List<TimelineEntry>,
+  audible: List<KeptSpan>,
+): List<TimelineEntry> =
+  timeline
+    .mapNotNull { entry -> episodeStart(entry, audible)?.let { entry.copy(start = it, end = it + overlap(entry, audible)) } }
+    .fold(emptyList(), ::join)
+
+private fun overlap(
+  entry: TimelineEntry,
+  audible: List<KeptSpan>,
+): Double = audible.sumOf { maxOf(0.0, minOf(it.end, entry.end) - maxOf(it.start, entry.start)) }
+
+private fun join(
+  joined: List<TimelineEntry>,
+  entry: TimelineEntry,
+): List<TimelineEntry> {
+  val last = joined.lastOrNull()
+  if (last == null || last.title != entry.title || last.cut != entry.cut) return joined + entry
+  return joined.dropLast(1) + last.copy(end = entry.end)
+}
+
 private fun episodeStart(
   entry: TimelineEntry,
   audible: List<KeptSpan>,
