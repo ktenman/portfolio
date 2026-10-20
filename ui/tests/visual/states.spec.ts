@@ -9,7 +9,7 @@ import { stubDiversification, stubDiversificationWithLongFundName } from './dive
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
-import { stubRadio } from './radio-fixture'
+import { stubRadio, stubRadioLongText } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 import { stubWindows } from './windows-fixture'
@@ -229,6 +229,19 @@ test('the radio dock takes over once the player card scrolls away', async ({ pag
   await expect(page.getByTestId('radio-dock')).toBeInViewport()
   await settleAndFreeze(page)
   await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
+})
+
+test('the radio topics stay in view while the text scrolls', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioLongText(page)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await openRoute(page, '/radio/2026-10-17')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
+  await expect(page.getByTestId('radio-topics')).toBeInViewport()
+  await settleAndFreeze(page)
+  await expect(page).toHaveScreenshot('radio-topics-pinned.png')
 })
 
 test('the raw radio recording shows the cut decisions', async ({ page }, testInfo) => {
