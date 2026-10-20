@@ -56,12 +56,9 @@
         :at="player.seconds.value"
         @play="player.playFrom($event, player.version.value)"
       />
-      <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
+      <div ref="controls" class="grid gap-3">
         <radio-controls large />
-        <div
-          class="flex flex-wrap items-center gap-2 max-md:w-full"
-          :class="{ 'max-md:hidden': !player.lost.value && !offerStart }"
-        >
+        <div v-if="player.lost.value || offerStart" class="flex flex-wrap justify-center gap-2">
           <app-button v-if="player.lost.value" class="max-md:grow" @click="player.rejoin">
             Tagasi praegusele
           </app-button>
@@ -73,15 +70,6 @@
           >
             Saate algusesse · {{ clock(recording.status.startedAt, showStart) }}
           </app-button>
-          <label class="flex items-center gap-2 text-sm text-ink-soft max-md:hidden">
-            Kiirus
-            <select
-              v-model.number="player.rate.value"
-              class="form-select form-select-sm w-auto max-md:py-2.5"
-            >
-              <option v-for="rate in RATES" :key="rate" :value="rate">{{ rate }}×</option>
-            </select>
-          </label>
         </div>
       </div>
     </div>
@@ -93,7 +81,7 @@ import { computed, onBeforeUnmount, useTemplateRef, watchEffect } from 'vue'
 import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'

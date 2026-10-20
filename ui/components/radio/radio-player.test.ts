@@ -146,6 +146,32 @@ describe('RadioPlayer', () => {
     expect(player.rate.value).toBe(1)
   })
 
+  it('should leave speed to the chip alone', () => {
+    const selects = render().findAll('select')
+    expect(selects.map(select => select.attributes('aria-label'))).toEqual(['Versioon'])
+  })
+
+  it('should offer the speed chip at every width', () => {
+    expect(render().get('[data-testid="radio-speed"]').classes()).not.toContain('md:hidden')
+  })
+
+  it('should put the start of the show under the controls', () => {
+    const wrapper = render()
+    const pad = wrapper.get('[data-testid="radio-play"]').element.parentElement!.parentElement!
+    expect(pad.contains(wrapper.get('[data-testid="radio-show-start"]').element)).toBe(false)
+  })
+
+  it('should keep the phone pad in equal columns on a live stream', async () => {
+    const wrapper = render()
+    player.live.value = true
+    await wrapper.vm.$nextTick()
+    const pad = wrapper.get('[data-testid="radio-play"]').element.parentElement!.parentElement!
+    expect([pad.classList.contains('max-md:auto-cols-fr'), wrapper.text()]).toEqual([
+      true,
+      expect.not.stringContaining('15'),
+    ])
+  })
+
   it('should speak the position in the recording as a clock', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
