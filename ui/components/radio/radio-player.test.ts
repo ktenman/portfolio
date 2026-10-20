@@ -57,7 +57,7 @@ describe('RadioPlayer', () => {
   it('should play the episode part clicked on Puhastatud', async () => {
     const wrapper = render('episode')
     await parts(wrapper)[1]!.trigger('click')
-    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1358.5])
+    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1803.5])
   })
 
   const timeline = (wrapper: ReturnType<typeof render>) =>
@@ -71,17 +71,12 @@ describe('RadioPlayer', () => {
     expect(timeline(wrapper).map(hatched)).toEqual(parts(wrapper).map(hatched))
   })
 
-  it('should name the playing chapter under the phone timeline', async () => {
-    const item = recording()
-    const chapters = [
-      { start: 0, title: 'Algus' },
-      { start: 500, title: 'Õhtune jätk' },
-    ]
-    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
-    audio.currentTime = 600
+  it('should caption the phone timeline with the playing topic', async () => {
+    const wrapper = render('episode')
+    audio.currentTime = 2000
     audio.dispatchEvent(new Event('timeupdate'))
     await wrapper.vm.$nextTick()
-    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Peatükk 2')
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Teema 2/3')
   })
 
   it('should keep a played removed part faded on the phone timeline', async () => {
@@ -90,13 +85,17 @@ describe('RadioPlayer', () => {
     expect(timeline(wrapper).find(hatched)!.get('div').classes()).toContain('bg-ink/40')
   })
 
-  it('should leave the caption empty before the first chapter', async () => {
-    const item = recording()
-    const chapters = [{ start: 30, title: 'Algus' }]
-    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
-    audio.currentTime = 10
-    audio.dispatchEvent(new Event('timeupdate'))
-    await wrapper.vm.$nextTick()
+  it('should caption the first topic while a kept cut opens the episode', () => {
+    const [first, second] = recording().topics
+    const opening = { ...first!, end: 60, title: 'Enne saadet', cut: true }
+    const topics = [opening, { ...first!, start: 60 }, second!]
+    const wrapper = render('episode', recording({ topics }))
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Teema 1/2')
+  })
+
+  it('should leave the caption empty with a single topic', () => {
+    const topics = recording().topics.slice(0, 1)
+    const wrapper = render('episode', recording({ topics }))
     expect(wrapper.find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
   })
 
@@ -106,6 +105,22 @@ describe('RadioPlayer', () => {
     vi.spyOn(input.element, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 0, 200, 28))
     await input.trigger('click', { clientX: 160 })
     expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
+  })
+
+  it('should play the next topic from the playing topic', async () => {
+    const wrapper = render('episode')
+    const next = wrapper.findAll('button').find(button => button.text() === 'Järgmine teema →')
+    await next!.trigger('click')
+    expect(audio.currentTime).toBe(1803.5)
+  })
+
+  it('should not show the playing topic on the raw recording', () => {
+    expect(render().find('[data-testid="radio-now"]').exists()).toBe(false)
+  })
+
+  it('should leave out the strip while the recording has no parts yet', () => {
+    const wrapper = render('raw', recording({ timeline: [] }))
+    expect(wrapper.find('[data-testid="radio-strip"]').exists()).toBe(false)
   })
 
   it('should leave the caption empty on the raw recording', () => {

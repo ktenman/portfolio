@@ -9,7 +9,7 @@ Return:
 - showStart.opensWithMusic: true if the show opens with a song or theme music between those two lines that belongs to the show; false if there is no such music or it is not part of the show.
 - breaks: every ad break inside the show, in order. lastShowLineTime = the hosts' last line before the break; firstShowLineTime = the hosts' first line after it.
 - showEnd.lastShowLineTime: the hosts' last line, their sign-off.
-- chapters: the show's topics in order, each with the line where it begins and a short Estonian title of at most 6 words. The first chapter starts at the show start.
+- chapters: the show's topics in order, each with the line where it begins, a short Estonian title of at most 6 words, a label of 2 or 3 words for a timeline, and one Estonian sentence summarising what is said. The first chapter starts at the show start.
 - evidence: one or two sentences per decision, quoting the lines you relied on.
 
 Every time is the start time of a transcript line, exactly as printed (the first number on the line). Recognition errors are common, and songs can come out as garbled lyrics or text in other scripts.

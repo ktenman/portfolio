@@ -260,9 +260,10 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    cutState: CutState;
     drops: number;
     transcriptState: TranscriptState;
+    cutState: CutState;
+    topics: TimelineEntry[];
 }
 
 export interface TranscriptLine {
@@ -438,6 +439,8 @@ export interface TimelineEntry {
     end: number;
     title: string;
     cut: boolean;
+    label: string | null;
+    summary: string | null;
 }
 
 export interface KeptSpan {
@@ -536,6 +539,8 @@ export interface OutlineSummary {
 export interface EpisodeChapter {
     start: number;
     title: string;
+    label: string | null;
+    summary: string | null;
 }
 
 export interface CutJingle {
@@ -683,17 +688,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
+}
+
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
-}
-
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum RecorderState {

@@ -14,6 +14,7 @@ import {
   RecorderState,
   type RecordingSummary,
   RecordingState,
+  type TimelineEntry,
   type TranscriptSection,
   TranscriptState,
 } from '../models/generated/domain-models'
@@ -276,27 +277,52 @@ export interface StripPart {
   end: number
   removed: boolean
   label: string
+  title: string
+  name: string | null
+  summary: string | null
+  time: string
 }
+
+const named = ({ title, label, summary, cut }: TimelineEntry) => ({
+  title,
+  name: cut ? null : (label ?? title),
+  summary: summary ?? null,
+})
 
 export const rawParts = (
   { timeline, cuts, status }: RecordingSummary,
   removed: number[]
 ): StripPart[] =>
-  timeline.map(({ start, end, title, cut }) => {
+  timeline.map(entry => {
+    const { start, end, title, cut } = entry
     const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
     const fate = out ? 'Eemaldatakse' : 'Jääb alles'
     return {
+      ...named(entry),
       start,
       end,
       removed: out,
       label: `${title} ${range(status.startedAt, start, end)} · ${fate}`,
+      time: clock(status.startedAt, start),
     }
   })
 
-export const episodeParts = ({ audible }: RecordingSummary): StripPart[] =>
-  audible.reduce<StripPart[]>((parts, { start, end }, i) => {
-    const from = parts[i - 1]?.end ?? 0
-    const to = from + end - start
-    const label = `Osa ${i + 1} ${position(from)}–${position(to)}`
-    return [...parts, { start: from, end: to, removed: false, label }]
+export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
+  topics.reduce<StripPart[]>((parts, entry) => {
+    const heard = parts.filter(part => part.name !== null)
+    const resumed = !entry.cut && heard[heard.length - 1]?.title === entry.title
+    const number = heard.length + (resumed ? 0 : 1)
+    const lead = entry.cut ? entry.title : `Teema ${number}: ${entry.title}`
+    const part = {
+      ...named(entry),
+      start: entry.start,
+      end: entry.end,
+      removed: false,
+      label: `${lead} · ${position(entry.start)}`,
+      time: position(entry.start),
+    }
+    return [...parts, resumed ? { ...part, name: null } : part]
   }, [])
+
+export const topicAt = (topics: StripPart[], at: number): number =>
+  Math.max(0, topics.filter(topic => topic.start <= at).length - 1)

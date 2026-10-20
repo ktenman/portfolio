@@ -55,6 +55,8 @@ data class TimelineEntry(
   val end: Double,
   val title: String,
   val cut: Boolean,
+  val label: String? = null,
+  val summary: String? = null,
 )
 
 data class TranscriptSection(
@@ -216,10 +218,10 @@ private fun split(
   topics: List<EpisodeChapter>,
   title: String,
 ): List<TimelineEntry> {
-  val opening = EpisodeChapter(kept.start, topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.title ?: title)
+  val opening = topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.copy(start = kept.start) ?: EpisodeChapter(kept.start, title)
   val marks = listOf(opening) + topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
   val ends = marks.drop(1).map { it.start } + kept.end
-  return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false) }
+  return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false, mark.label, mark.summary) }
 }
 
 fun sections(
@@ -239,6 +241,28 @@ fun sections(
       lines = lines.filter { it.start >= entry.start && (last || it.start < entry.end) },
     )
   }
+
+fun heard(
+  timeline: List<TimelineEntry>,
+  audible: List<KeptSpan>,
+): List<TimelineEntry> =
+  timeline
+    .mapNotNull { entry -> episodeStart(entry, audible)?.let { entry.copy(start = it, end = it + overlap(entry, audible)) } }
+    .fold(emptyList(), ::join)
+
+private fun overlap(
+  entry: TimelineEntry,
+  audible: List<KeptSpan>,
+): Double = audible.sumOf { maxOf(0.0, minOf(it.end, entry.end) - maxOf(it.start, entry.start)) }
+
+private fun join(
+  joined: List<TimelineEntry>,
+  entry: TimelineEntry,
+): List<TimelineEntry> {
+  val last = joined.lastOrNull()
+  if (last == null || last.title != entry.title || last.cut != entry.cut) return joined + entry
+  return joined.dropLast(1) + last.copy(end = entry.end)
+}
 
 private fun episodeStart(
   entry: TimelineEntry,

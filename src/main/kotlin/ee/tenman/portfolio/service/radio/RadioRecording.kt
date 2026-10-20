@@ -185,6 +185,9 @@ data class RecordingSummary(
   val drops: Int
     get() = (status.parts.size - 1).coerceAtLeast(0)
 
+  val topics: List<TimelineEntry>
+    get() = heard(timeline, audible)
+
   val transcriptState: TranscriptState
     get() =
       when {

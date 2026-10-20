@@ -54,7 +54,7 @@ class RadioEpisodeServiceTest {
     ShowStart(before, first, false, "Tere."),
     emptyList(),
     ShowEnd(end, "Head aega."),
-    listOf(OutlineChapter(first, "Ooperikriis")),
+    listOf(OutlineChapter(first, "Ooperikriis", "Ooper", "Ooperi tüli.")),
   )
 
   private fun transcribed(vararg starts: Double) {
@@ -222,8 +222,8 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should store the outline topics on the recording clock`() {
-    expect(rendered().topics).toEqual(listOf(EpisodeChapter(5.0, "Ooperikriis")))
+  fun `should store the outline topics with their labels on the recording clock`() {
+    expect(rendered().topics).toEqual(listOf(EpisodeChapter(5.0, "Ooperikriis", "Ooper", "Ooperi tüli.")))
   }
 
   @Test

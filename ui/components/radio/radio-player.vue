@@ -32,11 +32,10 @@
           </select>
         </label>
       </div>
-      <div class="grid gap-2 max-md:hidden">
+      <div v-if="parts.length" class="grid gap-2 max-md:hidden">
         <radio-strip
           :parts="parts"
           :at="player.seconds.value"
-          :marks="marks"
           @play="player.playFrom($event, player.version.value)"
         />
         <p class="mb-0 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft">
@@ -50,10 +49,6 @@
               Jääb alles
             </span>
           </template>
-          <span v-else-if="marks.length" class="flex items-center gap-1.5">
-            <span class="h-3 w-0.5 bg-brass" />
-            Peatükk
-          </span>
           <span>Klõpsa osal, et seda kuulata</span>
         </p>
       </div>
@@ -61,11 +56,16 @@
         :value="player.seconds.value"
         :total="player.total.value"
         :parts="parts"
-        :marks="marks"
-        :caption="chapter"
+        :caption="topic"
         :ticks="ticks"
         label="Asukoht salvestuses"
         @seek="player.seek"
+      />
+      <radio-now
+        v-if="!raw"
+        :parts="parts"
+        :at="player.seconds.value"
+        @play="player.playFrom($event, player.version.value)"
       />
       <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
@@ -105,9 +105,10 @@ import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
+import { clock, episodeParts, HATCH, position, rawParts, topicAt } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
+import RadioNow from './radio-now.vue'
 import RadioScrubber, { type Tick } from './radio-scrubber.vue'
 import RadioStrip from './radio-strip.vue'
 
@@ -135,12 +136,10 @@ const version = computed({
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
-const marks = computed(() =>
-  raw.value ? [] : (props.recording.editList?.chapters ?? []).map(chapter => chapter.start)
-)
-const chapter = computed(() => {
-  const count = marks.value.filter(mark => mark <= player.seconds.value).length
-  return count ? `Peatükk ${count}` : ''
+const topic = computed(() => {
+  const topics = raw.value ? [] : parts.value.filter(part => part.name !== null)
+  const number = topicAt(topics, player.seconds.value) + 1
+  return topics.length > 1 ? `Teema ${number}/${topics.length}` : ''
 })
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null

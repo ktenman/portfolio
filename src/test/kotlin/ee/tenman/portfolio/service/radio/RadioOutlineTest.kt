@@ -96,6 +96,21 @@ class RadioOutlineTest {
   }
 
   @Test
+  fun `should read a chapter's label and summary`() {
+    val chapter = OutlineChapter(50.0, "Rahvusooper Estonia", "Ooper", "Ooperi tüli.")
+    val read = JsonMapperFactory.instance.writeValueAsString(outline(5.0, 50.0, emptyList(), 90.0).copy(chapters = listOf(chapter)))
+    expect(parse(read)?.chapters).toEqual(listOf(chapter))
+  }
+
+  @Test
+  fun `should read an outline saved before chapters had labels`() {
+    val read =
+      """{"hosts":[],"showStart":{"lastNonShowLineTime":5.0,"firstSpeechTime":50.0,"opensWithMusic":false,"evidence":"Tere."},""" +
+        """"breaks":[],"showEnd":{"lastShowLineTime":90.0,"evidence":"Head aega."},"chapters":[{"time":50.0,"title":"Ooperikriis"}]}"""
+    expect(parse(read)?.chapters?.single()?.label).toEqual(null)
+  }
+
+  @Test
   fun `should reject a read that lacks a field`() {
     val read = JsonMapperFactory.instance.writeValueAsString(outline(5.0, 50.0, emptyList(), 90.0))
     val broken = read.replace(Regex(""","showEnd":\{[^}]*}"""), "")
