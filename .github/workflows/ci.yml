@@ -235,9 +235,19 @@ jobs:
           retention-days: 7
 
   visual:
-    name: 🖼️ Visual Regression Tests
+    name: 🖼️ Visual Regression Tests (${{ matrix.viewport }})
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - viewport: mobile
+            projects: --project=mobile --project=holdings-mobile --project=monthly-mobile
+          - viewport: tablet
+            projects: --project=tablet --project=monthly-tablet
+          - viewport: desktop
+            projects: --project=desktop --project=holdings-desktop --project=monthly-desktop
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
       options: --ipc=host
@@ -253,12 +263,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Run visual regression tests
-        run: npx playwright test
+        run: npx playwright test ${{ matrix.projects }}
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
         with:
-          name: Visual Regression Diffs
+          name: Visual Regression Diffs ${{ matrix.viewport }}
           path: test-results/
           retention-days: 7
 
@@ -295,8 +305,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }}
-    needs: [lint, test, detect-changes]
-    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [lint, test, visual, detect-changes]
+    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' && needs.visual.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -470,7 +480,7 @@ jobs:
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot
-    needs: [lint, test]
+    needs: [lint, test, visual]
     if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
