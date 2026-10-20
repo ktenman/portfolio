@@ -84,6 +84,30 @@ describe('RadioPlayer', () => {
     expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Peatükk 2')
   })
 
+  it('should keep a played removed part faded on the phone timeline', async () => {
+    const wrapper = render()
+    await parts(wrapper)[3]!.trigger('click')
+    expect(timeline(wrapper).find(hatched)!.get('div').classes()).toContain('bg-ink/40')
+  })
+
+  it('should leave the caption empty before the first chapter', async () => {
+    const item = recording()
+    const chapters = [{ start: 30, title: 'Algus' }]
+    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
+    audio.currentTime = 10
+    audio.dispatchEvent(new Event('timeupdate'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
+  })
+
+  it('should jump to the spot tapped on the timeline', async () => {
+    const wrapper = render()
+    const input = wrapper.get('input[aria-label="Asukoht salvestuses"]')
+    vi.spyOn(input.element, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 0, 200, 28))
+    await input.trigger('click', { clientX: 160 })
+    expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
+  })
+
   it('should leave the caption empty on the raw recording', () => {
     expect(render().find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
   })

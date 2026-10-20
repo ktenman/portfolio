@@ -48,6 +48,7 @@
         :aria-label="label"
         :aria-valuetext="`${position(value)} / ${position(total)}`"
         @input="emit('seek', Number(($event.target as HTMLInputElement).value))"
+        @click="tap"
       />
     </div>
     <div v-if="ticks?.length" class="relative mt-2 h-4 text-label text-ink-soft">
@@ -98,6 +99,12 @@ const share = computed(() => at(props.value))
 
 const played = (part: StripPart) =>
   Math.min(100, Math.max(0, ((props.value - part.start) / (part.end - part.start)) * 100))
+
+const tap = (event: MouseEvent) => {
+  const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  if (!box.width) return
+  emit('seek', Math.round(((event.clientX - box.left) / box.width) * props.total))
+}
 
 const place = (at: number) => {
   if (at <= 0) return ''
