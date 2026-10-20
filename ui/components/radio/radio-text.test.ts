@@ -304,8 +304,14 @@ describe('RadioText', () => {
     return wrapper
   }
 
+  const scrollable = (wrapper: Awaited<ReturnType<typeof render>>) =>
+    Object.defineProperty(wrapper.get('[data-testid="radio-rail"]').element, 'scrollHeight', {
+      value: 900,
+    })
+
   it('should keep following when the topics are scrolled', async () => {
     const wrapper = await attached()
+    scrollable(wrapper)
     await hear(wrapper, 762.5)
     wrapper
       .get('[data-testid="radio-topics"]')
@@ -315,9 +321,19 @@ describe('RadioText', () => {
 
   it('should keep following when a key scrolls the topics', async () => {
     const wrapper = await attached()
+    scrollable(wrapper)
     await hear(wrapper, 762.5)
     await rail(wrapper)[0].trigger('keydown', { key: 'ArrowDown' })
     expect(player.lost.value).toBe(false)
+  })
+
+  it('should stop following after a wheel on topics that cannot scroll', async () => {
+    const wrapper = await attached()
+    await hear(wrapper, 762.5)
+    wrapper
+      .get('[data-testid="radio-topics"]')
+      .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
+    expect(player.lost.value).toBe(true)
   })
 
   it('should scroll the topics to the playing topic', async () => {

@@ -219,7 +219,10 @@ const reveal = () => {
   if (delta) rail.value.scrollBy({ top: delta, behavior: behavior() })
 }
 
-const inside = ({ target }: Event) => target instanceof Node && !!rail.value?.contains(target)
+const inside = ({ target }: Event) =>
+  target instanceof Node &&
+  !!rail.value?.contains(target) &&
+  rail.value.scrollHeight > rail.value.clientHeight
 
 const lose = (event: Event) => {
   if (inside(event)) return
