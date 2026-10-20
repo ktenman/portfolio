@@ -5,7 +5,7 @@ FROM node:24-slim AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN ONNXRUNTIME_NODE_INSTALL=skip npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -22,7 +22,7 @@ RUN chmod +x /usr/local/bin/curl_ff117 /usr/local/bin/curl-impersonate-ff
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev && \
+RUN ONNXRUNTIME_NODE_INSTALL=skip npm ci --omit=dev && \
     rm -rf node_modules/onnxruntime-node/bin/napi-v6/darwin \
            node_modules/onnxruntime-node/bin/napi-v6/win32 \
            ~/.npm
