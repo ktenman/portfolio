@@ -61,6 +61,12 @@
         label="Asukoht salvestuses"
         @seek="player.seek"
       />
+      <radio-now
+        v-if="!raw"
+        :parts="parts"
+        :at="player.seconds.value"
+        @play="player.playFrom($event, player.version.value)"
+      />
       <div ref="controls" class="flex flex-wrap items-center justify-between gap-3">
         <radio-controls large />
         <div
@@ -102,6 +108,7 @@ import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio
 import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
+import RadioNow from './radio-now.vue'
 import RadioScrubber, { type Tick } from './radio-scrubber.vue'
 import RadioStrip from './radio-strip.vue'
 

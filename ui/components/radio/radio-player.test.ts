@@ -99,6 +99,17 @@ describe('RadioPlayer', () => {
     expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
   })
 
+  it('should play the next topic from the playing topic', async () => {
+    const wrapper = render('episode')
+    const next = wrapper.findAll('button').find(button => button.text() === 'Järgmine teema →')
+    await next!.trigger('click')
+    expect(audio.currentTime).toBe(1803.5)
+  })
+
+  it('should not show the playing topic on the raw recording', () => {
+    expect(render().find('[data-testid="radio-now"]').exists()).toBe(false)
+  })
+
   it('should leave the caption empty on the raw recording', () => {
     expect(render().find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
   })
