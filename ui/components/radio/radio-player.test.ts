@@ -60,6 +60,58 @@ describe('RadioPlayer', () => {
     expect([player.version.value, audio.currentTime]).toEqual(['episode', 1358.5])
   })
 
+  const timeline = (wrapper: ReturnType<typeof render>) =>
+    wrapper.findAll('[data-testid="radio-timeline-part"]')
+
+  const hatched = (part: { classes: () => string[] }) =>
+    part.classes().join(' ').includes('repeating-linear-gradient')
+
+  it('should hatch a removed part on the phone timeline', () => {
+    const wrapper = render()
+    expect(timeline(wrapper).map(hatched)).toEqual(parts(wrapper).map(hatched))
+  })
+
+  it('should name the playing chapter under the phone timeline', async () => {
+    const item = recording()
+    const chapters = [
+      { start: 0, title: 'Algus' },
+      { start: 500, title: 'Õhtune jätk' },
+    ]
+    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
+    audio.currentTime = 600
+    audio.dispatchEvent(new Event('timeupdate'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Peatükk 2')
+  })
+
+  it('should keep a played removed part faded on the phone timeline', async () => {
+    const wrapper = render()
+    await parts(wrapper)[3]!.trigger('click')
+    expect(timeline(wrapper).find(hatched)!.get('div').classes()).toContain('bg-ink/40')
+  })
+
+  it('should leave the caption empty before the first chapter', async () => {
+    const item = recording()
+    const chapters = [{ start: 30, title: 'Algus' }]
+    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
+    audio.currentTime = 10
+    audio.dispatchEvent(new Event('timeupdate'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
+  })
+
+  it('should jump to the spot tapped on the timeline', async () => {
+    const wrapper = render()
+    const input = wrapper.get('input[aria-label="Asukoht salvestuses"]')
+    vi.spyOn(input.element, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 0, 200, 28))
+    await input.trigger('click', { clientX: 160 })
+    expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
+  })
+
+  it('should leave the caption empty on the raw recording', () => {
+    expect(render().find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
+  })
+
   it('should offer the start of the show only on the raw recording', () => {
     expect(render('episode').find('[data-testid="radio-show-start"]').exists()).toBe(false)
   })
@@ -77,6 +129,24 @@ describe('RadioPlayer', () => {
       wrapper.find('button[aria-label="Vaigista"]').attributes('aria-pressed'),
       player.muted.value,
     ]).toEqual(['true', true])
+  })
+
+  it('should step the speed from the chip', async () => {
+    const wrapper = render()
+    player.rate.value = 1
+    const rates = []
+    for (let tap = 0; tap < 4; tap++) {
+      await wrapper.get('[data-testid="radio-speed"]').trigger('click')
+      rates.push(player.rate.value)
+    }
+    expect(rates).toEqual([1.25, 1.5, 2, 1])
+  })
+
+  it('should step an unlisted speed back to normal', async () => {
+    const wrapper = render()
+    player.rate.value = 1.75
+    await wrapper.get('[data-testid="radio-speed"]').trigger('click')
+    expect(player.rate.value).toBe(1)
   })
 
   it('should speak the position in the recording as a clock', () => {
