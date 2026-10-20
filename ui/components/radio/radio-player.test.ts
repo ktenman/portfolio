@@ -55,7 +55,7 @@ describe('RadioPlayer', () => {
   it('should play the raw topic clicked on Toorsalvestus', async () => {
     const wrapper = render()
     await labels(wrapper)[1]!.trigger('click')
-    expect([player.version.value, player.recordingSeconds.value]).toEqual(['raw', 2255])
+    expect([player.version.value, player.recordingSeconds.value]).toEqual(['raw', 2700])
   })
 
   it('should play the episode topic clicked on Puhastatud', async () => {

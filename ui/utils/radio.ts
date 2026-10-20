@@ -293,12 +293,15 @@ export const rawParts = (
   { timeline, cuts, status }: RecordingSummary,
   removed: number[]
 ): StripPart[] =>
-  timeline.map(entry => {
+  timeline.map((entry, i) => {
     const { start, end, title, cut } = entry
     const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
     const fate = out ? 'Eemaldatakse' : 'Jääb alles'
+    const before = timeline.slice(0, i).filter(e => !e.cut)
+    const resumed = !cut && before[before.length - 1]?.title === title
     return {
       ...named(entry),
+      ...(resumed && { name: null }),
       start,
       end,
       removed: out,

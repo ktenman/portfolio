@@ -198,6 +198,20 @@ describe('rawParts names', () => {
   it('should name a kept raw part by its label', () => {
     expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
   })
+
+  it('should name a raw topic resumed after a break once', () => {
+    expect(rawParts(recording(), []).map(part => part.name)).toEqual([
+      null,
+      'Ooperitüli',
+      null,
+      null,
+      'Poliitika',
+      null,
+      null,
+      'Ülle Madise',
+      null,
+    ])
+  })
 })
 
 describe('episodeParts', () => {
