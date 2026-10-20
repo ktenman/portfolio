@@ -1,8 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
+import RadioResult from './radio-result.vue'
 import RadioText from './radio-text.vue'
 import { recording, sections, song, transcript } from './radio-fixture'
 import type { RecordingSummary } from '../../models/generated/domain-models'
@@ -62,9 +63,6 @@ describe('RadioText', () => {
   const headings = (wrapper: Awaited<ReturnType<typeof render>>) =>
     wrapper.findAll('[data-testid="radio-section-heading"]').map(h => h.text())
 
-  const rail = (wrapper: Awaited<ReturnType<typeof render>>) =>
-    wrapper.find('[data-testid="radio-topics"]').findAll('[data-testid="radio-topic"]')
-
   it('should show a heading for each topic with its time and length', async () => {
     expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli23 min')
   })
@@ -92,12 +90,6 @@ describe('RadioText', () => {
     expect(audio.currentTime).toBe(2255)
   })
 
-  it('should drop headings without matching lines when searching', async () => {
-    const wrapper = await render()
-    await wrapper.find('input[type="search"]').setValue('jätkab')
-    expect(headings(wrapper)).toEqual(['12:32Rahvusooperi tüli7 min'])
-  })
-
   it('should mark the playing topic without a badge', async () => {
     const wrapper = await render()
     await hear(wrapper, 2257)
@@ -120,37 +112,6 @@ describe('RadioText', () => {
     expect(lines(wrapper)).toHaveLength(3)
   })
 
-  it('should list each topic once in Teemad with its length', async () => {
-    expect(rail(await render())[1].text()).toBe('12:07Rahvusooperi tüli 23 min')
-  })
-
-  it('should mark a cut lõige in Teemad on the raw recording', async () => {
-    expect(rail(await render())[0].text()).toContain('lõige')
-  })
-
-  it('should play and scroll to a topic picked from Teemad', async () => {
-    const wrapper = await render()
-    await rail(wrapper)[3].trigger('click')
-    await wrapper.vm.$nextTick()
-    expect([audio.currentTime, scrolled().length > 0]).toEqual([2255, true])
-  })
-
-  it('should offer Teemad as chips above the search', async () => {
-    const chips = (await render()).find('[data-testid="radio-topic-chips"]')
-    expect(chips.findAll('[data-testid="radio-topic"]')).toHaveLength(9)
-  })
-
-  it('should list the ad breaks the machine found', async () => {
-    expect((await render()).find('[data-testid="radio-ads"]').text()).toContain(
-      '12:30–12:322 min 15 s'
-    )
-  })
-
-  it('should say no ad break was found when the machine found none', async () => {
-    const wrapper = await render(recording({ cuts: [] }))
-    expect(wrapper.find('[data-testid="radio-ads"]').text()).toContain('Ei leitud')
-  })
-
   it('should name the model that found the topics and breaks', async () => {
     expect((await render()).find('[data-testid="radio-detection"]').text()).toContain(
       'deepseek/deepseek-v4-flash'
@@ -165,19 +126,6 @@ describe('RadioText', () => {
     const [first, ...rest] = transcript()
     vi.mocked(radioService.transcript).mockResolvedValue(sections([first, song(), ...rest]))
     expect(lines(await render())[1].text()).toBe('12:08:15Muusika')
-  })
-
-  it('should leave music out of the search', async () => {
-    vi.mocked(radioService.transcript).mockResolvedValue(sections([song()]))
-    const wrapper = await render()
-    await wrapper.find('input[type="search"]').setValue('Muusika')
-    expect(lines(wrapper)).toHaveLength(0)
-  })
-
-  it('should keep only the lines that contain the search', async () => {
-    const wrapper = await render()
-    await wrapper.find('input[type="search"]').setValue('KESKPÄEVATUND')
-    expect(lines(wrapper).map(l => l.text())).toEqual(['12:32:36Ja Keskpäevatund jätkab.'])
   })
 
   it('should play the recording from the time of a line', async () => {
@@ -207,6 +155,32 @@ describe('RadioText', () => {
 
   it('should not label a transcript that is there', async () => {
     expect((await render()).find('[data-testid="radio-transcript"]').text()).not.toContain('Olemas')
+  })
+
+  it('should offer no text search', async () => {
+    expect((await render()).find('input[type="search"]').exists()).toBe(false)
+  })
+
+  it('should list the topics only in the text', async () => {
+    expect((await render()).find('[data-testid="radio-topic"]').exists()).toBe(false)
+  })
+
+  it('should put the downloads in the Tekst heading', async () => {
+    const card = (await render()).get('[data-testid="radio-transcript"]')
+    expect(card.findAll('a[download]').map(a => a.text())).toEqual(['SRT', 'TXT'])
+  })
+
+  it('should leave out the cut summary on the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    expect((await render()).findComponent(RadioResult).exists()).toBe(false)
+  })
+
+  it('should keep the cut summary on the raw recording', async () => {
+    expect((await render()).findComponent(RadioResult).exists()).toBe(true)
+  })
+
+  it('should leave out the ad breaks', async () => {
+    expect((await render()).find('[data-testid="radio-ads"]').exists()).toBe(false)
   })
 
   it('should offer the transcript as subtitles and as text', async () => {
@@ -252,14 +226,6 @@ describe('RadioText', () => {
     expect(scrolled()).toEqual([lines(wrapper)[2].element])
   })
 
-  it('should not follow while the search filters the text', async () => {
-    const wrapper = await render()
-    play()
-    await wrapper.find('input[type="search"]').setValue('Tere')
-    await hear(wrapper, 762.5)
-    expect(scrolled()).toEqual([])
-  })
-
   it('should stop following after a wheel scroll', async () => {
     const wrapper = await render()
     play()
@@ -276,7 +242,7 @@ describe('RadioText', () => {
     expect(player.lost.value).toBe(true)
   })
 
-  it('should not stop following on keys typed into the search box', async () => {
+  it('should not stop following on a space pressed on a heading', async () => {
     const wrapper = mount(RadioText, {
       props: { recording: recording() },
       attachTo: document.body,
@@ -284,7 +250,7 @@ describe('RadioText', () => {
     })
     await flushPromises()
     await hear(wrapper, 762.5)
-    await wrapper.find('input[type="search"]').trigger('keydown', { key: ' ' })
+    await wrapper.get('[data-testid="radio-section-heading"]').trigger('keydown', { key: ' ' })
     expect(player.lost.value).toBe(false)
   })
 
@@ -309,47 +275,31 @@ describe('RadioText', () => {
       value: 900,
     })
 
-  it('should keep following when the topics are scrolled', async () => {
+  it('should keep following when the rail is scrolled', async () => {
     const wrapper = await attached()
     scrollable(wrapper)
     await hear(wrapper, 762.5)
     wrapper
-      .get('[data-testid="radio-topics"]')
+      .get('[data-testid="radio-detection"]')
       .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
     expect(player.lost.value).toBe(false)
   })
 
-  it('should keep following when a key scrolls the topics', async () => {
+  it('should keep following when a key scrolls the rail', async () => {
     const wrapper = await attached()
     scrollable(wrapper)
     await hear(wrapper, 762.5)
-    await rail(wrapper)[0].trigger('keydown', { key: 'ArrowDown' })
+    await wrapper.get('[data-testid="radio-detection"]').trigger('keydown', { key: 'ArrowDown' })
     expect(player.lost.value).toBe(false)
   })
 
-  it('should stop following after a wheel on topics that cannot scroll', async () => {
+  it('should stop following after a wheel on a rail that cannot scroll', async () => {
     const wrapper = await attached()
     await hear(wrapper, 762.5)
     wrapper
-      .get('[data-testid="radio-topics"]')
+      .get('[data-testid="radio-detection"]')
       .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
     expect(player.lost.value).toBe(true)
-  })
-
-  it('should scroll the topics to the playing topic', async () => {
-    const scrollBy = vi.fn()
-    HTMLElement.prototype.scrollBy = scrollBy
-    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-    onTestFinished(() => rect.mockRestore())
-    rect.mockImplementation(function (this: HTMLElement) {
-      if (this.dataset.testid === 'radio-rail') return new DOMRect(0, 0, 320, 300)
-      if (this.dataset.testid === 'radio-topic' && this.getAttribute('aria-current'))
-        return new DOMRect(0, 400, 320, 40)
-      return new DOMRect()
-    })
-    const wrapper = await render()
-    await hear(wrapper, 2701)
-    expect(scrollBy).toHaveBeenLastCalledWith({ top: 140, behavior: 'smooth' })
   })
 
   it('should follow again after going back to the playing line', async () => {

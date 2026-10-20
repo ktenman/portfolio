@@ -1,12 +1,8 @@
 <template>
-  <radio-card :title="raw ? 'Tulemus' : 'Lõiked'">
-    <div v-if="raw" data-testid="radio-cut-result">
+  <radio-card title="Tulemus">
+    <div data-testid="radio-cut-result">
       <radio-facts :rows="facts" />
     </div>
-    <p v-else class="mb-0">
-      {{ removed.length }} lõiget rakendatud, kokku {{ position(cutSeconds) }} eemaldatud.
-      Puhastatud saade on {{ position(recording.editList?.durationSeconds ?? 0) }}.
-    </p>
     <div v-if="rendered" class="mt-3 grid gap-2">
       <div
         role="progressbar"
@@ -40,15 +36,10 @@
       Puhastatud versioon on ajakohane
     </p>
     <div class="mt-3 flex flex-wrap gap-2">
-      <app-button v-if="raw" :disabled="machine" @click="decisions.reset">Lähtesta</app-button>
-      <app-button v-else @click="player.load(recording, 'raw')">Muuda lõikeid</app-button>
+      <app-button :disabled="machine" @click="decisions.reset">Lähtesta</app-button>
     </div>
     <p class="mt-3 mb-0 text-sm text-ink-soft">
-      {{
-        raw
-          ? 'Toorsalvestus jääb muutmata. Otsused salvestuvad ise.'
-          : 'Avab toorsalvestuse koos lõigete ja otsustega.'
-      }}
+      Toorsalvestus jääb muutmata. Otsused salvestuvad ise.
     </p>
   </radio-card>
 </template>
@@ -57,7 +48,6 @@
 import { computed } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useElapsed } from '../../composables/use-radio-recordings'
 import { advance, left, position } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
@@ -69,10 +59,8 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const UPDATING = 'Uuendan puhastatud versiooni'
 
-const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
 
-const raw = computed(() => player.version.value === 'raw')
 const removed = computed(() => decisions.removed.value)
 const machine = computed(() => removed.value.length === props.recording.cuts.length)
 const cutSeconds = computed(() =>
