@@ -66,7 +66,7 @@ describe('RadioText', () => {
     wrapper.find('[data-testid="radio-topics"]').findAll('[data-testid="radio-topic"]')
 
   it('should show a heading for each topic with its time and length', async () => {
-    expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli 23 min')
+    expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli23 min')
   })
 
   it('should hide cut sections in the cleaned version', async () => {
@@ -76,7 +76,7 @@ describe('RadioText', () => {
 
   it('should show the episode time on headings in the cleaned version', async () => {
     player.load(recording(), 'episode')
-    expect(headings(await render())[1]).toBe('22:38Rahvusooperi tüli 7 min')
+    expect(headings(await render())[1]).toBe('22:38Rahvusooperi tüli7 min')
   })
 
   it('should play the episode from a line in the cleaned version', async () => {
@@ -95,13 +95,13 @@ describe('RadioText', () => {
   it('should drop headings without matching lines when searching', async () => {
     const wrapper = await render()
     await wrapper.find('input[type="search"]').setValue('jätkab')
-    expect(headings(wrapper)).toEqual(['12:32Rahvusooperi tüli 7 min'])
+    expect(headings(wrapper)).toEqual(['12:32Rahvusooperi tüli7 min'])
   })
 
-  it('should mark the playing topic Praegu', async () => {
+  it('should mark the playing topic without a badge', async () => {
     const wrapper = await render()
     await hear(wrapper, 2257)
-    expect(wrapper.find('[data-testid="radio-section"][aria-current="true"]').text()).toContain(
+    expect(wrapper.get('[data-testid="radio-section"][aria-current="true"]').text()).not.toContain(
       'Praegu'
     )
   })
