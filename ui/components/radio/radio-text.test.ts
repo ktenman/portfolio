@@ -165,11 +165,6 @@ describe('RadioText', () => {
     expect((await render()).find('[data-testid="radio-topic"]').exists()).toBe(false)
   })
 
-  it('should put the downloads in the Tekst heading', async () => {
-    const card = (await render()).get('[data-testid="radio-transcript"]')
-    expect(card.findAll('a[download]').map(a => a.text())).toEqual(['SRT', 'TXT'])
-  })
-
   it('should leave out the cut summary on the cleaned version', async () => {
     player.load(recording(), 'episode')
     expect((await render()).findComponent(RadioResult).exists()).toBe(false)
@@ -183,15 +178,9 @@ describe('RadioText', () => {
     expect((await render()).find('[data-testid="radio-ads"]').exists()).toBe(false)
   })
 
-  it('should offer the transcript as subtitles and as text', async () => {
-    const links = (await render())
-      .findAll('a[download]')
-      .map(a => a.attributes('href'))
-      .filter(href => href?.includes('transcript'))
-    expect(links).toEqual([
-      '/api/radio/2026-10-17/transcript.srt',
-      '/api/radio/2026-10-17/transcript.txt',
-    ])
+  it('should offer no transcript downloads', async () => {
+    const links = (await render()).findAll('a[download]').map(a => a.attributes('href'))
+    expect(links.filter(href => href?.includes('transcript'))).toEqual([])
   })
 
   it('should follow the playing line while playing', async () => {

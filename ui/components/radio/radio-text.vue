@@ -2,14 +2,6 @@
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div ref="main" class="grid min-w-0 gap-4">
       <radio-card title="Tekst" data-testid="radio-transcript">
-        <template #aside>
-          <div class="flex flex-wrap gap-2">
-            <a v-for="file in FILES" :key="file.name" :href="url(file.name)" download :class="LINK">
-              <radio-icon name="download" />
-              {{ file.label }}
-            </a>
-          </div>
-        </template>
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!topics.length" class="mb-0 text-ink-soft">Teksti veel pole.</p>
         <div v-else ref="list">
@@ -71,13 +63,12 @@ import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioCuts, useRadioTranscript } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { HATCH, LINK } from '../../utils/radio'
+import { HATCH } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioCuts from './radio-cuts.vue'
 import RadioDetails from './radio-details.vue'
-import RadioIcon from './radio-icon.vue'
 import RadioResult from './radio-result.vue'
 import RadioSection from './radio-section.vue'
 
@@ -85,11 +76,6 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '])
 const DRAG = 10
-
-const FILES = [
-  { name: 'transcript.srt', label: 'SRT' },
-  { name: 'transcript.txt', label: 'TXT' },
-]
 
 const transcript = useRadioTranscript(() => props.recording)
 const contexts = useRadioCuts(() => props.recording)
@@ -119,7 +105,6 @@ const drop = (index: number) =>
     .catch(() => toast.error('Lõiget ei saanud kustutada'))
 const player = useRadioPlayer()
 
-const url = (file: string) => radioService.fileUrl(props.recording.name, file)
 const raw = computed(() => player.version.value === 'raw')
 const sections = computed(() => transcript.data.value ?? [])
 const topics = computed(() =>
