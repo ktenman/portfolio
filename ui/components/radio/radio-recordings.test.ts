@@ -91,14 +91,37 @@ describe('RadioRecordings', () => {
     expect((await mount()).text()).toContain('Salvestab')
   })
 
-  it('should name each listen link after its recording', async () => {
+  it('should name each recording link after its programme, day and time', async () => {
     const link = (await mount()).find('a[href="/radio/2026-10-17"]')
-    expect(link.attributes('aria-label')).toBe('Kuula: Keskpäevatund L 17.10')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund L 17.10 · 11:55–13:05')
   })
 
-  it('should link each recording to its episode page', async () => {
-    const links = (await mount()).findAll('a[href^="/radio/"]').map(a => a.attributes('href'))
-    expect(links).toContain('/radio/2026-10-17')
+  it('should stretch the recording link over its row', async () => {
+    const wrapper = await mount()
+    const stretched = [
+      ...wrapper.find('a[href="/radio/2026-10-17"]').classes(),
+      ...wrapper.find('tbody tr').classes(),
+    ]
+    expect(stretched).toEqual(
+      expect.arrayContaining(['after:absolute', 'after:inset-0', 'relative'])
+    )
+  })
+
+  it('should open a recording that is still being recorded', async () => {
+    expect((await mount()).find('a[href="/radio/2026-10-16"]').exists()).toBe(true)
+  })
+
+  it('should not offer a Kuula button', async () => {
+    expect((await mount()).text()).not.toContain('Kuula')
+  })
+
+  it('should keep the trash above the row link', async () => {
+    const trash = (await mount()).find('button[aria-label="Kustuta: Keskpäevatund L 17.10"]')
+    expect(trash.classes()).toEqual(expect.arrayContaining(['z-10', 'max-md:min-h-11']))
+  })
+
+  it('should name the actions column for screen readers', async () => {
+    expect((await mount()).find('thead th .sr-only').text()).toBe('Toimingud')
   })
 
   it('should ask before deleting a recording', async () => {

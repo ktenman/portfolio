@@ -12,9 +12,16 @@
           :is-error="isError"
           error-message="Salvestusi ei õnnestunud laadida."
           empty-message="Salvestusi veel pole."
+          :row-class="() => 'relative cursor-pointer'"
         >
           <template #cell-programme="{ item }">
-            <span class="font-semibold">{{ item.programme }}</span>
+            <router-link
+              :to="`/radio/${item.name}`"
+              class="font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-brass-deep"
+              :aria-label="`${item.programme} ${day(item.status.startedAt)} · ${span(item)}`"
+            >
+              {{ item.programme }}
+            </router-link>
           </template>
           <template #cell-cuts="{ item }">
             <span :class="{ 'font-semibold': !item.editList?.reviewed }">{{ cutState(item) }}</span>
@@ -27,29 +34,20 @@
               {{ STATES[item.status.state].label }}
             </radio-badge>
           </template>
-          <template #cell-listen="{ item }">
-            <div class="inline-flex items-center gap-1">
-              <button
-                v-if="item.status.state !== RecordingState.RECORDING"
-                type="button"
-                class="inline-flex rounded-container p-1.5 text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep"
-                title="Kustuta"
-                :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
-                @click="remove(item)"
-              >
-                <radio-icon name="trash" />
-              </button>
-              <router-link
-                :to="`/radio/${item.name}`"
-                :class="LINK"
-                :aria-label="`Kuula: ${item.programme} ${day(item.status.startedAt)}`"
-              >
-                <svg class="size-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M7 4v16l13-8z" />
-                </svg>
-                Kuula
-              </router-link>
-            </div>
+          <template #header-actions>
+            <span class="sr-only">Toimingud</span>
+          </template>
+          <template #cell-actions="{ item }">
+            <button
+              v-if="item.status.state !== RecordingState.RECORDING"
+              type="button"
+              class="relative z-10 inline-flex items-center justify-center rounded-container p-1.5 text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep max-md:min-h-11 max-md:min-w-11"
+              title="Kustuta"
+              :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
+              @click="remove(item)"
+            >
+              <radio-icon name="trash" />
+            </button>
           </template>
         </data-table>
         <radio-programmes />
@@ -66,7 +64,7 @@ import { useConfirm } from '../../composables/use-confirm'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { cutState, day, length, LINK, span, STATES, textState } from '../../utils/radio'
+import { cutState, day, length, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
@@ -117,6 +115,6 @@ const columns: ColumnDefinition[] = [
   { key: 'text', label: 'Tekst' },
   { key: 'cuts', label: 'Lõiked' },
   { key: 'state', label: 'Olek' },
-  { key: 'listen', label: '', class: 'text-right' },
+  { key: 'actions', label: 'Toimingud', class: 'text-right' },
 ]
 </script>
