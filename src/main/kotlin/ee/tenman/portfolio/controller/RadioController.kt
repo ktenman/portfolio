@@ -85,16 +85,6 @@ class RadioController(
     @PathVariable name: String,
   ): ResponseEntity<List<TranscriptSection>> = ResponseEntity.ofNullable(radioArchiveService.sections(name))
 
-  @GetMapping("/{name}/transcript.txt", produces = ["text/plain;charset=UTF-8"])
-  fun getText(
-    @PathVariable name: String,
-  ): ResponseEntity<String> = attachment(radioArchiveService.text(name), radioArchiveService.downloadName(name, "transcript.txt"))
-
-  @GetMapping("/{name}/transcript.srt", produces = ["application/x-subrip;charset=UTF-8"])
-  fun getSubtitles(
-    @PathVariable name: String,
-  ): ResponseEntity<String> = attachment(radioArchiveService.subtitles(name), radioArchiveService.downloadName(name, "transcript.srt"))
-
   @GetMapping("/{name}/cuts")
   fun getCuts(
     @PathVariable name: String,
@@ -104,7 +94,7 @@ class RadioController(
   fun getFile(
     @PathVariable name: String,
     @PathVariable file: String,
-  ): ResponseEntity<Resource> = attachment(radioArchiveService.file(name, file), radioArchiveService.downloadName(name, file), ::media)
+  ): ResponseEntity<Resource> = attachment(radioArchiveService.file(name, file), radioArchiveService.downloadName(name, file))
 
   @PutMapping("/{name}/cuts")
   fun putCuts(
@@ -148,14 +138,13 @@ class RadioController(
   private fun done(found: Boolean): ResponseEntity<Void> =
     if (found) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
 
-  private fun <T : Any> attachment(
-    body: T?,
+  private fun attachment(
+    resource: Resource?,
     file: String?,
-    respond: (T) -> ResponseEntity.BodyBuilder = { ResponseEntity.ok() },
-  ): ResponseEntity<T> {
-    if (body == null || file == null) return ResponseEntity.notFound().build()
+  ): ResponseEntity<Resource> {
+    if (resource == null || file == null) return ResponseEntity.notFound().build()
     val disposition = ContentDisposition.attachment().filename(file, UTF_8).build()
-    return respond(body).header(CONTENT_DISPOSITION, disposition.toString()).body(body)
+    return media(resource).header(CONTENT_DISPOSITION, disposition.toString()).body(resource)
   }
 
   private fun media(resource: Resource): ResponseEntity.BodyBuilder =

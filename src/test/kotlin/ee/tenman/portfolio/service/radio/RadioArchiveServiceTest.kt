@@ -583,19 +583,6 @@ class RadioArchiveServiceTest {
   }
 
   @Test
-  fun `should leave the song out of the text`() {
-    expect(service.text(sung())).toEqual("Välismääraja paneb kokku Neeme Raud.\nTere, siin Keskpäevatund.\n")
-  }
-
-  @Test
-  fun `should leave the song out of the subtitles`() {
-    expect(service.subtitles(sung())).toEqual(
-      "1\n00:12:36,800 --> 00:12:40,900\nVälismääraja paneb kokku Neeme Raud.\n\n" +
-        "2\n00:15:28,000 --> 00:15:38,000\nTere, siin Keskpäevatund.\n\n",
-    )
-  }
-
-  @Test
   fun `should delete the directory of a recording`() {
     val directory = recording("2026-10-19-1023-kuku")
     service.delete("2026-10-19-1023-kuku")

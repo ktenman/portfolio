@@ -88,26 +88,21 @@ class RadioControllerIT {
   }
 
   @Test
-  fun `should serve the text transcript as UTF-8`() {
+  fun `should not offer the transcript as text`() {
     val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
     Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
-      .andExpect(header().string(CONTENT_TYPE, "text/plain;charset=UTF-8"))
+      .andExpect(status().isNotFound)
   }
 
   @Test
-  fun `should save the text transcript under the programme and its day`() {
+  fun `should not offer the transcript as subtitles`() {
     val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
     Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
     mockMvc
-      .perform(mvcGet("/api/radio/2026-10-17/transcript.txt"))
-      .andExpect(
-        header().string(
-          CONTENT_DISPOSITION,
-          "attachment; filename=\"Keskpaeevatund 2026-10-17.txt\"; filename*=UTF-8''Keskp%C3%A4evatund%202026-10-17.txt",
-        ),
-      )
+      .perform(mvcGet("/api/radio/2026-10-17/transcript.srt"))
+      .andExpect(status().isNotFound)
   }
 
   @Test
