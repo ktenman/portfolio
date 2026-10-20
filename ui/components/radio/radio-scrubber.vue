@@ -1,23 +1,41 @@
 <template>
   <div>
     <div
-      class="relative h-4 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass"
+      class="relative h-4 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass max-md:h-7"
     >
-      <div class="absolute inset-x-0 top-1.5 flex h-1 gap-0.5">
-        <div
-          v-for="part in parts"
-          :key="part.start"
-          class="h-full rounded-full"
-          :class="part.cut ? 'bg-hairline' : 'bg-hairline-strong'"
-          :style="{ flexGrow: part.end - part.start }"
-        />
-      </div>
+      <div class="absolute inset-x-0 top-1.5 h-1 rounded-full bg-hairline-strong max-md:hidden" />
       <div
-        class="pointer-events-none absolute top-1.5 left-0 h-1 rounded-full bg-ink"
+        class="pointer-events-none absolute top-1.5 left-0 h-1 rounded-full bg-ink max-md:hidden"
         :style="{ width: `${share}%` }"
       />
       <div
-        class="pointer-events-none absolute top-0 size-4 -translate-x-1/2 rounded-full border-2 border-surface bg-ink shadow-control"
+        class="pointer-events-none absolute top-0 size-4 -translate-x-1/2 rounded-full border-2 border-surface bg-ink shadow-control max-md:hidden"
+        :style="{ left: `${share}%` }"
+      />
+      <div class="absolute inset-x-0 top-2 flex h-3 gap-0.5 md:hidden">
+        <div
+          v-for="part in parts"
+          :key="part.start"
+          data-testid="radio-timeline-part"
+          class="relative overflow-hidden rounded-sm"
+          :class="part.removed ? HATCH : 'bg-hairline-strong'"
+          :style="{ flexGrow: part.end - part.start }"
+        >
+          <div
+            class="h-full"
+            :class="part.removed ? 'bg-ink/40' : 'bg-ink'"
+            :style="{ width: `${played(part)}%` }"
+          />
+        </div>
+      </div>
+      <div
+        v-for="mark in marks"
+        :key="mark"
+        class="pointer-events-none absolute top-2 h-3 w-0.5 bg-brass md:hidden"
+        :style="{ left: `${at(mark)}%` }"
+      />
+      <div
+        class="pointer-events-none absolute top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface md:hidden"
         :style="{ left: `${share}%` }"
       />
       <input
@@ -34,6 +52,13 @@
     </div>
     <div v-if="ticks?.length" class="relative mt-2 h-4 text-label text-ink-soft">
       <span
+        v-if="caption"
+        data-testid="radio-timeline-caption"
+        class="absolute left-1/2 -translate-x-1/2 whitespace-nowrap md:hidden"
+      >
+        {{ caption }}
+      </span>
+      <span
         v-for="tick in ticks"
         :key="tick.at"
         class="absolute whitespace-nowrap"
@@ -48,7 +73,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { position } from '../../utils/radio'
+import { HATCH, position, type StripPart } from '../../utils/radio'
 
 export interface Tick {
   at: number
@@ -60,14 +85,19 @@ const props = defineProps<{
   value: number
   total: number
   label: string
-  parts?: { start: number; end: number; cut: boolean }[]
+  parts?: StripPart[]
+  marks?: number[]
+  caption?: string
   ticks?: Tick[]
 }>()
 
 const emit = defineEmits<{ seek: [seconds: number] }>()
 
-const parts = computed(() => props.parts ?? [{ start: 0, end: props.total, cut: false }])
-const share = computed(() => (props.total ? Math.min(100, (props.value / props.total) * 100) : 0))
+const at = (seconds: number) => (props.total ? Math.min(100, (seconds / props.total) * 100) : 0)
+const share = computed(() => at(props.value))
+
+const played = (part: StripPart) =>
+  Math.min(100, Math.max(0, ((props.value - part.start) / (part.end - part.start)) * 100))
 
 const place = (at: number) => {
   if (at <= 0) return ''

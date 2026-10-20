@@ -25,7 +25,7 @@
           </select>
         </label>
       </div>
-      <div class="grid gap-2">
+      <div class="grid gap-2 max-md:hidden">
         <radio-strip
           :parts="parts"
           :at="player.seconds.value"
@@ -53,6 +53,9 @@
       <radio-scrubber
         :value="player.seconds.value"
         :total="player.total.value"
+        :parts="parts"
+        :marks="marks"
+        :caption="chapter"
         :ticks="ticks"
         label="Asukoht salvestuses"
         @seek="player.seek"
@@ -125,6 +128,10 @@ const parts = computed(() =>
 const marks = computed(() =>
   raw.value ? [] : (props.recording.editList?.chapters ?? []).map(chapter => chapter.start)
 )
+const chapter = computed(() => {
+  const count = marks.value.filter(mark => mark <= player.seconds.value).length
+  return count ? `Peatükk ${count}` : ''
+})
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null
 )

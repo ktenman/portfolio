@@ -60,6 +60,34 @@ describe('RadioPlayer', () => {
     expect([player.version.value, audio.currentTime]).toEqual(['episode', 1358.5])
   })
 
+  const timeline = (wrapper: ReturnType<typeof render>) =>
+    wrapper.findAll('[data-testid="radio-timeline-part"]')
+
+  const hatched = (part: { classes: () => string[] }) =>
+    part.classes().join(' ').includes('repeating-linear-gradient')
+
+  it('should hatch a removed part on the phone timeline', () => {
+    const wrapper = render()
+    expect(timeline(wrapper).map(hatched)).toEqual(parts(wrapper).map(hatched))
+  })
+
+  it('should name the playing chapter under the phone timeline', async () => {
+    const item = recording()
+    const chapters = [
+      { start: 0, title: 'Algus' },
+      { start: 500, title: 'Õhtune jätk' },
+    ]
+    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
+    audio.currentTime = 600
+    audio.dispatchEvent(new Event('timeupdate'))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Peatükk 2')
+  })
+
+  it('should leave the caption empty on the raw recording', () => {
+    expect(render().find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
+  })
+
   it('should offer the start of the show only on the raw recording', () => {
     expect(render('episode').find('[data-testid="radio-show-start"]').exists()).toBe(false)
   })
