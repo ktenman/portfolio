@@ -32,7 +32,7 @@
           </select>
         </label>
       </div>
-      <div class="grid gap-2 max-md:hidden">
+      <div v-if="parts.length" class="grid gap-2 max-md:hidden">
         <radio-strip
           :parts="parts"
           :at="player.seconds.value"

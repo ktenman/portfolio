@@ -1,6 +1,11 @@
 <template>
   <div data-testid="radio-strip">
-    <div class="relative h-30 overflow-x-clip" aria-hidden="true">
+    <div
+      v-if="named.length"
+      data-testid="radio-strip-labels"
+      class="relative h-30 overflow-x-clip"
+      aria-hidden="true"
+    >
       <span
         v-for="part in named"
         :key="part.start"

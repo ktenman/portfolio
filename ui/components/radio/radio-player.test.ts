@@ -118,6 +118,11 @@ describe('RadioPlayer', () => {
     expect(render().find('[data-testid="radio-now"]').exists()).toBe(false)
   })
 
+  it('should leave out the strip while the recording has no parts yet', () => {
+    const wrapper = render('raw', recording({ timeline: [] }))
+    expect(wrapper.find('[data-testid="radio-strip"]').exists()).toBe(false)
+  })
+
   it('should leave the caption empty on the raw recording', () => {
     expect(render().find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
   })

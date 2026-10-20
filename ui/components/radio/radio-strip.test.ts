@@ -52,6 +52,12 @@ describe('RadioStrip', () => {
     )
   })
 
+  it('should leave out the label band when no part is named', () => {
+    const parts = [part(0, 10, 'Enne saadet', null)]
+    const wrapper = mount(RadioStrip, { props: { parts, at: 0 } })
+    expect(wrapper.find('[data-testid="radio-strip-labels"]').exists()).toBe(false)
+  })
+
   it('should mute the label of a topic already heard', () => {
     expect(labels(35)[0]!.classes()).toContain('text-ink-soft')
   })
