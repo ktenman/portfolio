@@ -120,6 +120,11 @@ describe('RadioRecordings', () => {
     expect(trash.classes()).toEqual(expect.arrayContaining(['z-10', 'max-md:min-h-11']))
   })
 
+  it('should leave the actions empty for a recording still being recorded', async () => {
+    const cells = (await mount()).findAll('tbody tr')[1]!.findAll('td')
+    expect(cells[cells.length - 1]!.text()).toBe('')
+  })
+
   it('should name the actions column for screen readers', async () => {
     expect((await mount()).find('thead th .sr-only').text()).toBe('Toimingud')
   })

@@ -38,16 +38,18 @@
             <span class="sr-only">Toimingud</span>
           </template>
           <template #cell-actions="{ item }">
-            <button
-              v-if="item.status.state !== RecordingState.RECORDING"
-              type="button"
-              class="relative z-10 inline-flex items-center justify-center rounded-container p-1.5 text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep max-md:min-h-11 max-md:min-w-11"
-              title="Kustuta"
-              :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
-              @click="remove(item)"
-            >
-              <radio-icon name="trash" />
-            </button>
+            <span>
+              <button
+                v-if="item.status.state !== RecordingState.RECORDING"
+                type="button"
+                class="relative z-10 inline-flex items-center justify-center rounded-container p-1.5 text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep max-md:min-h-11 max-md:min-w-11"
+                title="Kustuta"
+                :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
+                @click="remove(item)"
+              >
+                <radio-icon name="trash" />
+              </button>
+            </span>
           </template>
         </data-table>
         <radio-programmes />
