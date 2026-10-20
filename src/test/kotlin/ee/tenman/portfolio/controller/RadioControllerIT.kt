@@ -152,6 +152,24 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should send an empty cut for a topic`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Õhtu uudised")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript"))
+      .andExpect(jsonPath("$[0].cut").hasJsonPath())
+  }
+
+  @Test
+  fun `should send an empty episode start for a section outside the episode`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Õhtu uudised")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript"))
+      .andExpect(jsonPath("$[0].episodeStart").hasJsonPath())
+  }
+
+  @Test
   fun `should not find the transcript of a recording without one`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/transcript")).andExpect(status().isNotFound)
   }

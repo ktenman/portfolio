@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 
 const val PROGRAMME = "Keskpäevatund"
 private const val TOPIC_LEAD = 30.0
@@ -60,7 +61,9 @@ data class TranscriptSection(
   val start: Double,
   val end: Double,
   val title: String,
+  @field:JsonInclude(JsonInclude.Include.ALWAYS)
   val cut: Int?,
+  @field:JsonInclude(JsonInclude.Include.ALWAYS)
   val episodeStart: Double?,
   val lines: List<TranscriptLine>,
 )

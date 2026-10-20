@@ -123,7 +123,7 @@ class InstrumentControllerIT {
       .perform(get("/api/instruments").cookie(DEFAULT_COOKIE))
       .andExpect(status().isOk)
       .andExpect(jsonPath("$.instruments").isArray)
-      .andExpect(jsonPath("$.portfolioXirr").value(org.hamcrest.Matchers.nullValue()))
+      .andExpect(jsonPath("$.portfolioXirr").doesNotExist())
       .andExpect(jsonPath("$.instruments[0].symbol").value(instrument1.symbol))
       .andExpect(jsonPath("$.instruments[0].name").value(instrument1.name))
       .andExpect(jsonPath("$.instruments[0].category").value(instrument1.category))
