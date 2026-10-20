@@ -92,8 +92,7 @@ describe('RadioPlayer', () => {
 
   it('should play the next topic from the playing topic', async () => {
     const wrapper = render('episode')
-    const next = wrapper.findAll('button').find(button => button.text() === 'Järgmine teema →')
-    await next!.trigger('click')
+    await wrapper.get('button[aria-label="Järgmine teema"]').trigger('click')
     expect(audio.currentTime).toBe(1803.5)
   })
 

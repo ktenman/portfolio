@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RadioNow from './radio-now.vue'
-import type { StripPart } from '../../utils/radio'
+import { position, type StripPart } from '../../utils/radio'
 
 const part = (
   start: number,
@@ -9,7 +9,16 @@ const part = (
   title: string,
   name: string | null,
   summary: string | null = null
-): StripPart => ({ start, end, removed: false, label: title, title, name, summary, time: '' })
+): StripPart => ({
+  start,
+  end,
+  removed: false,
+  label: title,
+  title,
+  name,
+  summary,
+  time: position(start),
+})
 
 const PARTS: StripPart[] = [
   part(
@@ -36,22 +45,34 @@ describe('RadioNow', () => {
   const button = (wrapper: ReturnType<typeof render>, name: string) =>
     wrapper.findAll('button').find(it => it.text() === name || it.attributes('aria-label') === name)
 
-  it("should show the playing topic's number, title and summary", () => {
+  it("should show the playing topic's time, title and summary", () => {
     const text = render(800).text()
     expect(
-      ['2/3', 'Põhja-Korea fantoomtöölised Ameerikas', 'Võltsnimedega IT-töötajad'].every(part =>
+      ['13:06', 'Põhja-Korea fantoomtöölised Ameerikas', 'Võltsnimedega IT-töötajad'].every(part =>
         text.includes(part)
       )
     ).toBe(true)
   })
 
-  it("should show the playing topic's span and length", () => {
-    expect(render(800).text()).toContain('13:06–15:01 · 2 min')
+  it('should leave out the topic number and length', () => {
+    expect(render(800).text()).not.toMatch(/2\/3|min/)
+  })
+
+  it('should show only on the phone', () => {
+    expect(render(800).get('[data-testid="radio-now"]').classes()).toContain('md:hidden')
+  })
+
+  it('should step with icons', () => {
+    const steps = render(800).findAll('button')
+    expect(steps.map(step => [step.find('svg').exists(), step.text()])).toEqual([
+      [true, ''],
+      [true, ''],
+    ])
   })
 
   it('should play the next topic', async () => {
     const wrapper = render(800)
-    await button(wrapper, 'Järgmine teema →')!.trigger('click')
+    await button(wrapper, 'Järgmine teema')!.trigger('click')
     expect(wrapper.emitted('play')).toEqual([[901]])
   })
 
@@ -62,11 +83,7 @@ describe('RadioNow', () => {
   })
 
   it('should offer no next topic on the last one', () => {
-    const wrapper = render(1000)
-    expect([button(wrapper, 'Järgmine teema →'), button(wrapper, 'Järgmine teema')]).toEqual([
-      undefined,
-      undefined,
-    ])
+    expect(button(render(1000), 'Järgmine teema')).toBeUndefined()
   })
 
   it('should offer no previous topic on the first one', () => {
@@ -77,8 +94,10 @@ describe('RadioNow', () => {
     expect(render(100, PARTS.slice(0, 2)).find('[data-testid="radio-now"]').exists()).toBe(false)
   })
 
-  it('should not count a cut as a topic', () => {
-    expect(render(600).text()).toContain('1/3 Küberturvalisus ja nutikülmikud')
+  it('should not count a cut as a topic', async () => {
+    const wrapper = render(600)
+    await button(wrapper, 'Järgmine teema')!.trigger('click')
+    expect(wrapper.emitted('play')).toEqual([[786]])
   })
 
   it('should leave out a missing summary', () => {
