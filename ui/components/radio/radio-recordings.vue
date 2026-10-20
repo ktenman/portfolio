@@ -17,7 +17,7 @@
           <template #cell-programme="{ item }">
             <router-link
               :to="`/radio/${item.name}`"
-              class="font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-brass-deep"
+              class="font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
               :aria-label="`${item.programme} ${day(item.status.startedAt)} · ${span(item)}`"
             >
               {{ item.programme }}

@@ -107,6 +107,15 @@ describe('RadioRecordings', () => {
     )
   })
 
+  it('should draw the row focus ring inside the row', async () => {
+    const link = (await mount()).find('a[href="/radio/2026-10-17"]')
+    expect(link.classes()).toContain('focus-visible:after:-outline-offset-2')
+  })
+
+  it('should stay on the list when the trash is clicked', async () => {
+    expect((await remove()).vm.$router.currentRoute.value.path).toBe('/')
+  })
+
   it('should open a recording that is still being recorded', async () => {
     expect((await mount()).find('a[href="/radio/2026-10-16"]').exists()).toBe(true)
   })
