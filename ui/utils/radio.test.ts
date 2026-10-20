@@ -191,6 +191,10 @@ describe('rawParts names', () => {
     expect(rawParts(recording(), [])[0]!.name).toBeNull()
   })
 
+  it("should print a raw part's start on the clock", () => {
+    expect(rawParts(recording(), [])[1]!.time).toBe('12:07')
+  })
+
   it('should name a kept raw part by its label', () => {
     expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
   })
@@ -217,6 +221,10 @@ describe('episodeParts', () => {
     expect(episodeParts(recording())[2]!.summary).toBe(
       'Õiguskantsler räägib oma presidendikandidatuurist.'
     )
+  })
+
+  it("should print a topic's start in episode time", () => {
+    expect(episodeParts(recording())[1]!.time).toBe('30:03')
   })
 
   it('should name a topic by its title when it has no label', () => {

@@ -280,6 +280,7 @@ export interface StripPart {
   title: string
   name: string | null
   summary: string | null
+  time: string
 }
 
 const named = ({ title, label, summary, cut }: TimelineEntry) => ({
@@ -302,6 +303,7 @@ export const rawParts = (
       end,
       removed: out,
       label: `${title} ${range(status.startedAt, start, end)} · ${fate}`,
+      time: clock(status.startedAt, start),
     }
   })
 
@@ -315,5 +317,6 @@ export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
       end: entry.end,
       removed: false,
       label: `${lead} · ${position(entry.start)}`,
+      time: position(entry.start),
     }
   })
