@@ -199,6 +199,59 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should carry a topic's label and summary onto the timeline`() {
+    val topic = EpisodeChapter(0.0, "Tesla uus roadster", "Tesla roadster", "Lendavad autod.")
+    val entry = timeline(emptyList(), listOf(topic), 60.0, PROGRAMME).single()
+    expect(entry.label to entry.summary).toEqual("Tesla roadster" to "Lendavad autod.")
+  }
+
+  private fun entry(
+    start: Double,
+    end: Double,
+    title: String,
+    cut: Boolean = false,
+  ) = TimelineEntry(start, end, title, cut)
+
+  private fun List<TimelineEntry>.spans() = map { Triple(it.start, it.end, it.title) }
+
+  @Test
+  fun `should place each heard topic on the episode clock`() {
+    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Reklaamipaus", true), entry(160.0, 300.0, "Valimised"))
+    val audible = listOf(KeptSpan(0.0, 100.0), KeptSpan(160.0, 300.0))
+    expect(heard(timeline, audible).spans()).toEqual(listOf(Triple(0.0, 100.0, "Ooper"), Triple(100.0, 240.0, "Valimised")))
+  }
+
+  @Test
+  fun `should join a topic split by a removed cut`() {
+    val timeline =
+      listOf(
+        entry(0.0, 100.0, "Ooper"),
+        entry(100.0, 160.0, "Reklaamipaus", true),
+        entry(160.0, 200.0, "Ooper"),
+        entry(200.0, 300.0, "Valimised"),
+      )
+    val audible = listOf(KeptSpan(0.0, 100.0), KeptSpan(160.0, 300.0))
+    expect(heard(timeline, audible).spans()).toEqual(listOf(Triple(0.0, 140.0, "Ooper"), Triple(140.0, 240.0, "Valimised")))
+  }
+
+  @Test
+  fun `should leave out a part that is not heard`() {
+    val timeline = listOf(entry(0.0, 50.0, "Enne saadet", true), entry(50.0, 100.0, "Ooper"))
+    expect(heard(timeline, listOf(KeptSpan(50.0, 100.0))).spans()).toEqual(listOf(Triple(0.0, 50.0, "Ooper")))
+  }
+
+  @Test
+  fun `should keep a restored cut apart from the topics around it`() {
+    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Reklaamipaus", true), entry(160.0, 300.0, "Ooper"))
+    expect(heard(timeline, listOf(KeptSpan(0.0, 300.0))).map { it.cut }).toEqual(listOf(false, true, false))
+  }
+
+  @Test
+  fun `should give no topics before the recording is cut`() {
+    expect(heard(listOf(entry(0.0, 60.0, "Ooper")), emptyList())).toEqual(emptyList())
+  }
+
+  @Test
   fun `should show a recording without an edit list as one part`() {
     expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
   }

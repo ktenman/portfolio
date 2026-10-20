@@ -74,9 +74,17 @@
           },
           "title": {
             "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "2 or 3 Estonian words naming the topic on a timeline"
+          },
+          "summary": {
+            "type": "string",
+            "description": "one Estonian sentence saying what the topic is about"
           }
         },
-        "required": ["time", "title"],
+        "required": ["time", "title", "label", "summary"],
         "additionalProperties": false
       }
     }

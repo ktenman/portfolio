@@ -86,6 +86,8 @@ data class KeptSpan(
 data class EpisodeChapter(
   val start: Double,
   val title: String,
+  val label: String? = null,
+  val summary: String? = null,
 )
 
 data class OutlineSummary(

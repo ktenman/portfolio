@@ -35,6 +35,7 @@ const searching = {
   episodeBytes: null,
   cuts: [],
   timeline: [],
+  topics: [],
   transcriptState: TranscriptState.TRANSCRIBED,
   cutState: CutState.NONE,
 }

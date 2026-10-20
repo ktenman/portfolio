@@ -107,8 +107,10 @@ class RadioEpisodeService(
   private fun topics(
     previous: EditList?,
     findings: List<Finding>,
-  ): List<OutlineChapter> =
-    (previous?.topics.orEmpty().map { OutlineChapter(it.start, it.title) } + findings.flatMap { it.agreed.chapters }).sortedBy { it.time }
+  ): List<OutlineChapter> {
+    val saved = previous?.topics.orEmpty().map { OutlineChapter(it.start, it.title, it.label, it.summary) }
+    return (saved + findings.flatMap { it.agreed.chapters }).sortedBy { it.time }
+  }
 
   private fun find(
     directory: Path,
@@ -184,7 +186,7 @@ class RadioEpisodeService(
     chapters = marks.map { EpisodeChapter(rounded(it.first), it.second) },
     reviewed = false,
     renderedAt = now(),
-    topics = topics.map { EpisodeChapter(rounded(it.time), it.title) },
+    topics = topics.map { EpisodeChapter(rounded(it.time), it.title, it.label, it.summary) },
     music = previous?.music.orEmpty() + findings.mapNotNull { music(it) },
     manual = previous?.manual.orEmpty(),
   )

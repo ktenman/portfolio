@@ -72,6 +72,8 @@ data class ShowEnd(
 data class OutlineChapter(
   val time: Double,
   val title: String,
+  val label: String? = null,
+  val summary: String? = null,
 )
 
 data class Pause(

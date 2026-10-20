@@ -148,7 +148,14 @@ describe('Radio cuts', () => {
       cuts: [...recording().cuts, ...added],
       timeline: [
         ...recording().timeline,
-        ...added.map(cut => ({ start: cut.start, end: cut.end, title: cut.title, cut: true })),
+        ...added.map(cut => ({
+          start: cut.start,
+          end: cut.end,
+          title: cut.title,
+          cut: true,
+          label: null,
+          summary: null,
+        })),
       ].sort((a, b) => a.start - b.start),
     })
 
