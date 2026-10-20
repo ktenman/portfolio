@@ -9,7 +9,6 @@ import {
   audioFormat,
   clock,
   day,
-  dropNote,
   episodeParts,
   fullDay,
   left,
@@ -100,19 +99,8 @@ describe('labels', () => {
 })
 
 describe('stream', () => {
-  const dropped = (drops: number, lostSeconds: number) =>
-    recording({ drops, status: { ...recording().status, lostSeconds } })
-
   it('should give the format of the recording', () => {
     expect(audioFormat(recording().format)).toEqual('MP3 256 kb/s')
-  })
-
-  it('should say nothing was lost when the stream dropped once', () => {
-    expect(dropNote(dropped(1, 0))).toEqual('Voog katkes korra, midagi ei kadunud')
-  })
-
-  it('should give the length lost when the stream dropped', () => {
-    expect(dropNote(dropped(20, 4))).toEqual('Voog katkes 20 korda, 4 s jäi salvestamata')
   })
 })
 

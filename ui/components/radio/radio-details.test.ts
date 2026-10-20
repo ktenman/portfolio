@@ -12,21 +12,14 @@ describe('RadioDetails', () => {
   const render = (item: RecordingSummary = recording()) =>
     mount(RadioDetails, { props: { recording: item } })
 
-  it('should fold the recording facts away', () => {
-    expect(render().find('[data-testid="radio-recording"]').attributes('open')).toBeUndefined()
+  it('should leave out the recording panel', () => {
+    expect(render().find('details').exists()).toBe(false)
   })
 
-  it('should note how often the stream dropped', () => {
-    expect(render(recording({ drops: 2 })).text()).toContain(
-      'Voog katkes 2 korda, midagi ei kadunud'
-    )
-  })
-
-  it('should not note drops of a stream that never dropped', () => {
-    expect(render().text()).not.toContain('Voog katkes')
-  })
-
-  it('should show the checksum of each recorded part', () => {
-    expect(render().text()).toContain('SHA-256ab12')
+  it('should offer only the cleaned episode for download', () => {
+    const links = render()
+      .findAll('a[download]')
+      .map(a => a.attributes('href'))
+    expect(links).toEqual(['/api/radio/2026-10-17/episode.m4a'])
   })
 })
