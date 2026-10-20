@@ -3,10 +3,20 @@ import { mount } from '@vue/test-utils'
 import RadioStrip from './radio-strip.vue'
 import type { StripPart } from '../../utils/radio'
 
+const part = (start: number, end: number, label: string, name: string | null): StripPart => ({
+  start,
+  end,
+  removed: name === null,
+  label,
+  title: label,
+  name,
+  summary: null,
+})
+
 const PARTS: StripPart[] = [
-  { start: 0, end: 10, removed: true, label: 'Enne saadet' },
-  { start: 10, end: 30, removed: false, label: 'Ülle Madise' },
-  { start: 30, end: 40, removed: false, label: 'Pärast' },
+  part(0, 10, 'Enne saadet', null),
+  part(10, 30, 'Ülle Madise', 'Madise'),
+  part(30, 40, 'Pärast', 'Pärast'),
 ]
 
 describe('RadioStrip', () => {

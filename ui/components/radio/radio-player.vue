@@ -36,7 +36,6 @@
         <radio-strip
           :parts="parts"
           :at="player.seconds.value"
-          :marks="marks"
           @play="player.playFrom($event, player.version.value)"
         />
         <p class="mb-0 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft">
@@ -50,10 +49,6 @@
               Jääb alles
             </span>
           </template>
-          <span v-else-if="marks.length" class="flex items-center gap-1.5">
-            <span class="h-3 w-0.5 bg-brass" />
-            Peatükk
-          </span>
           <span>Klõpsa osal, et seda kuulata</span>
         </p>
       </div>
@@ -61,8 +56,7 @@
         :value="player.seconds.value"
         :total="player.total.value"
         :parts="parts"
-        :marks="marks"
-        :caption="chapter"
+        :caption="topic"
         :ticks="ticks"
         label="Asukoht salvestuses"
         @seek="player.seek"
@@ -135,12 +129,10 @@ const version = computed({
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
-const marks = computed(() =>
-  raw.value ? [] : (props.recording.editList?.chapters ?? []).map(chapter => chapter.start)
-)
-const chapter = computed(() => {
-  const count = marks.value.filter(mark => mark <= player.seconds.value).length
-  return count ? `Peatükk ${count}` : ''
+const topic = computed(() => {
+  const topics = raw.value ? [] : parts.value.filter(part => part.name !== null)
+  const count = topics.filter(part => part.start <= player.seconds.value).length
+  return topics.length > 1 ? `Teema ${count}/${topics.length}` : ''
 })
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null

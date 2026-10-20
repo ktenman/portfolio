@@ -14,6 +14,7 @@ import {
   RecorderState,
   type RecordingSummary,
   RecordingState,
+  type TimelineEntry,
   type TranscriptSection,
   TranscriptState,
 } from '../models/generated/domain-models'
@@ -276,16 +277,27 @@ export interface StripPart {
   end: number
   removed: boolean
   label: string
+  title: string
+  name: string | null
+  summary: string | null
 }
+
+const named = ({ title, label, summary, cut }: TimelineEntry) => ({
+  title,
+  name: cut ? null : (label ?? title),
+  summary: summary ?? null,
+})
 
 export const rawParts = (
   { timeline, cuts, status }: RecordingSummary,
   removed: number[]
 ): StripPart[] =>
-  timeline.map(({ start, end, title, cut }) => {
+  timeline.map(entry => {
+    const { start, end, title, cut } = entry
     const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
     const fate = out ? 'Eemaldatakse' : 'Jääb alles'
     return {
+      ...named(entry),
       start,
       end,
       removed: out,
@@ -293,10 +305,15 @@ export const rawParts = (
     }
   })
 
-export const episodeParts = ({ audible }: RecordingSummary): StripPart[] =>
-  audible.reduce<StripPart[]>((parts, { start, end }, i) => {
-    const from = parts[i - 1]?.end ?? 0
-    const to = from + end - start
-    const label = `Osa ${i + 1} ${position(from)}–${position(to)}`
-    return [...parts, { start: from, end: to, removed: false, label }]
-  }, [])
+export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
+  topics.map((entry, i) => {
+    const number = topics.slice(0, i + 1).filter(topic => !topic.cut).length
+    const lead = entry.cut ? entry.title : `Teema ${number}: ${entry.title}`
+    return {
+      ...named(entry),
+      start: entry.start,
+      end: entry.end,
+      removed: false,
+      label: `${lead} · ${position(entry.start)}`,
+    }
+  })

@@ -57,7 +57,7 @@ describe('RadioPlayer', () => {
   it('should play the episode part clicked on Puhastatud', async () => {
     const wrapper = render('episode')
     await parts(wrapper)[1]!.trigger('click')
-    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1358.5])
+    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1803.5])
   })
 
   const timeline = (wrapper: ReturnType<typeof render>) =>
@@ -71,17 +71,12 @@ describe('RadioPlayer', () => {
     expect(timeline(wrapper).map(hatched)).toEqual(parts(wrapper).map(hatched))
   })
 
-  it('should name the playing chapter under the phone timeline', async () => {
-    const item = recording()
-    const chapters = [
-      { start: 0, title: 'Algus', label: null, summary: null },
-      { start: 500, title: 'Õhtune jätk', label: null, summary: null },
-    ]
-    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
-    audio.currentTime = 600
+  it('should caption the phone timeline with the playing topic', async () => {
+    const wrapper = render('episode')
+    audio.currentTime = 2000
     audio.dispatchEvent(new Event('timeupdate'))
     await wrapper.vm.$nextTick()
-    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Peatükk 2')
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Teema 2/3')
   })
 
   it('should keep a played removed part faded on the phone timeline', async () => {
@@ -90,13 +85,9 @@ describe('RadioPlayer', () => {
     expect(timeline(wrapper).find(hatched)!.get('div').classes()).toContain('bg-ink/40')
   })
 
-  it('should leave the caption empty before the first chapter', async () => {
-    const item = recording()
-    const chapters = [{ start: 30, title: 'Algus', label: null, summary: null }]
-    const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
-    audio.currentTime = 10
-    audio.dispatchEvent(new Event('timeupdate'))
-    await wrapper.vm.$nextTick()
+  it('should leave the caption empty with a single topic', () => {
+    const topics = recording().topics.slice(0, 1)
+    const wrapper = render('episode', recording({ topics }))
     expect(wrapper.find('[data-testid="radio-timeline-caption"]').exists()).toBe(false)
   })
 

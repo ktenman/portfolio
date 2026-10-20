@@ -186,12 +186,48 @@ describe('rawParts', () => {
   })
 })
 
+describe('rawParts names', () => {
+  it('should leave a cut unnamed on the raw strip', () => {
+    expect(rawParts(recording(), [])[0]!.name).toBeNull()
+  })
+
+  it('should name a kept raw part by its label', () => {
+    expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
+  })
+})
+
 describe('episodeParts', () => {
-  it('should lay the heard spans end to end in episode time', () => {
-    expect(episodeParts(recording()).map(({ start, end }) => [start, end])).toEqual([
-      [0, 1358.5],
-      [1358.5, 2128.5],
-      [2128.5, 2828.5],
+  it('should build the cleaned strip from the topics', () => {
+    expect(episodeParts(recording()).map(({ start, end, name }) => [start, end, name])).toEqual([
+      [0, 1803.5, 'Ooperitüli'],
+      [1803.5, 2391.5, 'Poliitika'],
+      [2391.5, 2828.5, 'Ülle Madise'],
     ])
+  })
+
+  it('should name each topic by its number, title and start', () => {
+    expect(episodeParts(recording()).map(part => part.label)).toEqual([
+      'Teema 1: Rahvusooperi tüli · 0:00',
+      'Teema 2: Mis toimub poliitikas? · 30:03',
+      'Teema 3: President Ülle Madise · 39:51',
+    ])
+  })
+
+  it("should carry each topic's summary onto the strip", () => {
+    expect(episodeParts(recording())[2]!.summary).toBe(
+      'Õiguskantsler räägib oma presidendikandidatuurist.'
+    )
+  })
+
+  it('should name a topic by its title when it has no label', () => {
+    const topic = {
+      start: 0,
+      end: 60,
+      title: 'Tesla uus roadster',
+      cut: false,
+      label: null,
+      summary: null,
+    }
+    expect(episodeParts(recording({ topics: [topic] }))[0]!.name).toBe('Tesla uus roadster')
   })
 })

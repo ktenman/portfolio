@@ -29,12 +29,6 @@
         </div>
       </div>
       <div
-        v-for="mark in marks"
-        :key="mark"
-        class="pointer-events-none absolute top-2 h-3 w-0.5 bg-brass md:hidden"
-        :style="{ left: `${at(mark)}%` }"
-      />
-      <div
         class="pointer-events-none absolute top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface md:hidden"
         :style="{ left: `${share}%` }"
       />
@@ -87,7 +81,6 @@ const props = defineProps<{
   total: number
   label: string
   parts?: StripPart[]
-  marks?: number[]
   caption?: string
   ticks?: Tick[]
 }>()

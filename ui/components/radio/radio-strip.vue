@@ -13,12 +13,6 @@
       @click="emit('play', part.start)"
     />
     <div
-      v-for="mark in marks"
-      :key="mark"
-      class="pointer-events-none absolute inset-y-0 w-0.5 bg-brass"
-      :style="{ left: share(mark) }"
-    />
-    <div
       class="pointer-events-none absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-ink"
       :style="{ left: share(at) }"
     />
@@ -29,7 +23,7 @@
 import { computed } from 'vue'
 import { HATCH, type StripPart } from '../../utils/radio'
 
-const props = defineProps<{ parts: StripPart[]; at: number; marks?: number[] }>()
+const props = defineProps<{ parts: StripPart[]; at: number }>()
 
 const emit = defineEmits<{ play: [start: number] }>()
 
