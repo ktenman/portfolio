@@ -14,6 +14,8 @@ const version = ref<Version>('raw')
 const part = ref(0)
 const current = ref(0)
 const playing = ref(false)
+export const RATES = [1, 1.25, 1.5, 2]
+
 const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
