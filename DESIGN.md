@@ -660,7 +660,8 @@ header is brass text on the cell fill.
 **Row tracking is carried by banding, not hover.** `.table-striped` tints odd rows with `--color-surface-band`,
 an opaque warm band at 1.11:1 against surface. Rows have no hover state — they are not clickable, and a hover
 tint on top of a band reads as a selection. One surface still breaks this: `etf-breakdown-table.vue:528` tints
-`tbody tr:hover` with `--color-surface-hover`. It is debt, not precedent.
+`tbody tr:hover` with `--color-surface-hover`. It is debt, not precedent. A row whose name is a stretched link
+(`radio-recordings.vue`) is clickable, so it takes a pointer cursor and underlines the name on hover; it still takes no hover tint.
 
 **Filter chips are the brass-wash element.** They are `.platform-btn` and `.etf-btn` in the source, styled as
 one rule (`controls.css:74`). At rest the chip is **recessed, not outlined**: `--color-surface-sunken` fill, a
