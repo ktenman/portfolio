@@ -17,7 +17,7 @@
           data-testid="radio-timeline-label"
           class="grid max-w-full cursor-pointer pr-2 text-left focus-visible:outline-2 focus-visible:outline-brass-deep @max-[2.5rem]:hidden"
           :title="part.summary ?? undefined"
-          :aria-label="part.label"
+          :aria-label="`${part.time} ${part.name}`"
           :aria-current="now(part) ? 'true' : undefined"
           @click="emit('play', part.start)"
         >
@@ -84,14 +84,27 @@ const named = computed(() => props.parts.filter(part => part.name !== null))
 
 const share = computed(() => (props.total ? Math.min(100, (props.value / props.total) * 100) : 0))
 
-const now = (part: StripPart) => part.start <= props.value && props.value < part.end
+const here = computed(() =>
+  props.parts.find(part => part.start <= props.value && props.value < part.end)
+)
+
+const end = (part: StripPart) => {
+  const next = named.value.find(other => other.start > part.start)?.start ?? Infinity
+  const stretches = props.parts.filter(
+    other => other.title === part.title && other.start >= part.start && other.start < next
+  )
+  return Math.max(...stretches.map(stretch => stretch.end))
+}
+
+const now = (part: StripPart) =>
+  here.value?.title === part.title && part.start <= props.value && props.value < end(part)
 
 const played = (part: StripPart) =>
   Math.min(100, Math.max(0, ((props.value - part.start) / (part.end - part.start)) * 100))
 
 const tone = (part: StripPart) => {
   if (now(part)) return 'font-semibold text-brass-deep'
-  return props.value >= part.end ? 'text-ink-soft' : 'text-ink'
+  return props.value >= end(part) ? 'text-ink-soft' : 'text-ink'
 }
 
 const tap = (event: MouseEvent) => {

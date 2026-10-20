@@ -26,6 +26,13 @@ const PARTS: StripPart[] = [
   part(30, 40, 'Pärast', 'Pärast'),
 ]
 
+const RESUMED: StripPart[] = [
+  part(0, 10, 'Ülle Madise', 'Madise'),
+  part(10, 20, 'Reklaamipaus', null),
+  { ...part(20, 30, 'Ülle Madise', null), removed: false },
+  part(30, 40, 'Pärast', 'Pärast'),
+]
+
 describe('RadioScrubber', () => {
   const render = (value = 0, parts = PARTS) =>
     mount(RadioScrubber, { props: { value, total: 40, label: 'Asukoht', parts } })
@@ -63,8 +70,23 @@ describe('RadioScrubber', () => {
     expect(labels()[0]!.attributes('title')).toBe('Õiguskantsler räägib kandidatuurist.')
   })
 
-  it('should name each label for screen readers by its part', () => {
-    expect(labels()[1]!.attributes('aria-label')).toBe('Pärast')
+  it('should name each label for screen readers by its visible time and name', () => {
+    expect(labels()[1]!.attributes('aria-label')).toBe('30 s Pärast')
+  })
+
+  it("should keep a resumed topic's label playing while its second stretch plays", () => {
+    const label = render(25, RESUMED).findAll('[data-testid="radio-timeline-label"]')[0]!
+    expect(label.attributes('aria-current')).toBe('true')
+  })
+
+  it('should not mark a topic heard during a break inside it', () => {
+    const label = render(15, RESUMED).findAll('[data-testid="radio-timeline-label"]')[0]!
+    expect(label.findAll('span')[1]!.classes()).toContain('text-ink')
+  })
+
+  it('should mark a topic heard once its last stretch ends', () => {
+    const label = render(35, RESUMED).findAll('[data-testid="radio-timeline-label"]')[0]!
+    expect(label.findAll('span')[1]!.classes()).toContain('text-ink-soft')
   })
 
   it('should leave out the label row when no part is named', () => {
