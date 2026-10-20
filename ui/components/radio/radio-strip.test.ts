@@ -39,10 +39,10 @@ describe('RadioStrip', () => {
 
   const labels = (at: number) => render(at).findAll('[data-testid="radio-strip-label"]')
 
-  it('should label each named part at its start', () => {
+  it('should label each named part with its start time at its start', () => {
     expect(labels(0).map(label => [label.text(), label.attributes('style')])).toEqual([
-      ['Madise', 'left: calc(25% + 0.625rem);'],
-      ['Pärast', 'left: calc(75% + 0.625rem);'],
+      ['10 s Madise', 'left: calc(25% + 0.625rem);'],
+      ['30 s Pärast', 'left: calc(75% + 0.625rem);'],
     ])
   })
 
@@ -71,7 +71,11 @@ describe('RadioStrip', () => {
     ])
   })
 
-  it("should print each part's start inside it", () => {
-    expect(render().findAll('button')[1]!.text()).toBe('10 s')
+  it('should leave the parts themselves without text', () => {
+    expect(
+      render()
+        .findAll('button')
+        .map(button => button.text())
+    ).toEqual(['', '', ''])
   })
 })

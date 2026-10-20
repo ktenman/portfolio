@@ -10,19 +10,20 @@
         v-for="part in named"
         :key="part.start"
         data-testid="radio-strip-label"
-        class="absolute bottom-1 max-w-40 origin-bottom-left -rotate-45 truncate text-2xs leading-none whitespace-nowrap"
+        class="absolute bottom-1 max-w-48 origin-bottom-left -rotate-45 truncate text-2xs leading-none whitespace-nowrap"
         :class="tone(part)"
         :style="{ left: `calc(${share(part.start)} + 0.625rem)` }"
       >
+        <span class="font-normal text-ink-soft tabular-nums">{{ part.time }}</span>
         {{ part.name }}
       </span>
     </div>
-    <div class="relative flex h-10 gap-0.5">
+    <div class="relative flex h-6 gap-0.5">
       <button
         v-for="part in parts"
         :key="part.start"
         type="button"
-        class="@container relative min-w-0 basis-0 cursor-pointer overflow-hidden rounded-control border transition-colors hover:border-brass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
+        class="relative min-w-0 basis-0 cursor-pointer overflow-hidden rounded-control border transition-colors hover:border-brass focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
         :class="[background(part), now(part) ? 'border-brass' : 'border-hairline']"
         :style="{ flexGrow: part.end - part.start }"
         :title="part.label"
@@ -30,9 +31,6 @@
         :aria-current="now(part) ? 'true' : undefined"
         @click="emit('play', part.start)"
       >
-        <span class="absolute top-1.5 left-2 text-label text-ink-soft @max-[2.75rem]:hidden">
-          {{ part.time }}
-        </span>
         <span
           data-testid="radio-strip-played"
           class="absolute bottom-0 left-0 h-1 bg-ink"
