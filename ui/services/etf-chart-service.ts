@@ -124,7 +124,7 @@ function weightedAverage(
   const totals = instruments.reduce(
     (acc, instrument) => {
       const value = select(instrument)
-      if (value === null) return acc
+      if (value == null) return acc
       const weight = instrument.currentValue ?? 0
       return { weight: acc.weight + weight, sum: acc.sum + value * weight }
     },

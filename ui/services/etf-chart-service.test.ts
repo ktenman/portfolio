@@ -224,6 +224,29 @@ describe('etf-chart-service', () => {
       expect(result.ter).toBeCloseTo(0.6, 10)
     })
 
+    it('should ignore a fund whose TER is missing from the response', () => {
+      const withoutTer = { ...vwce }
+      Reflect.deleteProperty(withoutTer, 'ter')
+      const result = calculateWeightedMetrics([withoutTer, qdve], ['VWCE', 'QDVE'])
+
+      expect(result.ter).toBeCloseTo(0.6, 10)
+    })
+
+    it('should ignore a fund whose return is missing from the response', () => {
+      const withoutReturn = { ...vwce }
+      Reflect.deleteProperty(withoutReturn, 'xirrAnnualReturn')
+      const result = calculateWeightedMetrics([withoutReturn, qdve], ['VWCE', 'QDVE'])
+
+      expect(result.annualReturn).toBeCloseTo(0.5, 10)
+    })
+
+    it('should count a zero TER', () => {
+      const free = createInstrumentDto({ symbol: 'VWCE', currentValue: 3000, ter: 0 })
+      const result = calculateWeightedMetrics([free, qdve], ['VWCE', 'QDVE'])
+
+      expect(result.ter).toBeCloseTo(0.15, 10)
+    })
+
     it('should return nulls when nothing is selected', () => {
       const result = calculateWeightedMetrics([vwce, qdve], [])
 
