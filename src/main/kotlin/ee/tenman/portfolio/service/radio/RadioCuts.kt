@@ -55,6 +55,8 @@ data class TimelineEntry(
   val end: Double,
   val title: String,
   val cut: Boolean,
+  val label: String? = null,
+  val summary: String? = null,
 )
 
 data class TranscriptSection(
@@ -216,10 +218,10 @@ private fun split(
   topics: List<EpisodeChapter>,
   title: String,
 ): List<TimelineEntry> {
-  val opening = EpisodeChapter(kept.start, topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.title ?: title)
+  val opening = topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.copy(start = kept.start) ?: EpisodeChapter(kept.start, title)
   val marks = listOf(opening) + topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
   val ends = marks.drop(1).map { it.start } + kept.end
-  return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false) }
+  return marks.zip(ends).map { (mark, end) -> TimelineEntry(mark.start, end, mark.title, false, mark.label, mark.summary) }
 }
 
 fun sections(

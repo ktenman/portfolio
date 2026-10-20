@@ -74,8 +74,8 @@ describe('RadioPlayer', () => {
   it('should name the playing chapter under the phone timeline', async () => {
     const item = recording()
     const chapters = [
-      { start: 0, title: 'Algus' },
-      { start: 500, title: 'Õhtune jätk' },
+      { start: 0, title: 'Algus', label: null, summary: null },
+      { start: 500, title: 'Õhtune jätk', label: null, summary: null },
     ]
     const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
     audio.currentTime = 600
@@ -92,7 +92,7 @@ describe('RadioPlayer', () => {
 
   it('should leave the caption empty before the first chapter', async () => {
     const item = recording()
-    const chapters = [{ start: 30, title: 'Algus' }]
+    const chapters = [{ start: 30, title: 'Algus', label: null, summary: null }]
     const wrapper = render('episode', recording({ editList: { ...item.editList!, chapters } }))
     audio.currentTime = 10
     audio.dispatchEvent(new Event('timeupdate'))

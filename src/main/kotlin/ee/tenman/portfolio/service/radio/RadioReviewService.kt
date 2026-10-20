@@ -141,7 +141,7 @@ class RadioReviewService(
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val spans = keep.map { it.start to it.end }
-    val topics = edit.topics.map { OutlineChapter(it.start, it.title) }
+    val topics = edit.topics.map { OutlineChapter(it.start, it.title, it.label, it.summary) }
     val marks = chapters(audible(timeline.spans, spans), topics, names(status, edit.found()))
     val temporary = directory.resolve(REVIEWED)
     runCatching { radioRenderService.render(timeline, spans, marks, title(status, edit.found(), clock.zone), temporary, progress) }

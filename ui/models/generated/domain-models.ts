@@ -438,6 +438,8 @@ export interface TimelineEntry {
     end: number;
     title: string;
     cut: boolean;
+    label: string | null;
+    summary: string | null;
 }
 
 export interface KeptSpan {
@@ -536,6 +538,8 @@ export interface OutlineSummary {
 export interface EpisodeChapter {
     start: number;
     title: string;
+    label: string | null;
+    summary: string | null;
 }
 
 export interface CutJingle {

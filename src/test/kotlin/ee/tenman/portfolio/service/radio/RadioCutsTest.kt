@@ -199,6 +199,13 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should carry a topic's label and summary onto the timeline`() {
+    val topic = EpisodeChapter(0.0, "Tesla uus roadster", "Tesla roadster", "Lendavad autod.")
+    val entry = timeline(emptyList(), listOf(topic), 60.0, PROGRAMME).single()
+    expect(entry.label to entry.summary).toEqual("Tesla roadster" to "Lendavad autod.")
+  }
+
+  @Test
   fun `should show a recording without an edit list as one part`() {
     expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
   }
