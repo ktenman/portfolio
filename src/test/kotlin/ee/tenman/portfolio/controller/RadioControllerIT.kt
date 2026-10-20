@@ -15,6 +15,7 @@ import ee.tenman.portfolio.service.radio.TranscriptSegment
 import ee.tenman.portfolio.service.radio.ffmpeg
 import ee.tenman.portfolio.service.radio.taped
 import jakarta.annotation.Resource
+import org.hamcrest.Matchers.hasEntry
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_DISPOSITION
@@ -149,6 +150,24 @@ class RadioControllerIT {
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/transcript"))
       .andExpect(jsonPath("$[0].lines[0].text").value("Tere, Keskpäevatund!"))
+  }
+
+  @Test
+  fun `should send an empty cut for a topic`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Õhtu uudised")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript"))
+      .andExpect(jsonPath("$[0]").value(hasEntry("cut", null)))
+  }
+
+  @Test
+  fun `should send an empty episode start for a section outside the episode`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Õhtu uudised")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/transcript"))
+      .andExpect(jsonPath("$[0]").value(hasEntry("episodeStart", null)))
   }
 
   @Test
