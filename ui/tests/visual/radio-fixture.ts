@@ -233,3 +233,18 @@ export const stubRadioStill: RouteStub = async page => {
   await page.clock.setFixedTime(Date.now())
   await stubRadio(page)
 }
+
+export const stubRadioLongText: RouteStub = async page => {
+  await stubRadio(page)
+  const lines = Array.from({ length: 90 }, (_, i) => ({
+    start: 770 + i * 34,
+    end: 800 + i * 34,
+    text: ` Lõik ${i + 1}: Keskpäevatund arutab päeva olulisemaid teemasid.`,
+    words: [],
+    split: null,
+    music: false,
+  }))
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/transcript`), route =>
+    route.fulfill({ json: sections(lines) })
+  )
+}

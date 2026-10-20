@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
@@ -292,6 +292,64 @@ describe('RadioText', () => {
     await render()
     window.dispatchEvent(new WheelEvent('wheel'))
     expect(player.lost.value).toBe(false)
+  })
+
+  const attached = async () => {
+    const wrapper = mount(RadioText, {
+      props: { recording: recording() },
+      attachTo: document.body,
+      global: { plugins: [[VueQueryPlugin, { queryClient: new QueryClient() }]] },
+    })
+    await flushPromises()
+    return wrapper
+  }
+
+  const scrollable = (wrapper: Awaited<ReturnType<typeof render>>) =>
+    Object.defineProperty(wrapper.get('[data-testid="radio-rail"]').element, 'scrollHeight', {
+      value: 900,
+    })
+
+  it('should keep following when the topics are scrolled', async () => {
+    const wrapper = await attached()
+    scrollable(wrapper)
+    await hear(wrapper, 762.5)
+    wrapper
+      .get('[data-testid="radio-topics"]')
+      .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should keep following when a key scrolls the topics', async () => {
+    const wrapper = await attached()
+    scrollable(wrapper)
+    await hear(wrapper, 762.5)
+    await rail(wrapper)[0].trigger('keydown', { key: 'ArrowDown' })
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should stop following after a wheel on topics that cannot scroll', async () => {
+    const wrapper = await attached()
+    await hear(wrapper, 762.5)
+    wrapper
+      .get('[data-testid="radio-topics"]')
+      .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
+    expect(player.lost.value).toBe(true)
+  })
+
+  it('should scroll the topics to the playing topic', async () => {
+    const scrollBy = vi.fn()
+    HTMLElement.prototype.scrollBy = scrollBy
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    onTestFinished(() => rect.mockRestore())
+    rect.mockImplementation(function (this: HTMLElement) {
+      if (this.dataset.testid === 'radio-rail') return new DOMRect(0, 0, 320, 300)
+      if (this.dataset.testid === 'radio-topic' && this.getAttribute('aria-current'))
+        return new DOMRect(0, 400, 320, 40)
+      return new DOMRect()
+    })
+    const wrapper = await render()
+    await hear(wrapper, 2701)
+    expect(scrollBy).toHaveBeenLastCalledWith({ top: 140, behavior: 'smooth' })
   })
 
   it('should follow again after going back to the playing line', async () => {
