@@ -57,7 +57,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { position, type StripPart } from '../../utils/radio'
+import { position, topicAt, type StripPart } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 
 const props = defineProps<{ parts: StripPart[]; at: number }>()
@@ -69,9 +69,7 @@ const STEP =
 
 const topics = computed(() => props.parts.filter(part => part.name !== null))
 
-const index = computed(() =>
-  Math.max(0, topics.value.filter(topic => topic.start <= props.at).length - 1)
-)
+const index = computed(() => topicAt(topics.value, props.at))
 
 const current = computed(() => (topics.value.length > 1 ? topics.value[index.value] : undefined))
 

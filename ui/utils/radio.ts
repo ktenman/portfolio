@@ -308,10 +308,12 @@ export const rawParts = (
   })
 
 export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
-  topics.map((entry, i) => {
-    const number = topics.slice(0, i + 1).filter(topic => !topic.cut).length
+  topics.reduce<StripPart[]>((parts, entry) => {
+    const heard = parts.filter(part => part.name !== null)
+    const resumed = !entry.cut && heard[heard.length - 1]?.title === entry.title
+    const number = heard.length + (resumed ? 0 : 1)
     const lead = entry.cut ? entry.title : `Teema ${number}: ${entry.title}`
-    return {
+    const part = {
       ...named(entry),
       start: entry.start,
       end: entry.end,
@@ -319,4 +321,8 @@ export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
       label: `${lead} · ${position(entry.start)}`,
       time: position(entry.start),
     }
-  })
+    return [...parts, resumed ? { ...part, name: null } : part]
+  }, [])
+
+export const topicAt = (topics: StripPart[], at: number): number =>
+  Math.max(0, topics.filter(topic => topic.start <= at).length - 1)

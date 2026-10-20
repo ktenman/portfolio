@@ -85,6 +85,14 @@ describe('RadioPlayer', () => {
     expect(timeline(wrapper).find(hatched)!.get('div').classes()).toContain('bg-ink/40')
   })
 
+  it('should caption the first topic while a kept cut opens the episode', () => {
+    const [first, second] = recording().topics
+    const opening = { ...first!, end: 60, title: 'Enne saadet', cut: true }
+    const topics = [opening, { ...first!, start: 60 }, second!]
+    const wrapper = render('episode', recording({ topics }))
+    expect(wrapper.get('[data-testid="radio-timeline-caption"]').text()).toBe('Teema 1/2')
+  })
+
   it('should leave the caption empty with a single topic', () => {
     const topics = recording().topics.slice(0, 1)
     const wrapper = render('episode', recording({ topics }))

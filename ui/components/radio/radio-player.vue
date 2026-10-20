@@ -105,7 +105,7 @@ import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
+import { clock, episodeParts, HATCH, position, rawParts, topicAt } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
 import RadioNow from './radio-now.vue'
@@ -138,8 +138,8 @@ const parts = computed(() =>
 )
 const topic = computed(() => {
   const topics = raw.value ? [] : parts.value.filter(part => part.name !== null)
-  const count = topics.filter(part => part.start <= player.seconds.value).length
-  return topics.length > 1 ? `Teema ${count}/${topics.length}` : ''
+  const number = topicAt(topics, player.seconds.value) + 1
+  return topics.length > 1 ? `Teema ${number}/${topics.length}` : ''
 })
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null

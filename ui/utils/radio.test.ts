@@ -227,6 +227,29 @@ describe('episodeParts', () => {
     expect(episodeParts(recording())[1]!.time).toBe('30:03')
   })
 
+  it('should count a topic resumed after a restored cut once', () => {
+    const entry = (start: number, end: number, title: string, cut = false) => ({
+      start,
+      end,
+      title,
+      cut,
+      label: null,
+      summary: null,
+    })
+    const topics = [
+      entry(0, 100, 'Ooper'),
+      entry(100, 160, 'Reklaamipaus', true),
+      entry(160, 300, 'Ooper'),
+      entry(300, 400, 'Valimised'),
+    ]
+    expect(episodeParts(recording({ topics })).map(part => [part.name, part.label])).toEqual([
+      ['Ooper', 'Teema 1: Ooper · 0:00'],
+      [null, 'Reklaamipaus · 1:40'],
+      [null, 'Teema 1: Ooper · 2:40'],
+      ['Valimised', 'Teema 2: Valimised · 5:00'],
+    ])
+  })
+
   it('should name a topic by its title when it has no label', () => {
     const topic = {
       start: 0,
