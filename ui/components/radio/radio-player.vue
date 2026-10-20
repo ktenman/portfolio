@@ -18,49 +18,38 @@
             </span>
           </p>
         </div>
-        <label class="flex items-center gap-2 text-sm text-ink-soft max-md:row-start-1">
-          <span class="max-md:hidden">Versioon</span>
-          <select
-            v-model="version"
-            aria-label="Versioon"
-            class="form-select form-select-sm w-auto max-md:min-h-11 max-md:rounded-full max-md:py-2.5 max-md:font-medium"
-          >
-            <option value="raw">Toorsalvestus · {{ position(recording.status.seconds) }}</option>
-            <option v-if="cleaned" value="episode">
-              Puhastatud · {{ position(recording.editList?.durationSeconds ?? 0) }}
-            </option>
-          </select>
-        </label>
+        <select
+          v-model="version"
+          aria-label="Versioon"
+          class="form-select form-select-sm min-h-11 w-auto rounded-full py-2.5 font-medium max-md:row-start-1"
+        >
+          <option value="raw">Toorsalvestus</option>
+          <option v-if="cleaned" value="episode">Puhastatud</option>
+        </select>
       </div>
-      <div v-if="parts.length" class="grid gap-2 max-md:hidden">
-        <radio-strip
+      <div class="grid gap-2">
+        <radio-scrubber
+          :value="player.seconds.value"
+          :total="player.total.value"
           :parts="parts"
-          :at="player.seconds.value"
+          label="Asukoht salvestuses"
+          @seek="player.seek"
           @play="player.playFrom($event, player.version.value)"
         />
-        <p class="mb-0 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft">
-          <template v-if="raw">
-            <span class="flex items-center gap-1.5">
-              <span class="size-3 rounded-control border border-hairline" :class="HATCH" />
-              Eemaldatakse
-            </span>
-            <span class="flex items-center gap-1.5">
-              <span class="size-3 rounded-control border border-hairline bg-surface" />
-              Jääb alles
-            </span>
-          </template>
-          <span>Klõpsa osal, et seda kuulata</span>
+        <p
+          v-if="raw && parts.length"
+          class="mb-0 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-soft max-md:hidden"
+        >
+          <span class="flex items-center gap-1.5">
+            <span class="size-3 rounded-control border border-hairline" :class="HATCH" />
+            Eemaldatakse
+          </span>
+          <span class="flex items-center gap-1.5">
+            <span class="size-3 rounded-control border border-hairline bg-surface" />
+            Jääb alles
+          </span>
         </p>
       </div>
-      <radio-scrubber
-        :value="player.seconds.value"
-        :total="player.total.value"
-        :parts="parts"
-        :caption="topic"
-        :ticks="ticks"
-        label="Asukoht salvestuses"
-        @seek="player.seek"
-      />
       <radio-now
         v-if="!raw"
         :parts="parts"
@@ -105,12 +94,11 @@ import { useElementVisibility } from '@vueuse/core'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { RATES, useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { clock, episodeParts, HATCH, position, rawParts, topicAt } from '../../utils/radio'
+import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
 import RadioNow from './radio-now.vue'
-import RadioScrubber, { type Tick } from './radio-scrubber.vue'
-import RadioStrip from './radio-strip.vue'
+import RadioScrubber from './radio-scrubber.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
@@ -136,28 +124,8 @@ const version = computed({
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
-const topic = computed(() => {
-  const topics = raw.value ? [] : parts.value.filter(part => part.name !== null)
-  const number = topicAt(topics, player.seconds.value) + 1
-  return topics.length > 1 ? `Teema ${number}/${topics.length}` : ''
-})
 const showStart = computed(
   () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null
 )
 const offerStart = computed(() => raw.value && showStart.value !== null)
-const showEnd = computed(
-  () => props.recording.cuts.find(c => c.kind === CutKind.AFTER)?.start ?? null
-)
-
-const ticks = computed<Tick[]>(() => {
-  const end = player.total.value
-  if (!raw.value) return [0, end].map(at => ({ at, text: position(at), phone: true }))
-  const { startedAt } = props.recording.status
-  const shown = [showStart.value, showEnd.value].filter((at): at is number => at !== null)
-  return [
-    { at: 0, text: clock(startedAt, 0), phone: true },
-    ...shown.map(at => ({ at, text: clock(startedAt, at) })),
-    { at: end, text: clock(startedAt, end), phone: true },
-  ]
-})
 </script>
