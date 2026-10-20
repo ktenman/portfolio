@@ -1,6 +1,6 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-    <div class="grid min-w-0 gap-4">
+    <div ref="main" class="grid min-w-0 gap-4">
       <radio-topics
         class="lg:hidden"
         chips
@@ -57,26 +57,33 @@
         </div>
       </radio-card>
     </div>
-    <div class="grid gap-4">
-      <radio-topics
-        class="max-lg:hidden"
-        :sections="topics"
-        :started-at="recording.status.startedAt"
-        :raw="raw"
-        :playing="playing"
-        @pick="pick"
-      />
-      <radio-result v-if="recording.editList" :recording="recording" />
-      <radio-cuts v-if="raw" :recording="recording" />
-      <radio-analysis :recording="recording" />
-      <radio-details :recording="recording" />
+    <div
+      ref="rail"
+      data-testid="radio-rail"
+      class="[scrollbar-width:thin]"
+      :class="{ 'lg:sticky lg:top-20 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto': long }"
+    >
+      <div ref="body" class="grid gap-4">
+        <radio-topics
+          class="max-lg:hidden"
+          :sections="topics"
+          :started-at="recording.status.startedAt"
+          :raw="raw"
+          :playing="playing"
+          @pick="pick"
+        />
+        <radio-result v-if="recording.editList" :recording="recording" />
+        <radio-cuts v-if="raw" :recording="recording" />
+        <radio-analysis :recording="recording" />
+        <radio-details :recording="recording" />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useEventListener, usePreferredReducedMotion } from '@vueuse/core'
+import { useElementSize, useEventListener, usePreferredReducedMotion } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import type {
   RecordingSummary,
@@ -166,6 +173,10 @@ const spoken = computed(() =>
 const playing = computed(() => topics.value.find(s => s.start <= at.value && at.value < s.end))
 
 const list = useTemplateRef<HTMLElement>('list')
+const rail = useTemplateRef<HTMLElement>('rail')
+const { height: text } = useElementSize(useTemplateRef<HTMLElement>('main'))
+const { height: cards } = useElementSize(useTemplateRef<HTMLElement>('body'))
+const long = computed(() => text.value > cards.value)
 const motion = usePreferredReducedMotion()
 let jumped = false
 let touched = 0
@@ -199,7 +210,19 @@ const follow = (line?: TranscriptLine) => {
   scroll()
 }
 
-const lose = () => {
+const reveal = () => {
+  const row = rail.value?.querySelector('[data-testid="radio-topic"][aria-current="true"]')
+  if (!rail.value || !row) return
+  const box = rail.value.getBoundingClientRect()
+  const { top, bottom } = row.getBoundingClientRect()
+  const delta = top < box.top ? top - box.top : Math.max(0, bottom - box.bottom)
+  if (delta) rail.value.scrollBy({ top: delta, behavior: behavior() })
+}
+
+const inside = ({ target }: Event) => target instanceof Node && !!rail.value?.contains(target)
+
+const lose = (event: Event) => {
+  if (inside(event)) return
   if (current.value || (player.playing.value && at.value >= 0)) player.lost.value = true
 }
 
@@ -212,6 +235,7 @@ const finger = (event: TouchEvent) => event.touches[0]?.clientY ?? touched
 
 watch(current, follow, { flush: 'post' })
 watch(player.lost, lost => lost || scroll(), { flush: 'post' })
+watch(playing, reveal, { flush: 'post' })
 onMounted(() => follow(current.value))
 onBeforeUnmount(player.rejoin)
 onBeforeUnmount(decisions.flush)
@@ -222,10 +246,10 @@ useEventListener(window, 'touchstart', (event: TouchEvent) => (touched = finger(
 useEventListener(
   window,
   'touchmove',
-  (event: TouchEvent) => Math.abs(finger(event) - touched) > DRAG && lose(),
+  (event: TouchEvent) => Math.abs(finger(event) - touched) > DRAG && lose(event),
   { passive: true }
 )
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
-  if (KEYS.has(event.key) && !typing(event)) lose()
+  if (KEYS.has(event.key) && !typing(event)) lose(event)
 })
 </script>
