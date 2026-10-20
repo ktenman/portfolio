@@ -6,6 +6,8 @@ spring:
         format_sql: true
   profiles:
     active: test
+  jackson:
+    default-property-inclusion: non_null
 
 server:
   servlet:
