@@ -1,12 +1,17 @@
 <template>
-  <radio-card title="Töötlus">
-    <radio-facts :rows="workFacts" />
-    <div class="mt-3 flex flex-wrap gap-2">
-      <a v-if="recording.episodeBytes" :href="url('episode.m4a')" download :class="LINK">
+  <radio-card title="Töötlus" fold="shut">
+    <template v-if="recording.episodeBytes" #aside>
+      <a
+        :href="url('episode.m4a')"
+        download
+        :class="LINK"
+        :aria-label="`Laadi alla puhastatud, ${megabytes(recording.episodeBytes)}`"
+      >
         <radio-icon name="download" />
-        Puhastatud · {{ megabytes(recording.episodeBytes) }}
+        {{ megabytes(recording.episodeBytes) }}
       </a>
-    </div>
+    </template>
+    <radio-facts :rows="workFacts" />
   </radio-card>
 </template>
 

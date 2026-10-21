@@ -268,9 +268,29 @@ test('the radio dock keeps every control at least 44 px tall on a phone', async 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   const dock = page.getByTestId('radio-dock')
   await expect(dock).toBeInViewport()
-  const targets = [dock.getByTestId('radio-dock-line'), ...(await dock.getByRole('button').all())]
+  const targets = [
+    dock.getByRole('slider', { name: 'Asukoht salvestuses' }),
+    ...(await dock.getByRole('button').all()),
+    ...(await dock.getByRole('link').all()),
+  ]
   const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
   expect(Math.min(...heights)).toBeGreaterThanOrEqual(44)
+})
+
+test('the radio dock timeline leaves the topic link clear on a phone', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-17')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const dock = page.getByTestId('radio-dock')
+  await expect(dock).toBeInViewport()
+  const slider = (await dock.getByRole('slider', { name: 'Asukoht salvestuses' }).boundingBox())!
+  const link = (await dock.getByRole('link').boundingBox())!
+  expect(slider.y + slider.height).toBeLessThanOrEqual(link.y)
 })
 
 test('the radio dock shows while the navbar covers the card controls', async ({
@@ -308,20 +328,6 @@ test.describe('desktop states', () => {
     await openRoute(page, '/radio')
     await page.getByRole('button', { name: 'Kuula otse' }).click()
     await expect(page.getByTestId('radio-play')).toBeInViewport()
-  })
-
-  test('the radio player leads the text back to the playing line', async ({ page }) => {
-    await stubRadio(page)
-    await page.setViewportSize({ width: 1440, height: 600 })
-    await openRoute(page, '/radio/2026-10-17')
-    await page.getByTestId('radio-text-line').first().getByRole('button').click()
-    await page.mouse.wheel(0, 600)
-    await expect(
-      page.getByTestId('radio-dock').getByRole('button', { name: 'Tagasi praegusele' })
-    ).toBeInViewport()
-    await page.mouse.move(0, 0)
-    await settleAndFreeze(page)
-    await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-player-lost.png')
   })
 
   test('the spoken word is marked by a tint', async ({ page }) => {

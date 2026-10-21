@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RadioDetails from './radio-details.vue'
 import { recording } from './radio-fixture'
@@ -9,6 +9,8 @@ vi.mock('../../services/api', () => ({
 }))
 
 describe('RadioDetails', () => {
+  beforeEach(() => localStorage.clear())
+
   const render = (item: RecordingSummary = recording()) =>
     mount(RadioDetails, { props: { recording: item } })
 
@@ -21,5 +23,16 @@ describe('RadioDetails', () => {
       .findAll('a[download]')
       .map(a => a.attributes('href'))
     expect(links).toEqual(['/api/radio/2026-10-17/episode.m4a'])
+  })
+
+  it('should keep the download reachable while folded', () => {
+    const links = render()
+      .findAll('a[download]')
+      .map(a => a.attributes('aria-label'))
+    expect(links).toEqual(['Laadi alla puhastatud, 34 MB'])
+  })
+
+  it('should start folded', () => {
+    expect(render().get('button').attributes('aria-expanded')).toBe('false')
   })
 })
