@@ -83,9 +83,17 @@ describe('RadioDock', () => {
     expect(player.lost.value).toBe(false)
   })
 
-  it('should leave the speed chip to the player card', async () => {
+  it('should offer the speed chip in the dock', async () => {
     const wrapper = mount(RadioDock, { global: { stubs: { RouterLink: true } } })
     player.load(recording())
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[data-testid="radio-speed"]').exists()).toBe(true)
+  })
+
+  it('should leave the speed chip out of live radio', async () => {
+    const wrapper = mount(RadioDock, { global: { stubs: { RouterLink: true } } })
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
+    player.listen()
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="radio-speed"]').exists()).toBe(false)
   })

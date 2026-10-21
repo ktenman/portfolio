@@ -219,3 +219,64 @@
   outline: 2px solid var(--color-brass);
   outline-offset: 2px;
 }
+
+.volume-range {
+  height: 1.5rem;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-brass);
+  cursor: pointer;
+  appearance: none;
+}
+
+.volume-range:hover {
+  color: var(--color-brass-deep);
+}
+
+.volume-range.muted {
+  color: var(--color-ink-faint);
+}
+
+.volume-range:focus-visible {
+  outline: 2px solid var(--color-brass-deep);
+  outline-offset: 3px;
+}
+
+.volume-range::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    currentColor var(--level),
+    var(--color-hairline-strong) var(--level)
+  );
+}
+
+.volume-range::-webkit-slider-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: -0.3125rem;
+  border-radius: 50%;
+  background: currentColor;
+  appearance: none;
+}
+
+.volume-range::-moz-range-track {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-hairline-strong);
+}
+
+.volume-range::-moz-range-progress {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.volume-range::-moz-range-thumb {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
