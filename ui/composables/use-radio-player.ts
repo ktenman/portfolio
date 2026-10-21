@@ -135,6 +135,7 @@ const hangUp = () => {
   audio.pause()
   audio.removeAttribute('src')
   audio.load()
+  playing.value = false
 }
 
 const toggle = () => {
