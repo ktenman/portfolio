@@ -190,6 +190,34 @@ describe('useRadioPlayer', () => {
     expect([audio.muted, audio.volume]).toEqual([true, 0.6])
   })
 
+  it('should keep the moment on air when switching to the episode', () => {
+    player.load(recording())
+    tick(2296.5)
+    player.swap('episode')
+    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1400])
+  })
+
+  it('should keep the moment on air when switching to the recording', () => {
+    player.load(recording(), 'episode')
+    tick(1400)
+    player.swap('raw')
+    expect([player.version.value, player.recordingSeconds.value]).toEqual(['raw', 2296.5])
+  })
+
+  it('should keep playing after switching version while playing', () => {
+    player.load(recording())
+    audio.dispatchEvent(new Event('play'))
+    vi.mocked(audio.play).mockClear()
+    player.swap('episode')
+    expect(audio.play).toHaveBeenCalledOnce()
+  })
+
+  it('should stay paused after switching version while paused', () => {
+    player.load(recording())
+    player.swap('episode')
+    expect(audio.play).not.toHaveBeenCalled()
+  })
+
   it('should play the cleaned episode from a chapter start', () => {
     player.load(recording(), 'raw')
     player.playFrom(120, 'episode')

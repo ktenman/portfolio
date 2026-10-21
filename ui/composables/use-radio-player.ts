@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
-import { recordingTime } from '../utils/radio'
+import { episodeTime, recordingTime } from '../utils/radio'
 
 export type Version = 'raw' | 'episode'
 
@@ -104,6 +104,16 @@ const load = (target: RecordingSummary, wanted: Version = 'raw') => {
 }
 
 const play = () => element.value?.play()
+
+const swap = (wanted: Version) => {
+  const target = recording.value
+  if (!target || wanted === version.value) return
+  const at = wanted === 'raw' ? recordingSeconds.value : episodeTime(target.audible, seconds.value)
+  const was = playing.value
+  load(target, wanted)
+  seek(at)
+  if (was) play()
+}
 
 const listen = () => {
   const audio = element.value
@@ -236,6 +246,7 @@ export const useRadioPlayer = () => ({
   attach,
   detach,
   load,
+  swap,
   listen,
   toggle,
   seek,

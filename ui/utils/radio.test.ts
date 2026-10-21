@@ -10,6 +10,7 @@ import {
   clock,
   day,
   episodeParts,
+  episodeTime,
   fullDay,
   left,
   length,
@@ -39,6 +40,20 @@ describe('recordingTime', () => {
 
   it('should stop at the end of the last kept span', () => {
     expect(recordingTime(MACHINE, 9999)).toEqual(3837)
+  })
+})
+
+describe('episodeTime', () => {
+  it('should map a moment of the recording onto the episode', () => {
+    expect(episodeTime(MACHINE, 2296.5)).toEqual(1400)
+  })
+
+  it('should land a moment inside a cut where the cut ends', () => {
+    expect(episodeTime(MACHINE, 2200)).toEqual(1358.5)
+  })
+
+  it('should start the episode for a moment before the show', () => {
+    expect(episodeTime(MACHINE, 100)).toEqual(0)
   })
 })
 
