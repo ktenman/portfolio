@@ -69,30 +69,17 @@
         :at="player.seconds.value"
         @play="player.playFrom($event, player.version.value)"
       />
-      <div class="grid gap-3">
-        <radio-controls large />
-        <div v-if="offerStart" class="flex flex-wrap justify-center gap-2">
-          <app-button
-            v-if="raw && showStart !== null"
-            data-testid="radio-show-start"
-            class="min-h-11 max-md:grow md:min-h-0"
-            @click="player.playFrom(showStart)"
-          >
-            Saate algusesse · {{ clock(recording.status.startedAt, showStart) }}
-          </app-button>
-        </div>
-      </div>
+      <radio-controls large />
     </div>
   </section>
 </template>
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount } from 'vue'
-import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
+import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
-import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
 import RadioNow from './radio-now.vue'
 import RadioScrubber from './radio-scrubber.vue'
@@ -120,8 +107,4 @@ const version = computed({
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
-const showStart = computed(
-  () => props.recording.cuts.find(c => c.kind === CutKind.BEFORE)?.end ?? null
-)
-const offerStart = computed(() => raw.value && showStart.value !== null)
 </script>

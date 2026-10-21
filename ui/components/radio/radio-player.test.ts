@@ -109,14 +109,8 @@ describe('RadioPlayer', () => {
     expect(render().text()).not.toContain('Klõpsa osal')
   })
 
-  it('should offer the start of the show only on the raw recording', () => {
-    expect(render('episode').find('[data-testid="radio-show-start"]').exists()).toBe(false)
-  })
-
-  it('should jump to the start of the show', async () => {
-    const wrapper = render()
-    await wrapper.find('[data-testid="radio-show-start"]').trigger('click')
-    expect(audio.currentTime).toBe(761.5)
+  it('should leave out a jump to the start of the show', () => {
+    expect(render().text()).not.toContain('Saate algusesse')
   })
 
   it('should mute from the speaker', async () => {
@@ -187,12 +181,6 @@ describe('RadioPlayer', () => {
 
   it('should offer the speed chip at every width', () => {
     expect(render().get('[data-testid="radio-speed"]').classes()).not.toContain('md:hidden')
-  })
-
-  it('should put the start of the show under the controls', () => {
-    const wrapper = render()
-    const pad = wrapper.get('[data-testid="radio-play"]').element.parentElement!.parentElement!
-    expect(pad.contains(wrapper.get('[data-testid="radio-show-start"]').element)).toBe(false)
   })
 
   it('should keep the phone pad in equal columns on a live stream', async () => {
