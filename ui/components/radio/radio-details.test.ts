@@ -32,6 +32,12 @@ describe('RadioDetails', () => {
     expect(links).toEqual(['Laadi alla puhastatud, 34 MB'])
   })
 
+  it('should leave the cuts out of the facts', async () => {
+    const wrapper = render()
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.text()).not.toContain('Lõiked')
+  })
+
   it('should start folded', () => {
     expect(render().get('button').attributes('aria-expanded')).toBe('false')
   })
