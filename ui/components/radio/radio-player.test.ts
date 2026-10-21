@@ -264,17 +264,11 @@ describe('RadioPlayer', () => {
     ]).toEqual([expect.arrayContaining(['md:hidden']), expect.arrayContaining(['max-md:hidden'])])
   })
 
-  it('should count the card as in view while it first appears', () => {
-    player.cardInView.value = false
-    render()
-    expect(player.cardInView.value).toBe(true)
-  })
-
-  it("should clear the card's place in view when it closes", () => {
+  it('should pause the recording when the card closes', () => {
     const wrapper = render()
-    player.cardInView.value = true
+    const pause = vi.spyOn(audio, 'pause').mockImplementation(() => {})
     wrapper.unmount()
-    expect(player.cardInView.value).toBe(false)
+    expect(pause).toHaveBeenCalledOnce()
   })
 
   it('should not offer to go back to the playing line', async () => {

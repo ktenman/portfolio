@@ -44,6 +44,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import {
   type AiringRecording,
@@ -62,6 +63,7 @@ const props = defineProps<{ airing: DayAiring }>()
 const player = useRadioPlayer()
 const { data: recordings } = useRadioRecordings()
 const queryClient = useQueryClient()
+const router = useRouter()
 const toast = useToast()
 
 const note = computed(() => airingNote(props.airing))
@@ -73,6 +75,7 @@ const listen = (recording: AiringRecording | null | undefined) => {
   return () => {
     player.load(summary)
     player.playFrom(recording.from - recording.start)
+    void router.push(`/radio/${summary.name}`)
   }
 }
 
@@ -103,7 +106,9 @@ const action = computed(() => {
       return { label: 'Kuula', run: listen(airing.original?.recording), quiet: true }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
-      return { label: 'Kuula otse', run: player.listen, quiet: true }
+      return player.live.value && player.playing.value
+        ? { label: 'Peata', run: player.toggle, quiet: true }
+        : { label: 'Kuula otse', run: player.listen, quiet: true }
     case AiringState.OPEN:
       return { label: 'Salvesta', run: record(true) }
     case AiringState.PLANNED:

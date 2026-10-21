@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :style="{ '--radio-player': `${height}px` }">
     <router-link
       to="/radio"
       class="mb-3 inline-flex items-center gap-1 text-sm text-ink-soft hover:text-ink"
@@ -16,14 +16,15 @@
           {{ fullDay(recording.status.startedAt) }} · Kuku · {{ span(recording) }}
         </p>
       </div>
-      <radio-player :recording="recording" />
+      <radio-player ref="card" :recording="recording" />
       <radio-text :recording="recording" />
     </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { watch } from 'vue'
+import { useTemplateRef, watch } from 'vue'
+import { useElementSize } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
@@ -36,6 +37,7 @@ const route = useRoute()
 const name = route.params.name as string
 const { recording, isLoading } = useRadioRecording(name)
 const player = useRadioPlayer()
+const { height } = useElementSize(useTemplateRef('card'), undefined, { box: 'border-box' })
 
 watch(
   recording,

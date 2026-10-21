@@ -1,7 +1,7 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div ref="main" class="grid min-w-0 gap-4">
-      <radio-card title="Tekst" data-testid="radio-transcript">
+      <radio-card title="Tekst" class="max-md:hidden" data-testid="radio-transcript">
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!topics.length" class="mb-0 text-ink-soft">Teksti veel pole.</p>
         <div v-else ref="list">
@@ -37,7 +37,10 @@
       ref="rail"
       data-testid="radio-rail"
       class="[scrollbar-width:thin]"
-      :class="{ 'lg:sticky lg:top-20 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto': long }"
+      :class="{
+        'lg:sticky lg:top-[calc(var(--radio-player)+5rem)] lg:max-h-[calc(100dvh-6rem-var(--radio-player))] lg:overflow-y-auto':
+          long,
+      }"
     >
       <div ref="body" class="grid gap-4">
         <radio-topics
