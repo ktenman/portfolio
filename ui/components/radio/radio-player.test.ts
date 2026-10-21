@@ -230,6 +230,40 @@ describe('RadioPlayer', () => {
     expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
   })
 
+  it('should show each version with its length from tablets up', () => {
+    const segments = render()
+      .findAll('[role="group"][aria-label="Versioon"] button')
+      .map(b => b.text())
+    expect(segments).toEqual(['Toorsalvestus 1:10:00', 'Puhastatud 41:52'])
+  })
+
+  it('should press the segment of the version that plays', () => {
+    const pressed = render('episode')
+      .findAll('[role="group"][aria-label="Versioon"] button')
+      .map(b => b.attributes('aria-pressed'))
+    expect(pressed).toEqual(['false', 'true'])
+  })
+
+  it('should switch to the version of the segment clicked', async () => {
+    const wrapper = render()
+    await wrapper.findAll('[role="group"][aria-label="Versioon"] button')[1]!.trigger('click')
+    expect(player.version.value).toBe('episode')
+  })
+
+  it('should disable the cleaned segment before the episode is rendered', () => {
+    const wrapper = render('raw', recording({ editList: null, episodeBytes: null }))
+    const segment = wrapper.findAll('[role="group"][aria-label="Versioon"] button')[1]!
+    expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Puhastatud'])
+  })
+
+  it('should keep the select for phones only', () => {
+    const wrapper = render()
+    expect([
+      wrapper.get('select[aria-label="Versioon"]').classes(),
+      wrapper.get('[role="group"][aria-label="Versioon"]').classes(),
+    ]).toEqual([expect.arrayContaining(['md:hidden']), expect.arrayContaining(['max-md:hidden'])])
+  })
+
   it('should count the card as in view while it first appears', () => {
     player.cardInView.value = false
     render()

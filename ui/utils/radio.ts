@@ -65,6 +65,9 @@ export const recordingTime = (keep: KeptSpan[], seconds: number): number => {
   return last
 }
 
+export const episodeTime = (keep: KeptSpan[], seconds: number): number =>
+  keep.reduce((sum, k) => sum + Math.max(0, Math.min(seconds, k.end) - k.start), 0)
+
 const two = (value: number) => String(value).padStart(2, '0')
 
 export const position = (seconds: number): string => {

@@ -250,7 +250,11 @@ test('the raw radio recording shows the cut decisions', async ({ page }, testInf
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
-  await page.getByLabel('Versioon').selectOption('raw')
+  if (testInfo.project.name === 'mobile') {
+    await page.getByRole('combobox', { name: 'Versioon' }).selectOption('raw')
+  } else {
+    await page.getByRole('button', { name: /^Toorsalvestus/ }).click()
+  }
   await expect(page.getByTestId('radio-cut').first()).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
   await settleAndFreeze(page)

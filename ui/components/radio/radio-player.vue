@@ -21,11 +21,27 @@
         <select
           v-model="version"
           aria-label="Versioon"
-          class="form-select form-select-sm min-h-11 w-auto rounded-full py-2.5 font-medium max-md:row-start-1"
+          class="form-select form-select-sm min-h-11 w-auto rounded-full py-2.5 font-medium max-md:row-start-1 md:hidden"
         >
           <option value="raw">Toorsalvestus</option>
           <option v-if="cleaned" value="episode">Puhastatud</option>
         </select>
+        <div role="group" aria-label="Versioon" class="flex max-md:hidden">
+          <button
+            v-for="option in versions"
+            :key="option.value"
+            type="button"
+            class="relative inline-flex cursor-pointer items-baseline gap-2 border border-hairline bg-surface-sunken px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors first:rounded-l-container last:-ml-px last:rounded-r-container focus-visible:z-2 enabled:hover:not-aria-pressed:bg-surface-hover enabled:hover:not-aria-pressed:text-ink disabled:cursor-not-allowed disabled:text-ink-faint aria-pressed:z-1 aria-pressed:border-brass aria-pressed:bg-brass-wash aria-pressed:text-brass-deep"
+            :aria-pressed="version === option.value"
+            :disabled="option.seconds === null"
+            @click="version = option.value"
+          >
+            {{ option.label }}
+            <span v-if="option.seconds !== null" class="font-normal">
+              {{ position(option.seconds) }}
+            </span>
+          </button>
+        </div>
       </div>
       <div class="grid gap-2">
         <radio-scrubber
@@ -104,8 +120,16 @@ const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => Boolean(props.recording.editList && props.recording.episodeBytes))
 const version = computed({
   get: () => player.version.value,
-  set: (value: Version) => player.load(props.recording, value),
+  set: (value: Version) => player.swap(value),
 })
+const versions = computed(() => [
+  { value: 'raw' as const, label: 'Toorsalvestus', seconds: props.recording.status.seconds },
+  {
+    value: 'episode' as const,
+    label: 'Puhastatud',
+    seconds: cleaned.value ? (props.recording.editList?.durationSeconds ?? null) : null,
+  },
+])
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
