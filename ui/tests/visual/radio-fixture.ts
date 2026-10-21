@@ -59,6 +59,17 @@ const RECORDINGS = [
       state: RecordingState.RECORDING,
       seconds: 3180,
     },
+    timeline: [
+      {
+        start: 0,
+        end: 3180,
+        title: 'Digitund',
+        cut: false,
+        label: null,
+        summary: null,
+        topic: false,
+      },
+    ],
     sizeBytes: 101_800_000,
     transcribed: false,
     transcriptState: TranscriptState.RECORDING,

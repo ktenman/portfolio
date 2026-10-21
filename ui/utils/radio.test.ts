@@ -202,6 +202,19 @@ describe('rawParts names', () => {
     expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
   })
 
+  it('should leave the programme name unnamed before the recording has topics', () => {
+    const programme = {
+      start: 0,
+      end: 4200,
+      title: 'Sihik',
+      cut: false,
+      label: null,
+      summary: null,
+      topic: false,
+    }
+    expect(rawParts(recording({ timeline: [programme] }), [])[0]!.name).toBeNull()
+  })
+
   it('should name a raw topic resumed after a break once', () => {
     expect(rawParts(recording(), []).map(part => part.name)).toEqual([
       null,
@@ -252,6 +265,7 @@ describe('episodeParts', () => {
       cut,
       label: null,
       summary: null,
+      topic: !cut,
     })
     const topics = [
       entry(0, 100, 'Ooper'),
@@ -267,6 +281,33 @@ describe('episodeParts', () => {
     ])
   })
 
+  it('should not number the programme name as a topic', () => {
+    const topics = [
+      {
+        start: 0,
+        end: 120,
+        title: 'Keskpäevatund',
+        cut: false,
+        label: null,
+        summary: null,
+        topic: false,
+      },
+      {
+        start: 120,
+        end: 300,
+        title: 'Šokolaadi hind',
+        cut: false,
+        label: null,
+        summary: null,
+        topic: true,
+      },
+    ]
+    expect(episodeParts(recording({ topics })).map(part => part.label)).toEqual([
+      'Keskpäevatund · 0:00',
+      'Teema 1: Šokolaadi hind · 2:00',
+    ])
+  })
+
   it('should name a topic by its title when it has no label', () => {
     const topic = {
       start: 0,
@@ -275,6 +316,7 @@ describe('episodeParts', () => {
       cut: false,
       label: null,
       summary: null,
+      topic: true,
     }
     expect(episodeParts(recording({ topics: [topic] }))[0]!.name).toBe('Tesla uus roadster')
   })

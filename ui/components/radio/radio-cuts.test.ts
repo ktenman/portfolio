@@ -155,6 +155,7 @@ describe('Radio cuts', () => {
           cut: true,
           label: null,
           summary: null,
+          topic: false,
         })),
       ].sort((a, b) => a.start - b.start),
     })

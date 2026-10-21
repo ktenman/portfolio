@@ -278,9 +278,9 @@ export interface StripPart {
   time: string
 }
 
-const named = ({ title, label, summary, cut }: TimelineEntry) => ({
+const named = ({ title, label, summary, topic }: TimelineEntry) => ({
   title,
-  name: cut ? null : (label ?? title),
+  name: topic ? (label ?? title) : null,
   summary: summary ?? null,
 })
 
@@ -310,7 +310,7 @@ export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
     const heard = parts.filter(part => part.name !== null)
     const resumed = !entry.cut && heard[heard.length - 1]?.title === entry.title
     const number = heard.length + (resumed ? 0 : 1)
-    const lead = entry.cut ? entry.title : `Teema ${number}: ${entry.title}`
+    const lead = entry.topic ? `Teema ${number}: ${entry.title}` : entry.title
     const part = {
       ...named(entry),
       start: entry.start,

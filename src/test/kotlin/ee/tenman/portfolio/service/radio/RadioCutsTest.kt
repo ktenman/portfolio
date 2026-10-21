@@ -205,6 +205,23 @@ class RadioCutsTest {
     expect(entry.label to entry.summary).toEqual("Tesla roadster" to "Lendavad autod.")
   }
 
+  @Test
+  fun `should count a chapter as a topic`() {
+    val entry = timeline(emptyList(), listOf(EpisodeChapter(0.0, "Šokolaadi hind")), 60.0, PROGRAMME).single()
+    expect(entry.topic).toEqual(true)
+  }
+
+  @Test
+  fun `should not count the programme name as a topic`() {
+    expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME).single().topic).toEqual(false)
+  }
+
+  @Test
+  fun `should not count the programme name before the first chapter as a topic`() {
+    val entries = timeline(emptyList(), listOf(EpisodeChapter(120.0, "Šokolaadi hind")), 300.0, PROGRAMME)
+    expect(entries.map { it.title to it.topic }).toEqual(listOf("Keskpäevatund" to false, "Šokolaadi hind" to true))
+  }
+
   private fun entry(
     start: Double,
     end: Double,
