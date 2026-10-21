@@ -127,21 +127,21 @@ class OpenRouterClientIT {
   fun `should send system prompt and strict json schema when completing`() {
     wireMockServer.stubFor(
       post(urlEqualTo("/chat/completions"))
-        .withRequestBody(matchingJsonPath("$.model", equalTo("google/gemini-3.5-flash-lite")))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("google/gemini-4-argon")))
         .withRequestBody(matchingJsonPath("$.messages[0].role", equalTo("system")))
         .withRequestBody(matchingJsonPath("$.messages[1].content", equalTo("Saade algab 11:59.")))
         .withRequestBody(matchingJsonPath("$.response_format.json_schema.strict", equalTo("true")))
         .withRequestBody(matchingJsonPath("$.provider.require_parameters", equalTo("true")))
         .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
     )
-    val result = openRouterClient.complete(AiModel.GEMINI_3_5_FLASH_LITE, "Leia saade.", "Saade algab 11:59.", mapOf("type" to "object"))
+    val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade algab 11:59.", mapOf("type" to "object"))
     expect(result).toEqual("{\"hosts\":[]}")
   }
 
   @Test
   fun `should return null when completion answers with an error body`() {
     stubOpenRouterSuccess("{\"error\":{\"message\":\"upstream\"}}")
-    val result = openRouterClient.complete(AiModel.GEMINI_3_5_FLASH_LITE, "Leia saade.", "Saade.", mapOf("type" to "object"))
+    val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade.", mapOf("type" to "object"))
     expect(result).toEqual(null)
   }
 

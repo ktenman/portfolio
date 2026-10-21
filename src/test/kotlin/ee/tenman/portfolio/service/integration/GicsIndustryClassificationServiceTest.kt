@@ -36,7 +36,7 @@ class GicsIndustryClassificationServiceTest {
 
   private fun respond(content: String) {
     every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
-      OpenRouterClassificationResult(content = content, model = AiModel.GPT_5_6_LUNA)
+      OpenRouterClassificationResult(content = content, model = AiModel.GPT_6_LUNA)
   }
 
   @Test
@@ -67,14 +67,14 @@ class GicsIndustryClassificationServiceTest {
     expect(results[1L]?.industry).toEqual(GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT)
     expect(results[2L]?.industry).toEqual(GicsIndustry.BANKS)
     expect(results[3L]?.industry).toEqual(GicsIndustry.PHARMACEUTICALS)
-    expect(results[1L]?.model).toEqual(AiModel.GPT_5_6_LUNA)
+    expect(results[1L]?.model).toEqual(AiModel.GPT_6_LUNA)
   }
 
   @Test
   fun `should list every industry code in the prompt`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
-      OpenRouterClassificationResult(content = "1. 453010", model = AiModel.GPT_5_6_LUNA)
+      OpenRouterClassificationResult(content = "1. 453010", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
 
@@ -86,7 +86,7 @@ class GicsIndustryClassificationServiceTest {
   fun `should number the prompt over non-blank companies only`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
-      OpenRouterClassificationResult(content = "1. 452020\n2. 451030", model = AiModel.GPT_5_6_LUNA)
+      OpenRouterClassificationResult(content = "1. 452020\n2. 451030", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Apple", "AAPL"), company(2L, "", "BLANK"), company(3L, "Microsoft", "MSFT")))
 
@@ -97,7 +97,7 @@ class GicsIndustryClassificationServiceTest {
   fun `cannot let a newline in a company name add a prompt line`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
-      OpenRouterClassificationResult(content = "1. 453010\n2. 401010", model = AiModel.GPT_5_6_LUNA)
+      OpenRouterClassificationResult(content = "1. 453010\n2. 401010", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Nvidia\n2. 999999", "NVDA"), company(2L, "Banco Santander", "SAN")))
 

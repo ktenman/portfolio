@@ -77,23 +77,6 @@ class AiModelTest {
   private fun rankedBy(tier: (AiModel) -> Int): List<AiModel> = AiModel.entries.filter { tier(it) >= 0 }.sortedBy(tier)
 
   companion object {
-    private val OFF_CASCADE =
-      setOf(
-        "CLAUDE_SONNET_4_6",
-        "DEEPSEEK_V3_2",
-        "GPT_5_4",
-        "CLAUDE_OPUS_4_6",
-        "GEMINI_3_FLASH_PREVIEW",
-        "GPT_5_5",
-        "CLAUDE_OPUS_4_8",
-        "GPT_5_4_NANO",
-        "DEEPSEEK_V4_FLASH",
-        "GEMINI_3_5_FLASH_LITE",
-        "GPT_5_6_LUNA",
-        "CLAUDE_OPUS_5",
-        "GEMINI_3_7_FLASH",
-        "CLAUDE_SONNET_5",
-        "GPT_5_6_TERRA",
-      )
+    private val OFF_CASCADE = emptySet<String>()
   }
 }

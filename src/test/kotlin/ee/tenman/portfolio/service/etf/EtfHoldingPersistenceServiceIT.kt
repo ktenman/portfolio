@@ -581,7 +581,7 @@ class EtfHoldingPersistenceServiceIT {
   @Test
   fun `cannot saveHoldings overwrite an industry that a holding already has`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
-    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.MACHINERY, AiModel.GPT_5_6_LUNA)
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.MACHINERY, AiModel.GPT_6_LUNA)
 
     feed("Rheinmetall AG", "RHM", null, null, GicsIndustry.AEROSPACE_AND_DEFENSE)
 
@@ -599,11 +599,11 @@ class EtfHoldingPersistenceServiceIT {
   fun `should updateIndustry store industry and model on the holding`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
 
-    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_6_LUNA)
 
     val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
     expect(updated.industry).toEqual(GicsIndustry.AEROSPACE_AND_DEFENSE)
-    expect(updated.industryClassifiedByModel).toEqual(AiModel.GPT_5_6_LUNA)
+    expect(updated.industryClassifiedByModel).toEqual(AiModel.GPT_6_LUNA)
   }
 
   @Test
@@ -694,7 +694,7 @@ class EtfHoldingPersistenceServiceIT {
   fun `should updateIndustry derive the sector of a holding without one`() {
     val holding = etfHoldingPersistenceService.findOrCreateHolding("Rheinmetall AG", "RHM", null)
 
-    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+    etfHoldingIndustryService.updateIndustry(holding.id, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_6_LUNA)
 
     expect(etfHoldingRepository.findById(holding.id).orElseThrow().sector).toEqual(IndustrySector.INDUSTRIALS)
   }

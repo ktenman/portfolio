@@ -236,10 +236,10 @@ class OpenRouterCircuitBreakerTest {
 
   @Test
   fun `should track rate limits independently for each model`() {
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_4_ARGON)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(true)
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(false)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_4_ARGON)).toEqual(false)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5_5)).toEqual(false)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(false)
   }
@@ -257,9 +257,9 @@ class OpenRouterCircuitBreakerTest {
     val tier0 = circuitBreaker.selectModelByTier(0)
     val tier1 = circuitBreaker.selectModelByTier(1)
     val tier2 = circuitBreaker.selectModelByTier(2)
-    expect(tier0.model).toEqual(AiModel.GPT_6_LUNA)
+    expect(tier0.model).toEqual(AiModel.GEMINI_4_ARGON)
     expect(tier1.model).toEqual(AiModel.CLAUDE_OPUS_5_5)
-    expect(tier2.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
+    expect(tier2.model).toEqual(AiModel.GPT_6_LUNA)
   }
 
   @Test
@@ -270,11 +270,11 @@ class OpenRouterCircuitBreakerTest {
 
   @Test
   fun `should reset all model rate limits`() {
-    circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)
+    circuitBreaker.tryAcquireForModel(AiModel.GEMINI_4_ARGON)
     circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5_5)
     circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)
     circuitBreaker.resetRateLimits()
-    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_3_5_FLASH_LITE)).toEqual(true)
+    expect(circuitBreaker.tryAcquireForModel(AiModel.GEMINI_4_ARGON)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.CLAUDE_OPUS_5_5)).toEqual(true)
     expect(circuitBreaker.tryAcquireForModel(AiModel.DEEPSEEK_V4_PRO)).toEqual(true)
   }

@@ -26,7 +26,7 @@ class HoldingIdentityBatchServiceTest {
 
   private fun answer(content: String?) {
     every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
-      content?.let { OpenRouterClassificationResult(content = it, model = AiModel.DEEPSEEK_V4_FLASH) }
+      content?.let { OpenRouterClassificationResult(content = it, model = AiModel.DEEPSEEK_V4_PRO) }
   }
 
   @Test
@@ -93,7 +93,7 @@ class HoldingIdentityBatchServiceTest {
   fun `should number each pair with its names and shared ticker in the prompt`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "1: YES\n2: YES", model = AiModel.DEEPSEEK_V4_FLASH)
+      OpenRouterClassificationResult(content = "1: YES\n2: YES", model = AiModel.DEEPSEEK_V4_PRO)
     service.resolve(listOf(alibaba, zalgiris))
     expect(prompt.captured).toContain(
       "1. Name 1: Alibaba | Name 2: ALIBABA GROUP HOLDING | Possible shared ticker: BABA",
@@ -105,7 +105,7 @@ class HoldingIdentityBatchServiceTest {
   fun `should show both tickers instead of a shared ticker when they differ`() {
     val prompt = slot<String>()
     every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
-      OpenRouterClassificationResult(content = "1: NO\n2: NO", model = AiModel.DEEPSEEK_V4_FLASH)
+      OpenRouterClassificationResult(content = "1: NO\n2: NO", model = AiModel.DEEPSEEK_V4_PRO)
     service.resolve(listOf(IdentityPair("PTC", "PTC Therapeutics Inc", "PTCT", null, null, "PTC"), zalgiris))
     expect(prompt.captured).toContain("1. Name 1: PTC (ticker: PTC) | Name 2: PTC Therapeutics Inc (ticker: PTCT)\n")
   }

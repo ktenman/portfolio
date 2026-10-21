@@ -176,7 +176,7 @@ class EtfHoldingCountryServiceIT {
         countryCode = "US",
         countryName = "United States",
         countrySource = CountrySource.LLM,
-        countryClassifiedByModel = AiModel.GPT_5_6_LUNA,
+        countryClassifiedByModel = AiModel.GPT_6_LUNA,
       ),
     )
 

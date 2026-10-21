@@ -226,7 +226,7 @@ class HoldingMergeServiceIT {
         name = "Haleon",
         industry = GicsIndustry.PERSONAL_CARE_PRODUCTS,
         industrySource = IndustrySource.LLM,
-        industryClassifiedByModel = AiModel.GPT_5_6_LUNA,
+        industryClassifiedByModel = AiModel.GPT_6_LUNA,
       ),
     )
     val duplicate =
@@ -306,7 +306,7 @@ class HoldingMergeServiceIT {
   fun `should inherit dated Vanguard country provenance on the canonical UUID`() {
     val canonical =
       etfHoldingRepository.save(
-      EtfHolding(name = "Haleon", countryCode = "US", countrySource = CountrySource.LLM, countryClassifiedByModel = AiModel.GPT_5_6_LUNA),
+      EtfHolding(name = "Haleon", countryCode = "US", countrySource = CountrySource.LLM, countryClassifiedByModel = AiModel.GPT_6_LUNA),
     )
     val duplicate = vanguardCountry("Haleon PLC", "GB", firstDate)
     holdingMergeService.merge(canonical.id, listOf(duplicate.id))

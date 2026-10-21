@@ -105,16 +105,16 @@ class EtfHoldingsClassificationJobTest {
     every { industryClassificationService.classifyBatch(any()) } returns
       BatchClassificationOutcome(
         mapOf(
-          1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_5_FLASH_LITE),
-          2L to SectorClassificationResult(sector = IndustrySector.FINANCE, model = AiModel.GEMINI_3_5_FLASH_LITE),
+          1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_4_ARGON),
+          2L to SectorClassificationResult(sector = IndustrySector.FINANCE, model = AiModel.GEMINI_4_ARGON),
         ),
         true,
       )
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_3_5_FLASH_LITE) }
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(2L, IndustrySector.FINANCE, AiModel.GEMINI_3_5_FLASH_LITE) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_4_ARGON) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(2L, IndustrySector.FINANCE, AiModel.GEMINI_4_ARGON) }
   }
 
   @Test
@@ -125,13 +125,13 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     every { industryClassificationService.classifyBatch(any()) } returns
       BatchClassificationOutcome(
-        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_5_FLASH_LITE)),
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_4_ARGON)),
         true,
       )
 
     job.execute()
 
-    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_3_5_FLASH_LITE) }
+    verify(exactly = 1) { etfHoldingPersistenceService.updateSector(1L, IndustrySector.SEMICONDUCTORS, AiModel.GEMINI_4_ARGON) }
     verify(exactly = 0) { etfHoldingPersistenceService.updateSector(2L, any(), any()) }
   }
 
@@ -161,7 +161,7 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
     every { industryClassificationService.classifyBatch(any()) } returns
       BatchClassificationOutcome(
-        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_5_FLASH_LITE)),
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_4_ARGON)),
         true,
       )
 
@@ -191,7 +191,7 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L, 2L)) } returns listOf(holding1, holding2)
     every { industryClassificationService.classifyBatch(any()) } returns
       BatchClassificationOutcome(
-        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_5_FLASH_LITE)),
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_4_ARGON)),
         true,
       )
 
@@ -208,7 +208,7 @@ class EtfHoldingsClassificationJobTest {
     every { etfHoldingPersistenceService.findAllByIds(listOf(1L)) } returns listOf(holding)
     every { industryClassificationService.classifyBatch(any()) } returns
       BatchClassificationOutcome(
-        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_3_5_FLASH_LITE)),
+        mapOf(1L to SectorClassificationResult(sector = IndustrySector.SEMICONDUCTORS, model = AiModel.GEMINI_4_ARGON)),
         true,
       )
 

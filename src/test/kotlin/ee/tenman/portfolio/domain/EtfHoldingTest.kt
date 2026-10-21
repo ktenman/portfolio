@@ -18,7 +18,7 @@ class EtfHoldingTest {
         industrySource = IndustrySource.VANGUARD,
         sector = IndustrySector.FINANCE,
         sectorSource = source,
-        classifiedByModel = AiModel.GPT_5_6_LUNA,
+        classifiedByModel = AiModel.GPT_6_LUNA,
       )
 
     holding.deriveSector()
