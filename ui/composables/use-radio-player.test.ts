@@ -60,6 +60,13 @@ describe('useRadioPlayer', () => {
     expect(audio.getAttribute('src')).toBeNull()
   })
 
+  it('should stop playing when the live stream is stopped', () => {
+    player.listen()
+    audio.dispatchEvent(new Event('play'))
+    player.toggle()
+    expect(player.playing.value).toBe(false)
+  })
+
   it('should leave the live stream when a recording is loaded', () => {
     player.listen()
     player.load(split())
