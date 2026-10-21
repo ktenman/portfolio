@@ -93,11 +93,11 @@ class RadioEpisodeServiceTest {
   @Test
   fun `should read the outline three times and render the show`() {
     show()
-    every { outlineService.reads(any(), any(), AiModel.GEMINI_3_5_FLASH_LITE, any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
+    every { outlineService.reads(any(), any(), AiModel.GEMINI_4_ARGON, any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
     service.make(directory)
     val found = edit()
     expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
-      .toEqual(Triple(OutlineSummary("google/gemini-3.5-flash-lite", 3, 3, 3), 4.7, true))
+      .toEqual(Triple(OutlineSummary("google/gemini-4-argon", 3, 3, 3), 4.7, true))
   }
 
   @Test

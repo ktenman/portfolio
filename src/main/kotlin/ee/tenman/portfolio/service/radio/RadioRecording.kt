@@ -23,7 +23,7 @@ val NAME = Regex("[0-9a-z][0-9a-z-]*")
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
   val recordings: Path = Path.of("/recordings"),
-  val outlineModel: AiModel = AiModel.GEMINI_3_5_FLASH_LITE,
+  val outlineModel: AiModel = AiModel.GEMINI_4_ARGON,
   val live: String = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000",
   val bucket: String = "radio",
   val localDays: Long = 7,

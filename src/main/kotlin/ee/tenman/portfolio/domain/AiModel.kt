@@ -6,24 +6,10 @@ enum class AiModel(
   val sectorFallbackTier: Int = -1,
   val countryFallbackTier: Int = -1,
 ) {
-  GPT_6_LUNA("openai/gpt-6-luna", 240, sectorFallbackTier = 0, countryFallbackTier = 0),
+  GEMINI_4_ARGON("google/gemini-4-argon", 400, sectorFallbackTier = 0, countryFallbackTier = 0),
   CLAUDE_OPUS_5_5("anthropic/claude-opus-5.5", 240, sectorFallbackTier = 1, countryFallbackTier = 1),
-  DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 2, countryFallbackTier = 2),
-  GPT_5_6_TERRA("openai/gpt-5.6-terra", 240),
-  CLAUDE_SONNET_5("anthropic/claude-sonnet-5", 240),
-  GPT_5_6_LUNA("openai/gpt-5.6-luna", 240),
-  CLAUDE_OPUS_5("anthropic/claude-opus-5", 240),
-  GEMINI_3_7_FLASH("google/gemini-3.7-flash", 400),
-  DEEPSEEK_V4_FLASH("deepseek/deepseek-v4-flash", 240),
-  GEMINI_3_5_FLASH_LITE("google/gemini-3.5-flash-lite", 400),
-  GEMINI_3_FLASH_PREVIEW("google/gemini-3-flash-preview", 400),
-  GPT_5_5("openai/gpt-5.5", 240),
-  CLAUDE_OPUS_4_8("anthropic/claude-opus-4.8", 240),
-  GPT_5_4_NANO("openai/gpt-5.4-nano", 240),
-  CLAUDE_SONNET_4_6("anthropic/claude-sonnet-4.6", 240),
-  DEEPSEEK_V3_2("deepseek/deepseek-v3.2", 240),
-  GPT_5_4("openai/gpt-5.4", 240),
-  CLAUDE_OPUS_4_6("anthropic/claude-opus-4.6", 240),
+  GPT_6_LUNA("openai/gpt-6-luna", 240, sectorFallbackTier = 2, countryFallbackTier = 2),
+  DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 3, countryFallbackTier = 3),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }
