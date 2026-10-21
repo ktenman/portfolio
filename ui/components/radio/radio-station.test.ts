@@ -41,14 +41,15 @@ describe('RadioStation', () => {
     expect((await mount(idle)).text()).toContain('Pole valitud')
   })
 
-  it('should name the next capture with its day and start', async () => {
+  it('should name the next capture with the day and time its airing starts', async () => {
     const capture = {
-      name: '2026-10-24-keskpaevatund',
+      name: '2026-10-24-1200-keskpaevatund',
       programmes: ['Keskpäevatund'],
-      start: SATURDAY_NOON - 300,
-      end: SATURDAY_NOON + 3900,
+      start: SATURDAY_NOON - 30,
+      end: SATURDAY_NOON + 3630,
+      slot: { start: SATURDAY_NOON, end: SATURDAY_NOON + 3600 },
     }
-    expect((await mount({ ...idle, capture })).text()).toContain('Keskpäevatund, L 24.10 11:55')
+    expect((await mount({ ...idle, capture })).text()).toContain('Keskpäevatund, L 24.10 12:00')
   })
 
   it('should show the recorder waiting between recordings', async () => {

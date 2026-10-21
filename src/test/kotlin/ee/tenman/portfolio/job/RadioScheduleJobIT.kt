@@ -26,6 +26,7 @@ import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RecorderState
+import ee.tenman.portfolio.service.radio.Slot
 import io.mockk.mockk
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -156,11 +157,17 @@ class RadioScheduleJobIT {
   }
 
   @Test
-  fun `should plan to record a programme chosen every time from five minutes before it`() {
+  fun `should plan to record a programme chosen every time from thirty seconds before it`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     expect(plan().single()).toEqual(
-      Capture("$day-1200-keskpaevatund", listOf("Keskpäevatund"), at("11:55").toEpochSecond(), at("13:05").toEpochSecond()),
+      Capture(
+        "$day-1200-keskpaevatund",
+        listOf("Keskpäevatund"),
+        at("11:59:30").toEpochSecond(),
+        at("13:00:30").toEpochSecond(),
+        Slot(at("12:00").toEpochSecond(), at("13:00").toEpochSecond()),
+      ),
     )
   }
 
@@ -199,7 +206,7 @@ class RadioScheduleJobIT {
   fun `should name the next capture of the recorder`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    expect(radioScheduleService.station().capture?.start).toEqual(at("11:55").toEpochSecond())
+    expect(radioScheduleService.station().capture?.start).toEqual(at("11:59:30").toEpochSecond())
   }
 
   @Test
