@@ -271,9 +271,26 @@ test('the radio dock keeps every control at least 44 px tall on a phone', async 
   const targets = [
     dock.getByRole('slider', { name: 'Asukoht salvestuses' }),
     ...(await dock.getByRole('button').all()),
+    ...(await dock.getByRole('link').all()),
   ]
   const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
   expect(Math.min(...heights)).toBeGreaterThanOrEqual(44)
+})
+
+test('the radio dock timeline leaves the topic link clear on a phone', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-17')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const dock = page.getByTestId('radio-dock')
+  await expect(dock).toBeInViewport()
+  const slider = (await dock.getByRole('slider', { name: 'Asukoht salvestuses' }).boundingBox())!
+  const link = (await dock.getByRole('link').boundingBox())!
+  expect(slider.y + slider.height).toBeLessThanOrEqual(link.y)
 })
 
 test('the radio dock shows while the navbar covers the card controls', async ({

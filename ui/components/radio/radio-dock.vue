@@ -25,7 +25,7 @@
           <component
             :is="link ? RouterLink : 'p'"
             :to="link"
-            class="mb-1 flex items-baseline justify-between gap-3 md:hidden"
+            class="mt-1 flex min-h-11 items-center justify-between gap-3 md:hidden"
           >
             <span class="truncate text-sm font-semibold text-brass-deep">{{ heading }}</span>
             <span class="shrink-0 text-label text-ink-soft tabular-nums">{{ status }}</span>
@@ -87,9 +87,11 @@ const status = computed(() =>
 const heading = computed(() =>
   player.live.value ? 'Kuku otse' : (here.value?.title ?? player.recording.value?.programme)
 )
-const detail = computed(() =>
-  player.live.value ? onAir.value : `${player.recording.value?.programme} · ${status.value}`
-)
+const detail = computed(() => {
+  if (player.live.value) return onAir.value
+  if (!here.value) return status.value
+  return `${player.recording.value?.programme} · ${status.value}`
+})
 
 onMounted(() => audio.value && player.attach(audio.value))
 onBeforeUnmount(player.detach)

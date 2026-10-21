@@ -121,6 +121,14 @@ describe('RadioDock', () => {
     expect(wrapper.text()).toContain('Keskpäevatund')
   })
 
+  it('should name the programme once while a recording has no topics', async () => {
+    const wrapper = render({})
+    player.load(recording({ timeline: [] }))
+    await wrapper.vm.$nextTick()
+    const detail = wrapper.findAllComponents(RouterLinkStub)[1]!.findAll('span')[1]!.text()
+    expect(detail).not.toContain('Keskpäevatund')
+  })
+
   it('should hatch a cut decided in the text before it saves', async () => {
     const item = recording()
     const wrapper = render()
