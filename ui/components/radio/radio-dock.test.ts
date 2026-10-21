@@ -71,16 +71,12 @@ describe('RadioDock', () => {
     expect(player.seconds.value).toBe(120)
   })
 
-  it('should offer to go back to the playing line from the dock', async () => {
+  it('should not offer to go back to the playing line', async () => {
     const wrapper = render()
     player.load(recording())
     player.lost.value = true
     await wrapper.vm.$nextTick()
-    await wrapper
-      .findAll('button')
-      .find(b => b.text() === 'Tagasi praegusele')!
-      .trigger('click')
-    expect(player.lost.value).toBe(false)
+    expect(wrapper.findAll('button').some(b => b.text() === 'Tagasi praegusele')).toBe(false)
   })
 
   it('should offer the speed chip in the dock', async () => {

@@ -46,7 +46,6 @@
             </span>
           </router-link>
           <radio-controls />
-          <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
         </div>
       </div>
     </transition>
@@ -59,7 +58,6 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
 import type { StationAiring } from '../../models/generated/domain-models'
 import { position, range } from '../../utils/radio'
-import AppButton from '../shared/app-button.vue'
 import RadioControls from './radio-controls.vue'
 
 const audio = useTemplateRef<HTMLAudioElement>('audio')

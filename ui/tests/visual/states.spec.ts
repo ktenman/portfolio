@@ -310,20 +310,6 @@ test.describe('desktop states', () => {
     await expect(page.getByTestId('radio-play')).toBeInViewport()
   })
 
-  test('the radio player leads the text back to the playing line', async ({ page }) => {
-    await stubRadio(page)
-    await page.setViewportSize({ width: 1440, height: 600 })
-    await openRoute(page, '/radio/2026-10-17')
-    await page.getByTestId('radio-text-line').first().getByRole('button').click()
-    await page.mouse.wheel(0, 600)
-    await expect(
-      page.getByTestId('radio-dock').getByRole('button', { name: 'Tagasi praegusele' })
-    ).toBeInViewport()
-    await page.mouse.move(0, 0)
-    await settleAndFreeze(page)
-    await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-player-lost.png')
-  })
-
   test('the spoken word is marked by a tint', async ({ page }) => {
     await stubRadio(page)
     await openRoute(page, '/radio/2026-10-17')

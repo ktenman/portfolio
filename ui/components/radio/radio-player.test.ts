@@ -243,22 +243,10 @@ describe('RadioPlayer', () => {
     expect(player.cardInView.value).toBe(false)
   })
 
-  it('should offer to go back to the playing line while the text lost it', async () => {
+  it('should not offer to go back to the playing line', async () => {
     const wrapper = render()
     player.lost.value = true
     await wrapper.vm.$nextTick()
-    await wrapper
-      .findAll('button')
-      .find(b => b.text() === 'Tagasi praegusele')!
-      .trigger('click')
-    expect(player.lost.value).toBe(false)
-  })
-
-  it('should not offer to go back while the text follows the playing line', () => {
-    expect(
-      render()
-        .findAll('button')
-        .some(b => b.text() === 'Tagasi praegusele')
-    ).toBe(false)
+    expect(wrapper.findAll('button').some(b => b.text() === 'Tagasi praegusele')).toBe(false)
   })
 })
