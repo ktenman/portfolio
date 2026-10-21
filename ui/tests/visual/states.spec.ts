@@ -218,7 +218,7 @@ test('summary chart marks the high and low of total profit when total value is h
   )
 })
 
-test('the radio dock takes over once the player card scrolls away', async ({ page }, testInfo) => {
+test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
   await stubBuildInfo(page)
   await stubEnums(page)
@@ -226,9 +226,9 @@ test('the radio dock takes over once the player card scrolls away', async ({ pag
   await page.setViewportSize({ width: page.viewportSize()!.width, height: 600 })
   await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-  await expect(page.getByTestId('radio-dock')).toBeInViewport()
+  await expect(page.getByTestId('radio-play')).toBeInViewport()
   await settleAndFreeze(page)
-  await expect(page.getByTestId('radio-dock')).toHaveScreenshot('radio-dock-scrolled.png')
+  await expect(page).toHaveScreenshot('radio-player-scrolled.png')
 })
 
 test('the radio rail stays in view while the text scrolls', async ({ page }, testInfo) => {
@@ -245,23 +245,19 @@ test('the radio rail stays in view while the text scrolls', async ({ page }, tes
 })
 
 test('the raw radio recording shows the cut decisions', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'tablet')
+  test.skip(testInfo.project.name !== 'desktop')
   await stubBuildInfo(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
-  if (testInfo.project.name === 'mobile') {
-    await page.getByRole('combobox', { name: 'Versioon' }).selectOption('raw')
-  } else {
-    await page.getByRole('button', { name: /^Toorsalvestus/ }).click()
-  }
+  await page.getByRole('button', { name: /^Toorsalvestus/ }).click()
   await expect(page.getByTestId('radio-cut').first()).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
   await settleAndFreeze(page)
   await expect(page).toHaveScreenshot('radio-raw.png', { fullPage: true })
 })
 
-test('the radio dock keeps every control at least 44 px tall on a phone', async ({
+test('the radio player keeps every control at least 44 px tall on a phone', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
@@ -269,51 +265,41 @@ test('the radio dock keeps every control at least 44 px tall on a phone', async 
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-  const dock = page.getByTestId('radio-dock')
-  await expect(dock).toBeInViewport()
+  const card = page.getByTestId('radio-player')
   const targets = [
-    dock.getByRole('slider', { name: 'Asukoht salvestuses' }),
-    ...(await dock.getByRole('button').all()),
-    ...(await dock.getByRole('link').all()),
+    card.getByRole('slider', { name: 'Asukoht salvestuses' }),
+    card.getByRole('combobox', { name: 'Versioon' }),
+    ...(await card.getByRole('button').all()),
   ]
   const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
   expect(Math.min(...heights)).toBeGreaterThanOrEqual(44)
 })
 
-test('the radio dock timeline leaves the topic link clear on a phone', async ({
-  page,
-}, testInfo) => {
-  test.skip(testInfo.project.name !== 'mobile')
-  await stubBuildInfo(page)
-  await stubEnums(page)
-  await stubRadio(page)
-  await openRoute(page, '/radio/2026-10-17')
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-  const dock = page.getByTestId('radio-dock')
-  await expect(dock).toBeInViewport()
-  const slider = (await dock.getByRole('slider', { name: 'Asukoht salvestuses' }).boundingBox())!
-  const link = (await dock.getByRole('link').boundingBox())!
-  expect(slider.y + slider.height).toBeLessThanOrEqual(link.y)
-})
-
-test('the radio dock shows while the navbar covers the card controls', async ({
-  page,
-}, testInfo) => {
+test('the radio player sticks below the navbar', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await stubBuildInfo(page)
   await stubEnums(page)
-  await stubRadio(page)
+  await stubRadioLongText(page)
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await openRoute(page, '/radio/2026-10-17')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
+  const navbar = (await page.locator('nav.navbar').boundingBox())!
+  const card = (await page.getByTestId('radio-player').boundingBox())!
+  expect(card.y).toBe(navbar.y + navbar.height)
+})
+
+test('the playing radio line stays clear of the player', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioLongText(page)
   await page.setViewportSize({ width: 1440, height: 600 })
   await openRoute(page, '/radio/2026-10-17')
-  await page.evaluate(() => {
-    const navbar = document.querySelector('nav.navbar')!.getBoundingClientRect().height
-    const row = document
-      .querySelector('[data-testid="radio-player"] [data-testid="radio-play"]')!
-      .parentElement!.parentElement!.getBoundingClientRect()
-    window.scrollTo(0, scrollY + row.bottom - navbar + 8)
-  })
-  await expect(page.getByTestId('radio-dock')).toBeInViewport()
+  await page.getByTestId('radio-text-line').nth(40).getByRole('button').dispatchEvent('click')
+  const line = page.locator('[data-testid="radio-text-line"][aria-current="true"]')
+  await expect(line).toBeInViewport()
+  const card = (await page.getByTestId('radio-player').boundingBox())!
+  expect((await line.boundingBox())!.y).toBeGreaterThanOrEqual(card.y + card.height)
 })
 
 test.describe('desktop states', () => {
@@ -324,14 +310,6 @@ test.describe('desktop states', () => {
   test.beforeEach(async ({ page }) => {
     await stubBuildInfo(page)
     await stubEnums(page)
-  })
-
-  test('the radio player bar stays in view while the station plays', async ({ page }) => {
-    await stubRadio(page)
-    await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/live`), route => route.abort())
-    await openRoute(page, '/radio')
-    await page.getByRole('button', { name: 'Kuula otse' }).click()
-    await expect(page.getByTestId('radio-play')).toBeInViewport()
   })
 
   test('the spoken word is marked by a tint', async ({ page }) => {

@@ -6,7 +6,14 @@ import RadioCatchUp from './radio-catch-up.vue'
 import { airing, radioDay, recording } from './radio-fixture'
 import { AiringState } from '../../models/generated/domain-models'
 
-const player = vi.hoisted(() => ({ load: vi.fn(), playFrom: vi.fn(), listen: vi.fn() }))
+const player = vi.hoisted(() => ({
+  load: vi.fn(),
+  playFrom: vi.fn(),
+  listen: vi.fn(),
+  toggle: vi.fn(),
+  live: { value: false },
+  playing: { value: false },
+}))
 
 vi.mock('../../services/api', () => ({
   radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn() },
@@ -36,6 +43,8 @@ const button = async (label: string) =>
 describe('RadioCatchUp', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    player.live.value = false
+    player.playing.value = false
     vi.mocked(radioService.day).mockResolvedValue(radioDay())
     vi.mocked(radioService.recordings).mockResolvedValue([recording()])
     vi.mocked(radioService.record).mockResolvedValue()
@@ -106,6 +115,22 @@ describe('RadioCatchUp', () => {
   it('should listen live to an airing that is on air', async () => {
     await (await button('Kuula otse')).trigger('click')
     expect(player.listen).toHaveBeenCalled()
+  })
+
+  it('should open the recording of an airing it plays', async () => {
+    const wrapper = await mount()
+    const play = wrapper.findAll('button').find(b => b.text().includes('Kuula lõppu'))!
+    await play.trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.vm.$router.currentRoute.value.path).toBe(`/radio/${recording().name}`)
+    )
+  })
+
+  it('should stop the live radio from an airing on air', async () => {
+    player.live.value = true
+    player.playing.value = true
+    await (await button('Peata')).trigger('click')
+    expect(player.toggle).toHaveBeenCalled()
   })
 
   it('should ask to record a later airing once', async () => {

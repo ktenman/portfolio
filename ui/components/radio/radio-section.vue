@@ -29,7 +29,7 @@
         v-memo="[line, line === current, line === current && spoken]"
         data-testid="radio-text-line"
         :aria-current="line === current ? 'true' : undefined"
-        class="grid scroll-mt-20 scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
+        class="grid scroll-mt-[calc(var(--radio-player)+5rem)] scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
         :class="{ 'bg-brass-wash': line === current, 'opacity-60': cut }"
       >
         <button

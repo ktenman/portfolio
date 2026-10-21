@@ -20,7 +20,6 @@ const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
-const cardInView = ref(false)
 let loaded = ''
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
@@ -104,6 +103,8 @@ const load = (target: RecordingSummary, wanted: Version = 'raw') => {
 }
 
 const play = () => element.value?.play()
+
+const pause = () => element.value?.pause()
 
 const swap = (wanted: Version) => {
   const target = recording.value
@@ -241,7 +242,6 @@ export const useRadioPlayer = () => ({
   volume,
   muted,
   lost,
-  cardInView,
   rejoin,
   attach,
   detach,
@@ -249,6 +249,7 @@ export const useRadioPlayer = () => ({
   swap,
   listen,
   toggle,
+  pause,
   seek,
   skip,
   playFrom,

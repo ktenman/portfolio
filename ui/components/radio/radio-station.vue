@@ -12,8 +12,12 @@
       <template #aside><radio-badge tone="live">Otse</radio-badge></template>
       <p class="mb-0 font-semibold">{{ station.onAir.name }}</p>
       <p class="mb-3 text-sm text-body-secondary">{{ airing(station.onAir) }}</p>
-      <button type="button" :class="[LINK, 'cursor-pointer']" @click="player.listen()">
-        Kuula otse
+      <button
+        type="button"
+        :class="[LINK, 'cursor-pointer']"
+        @click="on ? player.toggle() : player.listen()"
+      >
+        {{ on ? 'Peata' : 'Kuula otse' }}
       </button>
       <p v-if="station.next" class="mt-3 mb-0 text-sm text-body-secondary">
         Järgmisena {{ clock(station.next.start, 0) }} {{ station.next.name }}
@@ -34,6 +38,7 @@ import RadioFacts from './radio-facts.vue'
 
 const { data: station } = useRadioStation()
 const player = useRadioPlayer()
+const on = computed(() => player.live.value && player.playing.value)
 
 const airing = (a: StationAiring) =>
   `${range(a.start, 0, a.end - a.start)} · ${a.recorded ? 'salvestatakse' : 'ei salvestata'}`
