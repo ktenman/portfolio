@@ -27,16 +27,8 @@ describe('RadioTopics', () => {
   })
 
   it('should hide the card before the recording has topics', () => {
-    const programme = {
-      start: 0,
-      end: 4200,
-      title: 'Sihik',
-      cut: false,
-      label: null,
-      summary: null,
-      topic: false,
-    }
-    const wrapper = render(0, rawParts(recording({ timeline: [programme] }), []))
+    const untitled = { start: 0, end: 4200, title: null, cut: false, label: null, summary: null }
+    const wrapper = render(0, rawParts(recording({ timeline: [untitled] }), []))
     expect(wrapper.find('[data-testid="radio-topics"]').exists()).toBe(false)
   })
 

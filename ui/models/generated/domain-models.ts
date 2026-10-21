@@ -437,11 +437,10 @@ export interface Cut {
 export interface TimelineEntry {
     start: number;
     end: number;
-    title: string;
+    title: string | null;
     cut: boolean;
     label: string | null;
     summary: string | null;
-    topic: boolean;
 }
 
 export interface KeptSpan {

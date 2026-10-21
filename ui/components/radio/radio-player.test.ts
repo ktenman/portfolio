@@ -66,14 +66,7 @@ describe('RadioPlayer', () => {
 
   it('should label a resumed topic once', () => {
     const [first, second, third] = recording().topics
-    const pause = {
-      ...first!,
-      start: 900,
-      end: 1000,
-      title: 'Reklaamipaus',
-      cut: true,
-      topic: false,
-    }
+    const pause = { ...first!, start: 900, end: 1000, title: 'Reklaamipaus', cut: true }
     const topics = [{ ...first!, end: 900 }, pause, { ...first!, start: 1000 }, second!, third!]
     const wrapper = render('episode', recording({ topics }))
     expect(labels(wrapper).map(label => label.findAll('span').map(span => span.text()))).toEqual([

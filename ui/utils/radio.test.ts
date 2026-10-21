@@ -202,17 +202,11 @@ describe('rawParts names', () => {
     expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
   })
 
-  it('should leave the programme name unnamed before the recording has topics', () => {
-    const programme = {
-      start: 0,
-      end: 4200,
-      title: 'Sihik',
-      cut: false,
-      label: null,
-      summary: null,
-      topic: false,
-    }
-    expect(rawParts(recording({ timeline: [programme] }), [])[0]!.name).toBeNull()
+  it('should label a part no topic covers by the programme', () => {
+    const untitled = { start: 0, end: 4200, title: null, cut: false, label: null, summary: null }
+    expect(rawParts(recording({ timeline: [untitled] }), [])[0]!.label).toBe(
+      'Keskpäevatund 11:55–13:05 · Jääb alles'
+    )
   })
 
   it('should name a raw topic resumed after a break once', () => {
@@ -265,7 +259,6 @@ describe('episodeParts', () => {
       cut,
       label: null,
       summary: null,
-      topic: !cut,
     })
     const topics = [
       entry(0, 100, 'Ooper'),
@@ -281,30 +274,14 @@ describe('episodeParts', () => {
     ])
   })
 
-  it('should not number the programme name as a topic', () => {
+  it('should not number a part no topic covers', () => {
     const topics = [
-      {
-        start: 0,
-        end: 120,
-        title: 'Keskpäevatund',
-        cut: false,
-        label: null,
-        summary: null,
-        topic: false,
-      },
-      {
-        start: 120,
-        end: 300,
-        title: 'Šokolaadi hind',
-        cut: false,
-        label: null,
-        summary: null,
-        topic: true,
-      },
+      { start: 0, end: 120, title: null, cut: false, label: null, summary: null },
+      { start: 120, end: 300, title: 'Šokolaadi hind', cut: false, label: null, summary: null },
     ]
-    expect(episodeParts(recording({ topics })).map(part => part.label)).toEqual([
-      'Keskpäevatund · 0:00',
-      'Teema 1: Šokolaadi hind · 2:00',
+    expect(episodeParts(recording({ topics })).map(part => [part.name, part.label])).toEqual([
+      [null, 'Keskpäevatund · 0:00'],
+      ['Šokolaadi hind', 'Teema 1: Šokolaadi hind · 2:00'],
     ])
   })
 
@@ -316,7 +293,6 @@ describe('episodeParts', () => {
       cut: false,
       label: null,
       summary: null,
-      topic: true,
     }
     expect(episodeParts(recording({ topics: [topic] }))[0]!.name).toBe('Tesla uus roadster')
   })

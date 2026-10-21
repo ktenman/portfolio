@@ -183,7 +183,7 @@ class RadioCutsTest {
 
   @Test
   fun `should list the cuts and the topics in recording order`() {
-    expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0, PROGRAMME).map { Triple(it.start, it.title, it.cut) }).toEqual(
+    expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
       listOf(
         Triple(0.0, "Enne saadet", true),
         Triple(761.5, "Rahvusooperi tüli", false),
@@ -201,25 +201,8 @@ class RadioCutsTest {
   @Test
   fun `should carry a topic's label and summary onto the timeline`() {
     val topic = EpisodeChapter(0.0, "Tesla uus roadster", "Tesla roadster", "Lendavad autod.")
-    val entry = timeline(emptyList(), listOf(topic), 60.0, PROGRAMME).single()
+    val entry = timeline(emptyList(), listOf(topic), 60.0).single()
     expect(entry.label to entry.summary).toEqual("Tesla roadster" to "Lendavad autod.")
-  }
-
-  @Test
-  fun `should count a chapter as a topic`() {
-    val entry = timeline(emptyList(), listOf(EpisodeChapter(0.0, "Šokolaadi hind")), 60.0, PROGRAMME).single()
-    expect(entry.topic).toEqual(true)
-  }
-
-  @Test
-  fun `should not count the programme name as a topic`() {
-    expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME).single().topic).toEqual(false)
-  }
-
-  @Test
-  fun `should not count the programme name before the first chapter as a topic`() {
-    val entries = timeline(emptyList(), listOf(EpisodeChapter(120.0, "Šokolaadi hind")), 300.0, PROGRAMME)
-    expect(entries.map { it.title to it.topic }).toEqual(listOf("Keskpäevatund" to false, "Šokolaadi hind" to true))
   }
 
   private fun entry(
@@ -269,7 +252,13 @@ class RadioCutsTest {
   }
 
   @Test
-  fun `should show a recording without an edit list as one part`() {
-    expect(timeline(emptyList(), emptyList(), 60.0, PROGRAMME)).toEqual(listOf(TimelineEntry(0.0, 60.0, "Keskpäevatund", false)))
+  fun `should show a recording without an edit list as one untitled part`() {
+    expect(timeline(emptyList(), emptyList(), 60.0)).toEqual(listOf(TimelineEntry(0.0, 60.0, null, false)))
+  }
+
+  @Test
+  fun `should leave the part before the first topic untitled`() {
+    val found = timeline(emptyList(), listOf(EpisodeChapter(120.0, "Šokolaadi hind")), 300.0)
+    expect(found.spans()).toEqual(listOf(Triple(0.0, 120.0, null), Triple(120.0, 300.0, "Šokolaadi hind")))
   }
 }

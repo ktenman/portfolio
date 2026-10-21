@@ -53,11 +53,10 @@ data class CutJingle(
 data class TimelineEntry(
   val start: Double,
   val end: Double,
-  val title: String,
+  val title: String?,
   val cut: Boolean,
   val label: String? = null,
   val summary: String? = null,
-  val topic: Boolean = false,
 )
 
 data class TranscriptSection(
@@ -207,24 +206,22 @@ fun timeline(
   found: List<Cut>,
   chapters: List<EpisodeChapter>,
   total: Double,
-  title: String,
 ): List<TimelineEntry> {
   val topics = chapters.sortedBy { it.start }
   val marked = found.map { TimelineEntry(it.start, it.end, it.title, true) }
-  return (marked + between(found, total).flatMap { split(it, topics, title) }).sortedBy { it.start }
+  return (marked + between(found, total).flatMap { split(it, topics) }).sortedBy { it.start }
 }
 
 private fun split(
   kept: KeptSpan,
   topics: List<EpisodeChapter>,
-  title: String,
 ): List<TimelineEntry> {
-  val programme = EpisodeChapter(kept.start, title)
-  val opening = topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }?.copy(start = kept.start) ?: programme
-  val marks = listOf(opening) + topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
-  val ends = marks.drop(1).map { it.start } + kept.end
-  return marks.zip(ends).map { (mark, end) ->
-    TimelineEntry(mark.start, end, mark.title, false, mark.label, mark.summary, mark !== programme)
+  val opening = topics.lastOrNull { it.start <= kept.start + TOPIC_LEAD }
+  val inside = topics.filter { it.start > kept.start + TOPIC_LEAD && it.start < kept.end }
+  val starts = listOf(kept.start) + inside.map { it.start }
+  val ends = inside.map { it.start } + kept.end
+  return (listOf(opening) + inside).zip(starts.zip(ends)).map { (mark, span) ->
+    TimelineEntry(span.first, span.second, mark?.title, false, mark?.label, mark?.summary)
   }
 }
 
@@ -233,13 +230,14 @@ fun sections(
   cuts: List<Cut>,
   audible: List<KeptSpan>,
   lines: List<TranscriptLine>,
+  programme: String,
 ): List<TranscriptSection> =
   timeline.mapIndexed { index, entry ->
     val last = index == timeline.lastIndex
     TranscriptSection(
       start = entry.start,
       end = entry.end,
-      title = entry.title,
+      title = entry.title ?: programme,
       cut = if (entry.cut) cuts.indexOfFirst { it.start == entry.start && it.end == entry.end }.takeIf { it >= 0 } else null,
       episodeStart = episodeStart(entry, audible),
       lines = lines.filter { it.start >= entry.start && (last || it.start < entry.end) },
