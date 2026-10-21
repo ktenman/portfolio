@@ -230,11 +230,11 @@ describe('RadioPlayer', () => {
     expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
   })
 
-  it('should show each version with its length from tablets up', () => {
+  it('should name each version without its length from tablets up', () => {
     const segments = render()
       .findAll('[role="group"][aria-label="Versioon"] button')
       .map(b => b.text())
-    expect(segments).toEqual(['Toorsalvestus 1:10:00', 'Puhastatud 41:52'])
+    expect(segments).toEqual(['Toorsalvestus', 'Puhastatud'])
   })
 
   it('should press the segment of the version that plays', () => {
