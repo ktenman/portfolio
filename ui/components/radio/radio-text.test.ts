@@ -64,6 +64,12 @@ describe('RadioText', () => {
   const headings = (wrapper: Awaited<ReturnType<typeof render>>) =>
     wrapper.findAll('[data-testid="radio-section-heading"]').map(h => h.text())
 
+  it('should leave the text to screens wider than a phone', async () => {
+    expect((await render()).get('[data-testid="radio-transcript"]').classes()).toContain(
+      'max-md:hidden'
+    )
+  })
+
   it('should show a heading for each topic with its time and length', async () => {
     expect(headings(await render())[0]).toBe('12:07Rahvusooperi tüli23 min')
   })

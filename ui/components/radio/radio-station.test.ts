@@ -101,6 +101,28 @@ describe('RadioStation', () => {
     expect(src).toContain('/api/radio/live')
   })
 
+  it('should stop the live station from the card', async () => {
+    const audio = document.createElement('audio')
+    vi.spyOn(audio, 'play').mockResolvedValue()
+    vi.spyOn(audio, 'pause').mockImplementation(() => {})
+    vi.spyOn(audio, 'load').mockImplementation(() => {})
+    const player = useRadioPlayer()
+    player.attach(audio)
+    const onAir = {
+      name: 'PaarisMäng',
+      start: SATURDAY_NOON,
+      end: SATURDAY_NOON + 3600,
+      recorded: false,
+    }
+    const wrapper = await mount({ ...idle, onAir })
+    await wrapper.find('button').trigger('click')
+    audio.dispatchEvent(new Event('play'))
+    await wrapper.find('button').trigger('click')
+    const live = audio.hasAttribute('src')
+    player.detach()
+    expect(live).toBe(false)
+  })
+
   it('should say the programme on air is not recorded', async () => {
     const onAir = {
       name: 'Tarkade klubi',

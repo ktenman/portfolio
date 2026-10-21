@@ -1,5 +1,5 @@
 <template>
-  <section class="card mb-4" data-testid="radio-player">
+  <section class="card sticky top-0 z-10 mb-4 lg:top-[60.5px]" data-testid="radio-player">
     <div class="card-body grid gap-4">
       <div
         class="flex flex-wrap items-end justify-between gap-3 max-md:grid max-md:grid-cols-[1fr_auto] max-md:items-center max-md:gap-y-4"
@@ -21,7 +21,7 @@
         <select
           v-model="version"
           aria-label="Versioon"
-          class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 font-medium max-md:row-start-1 md:hidden"
+          class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium max-md:row-start-1 md:hidden"
         >
           <option value="raw">Toorsalvestus</option>
           <option v-if="cleaned" value="episode">Puhastatud</option>
@@ -69,7 +69,7 @@
         :at="player.seconds.value"
         @play="player.playFrom($event, player.version.value)"
       />
-      <div ref="controls" class="grid gap-3">
+      <div class="grid gap-3">
         <radio-controls large />
         <div v-if="offerStart" class="flex flex-wrap justify-center gap-2">
           <app-button
@@ -87,8 +87,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, useTemplateRef, watchEffect } from 'vue'
-import { useElementVisibility } from '@vueuse/core'
+import { computed, onBeforeUnmount } from 'vue'
 import { CutKind, type RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
@@ -107,14 +106,8 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
-const shown = useElementVisibility(useTemplateRef<HTMLElement>('controls'), {
-  initialValue: true,
-  rootMargin: '-56px 0px 0px 0px',
-})
-
-watchEffect(() => (player.cardInView.value = shown.value))
 onBeforeUnmount(() => {
-  player.cardInView.value = false
+  player.pause()
   void decisions.flush()
 })
 
