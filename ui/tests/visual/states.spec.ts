@@ -268,7 +268,7 @@ test('the radio dock keeps every control at least 44 px tall on a phone', async 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   const dock = page.getByTestId('radio-dock')
   await expect(dock).toBeInViewport()
-  const targets = [dock.getByTestId('radio-dock-line'), ...(await dock.getByRole('button').all())]
+  const targets = [dock.getByRole('slider', { name: 'Asukoht salvestuses' }), ...(await dock.getByRole('button').all())]
   const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
   expect(Math.min(...heights)).toBeGreaterThanOrEqual(44)
 })

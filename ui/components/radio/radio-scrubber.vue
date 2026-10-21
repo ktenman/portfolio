@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-if="named.length"
+      v-if="named.length && !bare"
       data-testid="radio-timeline-labels"
       class="mb-2 flex gap-0.5 max-md:hidden"
     >
@@ -53,7 +53,7 @@
       />
       <input
         type="range"
-        class="absolute inset-0 w-full cursor-pointer opacity-0"
+        class="absolute inset-0 w-full cursor-pointer opacity-0 max-md:-inset-y-2"
         min="0"
         :max="total"
         step="1"
@@ -76,6 +76,7 @@ const props = defineProps<{
   total: number
   label: string
   parts: StripPart[]
+  bare?: boolean
 }>()
 
 const emit = defineEmits<{ seek: [seconds: number]; play: [start: number] }>()
