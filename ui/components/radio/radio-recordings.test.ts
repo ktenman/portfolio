@@ -82,8 +82,8 @@ describe('RadioRecordings', () => {
     expect((await mount()).text()).toContain('L 17.10 · 12:00–13:00')
   })
 
-  it('should count the suggested cuts of a recording', async () => {
-    expect((await mount()).text()).toContain('4 soovitust')
+  it('should leave the cuts out of the table', async () => {
+    expect((await mount()).text()).not.toContain('Lõiked')
   })
 
   it('should say a transcribed recording has its transcript', async () => {

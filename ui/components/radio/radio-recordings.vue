@@ -23,9 +23,6 @@
               {{ item.programme }}
             </router-link>
           </template>
-          <template #cell-cuts="{ item }">
-            <span :class="{ 'font-semibold': !item.editList?.reviewed }">{{ cutState(item) }}</span>
-          </template>
           <template #cell-text="{ item }">
             <span data-testid="radio-transcript">{{ textState(item) }}</span>
           </template>
@@ -66,7 +63,7 @@ import { useConfirm } from '../../composables/use-confirm'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { cutState, day, length, span, STATES, textState } from '../../utils/radio'
+import { day, length, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
@@ -115,7 +112,6 @@ const columns: ColumnDefinition[] = [
     formatter: (_, item: RecordingSummary) => length(item.status.seconds),
   },
   { key: 'text', label: 'Tekst' },
-  { key: 'cuts', label: 'Lõiked' },
   { key: 'state', label: 'Olek' },
   { key: 'actions', label: 'Toimingud', class: 'text-right' },
 ]

@@ -6,7 +6,6 @@ import {
   type AudioFormat,
   BoundaryMethod,
   type CutProgress,
-  CutState,
   CutStep,
   DayOfWeek,
   type KeptSpan,
@@ -247,16 +246,6 @@ const TEXT_STATES: Record<TranscriptState, string> = {
 
 export const textState = (recording: RecordingSummary): string =>
   TEXT_STATES[recording.transcriptState]
-
-const CUT_STATES: Record<CutState, (recording: RecordingSummary) => string> = {
-  [CutState.NONE]: () => '—',
-  [CutState.FAILED]: () => 'Ebaõnnestus',
-  [CutState.SUGGESTED]: recording => `${recording.cuts.length} soovitust`,
-  [CutState.REVIEWED]: () => 'Kinnitatud',
-}
-
-export const cutState = (recording: RecordingSummary): string =>
-  CUT_STATES[recording.cutState](recording)
 
 export const audioFormat = (format: AudioFormat | null): string =>
   format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
