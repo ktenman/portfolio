@@ -38,7 +38,7 @@ class RadioArchiveService(
     val edit = read<EditList>(directory.resolve(EDIT_LIST))
     val decided = decided(directory, edit)
     val cuts = cuts(decided, status.seconds)
-    return sections(timelineOf(cuts, decided, status), cuts, audibleOf(directory, status, edit), lines)
+    return sections(timelineOf(cuts, decided, status), cuts, audibleOf(directory, status, edit), lines, status.title())
   }
 
   fun contexts(name: String): List<CutContext>? {
@@ -216,7 +216,7 @@ class RadioArchiveService(
     cuts: List<Cut>,
     edit: EditList?,
     status: RecordingStatus,
-  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds, status.title())
+  ): List<TimelineEntry> = timeline(cuts, edit?.topics.orEmpty(), status.seconds)
 
   private fun audibleOf(
     directory: Path,

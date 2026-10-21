@@ -250,7 +250,7 @@ export const sections = (
   item.timeline.map(entry => ({
     start: entry.start,
     end: entry.end,
-    title: entry.title,
+    title: entry.title ?? item.programme,
     cut: entry.cut ? index(item, entry) : null,
     episodeStart: entry.cut ? null : (EPISODE[entry.start] ?? null),
     lines: lines.filter(l => entry.start <= l.start && l.start < entry.end),
