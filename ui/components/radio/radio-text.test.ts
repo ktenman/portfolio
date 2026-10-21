@@ -27,6 +27,7 @@ describe('RadioText', () => {
   let audio: HTMLAudioElement
 
   beforeEach(() => {
+    localStorage.clear()
     Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.transcript).mockReset().mockResolvedValue(sections())
     audio = document.createElement('audio')
@@ -112,10 +113,10 @@ describe('RadioText', () => {
     expect(lines(wrapper)).toHaveLength(3)
   })
 
-  it('should name the model that found the topics and breaks', async () => {
-    expect((await render()).find('[data-testid="radio-detection"]').text()).toContain(
-      'deepseek/deepseek-v4-flash'
-    )
+  it('should name the model that found the topics and breaks once Tuvastus opens', async () => {
+    const detection = (await render()).get('[data-testid="radio-detection"]')
+    await detection.get('button').trigger('click')
+    expect(detection.text()).toContain('deepseek/deepseek-v4-flash')
   })
 
   it('should show each line of the transcript', async () => {
