@@ -67,7 +67,7 @@ class EtfIndustryClassificationJobTest {
 
   private fun answered(vararg pairs: Pair<Long, GicsIndustry>) =
     BatchClassificationOutcome(
-      pairs.associate { it.first to GicsIndustryClassificationResult(it.second, AiModel.GPT_5_6_LUNA) },
+      pairs.associate { it.first to GicsIndustryClassificationResult(it.second, AiModel.GPT_6_LUNA) },
       true,
     )
 
@@ -102,10 +102,10 @@ class EtfIndustryClassificationJobTest {
     job.execute()
 
     verify(exactly = 1) {
-      etfHoldingIndustryService.updateIndustry(1L, GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT, AiModel.GPT_5_6_LUNA)
+      etfHoldingIndustryService.updateIndustry(1L, GicsIndustry.SEMICONDUCTORS_AND_SEMICONDUCTOR_EQUIPMENT, AiModel.GPT_6_LUNA)
     }
     verify(exactly = 1) {
-      etfHoldingIndustryService.updateIndustry(2L, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_5_6_LUNA)
+      etfHoldingIndustryService.updateIndustry(2L, GicsIndustry.AEROSPACE_AND_DEFENSE, AiModel.GPT_6_LUNA)
     }
   }
 

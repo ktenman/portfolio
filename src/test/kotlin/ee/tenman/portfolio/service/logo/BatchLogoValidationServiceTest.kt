@@ -30,7 +30,7 @@ class BatchLogoValidationServiceTest {
   private val batchProperties =
     BatchLogoValidationProperties(
     enabled = true,
-    model = AiModel.GEMINI_3_5_FLASH_LITE,
+    model = AiModel.GEMINI_4_ARGON,
     batchSize = 25,
     imagesPerCompany = 10,
   )

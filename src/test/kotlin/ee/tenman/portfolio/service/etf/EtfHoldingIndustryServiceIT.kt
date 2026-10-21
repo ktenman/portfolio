@@ -51,18 +51,18 @@ class EtfHoldingIndustryServiceIT {
   @Test
   fun `cannot overwrite an existing industry with a delayed LLM classification`() {
     val holding = repository.save(EtfHolding(name = "Haleon", industry = GicsIndustry.PHARMACEUTICALS))
-    service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_5_6_LUNA)
+    service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_6_LUNA)
     expect(repository.findById(holding.id).orElseThrow().industry).toEqual(GicsIndustry.PHARMACEUTICALS)
   }
 
   @Test
   fun `should save LLM provenance only when an industry is missing`() {
     val holding = repository.save(EtfHolding(name = "Haleon"))
-    val changed = service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_5_6_LUNA)
+    val changed = service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_6_LUNA)
     val saved = repository.findById(holding.id).orElseThrow()
     expect(changed).toEqual(true)
     expect(saved.industrySource).toEqual(IndustrySource.LLM)
-    expect(saved.industryClassifiedByModel).toEqual(AiModel.GPT_5_6_LUNA)
+    expect(saved.industryClassifiedByModel).toEqual(AiModel.GPT_6_LUNA)
     expect(saved.industryEffectiveDate).toEqual(null)
   }
 
@@ -76,7 +76,7 @@ class EtfHoldingIndustryServiceIT {
           listOf(GicsIndustry.PHARMACEUTICALS, GicsIndustry.PERSONAL_CARE_PRODUCTS).map { industry ->
             executor.submit<Boolean> {
               check(start.await(10, TimeUnit.SECONDS))
-              service.updateIndustry(holding.id, industry, AiModel.GPT_5_6_LUNA)
+              service.updateIndustry(holding.id, industry, AiModel.GPT_6_LUNA)
             }
           }
         start.countDown()
@@ -131,7 +131,7 @@ class EtfHoldingIndustryServiceIT {
           sectorSource = SectorSource.LIGHTYEAR,
           industry = GicsIndustry.PERSONAL_CARE_PRODUCTS,
           industrySource = IndustrySource.LLM,
-          industryClassifiedByModel = AiModel.GPT_5_6_LUNA,
+          industryClassifiedByModel = AiModel.GPT_6_LUNA,
         ),
       )
     update(holding)
@@ -273,7 +273,7 @@ class EtfHoldingIndustryServiceIT {
   fun `cannot replace Vanguard with a previously requested LLM result`() {
     val holding = repository.save(EtfHolding(name = "Haleon"))
     update(holding)
-    val changed = service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_5_6_LUNA)
+    val changed = service.updateIndustry(holding.id, GicsIndustry.PERSONAL_CARE_PRODUCTS, AiModel.GPT_6_LUNA)
     expect(changed).toEqual(false)
     expect(repository.findById(holding.id).orElseThrow().industrySource).toEqual(IndustrySource.VANGUARD)
   }
@@ -291,7 +291,7 @@ class EtfHoldingIndustryServiceIT {
         name = "Haleon",
         industry = GicsIndustry.PERSONAL_CARE_PRODUCTS,
         industrySource = IndustrySource.LLM,
-        industryClassifiedByModel = AiModel.GPT_5_6_LUNA,
+        industryClassifiedByModel = AiModel.GPT_6_LUNA,
       ),
     )
 

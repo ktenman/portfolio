@@ -26,10 +26,10 @@ class RadioOutlineServiceTest {
   fun `should ask for three reads with the outline schema`() {
     val client = mockk<OpenRouterClient>()
     every { client.complete(any(), any(), any(), any()) } returns JsonMapperFactory.instance.writeValueAsString(read)
-    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_3_5_FLASH_LITE) {}
+    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON) {}
     verify(exactly = 3) {
       client.complete(
-        AiModel.GEMINI_3_5_FLASH_LITE,
+        AiModel.GEMINI_4_ARGON,
         match { it.startsWith("The user message is a machine transcript") },
         "ärakiri",
         match { it["required"] == listOf("hosts", "showStart", "breaks", "showEnd", "chapters") },
@@ -41,7 +41,7 @@ class RadioOutlineServiceTest {
   fun `should name the programme and the length of its window in the prompt`() {
     val client = mockk<OpenRouterClient>()
     every { client.complete(any(), any(), any(), any()) } returns null
-    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_3_5_FLASH_LITE) {}
+    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON) {}
     verify(exactly = 3) {
       client.complete(any(), match { "a 65-minute recording" in it && "the talk show \"Tarkade klubi\" is on air" in it }, any(), any())
     }
@@ -52,7 +52,7 @@ class RadioOutlineServiceTest {
     val client = mockk<OpenRouterClient>()
     val answer = JsonMapperFactory.instance.writeValueAsString(read)
     every { client.complete(any(), any(), any(), any()) } returnsMany listOf(answer, "{\"hosts\": ", answer)
-    expect(RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_3_5_FLASH_LITE) {}).toEqual(listOf(read, null, read))
+    expect(RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON) {}).toEqual(listOf(read, null, read))
   }
 
   @Test
@@ -60,7 +60,7 @@ class RadioOutlineServiceTest {
     val client = mockk<OpenRouterClient>()
     every { client.complete(any(), any(), any(), any()) } returnsMany listOf(null, "{}", null)
     var reported = 0
-    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_3_5_FLASH_LITE) { reported++ }
+    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON) { reported++ }
     expect(reported).toEqual(3)
   }
 }
