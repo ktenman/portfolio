@@ -18,10 +18,12 @@ describe('RadioTopics', () => {
 
   it('should list each topic once with its start and length', () => {
     const wrapper = render()
-    expect([rows(wrapper).length, rows(wrapper)[0]!.findAll('span').map(s => s.text())]).toEqual([
-      3,
-      ['0:00', 'Rahvusooperi tüli', '30 min'],
-    ])
+    expect([
+      rows(wrapper).length,
+      rows(wrapper)[0]!
+        .findAll('span')
+        .map(s => s.text()),
+    ]).toEqual([3, ['0:00', 'Rahvusooperi tüli', '30 min']])
   })
 
   it('should give a resumed topic its length without the break', () => {

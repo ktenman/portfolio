@@ -108,10 +108,10 @@ describe('RadioDock', () => {
     player.load(recording())
     player.seek(2150)
     await wrapper.vm.$nextTick()
-    expect([wrapper.text().includes('Reklaamipaus'), wrapper.text().includes('Rahvusooperi')]).toEqual([
-      true,
-      false,
-    ])
+    expect([
+      wrapper.text().includes('Reklaamipaus'),
+      wrapper.text().includes('Rahvusooperi'),
+    ]).toEqual([true, false])
   })
 
   it('should name the programme while a recording has no topics', async () => {
