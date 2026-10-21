@@ -53,6 +53,7 @@ data class RecordingStatus(
   val parts: List<RecordingPart> = emptyList(),
   val programmes: List<String> = listOf(PROGRAMME),
   val lostSeconds: Long = 0,
+  val slot: Slot? = null,
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")
@@ -184,6 +185,14 @@ data class RecordingSummary(
 ) {
   val drops: Int
     get() = (status.parts.size - 1).coerceAtLeast(0)
+
+  val span: Slot
+    get() {
+      val start = status.startedAt.toLong()
+      val end = (status.startedAt + status.seconds).toLong()
+      val slot = status.slot ?: return Slot(start, end)
+      return Slot(maxOf(start, slot.start), minOf(end, slot.end))
+    }
 
   val topics: List<TimelineEntry>
     get() = heard(timeline, audible)

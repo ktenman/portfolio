@@ -18,6 +18,7 @@ const split = () =>
       programmes: ['Keskpäevatund'],
       startedAt: 1792227300,
       lostSeconds: 0,
+      slot: null,
       seconds: 4200,
       parts: [
         { file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null },

@@ -264,6 +264,7 @@ export interface RecordingSummary {
     topics: TimelineEntry[];
     cutState: CutState;
     transcriptState: TranscriptState;
+    span: Slot;
 }
 
 export interface TranscriptLine {
@@ -401,6 +402,7 @@ export interface RecordingStatus {
     parts: RecordingPart[];
     programmes: string[];
     lostSeconds: number;
+    slot: Slot | null;
 }
 
 export interface EditList {
@@ -466,6 +468,11 @@ export interface RenderProgress {
     secondsLeft: number;
 }
 
+export interface Slot {
+    start: number;
+    end: number;
+}
+
 export interface TranscriptWord {
     start: number;
     end: number;
@@ -490,6 +497,7 @@ export interface Capture {
     programmes: string[];
     start: number;
     end: number;
+    slot: Slot;
 }
 
 export interface LastRecording {

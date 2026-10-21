@@ -47,7 +47,7 @@ const recorder = computed<[string, string][]>(() => {
   const s = station.value
   if (!s) return []
   const next = s.capture
-    ? `${s.capture.programmes.join(', ')}, ${day(s.capture.start)} ${clock(s.capture.start, 0)}`
+    ? `${s.capture.programmes.join(', ')}, ${day(s.capture.slot.start)} ${clock(s.capture.slot.start, 0)}`
     : 'Pole valitud'
   const last = s.last ? `${s.last.programme}, ${day(s.last.end)} ${clock(s.last.end, 0)}` : '—'
   return [

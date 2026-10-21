@@ -53,9 +53,10 @@ class RadioArchiveServiceTest {
     name: String,
     state: RecordingState = RecordingState.CAPTURED,
     programmes: List<String> = listOf(PROGRAMME),
+    slot: Slot? = null,
   ): Path {
     val directory = Files.createDirectories(recordings.resolve(name))
-    val status = RecordingStatus(state, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), programmes)
+    val status = RecordingStatus(state, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)), programmes, slot = slot)
     Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
     Files.write(directory.resolve("raw.mp3"), ByteArray(1500))
     return directory
@@ -192,6 +193,24 @@ class RadioArchiveServiceTest {
     val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, parts)
     Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
     expect(service.recordings().single().drops).toEqual(2)
+  }
+
+  @Test
+  fun `should span a recording over the airing it was planned for`() {
+    recording("2026-10-18-1200-keskpaevatund", slot = Slot(1792230930, 1792235070))
+    expect(service.recordings().single().span).toEqual(Slot(1792230930, 1792235070))
+  }
+
+  @Test
+  fun `should span a recording that began after its airing from its own start`() {
+    recording("2026-10-18-1150-keskpaevatund", slot = Slot(1792230300, 1792235070))
+    expect(service.recordings().single().span).toEqual(Slot(1792230900, 1792235070))
+  }
+
+  @Test
+  fun `should span a recording made without a plan over its own length`() {
+    recording("2026-10-18-1023-kuku")
+    expect(service.recordings().single().span).toEqual(Slot(1792230900, 1792235100))
   }
 
   @Test

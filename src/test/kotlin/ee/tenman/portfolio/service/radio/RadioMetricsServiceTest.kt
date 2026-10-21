@@ -39,7 +39,7 @@ class RadioMetricsServiceTest {
 
   @Test
   fun `should export a missed capture with its programmes and the reason it was missed`() {
-    val capture = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund", "Tarkade klubi"), 0, 0)
+    val capture = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund", "Tarkade klubi"), 0, 0, Slot(0, 0))
     val registry = refreshed(missed = listOf(MissedCapture(capture, MissedReason.DOWN)))
     val gauge = registry.get("portfolio.radio.missed.capture").tags("capture", capture.name, "programmes", "Keskpäevatund, Tarkade klubi")
     expect(gauge.gauge().value()).toEqual(2.0)

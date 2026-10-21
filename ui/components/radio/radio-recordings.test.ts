@@ -54,6 +54,7 @@ describe('RadioRecordings', () => {
           programmes: ['Keskpäevatund'],
           startedAt: 1792170142,
           lostSeconds: 0,
+          slot: null,
           seconds: 60,
           parts: [],
         },
@@ -71,6 +72,14 @@ describe('RadioRecordings', () => {
 
   it('should show when and how long the show was recorded', async () => {
     expect((await mount()).text()).toContain('L 17.10 · 11:55–13:05')
+  })
+
+  it('should show a recording over the airing it was planned for', async () => {
+    const noon = Date.UTC(2026, 9, 17, 9) / 1000
+    vi.mocked(radioService.recordings).mockResolvedValue([
+      recording({ span: { start: noon, end: noon + 3600 } }),
+    ])
+    expect((await mount()).text()).toContain('L 17.10 · 12:00–13:00')
   })
 
   it('should count the suggested cuts of a recording', async () => {

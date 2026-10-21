@@ -261,8 +261,8 @@ export const cutState = (recording: RecordingSummary): string =>
 export const audioFormat = (format: AudioFormat | null): string =>
   format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
 
-export const span = (recording: RecordingSummary): string =>
-  range(recording.status.startedAt, 0, recording.status.seconds)
+export const span = ({ span: { start, end } }: RecordingSummary): string =>
+  range(start, 0, end - start)
 
 export const HATCH =
   'bg-[repeating-linear-gradient(135deg,var(--color-hairline-strong)_0_1px,transparent_1px_6px)]'

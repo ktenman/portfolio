@@ -10,6 +10,7 @@ import {
   type DayAiring,
   type EditList,
   type RadioDay,
+  type RecordingStatus,
   type RecordingSummary,
   RecordingState,
   type TranscriptLine,
@@ -78,17 +79,26 @@ export const programme = (
   details: Partial<ProgrammeCuts> = {}
 ): ProgrammeCuts => ({ name, state, progress: null, transcript: null, after: null, ...details })
 
+const captured = (): RecordingStatus => ({
+  state: RecordingState.CAPTURED,
+  programmes: ['Keskpäevatund'],
+  startedAt: STARTED,
+  seconds: 4200,
+  parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
+  lostSeconds: 0,
+  slot: null,
+})
+
+const spanned = ({ startedAt, seconds }: RecordingStatus) => ({
+  start: startedAt,
+  end: startedAt + seconds,
+})
+
 export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingSummary => ({
   name: '2026-10-17',
   programme: 'Keskpäevatund',
-  status: {
-    state: RecordingState.CAPTURED,
-    programmes: ['Keskpäevatund'],
-    startedAt: STARTED,
-    seconds: 4200,
-    parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
-    lostSeconds: 0,
-  },
+  status: captured(),
+  span: spanned(overrides.status ?? captured()),
   sizeBytes: 134_400_000,
   transcribed: true,
   editList: editList(),
