@@ -128,6 +128,40 @@ describe('RadioPlayer', () => {
     ]).toEqual(['true', true])
   })
 
+  it('should show the speaker as a sunken button', () => {
+    expect(render().get('button[aria-label="Vaigista"]').classes()).toContain('bg-surface-sunken')
+  })
+
+  it('should unmute when the volume slider moves', async () => {
+    const wrapper = render()
+    player.muted.value = true
+    await wrapper.get('input[aria-label="Helitugevus"]').setValue(0.4)
+    expect([player.muted.value, player.volume.value]).toEqual([false, 0.4])
+  })
+
+  it('should read the volume as a percentage', async () => {
+    const wrapper = render()
+    player.volume.value = 0.4
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('input[aria-label="Helitugevus"]').attributes('aria-valuetext')).toBe('40%')
+  })
+
+  it('should fill the volume slider up to its level', async () => {
+    const wrapper = render()
+    player.volume.value = 0.4
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('input[aria-label="Helitugevus"]').attributes('style')).toContain(
+      '--level: 40%'
+    )
+  })
+
+  it('should grey the volume slider while muted', async () => {
+    const wrapper = render()
+    player.muted.value = true
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('input[aria-label="Helitugevus"]').classes()).toContain('muted')
+  })
+
   it('should step the speed from the chip', async () => {
     const wrapper = render()
     player.rate.value = 1
@@ -209,22 +243,10 @@ describe('RadioPlayer', () => {
     expect(player.cardInView.value).toBe(false)
   })
 
-  it('should offer to go back to the playing line while the text lost it', async () => {
+  it('should not offer to go back to the playing line', async () => {
     const wrapper = render()
     player.lost.value = true
     await wrapper.vm.$nextTick()
-    await wrapper
-      .findAll('button')
-      .find(b => b.text() === 'Tagasi praegusele')!
-      .trigger('click')
-    expect(player.lost.value).toBe(false)
-  })
-
-  it('should not offer to go back while the text follows the playing line', () => {
-    expect(
-      render()
-        .findAll('button')
-        .some(b => b.text() === 'Tagasi praegusele')
-    ).toBe(false)
+    expect(wrapper.findAll('button').some(b => b.text() === 'Tagasi praegusele')).toBe(false)
   })
 })

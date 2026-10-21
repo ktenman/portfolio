@@ -9,44 +9,37 @@
     >
       <div
         v-if="visible && (player.recording.value || player.live.value)"
-        class="sticky bottom-0 z-10 mt-6 border-t border-hairline bg-surface px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-card"
-        :class="player.live.value ? 'pt-2' : 'pt-8 md:pt-2'"
+        class="sticky bottom-0 z-10 mt-6 border-t border-hairline bg-surface px-3 pt-1.5 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-card md:px-10"
         data-testid="radio-dock"
       >
-        <div v-if="!player.live.value" class="absolute inset-x-0 -top-px h-1 bg-hairline">
-          <div class="h-full bg-brass" :style="{ width: `${share}%` }" />
-          <input
-            type="range"
-            class="absolute inset-x-0 -top-3 h-11 w-full cursor-pointer opacity-0 md:-top-1.5 md:h-4"
-            min="0"
-            :max="player.total.value"
-            step="1"
+        <div class="mx-auto grid max-w-app gap-1">
+          <radio-scrubber
+            v-if="!player.live.value"
+            bare
             :value="player.seconds.value"
-            aria-label="Asukoht salvestuses"
-            :aria-valuetext="`${position(player.seconds.value)} / ${position(player.total.value)}`"
-            data-testid="radio-dock-line"
-            @input="player.seek(Number(($event.target as HTMLInputElement).value))"
+            :total="player.total.value"
+            :parts="parts"
+            label="Asukoht salvestuses"
+            @seek="player.seek"
           />
-        </div>
-        <div class="mx-auto flex max-w-app flex-wrap items-center gap-x-4 gap-y-2">
-          <p v-if="player.live.value" class="mb-0 min-w-0 grow basis-40 font-semibold">
-            Kuku otse
-            <span v-if="station?.onAir" class="block text-sm font-normal text-ink-soft">
-              {{ station.onAir.name }} · {{ airing(station.onAir) }}
-            </span>
-          </p>
-          <router-link
-            v-else-if="player.recording.value"
-            :to="`/radio/${player.recording.value.name}`"
-            class="min-w-0 grow basis-40 font-semibold"
+          <component
+            :is="link ? RouterLink : 'p'"
+            :to="link"
+            class="mt-1 flex min-h-11 items-center justify-between gap-3 md:hidden"
           >
-            {{ player.recording.value.programme }}
-            <span class="block text-sm font-normal text-ink-soft tabular-nums">
-              {{ position(player.seconds.value) }} / {{ position(player.total.value) }}
-            </span>
-          </router-link>
-          <radio-controls />
-          <app-button v-if="player.lost.value" @click="player.rejoin">Tagasi praegusele</app-button>
+            <span class="truncate text-sm font-semibold text-brass-deep">{{ heading }}</span>
+            <span class="shrink-0 text-label text-ink-soft tabular-nums">{{ status }}</span>
+          </component>
+          <radio-controls>
+            <component
+              :is="link ? RouterLink : 'p'"
+              :to="link"
+              class="mb-0 min-w-0 grow max-md:hidden"
+            >
+              <span class="block truncate font-semibold text-brass-deep">{{ heading }}</span>
+              <span class="block text-sm text-ink-soft tabular-nums">{{ detail }}</span>
+            </component>
+          </radio-controls>
         </div>
       </div>
     </transition>
@@ -55,23 +48,50 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
-import type { StationAiring } from '../../models/generated/domain-models'
-import { position, range } from '../../utils/radio'
-import AppButton from '../shared/app-button.vue'
+import { episodeParts, position, range, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
+import RadioScrubber from './radio-scrubber.vue'
 
 const audio = useTemplateRef<HTMLAudioElement>('audio')
 const player = useRadioPlayer()
 const { data: station } = useRadioStation()
-
-const airing = (a: StationAiring) => range(a.start, 0, a.end - a.start)
+const decisions = useRadioDecisions(() => player.recording.value!)
 
 const visible = computed(() => player.live.value || !player.cardInView.value)
-const share = computed(() =>
-  player.total.value ? (player.seconds.value / player.total.value) * 100 : 0
+const link = computed(() =>
+  player.recording.value ? `/radio/${player.recording.value.name}` : undefined
 )
+const parts = computed(() => {
+  const recording = player.recording.value
+  if (!recording) return []
+  return player.version.value === 'raw'
+    ? rawParts(recording, decisions.removed.value)
+    : episodeParts(recording)
+})
+const here = computed(() =>
+  parts.value.find(part => part.start <= player.seconds.value && player.seconds.value < part.end)
+)
+const onAir = computed(() => {
+  const airing = station.value?.onAir
+  return airing ? `${airing.name} · ${range(airing.start, 0, airing.end - airing.start)}` : ''
+})
+const status = computed(() =>
+  player.live.value
+    ? onAir.value
+    : `${position(player.seconds.value)} / ${position(player.total.value)}`
+)
+const heading = computed(() =>
+  player.live.value ? 'Kuku otse' : (here.value?.title ?? player.recording.value?.programme)
+)
+const detail = computed(() => {
+  if (player.live.value) return onAir.value
+  if (!here.value) return status.value
+  return `${player.recording.value?.programme} · ${status.value}`
+})
 
 onMounted(() => audio.value && player.attach(audio.value))
 onBeforeUnmount(player.detach)

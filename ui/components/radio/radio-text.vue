@@ -40,6 +40,11 @@
       :class="{ 'lg:sticky lg:top-20 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto': long }"
     >
       <div ref="body" class="grid gap-4">
+        <radio-topics
+          :parts="parts"
+          :at="player.seconds.value"
+          @play="player.playFrom($event, player.version.value)"
+        />
         <radio-result v-if="raw && recording.editList" :recording="recording" />
         <radio-cuts v-if="raw" :recording="recording" />
         <radio-analysis :recording="recording" />
@@ -63,7 +68,7 @@ import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioCuts, useRadioTranscript } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { HATCH } from '../../utils/radio'
+import { episodeParts, HATCH, rawParts } from '../../utils/radio'
 import RadioAnalysis from './radio-analysis.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
@@ -71,6 +76,7 @@ import RadioCuts from './radio-cuts.vue'
 import RadioDetails from './radio-details.vue'
 import RadioResult from './radio-result.vue'
 import RadioSection from './radio-section.vue'
+import RadioTopics from './radio-topics.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
@@ -111,6 +117,9 @@ const topics = computed(() =>
   raw.value ? sections.value : sections.value.filter(section => section.episodeStart !== null)
 )
 const lines = computed(() => sections.value.flatMap(section => section.lines))
+const parts = computed(() =>
+  raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
+)
 
 const at = computed(() =>
   player.recording.value?.name === props.recording.name ? player.recordingSeconds.value : -1

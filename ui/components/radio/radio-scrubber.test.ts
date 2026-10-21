@@ -94,6 +94,13 @@ describe('RadioScrubber', () => {
     expect(wrapper.find('[data-testid="radio-timeline-labels"]').exists()).toBe(false)
   })
 
+  it('should leave out the labels when bare', () => {
+    const wrapper = mount(RadioScrubber, {
+      props: { value: 0, total: 40, label: 'Asukoht', parts: PARTS, bare: true },
+    })
+    expect(wrapper.find('[data-testid="radio-timeline-labels"]').exists()).toBe(false)
+  })
+
   it('should show how much of each part has played', () => {
     const played = render(20).findAll('[data-testid="radio-timeline-part"] > div')
     expect(played.map(fill => fill.attributes('style'))).toEqual([

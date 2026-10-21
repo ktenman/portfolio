@@ -1,5 +1,10 @@
 <template>
-  <radio-card title="Tuvastus" data-testid="radio-detection">
+  <radio-card title="Tuvastus" fold="shut" data-testid="radio-detection">
+    <template v-if="recording.editList" #aside>
+      <span class="text-sm text-ink-soft tabular-nums">
+        {{ recording.editList.outline.matched }} / {{ recording.editList.outline.reads }}
+      </span>
+    </template>
     <radio-facts v-if="detection.length" :rows="detection" />
     <p v-else class="mb-0 text-sm text-ink-soft">Saadet pole veel analüüsitud.</p>
   </radio-card>

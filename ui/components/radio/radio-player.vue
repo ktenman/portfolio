@@ -58,10 +58,7 @@
       />
       <div ref="controls" class="grid gap-3">
         <radio-controls large />
-        <div v-if="player.lost.value || offerStart" class="flex flex-wrap justify-center gap-2">
-          <app-button v-if="player.lost.value" class="max-md:grow" @click="player.rejoin">
-            Tagasi praegusele
-          </app-button>
+        <div v-if="offerStart" class="flex flex-wrap justify-center gap-2">
           <app-button
             v-if="raw && showStart !== null"
             data-testid="radio-show-start"

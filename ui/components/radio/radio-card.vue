@@ -1,15 +1,44 @@
 <template>
   <section class="card">
-    <div class="card-body">
-      <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 class="mb-0 text-heading">{{ title }}</h3>
-        <slot name="aside" />
+    <div class="card-body" :class="{ 'py-1.5': fold }">
+      <div
+        class="flex flex-wrap justify-between gap-2"
+        :class="fold ? 'items-center' : 'mb-3 items-baseline'"
+      >
+        <h3 class="mb-0 text-heading" :class="{ grow: fold }">
+          <button
+            v-if="fold"
+            type="button"
+            class="flex min-h-12 w-full cursor-pointer items-center gap-2.5 text-left focus-visible:outline-2 focus-visible:outline-brass-deep"
+            :aria-expanded="open"
+            @click="open = !open"
+          >
+            <radio-icon
+              name="down"
+              class="text-ink-soft motion-safe:transition-transform"
+              :class="{ '-rotate-90': !open }"
+            />
+            {{ title }}
+          </button>
+          <template v-else>{{ title }}</template>
+        </h3>
+        <slot name="aside" :open="open" />
       </div>
-      <slot />
+      <div v-if="open" :class="{ 'pb-2.5': fold }">
+        <slot />
+      </div>
     </div>
   </section>
 </template>
 
 <script lang="ts" setup>
-defineProps<{ title: string }>()
+import { ref } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
+import RadioIcon from './radio-icon.vue'
+
+const props = defineProps<{ title: string; fold?: 'open' | 'shut' }>()
+
+const open = props.fold
+  ? useLocalStorage(`radio-fold:${props.title}`, props.fold === 'open')
+  : ref(true)
 </script>
