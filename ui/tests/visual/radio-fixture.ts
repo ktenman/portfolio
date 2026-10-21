@@ -28,6 +28,7 @@ const capture = (at: string, programmes: string[], seconds = 4200) => ({
   seconds,
   parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
   lostSeconds: 0,
+  slot: null,
 })
 
 const searching = {
@@ -196,10 +197,11 @@ const STATION = {
     recorded: false,
   },
   capture: {
-    name: '2026-10-31-keskpaevatund',
+    name: '2026-10-31-1200-keskpaevatund',
     programmes: ['Keskpäevatund'],
-    start: Date.UTC(2026, 9, 31, 9, 55, 0) / 1000,
-    end: Date.UTC(2026, 9, 31, 11, 5, 0) / 1000,
+    start: Date.UTC(2026, 9, 31, 9, 59, 30) / 1000,
+    end: Date.UTC(2026, 9, 31, 11, 0, 30) / 1000,
+    slot: { start: Date.UTC(2026, 9, 31, 10) / 1000, end: Date.UTC(2026, 9, 31, 11) / 1000 },
   },
   freeBytes: 364_000_000_000,
   hours: 3159,

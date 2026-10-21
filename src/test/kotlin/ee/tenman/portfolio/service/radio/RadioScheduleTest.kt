@@ -28,10 +28,10 @@ class RadioScheduleTest {
   ) = PlannedAiring(programme, slug, at(start), at(end))
 
   @Test
-  fun `should record an airing from five minutes before it to five minutes after it`() {
+  fun `should record an airing from thirty seconds before it to thirty seconds after it`() {
     val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), tallinn)
-    val start = at("2026-10-24T11:55").epochSecond
-    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), start, at("2026-10-24T13:05").epochSecond)
+    val slot = Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond)
+    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start - 30, slot.end + 30, slot)
     expect(found).toContainExactly(expected)
   }
 
@@ -44,6 +44,16 @@ class RadioScheduleTest {
       )
     expect(captures(airings, tallinn).map { it.name to it.programmes })
       .toContainExactly("2026-10-24-1200-keskpaevatund-tarkade-klubi" to listOf("Keskpäevatund", "Tarkade klubi"))
+  }
+
+  @Test
+  fun `should record airings ten minutes apart as one recording`() {
+    val airings =
+      listOf(
+        airing("Digitund", "digitund", "2026-10-26T11:00", "2026-10-26T11:50"),
+        airing("Keskpäevatund", "keskpaevatund", "2026-10-26T12:00", "2026-10-26T13:00"),
+      )
+    expect(captures(airings, tallinn).map { it.name }).toContainExactly("2026-10-26-1100-digitund-keskpaevatund")
   }
 
   @Test
@@ -97,8 +107,9 @@ class RadioScheduleTest {
     Capture(
       "2026-10-24-1200-keskpaevatund",
       listOf("Keskpäevatund"),
-      at("2026-10-24T11:55").epochSecond,
-      at("2026-10-24T13:05").epochSecond,
+      at("2026-10-24T11:59:30").epochSecond,
+      at("2026-10-24T13:00:30").epochSecond,
+      Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond),
     )
 
   private val afterwards = at("2026-10-24T13:06")

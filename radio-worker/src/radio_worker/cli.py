@@ -110,14 +110,14 @@ def follow(recordings: Path, model: Path, source: str, threads: int, chunk_secon
     weights = model / "ct2"
     load = functools.partial(load_whisper, weights, threads)
     try:
-        planned(recordings, model, lambda directory, seconds, programmes: run(directory, source, seconds, load, str(weights), chunk_seconds, programmes))
+        planned(recordings, model, lambda directory, seconds, programmes, slot: run(directory, source, seconds, load, str(weights), chunk_seconds, programmes, slot=slot))
     except KeyboardInterrupt:
         print("Stopped; the next start resumes an unfinished recording", file=sys.stderr)
     return 130
 
 
-def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float, programmes: list[str] | None = None, started: float | None = None) -> str:
-    prepare(directory, source, seconds, programmes, started)
+def run(directory: Path, source: str, seconds: float, load: Callable[[], Any], name: str, chunk_seconds: float, programmes: list[str] | None = None, started: float | None = None, slot: dict | None = None) -> str:
+    prepare(directory, source, seconds, programmes, started, slot)
     with hold(directory):
         stop = threading.Event()
         recording = threading.Thread(target=record, args=(directory, stop), daemon=True)

@@ -48,7 +48,7 @@ def fetch(model: Path) -> None:
 def planned(
     recordings: Path,
     model: Path,
-    record: Callable[[Path, float, list[str]], str],
+    record: Callable[[Path, float, list[str], dict | None], str],
     download: Callable[[Path], None] = fetch,
     clock: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
@@ -71,7 +71,7 @@ def planned(
         beat(recordings, clock(), capture["end"])
         directory = recordings / capture["name"]
         if ready(model):
-            attempt(lambda: say(f"{record(directory, capture['end'] - clock(), capture['programmes'])}: {directory}"), f"Recording {directory}")
+            attempt(lambda: say(f"{record(directory, capture['end'] - clock(), capture['programmes'], capture.get('slot'))}: {directory}"), f"Recording {directory}")
         else:
             say(f"Skipping {directory}: {model} holds no verified model")
         pause(capture["end"], clock, sleep)
