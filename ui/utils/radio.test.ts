@@ -202,6 +202,13 @@ describe('rawParts names', () => {
     expect(rawParts(recording(), [])[1]!.name).toBe('Ooperitüli')
   })
 
+  it('should label a part no topic covers by the programme', () => {
+    const untitled = { start: 0, end: 4200, title: null, cut: false, label: null, summary: null }
+    expect(rawParts(recording({ timeline: [untitled] }), [])[0]!.label).toBe(
+      'Keskpäevatund 11:55–13:05 · Jääb alles'
+    )
+  })
+
   it('should name a raw topic resumed after a break once', () => {
     expect(rawParts(recording(), []).map(part => part.name)).toEqual([
       null,
@@ -264,6 +271,17 @@ describe('episodeParts', () => {
       [null, 'Reklaamipaus · 1:40'],
       [null, 'Teema 1: Ooper · 2:40'],
       ['Valimised', 'Teema 2: Valimised · 5:00'],
+    ])
+  })
+
+  it('should not number a part no topic covers', () => {
+    const topics = [
+      { start: 0, end: 120, title: null, cut: false, label: null, summary: null },
+      { start: 120, end: 300, title: 'Šokolaadi hind', cut: false, label: null, summary: null },
+    ]
+    expect(episodeParts(recording({ topics })).map(part => [part.name, part.label])).toEqual([
+      [null, 'Keskpäevatund · 0:00'],
+      ['Šokolaadi hind', 'Teema 1: Šokolaadi hind · 2:00'],
     ])
   })
 

@@ -272,7 +272,7 @@ export interface StripPart {
   end: number
   removed: boolean
   label: string
-  title: string
+  title: string | null
   name: string | null
   summary: string | null
   time: string
@@ -285,7 +285,7 @@ const named = ({ title, label, summary, cut }: TimelineEntry) => ({
 })
 
 export const rawParts = (
-  { timeline, cuts, status }: RecordingSummary,
+  { timeline, cuts, status, programme }: RecordingSummary,
   removed: number[]
 ): StripPart[] =>
   timeline.map((entry, i) => {
@@ -300,17 +300,18 @@ export const rawParts = (
       start,
       end,
       removed: out,
-      label: `${title} ${range(status.startedAt, start, end)} · ${fate}`,
+      label: `${title ?? programme} ${range(status.startedAt, start, end)} · ${fate}`,
       time: clock(status.startedAt, start),
     }
   })
 
-export const episodeParts = ({ topics }: RecordingSummary): StripPart[] =>
+export const episodeParts = ({ topics, programme }: RecordingSummary): StripPart[] =>
   topics.reduce<StripPart[]>((parts, entry) => {
     const heard = parts.filter(part => part.name !== null)
     const resumed = !entry.cut && heard[heard.length - 1]?.title === entry.title
     const number = heard.length + (resumed ? 0 : 1)
-    const lead = entry.cut ? entry.title : `Teema ${number}: ${entry.title}`
+    const lead =
+      entry.cut || !entry.title ? (entry.title ?? programme) : `Teema ${number}: ${entry.title}`
     const part = {
       ...named(entry),
       start: entry.start,

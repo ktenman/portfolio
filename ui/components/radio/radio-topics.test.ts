@@ -26,6 +26,12 @@ describe('RadioTopics', () => {
     ]).toEqual([3, ['0:00', 'Rahvusooperi tüli', '30 min']])
   })
 
+  it('should hide the card before the recording has topics', () => {
+    const untitled = { start: 0, end: 4200, title: null, cut: false, label: null, summary: null }
+    const wrapper = render(0, rawParts(recording({ timeline: [untitled] }), []))
+    expect(wrapper.find('[data-testid="radio-topics"]').exists()).toBe(false)
+  })
+
   it('should give a resumed topic its length without the break', () => {
     const wrapper = render(0, rawParts(recording(), [0, 1, 2, 3]))
     expect(rows(wrapper)[0]!.findAll('span')[2]!.text()).toBe('30 min')
