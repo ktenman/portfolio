@@ -222,8 +222,17 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should store the outline topics with their labels on the recording clock`() {
-    expect(rendered().topics).toEqual(listOf(EpisodeChapter(5.0, "Ooperikriis", "Ooper", "Ooperi tüli.")))
+  fun `should store the outline topics with their labels`() {
+    expect(rendered().topics.map { Triple(it.title, it.label, it.summary) }).toEqual(listOf(Triple("Ooperikriis", "Ooper", "Ooperi tüli.")))
+  }
+
+  @Test
+  fun `should start an outline topic on the recording clock in the silence before its first word`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
+    transcribed(1.0, 8.0, 50.0)
+    saved(outline(1.0, 8.0, 50.0))
+    service.make(directory)
+    expect(edit().topics.single().start in 7.0..7.4).toEqual(true)
   }
 
   @Test

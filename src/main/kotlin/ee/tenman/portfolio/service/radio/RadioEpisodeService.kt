@@ -127,7 +127,8 @@ class RadioEpisodeService(
     val agreed = consensus(matched)
     val placed = radioCutService.boundaries(timeline, db, agreed, lines, library(radioProperties.jingles))
     passed(directory, CutStep.BOUNDARIES)
-    return Finding(agreed, placed.map { it.copy(programme = show.name) }, OutlineSummary(model, reads.size, matched.size, agreed.voters))
+    val cued = agreed.copy(chapters = agreed.chapters.map { it.copy(time = cue(db, lines, it.time)) })
+    return Finding(cued, placed.map { it.copy(programme = show.name) }, OutlineSummary(model, reads.size, matched.size, agreed.voters))
   }
 
   private fun outline(

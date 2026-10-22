@@ -4,11 +4,13 @@ import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.round
 
 const val TRANSCRIPT = "transcript only"
 private const val DIP = "level dip"
 private const val REACH = 2.0
+private const val PAUSE = 1.5
 
 fun firstWord(line: TranscriptLine): Double {
   val words = line.words
@@ -17,6 +19,15 @@ fun firstWord(line: TranscriptLine): Double {
 }
 
 fun lastWord(line: TranscriptLine): Double = line.words.lastOrNull()?.end ?: line.end
+
+fun cue(
+  db: DoubleArray,
+  lines: List<TranscriptLine>,
+  time: Double,
+): Double {
+  val previous = lines.lastOrNull { it.start < time } ?: return time
+  return quietest(db, max(lastWord(previous), time - PAUSE), time) ?: time
+}
 
 fun leave(
   db: DoubleArray,
