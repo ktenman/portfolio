@@ -41,8 +41,9 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
+import { useRoute, useRouter } from 'vue-router'
 import { useRadioDay } from '../../composables/use-radio-recordings'
 import { dateDay } from '../../utils/radio'
 import RadioDayBar from './radio-day-bar.vue'
@@ -52,7 +53,12 @@ import RadioTabs from './radio-tabs.vue'
 const TODAY =
   "after:absolute after:bottom-1 after:size-1 after:rounded-full after:bg-brass after:content-['']"
 
-const date = ref<string | null>(null)
+const route = useRoute()
+const router = useRouter()
+const date = computed({
+  get: () => (typeof route.query.day === 'string' ? route.query.day : null),
+  set: (day: string) => router.replace({ query: { day } }),
+})
 const { data: radioDay, isLoading, isError } = useRadioDay(date)
 const phone = useMediaQuery('(max-width: 767px)')
 

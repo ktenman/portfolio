@@ -139,6 +139,24 @@ describe('RadioCatchUp', () => {
     expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16')
   })
 
+  it('should keep the chosen day in the address', async () => {
+    const wrapper = await mount()
+    await wrapper
+      .findAll('button')
+      .find(b => b.attributes('aria-label') === 'Wed 14.10')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.vm.$router.currentRoute.value.query).toEqual({ day: '2026-10-14' })
+    )
+  })
+
+  it('should show the day in the address', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { day: '2026-10-14' } })
+    await flushPromises()
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14')
+  })
+
   it('should say when the recording of an airing was made', async () => {
     expect((await row('12:00')).text()).toContain('Recorded 11:55–13:05')
   })
