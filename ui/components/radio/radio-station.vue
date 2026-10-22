@@ -17,6 +17,7 @@
         :class="[LINK, 'cursor-pointer']"
         @click="on ? player.toggle() : player.listen()"
       >
+        <radio-icon :name="on ? 'pause' : 'play'" />
         {{ on ? 'Peata' : 'Kuula otse' }}
       </button>
       <p v-if="station.next" class="mt-3 mb-0 text-sm text-body-secondary">
@@ -35,6 +36,7 @@ import { audioFormat, clock, day, LINK, range, RECORDER_STATES } from '../../uti
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
+import RadioIcon from './radio-icon.vue'
 
 const { data: station } = useRadioStation()
 const player = useRadioPlayer()

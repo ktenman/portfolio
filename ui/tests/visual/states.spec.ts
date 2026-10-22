@@ -239,7 +239,7 @@ test('the radio rail stays in view while the text scrolls', async ({ page }, tes
   await page.setViewportSize({ width: 1280, height: 800 })
   await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2))
-  await expect(page.getByTestId('radio-detection')).toBeInViewport()
+  await expect(page.getByTestId('radio-details')).toBeInViewport()
   await settleAndFreeze(page)
   await expect(page).toHaveScreenshot('radio-rail-pinned.png')
 })

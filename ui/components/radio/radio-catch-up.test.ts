@@ -149,6 +149,16 @@ describe('RadioCatchUp', () => {
     )
   })
 
+  it('should show the play icon on the live button of an airing on air', async () => {
+    expect((await button('Kuula otse')).find('path').attributes('d')).toBe('M7 4v16l13-8z')
+  })
+
+  it('should show the pause icon on the stop button of an airing on air', async () => {
+    player.live.value = true
+    player.playing.value = true
+    expect((await button('Peata')).find('path').attributes('d')).toBe('M6 4h4v16H6z')
+  })
+
   it('should stop the live radio from an airing on air', async () => {
     player.live.value = true
     player.playing.value = true

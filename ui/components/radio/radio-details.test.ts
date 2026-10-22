@@ -38,6 +38,30 @@ describe('RadioDetails', () => {
     expect(wrapper.text()).not.toContain('Lõiked')
   })
 
+  const opened = async (item: RecordingSummary = recording()) => {
+    const wrapper = render(item)
+    await wrapper.get('button').trigger('click')
+    return wrapper
+  }
+
+  it('should name the model that found the topics and breaks', async () => {
+    expect((await opened()).text()).toContain('deepseek/deepseek-v4-flash')
+  })
+
+  it('should name the hosts', async () => {
+    expect((await opened()).text()).toContain('Mari, Jüri')
+  })
+
+  it('should leave out how many reads agreed', async () => {
+    expect((await opened()).text()).not.toContain('3 / 3')
+  })
+
+  it('should say the show is not analysed yet', async () => {
+    expect((await opened(recording({ editList: null }))).text()).toContain(
+      'Saadet pole veel analüüsitud.'
+    )
+  })
+
   it('should start folded', () => {
     expect(render().get('button').attributes('aria-expanded')).toBe('false')
   })

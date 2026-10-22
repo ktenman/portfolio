@@ -119,10 +119,8 @@ describe('RadioText', () => {
     expect(lines(wrapper)).toHaveLength(3)
   })
 
-  it('should name the model that found the topics and breaks once Tuvastus opens', async () => {
-    const detection = (await render()).get('[data-testid="radio-detection"]')
-    await detection.get('button').trigger('click')
-    expect(detection.text()).toContain('deepseek/deepseek-v4-flash')
+  it('should show one card for the detection and the processing', async () => {
+    expect((await render()).text()).not.toContain('Tuvastus')
   })
 
   it('should show each line of the transcript', async () => {
@@ -284,7 +282,7 @@ describe('RadioText', () => {
     scrollable(wrapper)
     await hear(wrapper, 762.5)
     wrapper
-      .get('[data-testid="radio-detection"]')
+      .get('[data-testid="radio-details"]')
       .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
     expect(player.lost.value).toBe(false)
   })
@@ -293,7 +291,7 @@ describe('RadioText', () => {
     const wrapper = await attached()
     scrollable(wrapper)
     await hear(wrapper, 762.5)
-    await wrapper.get('[data-testid="radio-detection"]').trigger('keydown', { key: 'ArrowDown' })
+    await wrapper.get('[data-testid="radio-details"]').trigger('keydown', { key: 'ArrowDown' })
     expect(player.lost.value).toBe(false)
   })
 
@@ -301,7 +299,7 @@ describe('RadioText', () => {
     const wrapper = await attached()
     await hear(wrapper, 762.5)
     wrapper
-      .get('[data-testid="radio-detection"]')
+      .get('[data-testid="radio-details"]')
       .element.dispatchEvent(new WheelEvent('wheel', { bubbles: true }))
     expect(player.lost.value).toBe(true)
   })

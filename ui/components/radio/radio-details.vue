@@ -1,5 +1,5 @@
 <template>
-  <radio-card title="Töötlus" fold="shut">
+  <radio-card title="Töötlus" fold="shut" data-testid="radio-details">
     <template v-if="recording.episodeBytes" #aside>
       <a
         :href="url('episode.m4a')"
@@ -11,7 +11,10 @@
         {{ megabytes(recording.episodeBytes) }}
       </a>
     </template>
-    <radio-facts :rows="workFacts" />
+    <radio-facts :rows="facts" />
+    <p v-if="!recording.editList" class="mt-2 mb-0 text-sm text-ink-soft">
+      Saadet pole veel analüüsitud.
+    </p>
   </radio-card>
 </template>
 
@@ -28,5 +31,10 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
 
-const workFacts = computed<[string, string][]>(() => [['Tekst', textState(props.recording)]])
+const facts = computed<[string, string][]>(() => {
+  const text: [string, string] = ['Tekst', textState(props.recording)]
+  const edit = props.recording.editList
+  if (!edit) return [text]
+  return [['Mudel', edit.outline.model ?? '—'], ['Saatejuhid', edit.hosts.join(', ') || '—'], text]
+})
 </script>

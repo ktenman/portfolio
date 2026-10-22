@@ -124,6 +124,17 @@ describe('RadioStation', () => {
     expect(live).toBe(false)
   })
 
+  it('should show the play icon on the live button', async () => {
+    const onAir = {
+      name: 'PaarisMäng',
+      start: SATURDAY_NOON,
+      end: SATURDAY_NOON + 3600,
+      recorded: false,
+    }
+    const wrapper = await mount({ ...idle, onAir })
+    expect(wrapper.find('button').find('path').attributes('d')).toBe('M7 4v16l13-8z')
+  })
+
   it('should say the programme on air is not recorded', async () => {
     const onAir = {
       name: 'Tarkade klubi',
