@@ -29,7 +29,7 @@ class RadioDayService(
     return RadioDay(
       date = shown,
       today = today,
-      days = listOf(today.minusDays(1), today, today.plusDays(1)),
+      days = week(today),
       from = from,
       until = until,
       now = now,

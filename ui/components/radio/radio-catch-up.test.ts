@@ -69,7 +69,36 @@ describe('RadioCatchUp', () => {
   })
 
   it('should mark today among the days to choose from', async () => {
-    expect((await mount()).text()).toContain('L 17.10 · täna')
+    const today = (await mount()).get('[aria-current="date"]')
+    expect(today.findAll('span').map(s => s.text())).toEqual(['L', '17'])
+  })
+
+  it('should offer every day of the week from Monday', async () => {
+    const days = (await mount()).get('nav[aria-label="Päev"]').findAll('button')
+    expect(days.map(d => d.attributes('aria-label'))).toEqual([
+      'E 12.10',
+      'T 13.10',
+      'K 14.10',
+      'N 15.10',
+      'R 16.10',
+      'L 17.10',
+      'P 18.10',
+    ])
+  })
+
+  it("should list Monday's schedule under Sunday's on a phone", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    vi.mocked(radioService.day).mockResolvedValue(
+      radioDay({ date: '2026-10-18', today: '2026-10-18' })
+    )
+    await mount()
+    vi.unstubAllGlobals()
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19')
   })
 
   it('should leave the day buttons to screens wider than a phone', async () => {
@@ -99,7 +128,7 @@ describe('RadioCatchUp', () => {
     const wrapper = await mount()
     await wrapper
       .findAll('button')
-      .find(b => b.text() === 'R 16.10')!
+      .find(b => b.attributes('aria-label') === 'R 16.10')!
       .trigger('click')
     await flushPromises()
     expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16')
