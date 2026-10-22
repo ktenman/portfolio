@@ -83,6 +83,17 @@ class TimelineTest {
   }
 
   @Test
+  fun `should not count a single quiet frame inside loud audio as a dip`() {
+    expect(dips(DoubleArray(2000) { -7.0 }.also { it[1000] = -23.0 }, 8.0, 12.0)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should count three quiet frames inside loud audio as a dip`() {
+    val db = DoubleArray(2000) { -7.0 }.also { it.fill(-23.0, 1000, 1003) }
+    expect(dips(db, 8.0, 12.0).single()).toEqualWithErrorTolerance(10.005, 0.001)
+  }
+
+  @Test
   fun `should read a part cut off inside a sample`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, constant(1.0, 100))))
     Files.write(directory.resolve("raw.pcm"), byteArrayOf(1), StandardOpenOption.APPEND)
