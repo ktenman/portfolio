@@ -36,6 +36,13 @@ const idle = {
   format: null,
 }
 
+const broadcast = {
+  name: 'PaarisMäng',
+  start: SATURDAY_NOON,
+  end: SATURDAY_NOON + 3600,
+  recorded: false,
+}
+
 describe('RadioStation', () => {
   it('should say no programme is chosen when nothing is planned', async () => {
     expect((await mount(idle)).text()).toContain('None selected')
@@ -131,6 +138,32 @@ describe('RadioStation', () => {
     }
     const wrapper = await mount({ ...idle, onAir })
     expect(wrapper.find('button').find('path').attributes('d')).toBe('M7 4v16l13-8z')
+  })
+
+  it("should show the live button as the player's round play button", async () => {
+    expect((await mount({ ...idle, onAir: broadcast })).find('button').classes()).toEqual(
+      expect.arrayContaining(['rounded-full', 'bg-brass'])
+    )
+  })
+
+  it('should show only the icon on the live button', async () => {
+    expect((await mount({ ...idle, onAir: broadcast })).find('button').text()).toBe('')
+  })
+
+  it('should name the live button for screen readers', async () => {
+    const button = (await mount({ ...idle, onAir: broadcast })).find('button')
+    expect(button.attributes('aria-label')).toBe('Listen live')
+  })
+
+  it('should name the live button Pause while the station plays', async () => {
+    const player = useRadioPlayer()
+    player.live.value = true
+    player.playing.value = true
+    const label = (await mount({ ...idle, onAir: broadcast }))
+      .find('button')
+      .attributes('aria-label')
+    player.detach()
+    expect(label).toBe('Pause')
   })
 
   it('should say the programme on air is not recorded', async () => {
