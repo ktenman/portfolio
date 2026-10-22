@@ -198,6 +198,39 @@ describe('RadioPlayer', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
 
+  it('should name the show and its day in the card', () => {
+    const wrapper = render()
+    expect([wrapper.get('h2').text(), wrapper.get('p').text()]).toEqual([
+      'Keskpäevatund',
+      'Saturday, 17.10',
+    ])
+  })
+
+  it('should measure how far the clock sits below the top of the card', async () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private readonly report: () => void) {}
+        observe() {
+          this.report()
+        }
+        disconnect() {}
+      }
+    )
+    const box = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
+    ) {
+      return new DOMRect(0, this.matches('[data-testid="radio-clock"]') ? 245 : 100, 300, 40)
+    })
+    const wrapper = render()
+    await wrapper.vm.$nextTick()
+    box.mockRestore()
+    vi.unstubAllGlobals()
+    expect(wrapper.get('[data-testid="radio-player"]').attributes('style')).toContain(
+      '--radio-head: 145px'
+    )
+  })
+
   it('should name the versions without their lengths', () => {
     const options = render()
       .findAll('select[aria-label="Version"] option')

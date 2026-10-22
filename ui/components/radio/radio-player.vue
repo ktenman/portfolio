@@ -1,8 +1,22 @@
 <template>
-  <section class="card sticky top-0 z-10 mb-4 lg:top-[60.5px]" data-testid="radio-player">
+  <section
+    ref="card"
+    class="card sticky top-0 z-10 mb-4 max-md:top-[calc(1rem-var(--radio-head))] lg:top-[60.5px]"
+    :style="{ '--radio-head': `${head}px` }"
+    data-testid="radio-player"
+  >
     <div class="card-body grid gap-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="mb-0 text-3xl font-semibold tabular-nums">
+      <div
+        class="flex items-center gap-6 max-md:grid max-md:grid-cols-[1fr_auto] max-md:gap-x-3 max-md:gap-y-4"
+      >
+        <div class="min-w-0 grow max-md:col-span-2">
+          <div class="flex items-baseline">
+            <slot />
+            <h2 class="mb-0">{{ recording.programme }}</h2>
+          </div>
+          <p class="mb-0 text-sm text-ink-soft">{{ fullDay(recording.status.startedAt) }}</p>
+        </div>
+        <p ref="time" class="mb-0 text-3xl font-semibold tabular-nums" data-testid="radio-clock">
           {{ position(player.seconds.value) }}
           <span class="text-ink-soft max-md:text-lg max-md:font-normal">
             / {{ position(player.total.value) }}
@@ -60,11 +74,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
+import { useResizeObserver } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { episodeParts, HATCH, position, rawParts } from '../../utils/radio'
+import { episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 
@@ -82,6 +97,12 @@ onBeforeUnmount(() => {
   void decisions.flush()
 })
 
+const card = useTemplateRef('card')
+const time = useTemplateRef('time')
+const head = ref(0)
+useResizeObserver(card, () => {
+  head.value = time.value!.getBoundingClientRect().top - card.value!.getBoundingClientRect().top
+})
 const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => Boolean(props.recording.editList && props.recording.episodeBytes))
 const version = computed({

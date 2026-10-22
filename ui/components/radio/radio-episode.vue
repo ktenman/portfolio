@@ -1,7 +1,9 @@
 <template>
   <div :style="{ '--radio-player': `${height}px` }">
-    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-      <div class="flex items-baseline">
+    <p v-if="isLoading" class="text-ink-soft">Loading…</p>
+    <p v-else-if="!recording" class="text-ink-soft">Recording {{ name }} not found.</p>
+    <template v-else>
+      <radio-player ref="card" :recording="recording">
         <router-link
           :to="origin.to"
           :aria-label="`Back to ${origin.label}`"
@@ -10,14 +12,7 @@
         >
           <radio-icon name="left" />
         </router-link>
-        <h2 v-if="recording" class="mb-0">{{ recording.programme }}</h2>
-      </div>
-      <p v-if="recording" class="mb-0 text-ink-soft">{{ fullDay(recording.status.startedAt) }}</p>
-    </div>
-    <p v-if="isLoading" class="text-ink-soft">Loading…</p>
-    <p v-else-if="!recording" class="text-ink-soft">Recording {{ name }} not found.</p>
-    <template v-else>
-      <radio-player ref="card" :recording="recording" />
+      </radio-player>
       <radio-text :recording="recording" />
     </template>
   </div>
@@ -29,7 +24,6 @@ import { useElementSize } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
-import { fullDay } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 import RadioPlayer from './radio-player.vue'
 import RadioText from './radio-text.vue'

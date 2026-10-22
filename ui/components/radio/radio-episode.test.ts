@@ -38,7 +38,12 @@ describe('RadioEpisode', () => {
     await router.push(`/radio/${item.name}`)
     const wrapper = mount(
       { template: '<router-view />' },
-      { global: { plugins: [router], stubs: { RadioPlayer: true, RadioText: true } } }
+      {
+        global: {
+          plugins: [router],
+          stubs: { RadioPlayer: { template: '<section><slot /></section>' }, RadioText: true },
+        },
+      }
     )
     return { router, wrapper }
   }
@@ -71,7 +76,12 @@ describe('RadioEpisode', () => {
     await router.push(`/radio/${recording().name}`)
     const link = mount(
       { template: '<router-view />' },
-      { global: { plugins: [router], stubs: { RadioPlayer: true, RadioText: true } } }
+      {
+        global: {
+          plugins: [router],
+          stubs: { RadioPlayer: { template: '<section><slot /></section>' }, RadioText: true },
+        },
+      }
     ).get('a')
     expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([
       'Back to Catch-up',
@@ -87,9 +97,9 @@ describe('RadioEpisode', () => {
     ])
   })
 
-  it('should date the recording by its day alone', async () => {
+  it('should leave the name of the show to the player', async () => {
     const { wrapper } = await open(recording())
-    expect(wrapper.findAll('p').map(p => p.text())).toEqual(['Saturday, 17.10'])
+    expect(wrapper.find('h2').exists()).toBe(false)
   })
 
   it('should show the text under the player', async () => {
