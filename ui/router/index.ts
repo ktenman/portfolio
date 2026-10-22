@@ -43,13 +43,17 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        name: 'Raadio',
+        name: 'Radio',
         component: () => import('../components/radio/radio-recordings.vue'),
       },
       {
-        path: 'jarelkuulamine',
+        path: 'catch-up',
         name: 'RadioCatchUp',
         component: () => import('../components/radio/radio-catch-up.vue'),
+      },
+      {
+        path: 'jarelkuulamine',
+        redirect: '/radio/catch-up',
       },
       {
         path: ':name',

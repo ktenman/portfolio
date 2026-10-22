@@ -1,7 +1,7 @@
 <template>
-  <radio-card v-if="rows.length" title="Leia lõiked">
+  <radio-card v-if="rows.length" title="Find cuts">
     <p class="mt-0 mb-3.5 text-sm text-ink-soft">
-      Leitud lõigetest tehakse kohe puhastatud versioon. Lõikeid saad siin üle vaadata ja muuta.
+      The cuts found make the clean version right away. You can review and change them here.
     </p>
     <ul class="m-0 grid list-none gap-3.5 p-0">
       <li v-for="row in rows" :key="row.name" class="grid gap-2 border-t border-hairline pt-3.5">
@@ -9,16 +9,16 @@
           <span>{{ row.name }}</span>
           <app-button
             v-if="row.state === ProgrammeCutState.FAILED"
-            :aria-label="`Proovi uuesti: ${row.name}`"
+            :aria-label="`Try again: ${row.name}`"
             :loading="asking === row.name"
             @click="find(row.name)"
           >
-            Proovi uuesti
+            Try again
           </app-button>
           <span v-else-if="row.meter" class="text-xl leading-tight font-medium tabular-nums">
-            {{ row.meter.percent }} %
+            {{ row.meter.percent }}%
           </span>
-          <span v-else class="text-ink-soft">Järjekorras</span>
+          <span v-else class="text-ink-soft">Queued</span>
         </div>
         <template v-if="row.meter">
           <div
@@ -27,7 +27,7 @@
             aria-valuemin="0"
             aria-valuemax="100"
             :aria-valuenow="row.meter.percent"
-            :aria-valuetext="`${row.meter.percent} %, ${row.meter.step}, ${row.meter.left}`"
+            :aria-valuetext="`${row.meter.percent}%, ${row.meter.step}, ${row.meter.left}`"
             class="h-1.5 overflow-hidden rounded-full bg-hairline"
           >
             <div
@@ -41,15 +41,15 @@
           </div>
         </template>
         <p v-if="row.state === ProgrammeCutState.WAITING" class="mb-0 text-sm text-ink-soft">
-          Otsing algab ise, kui tekst on valmis.
+          The search starts once the transcript is ready.
         </p>
         <p v-if="row.state === ProgrammeCutState.QUEUED" class="mb-0 text-sm text-ink-soft">
-          {{ row.after ? `Algab pärast saadet ${row.after}` : 'Algab kohe' }}
+          {{ row.after ? `Starts after ${row.after}` : 'Starts now' }}
         </p>
         <template v-if="row.state === ProgrammeCutState.FAILED && recording.failure">
           <p class="mb-0 flex items-center gap-1.5 text-sm">
             <radio-icon name="alert" />
-            Otsing katkes kell {{ stopped(recording.failure.failedAt) }}
+            The search stopped at {{ stopped(recording.failure.failedAt) }}
           </p>
           <p class="mb-0 text-sm text-ink-soft">{{ recording.failure.reason }}</p>
         </template>
@@ -95,7 +95,7 @@ const meter = ({ name, progress, transcript }: ProgrammeCuts) => {
       Math.min(elapsed.value, progress.stepSecondsLeft)
     )
     return {
-      label: `${name}: lõigete otsing`,
+      label: `${name}: cut search`,
       percent,
       step: stepLabel(progress),
       left: left(secondsLeft),
@@ -104,9 +104,9 @@ const meter = ({ name, progress, transcript }: ProgrammeCuts) => {
   if (!transcript) return null
   const written = Math.floor(transcript.writtenSeconds / 60)
   return {
-    label: `${name}: tekst`,
+    label: `${name}: transcript`,
     percent: transcript.percent,
-    step: `Ootan teksti · ${written} / ${Math.round(transcript.totalSeconds / 60)} min kirjas`,
+    step: `Waiting for the transcript · ${written} / ${Math.round(transcript.totalSeconds / 60)} min written`,
     left: left(transcript.secondsLeft),
   }
 }
@@ -124,7 +124,7 @@ const find = (programme: string) => {
   return radioService
     .findCuts(props.recording.name, { programme })
     .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
-    .catch(() => toast.error('Lõikeid ei saanud otsima panna'))
+    .catch(() => toast.error('Could not start the cut search'))
     .finally(() => (asking.value = null))
 }
 </script>

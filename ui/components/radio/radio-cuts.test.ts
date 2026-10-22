@@ -79,29 +79,29 @@ describe('Radio cuts', () => {
   })
 
   it('should name each transition preview after its cut', async () => {
-    expect(button(await card(1), 'Kuula üleminekut')?.attributes('aria-label')).toBe(
-      'Kuula üleminekut: Reklaamipaus 12:30'
+    expect(button(await card(1), 'Listen to the transition')?.attributes('aria-label')).toBe(
+      'Listen to the transition: Ad break 12:30'
     )
   })
 
   it('should ask to check a cut the machine is unsure of', async () => {
-    expect((await card(2)).text()).toContain('Kontrolli')
+    expect((await card(2)).text()).toContain('Check')
   })
 
   it('should quote what the hosts say on both sides of a cut', async () => {
     expect((await card(1)).text()).toContain(
-      '12:30 „Ja siinkohal väike paus.“ … 12:32 „Ja Keskpäevatund jätkab.“'
+      '12:30 “Ja siinkohal väike paus.” … 12:32 “Ja Keskpäevatund jätkab.”'
     )
   })
 
   it('should name how the machine found the edges of a cut', async () => {
-    expect((await card(1)).text()).toContain('helitaseme langus · jaama džingel')
+    expect((await card(1)).text()).toContain('level dip · station jingle')
   })
 
   it('should save a decision without a button', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const wrapper = await render()
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Keep').trigger('click')
     vi.advanceTimersByTime(3000)
     vi.useRealTimers()
     expect(vi.mocked(radioService.review).mock.calls).toEqual([
@@ -110,19 +110,19 @@ describe('Radio cuts', () => {
   })
 
   it('should offer no button to apply the cuts', async () => {
-    expect(button(await render(), 'Rakenda')).toBeUndefined()
+    expect(button(await render(), 'Apply')).toBeUndefined()
   })
 
   it('should show the jingle that ends a break and how well it matched', async () => {
-    expect((await card(1)).text()).toContain('Džingel r = 0,93 · kinnitamata')
+    expect((await card(1)).text()).toContain('Jingle r = 0.93 · unconfirmed')
   })
 
   it('should show no jingle for a cut without one', async () => {
-    expect((await card(2)).text()).not.toContain('Džingel')
+    expect((await card(2)).text()).not.toContain('Jingle')
   })
 
   it('should save the jingle of a break once the user confirms it', async () => {
-    await button(await card(1), 'Kinnita džingel').trigger('click')
+    await button(await card(1), 'Confirm jingle').trigger('click')
     await flushPromises()
     expect(radioService.jingle).toHaveBeenCalledWith('2026-10-17', 1, { saved: true })
   })
@@ -132,14 +132,14 @@ describe('Radio cuts', () => {
       cut.jingle ? { ...cut, jingle: { ...cut.jingle, saved: true } } : cut
     )
     const wrapper = await render(recording({ cuts }))
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Unusta džingel').trigger('click')
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Forget jingle').trigger('click')
     await flushPromises()
     expect(radioService.jingle).toHaveBeenCalledWith('2026-10-17', 1, { saved: false })
   })
 
   it('should name the jingle button after its cut', async () => {
-    expect(button(await card(1), 'Kinnita džingel')?.attributes('aria-label')).toBe(
-      'Kinnita džingel: Reklaamipaus 12:30'
+    expect(button(await card(1), 'Confirm jingle')?.attributes('aria-label')).toBe(
+      'Confirm jingle: Ad break 12:30'
     )
   })
 
@@ -161,7 +161,7 @@ describe('Radio cuts', () => {
 
   const manual = {
     kind: CutKind.MANUAL,
-    title: 'Käsitsi lõige',
+    title: 'Manual cut',
     start: 2600,
     end: 2640,
     methods: [BoundaryMethod.MANUAL, BoundaryMethod.MANUAL],
@@ -184,14 +184,14 @@ describe('Radio cuts', () => {
 
   it('should not add a cut that ends before it starts', async () => {
     const wrapper = await typed('12:32:10', '12:31:05')
-    expect(button(wrapper, 'Lisa lõige')?.attributes('disabled')).toBeDefined()
+    expect(button(wrapper, 'Add cut')?.attributes('disabled')).toBeDefined()
   })
 
   it('should take an end of the cut from where the player is', async () => {
     player.playFrom(2165)
     audio.dispatchEvent(new Event('timeupdate'))
     const wrapper = await render()
-    await button(wrapper, 'Praegune koht').trigger('click')
+    await button(wrapper, 'Current position').trigger('click')
     expect((wrapper.find('#radio-manual-start').element as HTMLInputElement).value).toBe('12:31:05')
   })
 
@@ -199,7 +199,7 @@ describe('Radio cuts', () => {
     const titles = (await render(handmade(manual)))
       .findAll('[data-testid="radio-cut"] h4')
       .map(title => title.text())
-    expect(titles[2]).toBe('Käsitsi lõige')
+    expect(titles[2]).toBe('Manual cut')
   })
 
   it('should remove a cut as soon as it is added by hand', async () => {
@@ -223,8 +223,8 @@ describe('Radio cuts', () => {
 
   it('should not offer to delete a cut made by hand once it is chosen for removal', async () => {
     const wrapper = await render(handmade(manual))
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[2], 'Eemalda').trigger('click')
-    expect(button(wrapper, 'Kustuta')).toBeUndefined()
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[2], 'Remove').trigger('click')
+    expect(button(wrapper, 'Delete')).toBeUndefined()
   })
 
   it('should save the decisions before a cut made by hand is deleted', async () => {
@@ -232,14 +232,14 @@ describe('Radio cuts', () => {
     vi.mocked(radioService.review).mockImplementation(async () => void calls.push('review'))
     vi.mocked(radioService.dropCut).mockImplementation(async () => void calls.push('drop'))
     const wrapper = await render(handmade(manual, manual))
-    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Jäta alles').trigger('click')
-    await button(wrapper, 'Kustuta').trigger('click')
+    await button(wrapper.findAll('[data-testid="radio-cut"]')[1], 'Keep').trigger('click')
+    await button(wrapper, 'Delete').trigger('click')
     await flushPromises()
     expect(calls).toEqual(['review', 'drop'])
   })
 
   it('should delete a cut made by hand', async () => {
-    await button(await render(handmade(manual)), 'Kustuta').trigger('click')
+    await button(await render(handmade(manual)), 'Delete').trigger('click')
     await flushPromises()
     expect(radioService.dropCut).toHaveBeenCalledWith('2026-10-17', 4)
   })
@@ -265,11 +265,18 @@ describe('Radio cuts', () => {
   }
 
   it('should show the step and time left of a running cut search', async () => {
-    expect((await render(finding)).text()).toContain('AI loeb saadet · 1/3~1 min jäänud')
+    expect((await render(finding)).text()).toContain('Reading the show with AI · 1/3~1 min left')
+  })
+
+  it('should show the percent of a running cut search without a space before the sign', async () => {
+    expect((await render(finding)).text()).toContain('36%')
   })
 
   it('should give the percent and step of a running cut search to a screen reader', async () => {
-    expect(bar(await render(finding))).toEqual(['36', '36 %, AI loeb saadet · 1/3, ~1 min jäänud'])
+    expect(bar(await render(finding))).toEqual([
+      '36',
+      '36%, Reading the show with AI · 1/3, ~1 min left',
+    ])
   })
 
   it("should move a running cut search's percent on between updates", async () => {
@@ -322,15 +329,17 @@ describe('Radio cuts', () => {
 
   it('should say which programme a queued cut search waits for', async () => {
     const target = searching(ProgrammeCutState.QUEUED, { after: 'Keskpäevatund' })
-    expect((await render(target)).text()).toContain('JärjekorrasAlgab pärast saadet Keskpäevatund')
+    expect((await render(target)).text()).toContain('QueuedStarts after Keskpäevatund')
   })
 
   it('should say a queued cut search starts at once when nothing runs before it', async () => {
-    expect((await render(searching(ProgrammeCutState.QUEUED))).text()).toContain('Algab kohe')
+    expect((await render(searching(ProgrammeCutState.QUEUED))).text()).toContain('Starts now')
   })
 
   it('should say how much of the transcript a waiting cut search has', async () => {
-    expect((await render(waiting)).text()).toContain('Ootan teksti · 53 / 70 min kirjas')
+    expect((await render(waiting)).text()).toContain(
+      'Waiting for the transcript · 53 / 70 min written'
+    )
   })
 
   it('should give the transcript written so far to a screen reader', async () => {
@@ -340,7 +349,7 @@ describe('Radio cuts', () => {
     vi.useRealTimers()
     expect(read).toEqual([
       '75',
-      '75 %, Ootan teksti · 53 / 70 min kirjas, ~32 min jäänud · valmis ~13:02',
+      '75%, Waiting for the transcript · 53 / 70 min written, ~32 min left · ready at ~13:02',
     ])
   })
 
@@ -353,35 +362,33 @@ describe('Radio cuts', () => {
 
   it('should say when and why a cut search failed', async () => {
     expect((await render(failed)).text()).toContain(
-      'Otsing katkes kell 13:20No outline read to vote on'
+      'The search stopped at 13:20No outline read to vote on'
     )
   })
 
   it('should look for the cuts of a failed programme again', async () => {
-    await button(await render(failed), 'Proovi uuesti').trigger('click')
+    await button(await render(failed), 'Try again').trigger('click')
     expect(radioService.findCuts).toHaveBeenCalledWith('2026-10-17', { programme: 'Tarkade klubi' })
   })
 
   it('should say there are no suggestions when no cut search is coming', async () => {
-    expect((await render(searching(ProgrammeCutState.NONE))).text()).toContain(
-      'Lõikesoovitusi pole.'
-    )
+    expect((await render(searching(ProgrammeCutState.NONE))).text()).toContain('No suggested cuts.')
   })
 
   it('should not show the cut search once every programme has its cuts', async () => {
-    expect((await render()).text()).not.toContain('Leia lõiked')
+    expect((await render()).text()).not.toContain('Find cuts')
   })
 
   const section = async (index: number) =>
     (await render()).findAll('[data-testid="radio-section"]')[index]
 
   it('should show each cut above its own lines in the text', async () => {
-    expect((await section(2)).find('[data-testid="radio-cut"] h4').text()).toBe('Reklaamipaus')
+    expect((await section(2)).find('[data-testid="radio-cut"] h4').text()).toBe('Ad break')
   })
 
   it('should save a decision from a cut in the text', async () => {
     const wrapper = await render()
-    await button(wrapper.findAll('[data-testid="radio-section"]')[2], 'Jäta alles').trigger('click')
+    await button(wrapper.findAll('[data-testid="radio-section"]')[2], 'Keep').trigger('click')
     wrapper.unmount()
     await flushPromises()
     expect(vi.mocked(radioService.review).mock.calls).toEqual([
@@ -395,7 +402,7 @@ describe('Radio cuts', () => {
   })
 
   it('should play the moment before a cut to hear the transition', async () => {
-    await button(await card(1), 'Kuula üleminekut').trigger('click')
+    await button(await card(1), 'Listen to the transition').trigger('click')
     expect(audio.currentTime).toBe(2115)
   })
 })

@@ -3,15 +3,15 @@
     <radio-tabs />
     <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div class="min-w-0">
-        <h3 class="mb-3 text-heading">Salvestused</h3>
+        <h3 class="mb-3 text-heading">Recordings</h3>
         <data-table
           :items="recordings ?? []"
           :columns="columns"
           key-field="name"
           :is-loading="isLoading"
           :is-error="isError"
-          error-message="Salvestusi ei õnnestunud laadida."
-          empty-message="Salvestusi veel pole."
+          error-message="Could not load the recordings."
+          empty-message="No recordings yet."
           :row-class="() => 'relative cursor-pointer'"
           mobile-list
         >
@@ -54,7 +54,7 @@
                 v-if="!live(item)"
                 type="button"
                 class="relative z-10 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep"
-                :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
+                :aria-label="`Delete: ${item.programme} ${day(item.status.startedAt)}`"
                 @click="remove(item)"
               >
                 <radio-icon name="trash" />
@@ -79,7 +79,7 @@
             </radio-badge>
           </template>
           <template #header-actions>
-            <span class="sr-only">Toimingud</span>
+            <span class="sr-only">Actions</span>
           </template>
           <template #cell-actions="{ item }">
             <span>
@@ -87,8 +87,8 @@
                 v-if="item.status.state !== RecordingState.RECORDING"
                 type="button"
                 class="relative z-10 inline-flex items-center justify-center rounded-container p-1.5 text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep max-md:min-h-11 max-md:min-w-11"
-                title="Kustuta"
-                :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
+                title="Delete"
+                :aria-label="`Delete: ${item.programme} ${day(item.status.startedAt)}`"
                 @click="remove(item)"
               >
                 <radio-icon name="trash" />
@@ -137,14 +137,14 @@ const date = (item: RecordingSummary) => Number(day(item.status.startedAt).slice
 const live = (item: RecordingSummary) => item.status.state === RecordingState.RECORDING
 
 const cleaned = (item: RecordingSummary) =>
-  item.editList ? length(Math.round(item.editList.durationSeconds / 60) * 60) : 'Puhastamata'
+  item.editList ? length(Math.round(item.editList.durationSeconds / 60) * 60) : 'not cleaned'
 
 const remove = async (item: RecordingSummary) => {
   const confirmed = await confirm({
-    title: 'Kustuta salvestus?',
-    message: `${item.programme}, ${day(item.status.startedAt)} · ${span(item)}, kustutatakse jäädavalt koos heli ja tekstiga.`,
-    confirmText: 'Kustuta',
-    cancelText: 'Loobu',
+    title: 'Delete recording?',
+    message: `${item.programme}, ${day(item.status.startedAt)} · ${span(item)} will be deleted permanently, along with its audio and text.`,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
     variant: 'danger',
   })
   if (!confirmed) return
@@ -157,25 +157,25 @@ const remove = async (item: RecordingSummary) => {
         )
       )
     )
-    .catch(() => toast.error('Salvestust ei saanud kustutada'))
+    .catch(() => toast.error('Could not delete the recording'))
 }
 
 const columns: ColumnDefinition[] = [
-  { key: 'programme', label: 'Saade' },
+  { key: 'programme', label: 'Show' },
   {
     key: 'recorded',
-    label: 'Salvestus',
+    label: 'Recorded',
     class: 'whitespace-nowrap',
     formatter: (_, item: RecordingSummary) => `${day(item.status.startedAt)} · ${span(item)}`,
   },
   {
     key: 'length',
-    label: 'Kestus',
+    label: 'Length',
     class: 'whitespace-nowrap',
     formatter: (_, item: RecordingSummary) => length(item.status.seconds),
   },
-  { key: 'text', label: 'Tekst' },
-  { key: 'state', label: 'Olek' },
-  { key: 'actions', label: 'Toimingud', class: 'text-right' },
+  { key: 'text', label: 'Transcript' },
+  { key: 'state', label: 'Status' },
+  { key: 'actions', label: 'Actions', class: 'text-right' },
 ]
 </script>

@@ -55,7 +55,7 @@ describe('RadioEpisode', () => {
 
   it('should show no view tabs', async () => {
     const { wrapper } = await open(recording())
-    expect(wrapper.find('nav[aria-label="Saate vaated"]').exists()).toBe(false)
+    expect(wrapper.find('nav[aria-label="Show views"]').exists()).toBe(false)
   })
 
   it('should show the text under the player', async () => {
@@ -67,6 +67,12 @@ describe('RadioEpisode', () => {
     const { default: app } = await import('../../router')
     await app.push('/radio/2026-10-17/text')
     expect(app.currentRoute.value.fullPath).toBe('/radio/2026-10-17')
+  })
+
+  it('should send old catch-up links to the catch-up page', async () => {
+    const { default: app } = await import('../../router')
+    await app.push('/radio/jarelkuulamine')
+    expect(app.currentRoute.value.fullPath).toBe('/radio/catch-up')
   })
 
   it('should send old cuts links to the recording', async () => {

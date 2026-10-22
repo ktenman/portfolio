@@ -4,10 +4,10 @@
       type="checkbox"
       class="form-check-input"
       :checked="programme.recordEvery"
-      :aria-label="`Salvesta iga kord: ${programme.name}`"
+      :aria-label="`Record every time: ${programme.name}`"
       @change="choose($event.target as HTMLInputElement)"
     />
-    Iga kord
+    Every time
   </label>
 </template>
 
@@ -33,6 +33,6 @@ const choose = (box: HTMLInputElement) =>
     )
     .catch(() => {
       box.checked = !box.checked
-      toast.error('Valikut ei saanud salvestada')
+      toast.error('Could not save the choice')
     })
 </script>

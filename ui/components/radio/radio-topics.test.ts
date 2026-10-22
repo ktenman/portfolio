@@ -56,11 +56,11 @@ describe('RadioTopics', () => {
   })
 
   it('should leave the title alone while open', () => {
-    expect(render(1900).get('h3').element.parentElement!.textContent!.trim()).toBe('Teemad')
+    expect(render(1900).get('h3').element.parentElement!.textContent!.trim()).toBe('Topics')
   })
 
   it("should show the playing topic's start while folded", () => {
-    localStorage.setItem('radio-fold:Teemad', 'false')
+    localStorage.setItem('radio-fold:Topics', 'false')
     expect(render(1900).get('h3').element.parentElement!.textContent).toContain('30:03')
   })
 
