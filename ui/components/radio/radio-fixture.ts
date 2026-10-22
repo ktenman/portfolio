@@ -308,7 +308,15 @@ const ARCHIVED = { start: at(12), state: AiringState.RECORDED, recording: take(a
 export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
   date: '2026-10-17',
   today: '2026-10-17',
-  days: ['2026-10-16', '2026-10-17', '2026-10-18'],
+  days: [
+    '2026-10-12',
+    '2026-10-13',
+    '2026-10-14',
+    '2026-10-15',
+    '2026-10-16',
+    '2026-10-17',
+    '2026-10-18',
+  ],
   from: at(0),
   until: at(24),
   now: at(13, 20),

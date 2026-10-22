@@ -1,7 +1,9 @@
 package ee.tenman.portfolio.service.radio
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.temporal.TemporalAdjusters
 
 val DAY_STARTS: LocalTime = LocalTime.of(5, 0)
 private const val SLACK = 60L
@@ -132,3 +134,8 @@ fun spans(
     .filter { it.end > from && it.start < until }
     .map { RecordedSpan(maxOf(it.start, from), minOf(it.end, until), it.recording) }
     .sortedBy { it.start }
+
+fun week(today: LocalDate): List<LocalDate> {
+  val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+  return (0L..6L).map(monday::plusDays)
+}
