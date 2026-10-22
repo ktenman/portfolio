@@ -105,8 +105,8 @@ describe('labels', () => {
     expect(day(STARTED)).toEqual('Sat 17.10')
   })
 
-  it('should give the full day of a recording', () => {
-    expect(fullDay(STARTED)).toEqual('Saturday, 17.10.2026')
+  it('should give the weekday and date of a recording without the year', () => {
+    expect(fullDay(STARTED)).toEqual('Saturday, 17.10')
   })
 
   it('should call a finished transcript ready', () => {

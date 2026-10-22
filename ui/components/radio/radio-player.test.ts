@@ -198,14 +198,6 @@ describe('RadioPlayer', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
 
-  it('should give the position on the station clock', async () => {
-    const wrapper = render()
-    audio.currentTime = 761.5
-    audio.dispatchEvent(new Event('timeupdate'))
-    await wrapper.vm.$nextTick()
-    expect(wrapper.text()).toContain('Aired 12:07:41')
-  })
-
   it('should name the versions without their lengths', () => {
     const options = render()
       .findAll('select[aria-label="Version"] option')

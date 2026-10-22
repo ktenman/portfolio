@@ -73,15 +73,23 @@ describe('RadioEpisode', () => {
       { template: '<router-view />' },
       { global: { plugins: [router], stubs: { RadioPlayer: true, RadioText: true } } }
     ).get('a')
-    expect([link.text(), link.attributes('href')]).toEqual([
-      'Catch-up',
+    expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([
+      'Back to Catch-up',
       '/radio/catch-up?day=2026-10-14',
     ])
   })
 
   it('should go back to the shows when opened on its own', async () => {
     const link = (await open(recording())).wrapper.get('a')
-    expect([link.text(), link.attributes('href')]).toEqual(['Shows', '/radio'])
+    expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([
+      'Back to Shows',
+      '/radio',
+    ])
+  })
+
+  it('should date the recording by its day alone', async () => {
+    const { wrapper } = await open(recording())
+    expect(wrapper.findAll('p').map(p => p.text())).toEqual(['Saturday, 17.10'])
   })
 
   it('should show the text under the player', async () => {
