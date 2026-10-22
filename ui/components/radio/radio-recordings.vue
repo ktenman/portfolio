@@ -13,18 +13,22 @@
           error-message="Salvestusi ei õnnestunud laadida."
           empty-message="Salvestusi veel pole."
           :row-class="() => 'relative cursor-pointer'"
+          mobile-list
         >
           <template #mobile-card="{ item }">
             <div data-testid="radio-recording-row" class="flex items-center gap-3.5">
               <span
-                class="grid w-14 shrink-0 justify-items-center rounded-container py-1.5 leading-tight"
+                class="grid size-13 shrink-0 content-center justify-items-center gap-0.5 rounded-container"
                 :class="live(item) ? 'bg-notice-wash text-notice' : 'bg-surface-sunken'"
               >
-                <span class="text-label font-medium" :class="{ 'text-ink-soft': !live(item) }">
-                  {{ day(item.status.startedAt).split(' ')[0] }}
+                <span
+                  class="text-label leading-none font-medium"
+                  :class="{ 'text-ink-soft': !live(item) }"
+                >
+                  {{ weekday(item) }}
                 </span>
-                <span class="font-semibold tabular-nums">
-                  {{ day(item.status.startedAt).split(' ')[1] }}
+                <span class="text-xl leading-none font-semibold tabular-nums">
+                  {{ date(item) }}
                 </span>
               </span>
               <span class="grid min-w-0 grow justify-items-start gap-0.5">
@@ -35,14 +39,15 @@
                 >
                   {{ item.programme }}
                 </router-link>
-                <radio-badge
-                  v-if="item.status.state !== RecordingState.CAPTURED"
-                  :tone="STATES[item.status.state].tone"
+                <span
+                  class="text-sm tabular-nums"
+                  :class="TONE_TEXT[STATES[item.status.state].tone]"
                 >
-                  {{ STATES[item.status.state].label }}
-                </radio-badge>
-                <span v-else class="text-sm text-ink-soft tabular-nums">
-                  {{ cleaned(item) }}
+                  {{
+                    item.status.state === RecordingState.CAPTURED
+                      ? cleaned(item)
+                      : STATES[item.status.state].label
+                  }}
                 </span>
               </span>
               <button
@@ -107,7 +112,7 @@ import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
 import { day, length, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
-import RadioBadge from './radio-badge.vue'
+import RadioBadge, { type BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioProgrammes from './radio-programmes.vue'
 import RadioStation from './radio-station.vue'
@@ -117,6 +122,17 @@ const { data: recordings, isLoading, isError } = useRadioRecordings()
 const { confirm } = useConfirm()
 const toast = useToast()
 const queryClient = useQueryClient()
+
+const TONE_TEXT: Record<BadgeTone, string> = {
+  plain: 'text-ink-soft',
+  live: 'text-notice',
+  warn: 'text-brass-deep',
+  error: 'text-loss-deep',
+}
+
+const weekday = (item: RecordingSummary) => day(item.status.startedAt).split(' ')[0]
+
+const date = (item: RecordingSummary) => Number(day(item.status.startedAt).slice(-5, -3))
 
 const live = (item: RecordingSummary) => item.status.state === RecordingState.RECORDING
 

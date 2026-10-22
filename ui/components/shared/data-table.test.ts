@@ -362,4 +362,13 @@ describe('DataTable', () => {
       expect(labels).toEqual(['Name'])
     })
   })
+  it('should list the mobile rows in one card when asked', () => {
+    const wrapper = mount(DataTable, {
+      props: { items: mockItems, columns: mockColumns, mobileList: true },
+    })
+    expect([
+      wrapper.find('.mobile-cards-wrapper').classes(),
+      wrapper.findAll('.mobile-card').length,
+    ]).toEqual([expect.arrayContaining(['divide-y', 'rounded-container']), 0])
+  })
 })
