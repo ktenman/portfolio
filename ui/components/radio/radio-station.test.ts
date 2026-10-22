@@ -38,7 +38,7 @@ const idle = {
 
 describe('RadioStation', () => {
   it('should say no programme is chosen when nothing is planned', async () => {
-    expect((await mount(idle)).text()).toContain('Pole valitud')
+    expect((await mount(idle)).text()).toContain('None selected')
   })
 
   it('should name the next capture with the day and time its airing starts', async () => {
@@ -49,39 +49,37 @@ describe('RadioStation', () => {
       end: SATURDAY_NOON + 3630,
       slot: { start: SATURDAY_NOON, end: SATURDAY_NOON + 3600 },
     }
-    expect((await mount({ ...idle, capture })).text()).toContain('Keskpäevatund, L 24.10 12:00')
+    expect((await mount({ ...idle, capture })).text()).toContain('Keskpäevatund, Sat 24.10 12:00')
   })
 
   it('should show the recorder waiting between recordings', async () => {
-    expect((await mount(idle)).text()).toContain('SalvestajaOotel')
+    expect((await mount(idle)).text()).toContain('RecorderWaiting')
   })
 
   it('should show the recorder off when the worker is not seen', async () => {
-    expect((await mount({ ...idle, recorder: RecorderState.OFF })).text()).toContain(
-      'SalvestajaVäljas'
-    )
+    expect((await mount({ ...idle, recorder: RecorderState.OFF })).text()).toContain('RecorderOff')
   })
 
   it('should name the last recording with the day and time it ended', async () => {
     const last = { programme: 'Keskpäevatund', end: SATURDAY_NOON + 3900 }
-    expect((await mount({ ...idle, last })).text()).toContain('ViimaneKeskpäevatund, L 24.10 13:05')
+    expect((await mount({ ...idle, last })).text()).toContain('LastKeskpäevatund, Sat 24.10 13:05')
   })
 
   it('should give the format of the last recording', async () => {
     const format = { codec: 'mp3', bitRate: 256_000 }
-    expect((await mount({ ...idle, format })).text()).toContain('VormingMP3 256 kb/s')
+    expect((await mount({ ...idle, format })).text()).toContain('FormatMP3 256 kb/s')
   })
 
   it('should show a dash before the first recording', async () => {
-    expect((await mount(idle)).text()).toContain('Viimane—')
+    expect((await mount(idle)).text()).toContain('Last—')
   })
 
   it('should say how many hours of radio still fit', async () => {
-    expect((await mount(idle)).text()).toContain('≈ 3159 tundi')
+    expect((await mount(idle)).text()).toContain('≈ 3,159 h')
   })
 
   it('should show no free space without a recordings directory', async () => {
-    expect((await mount({ ...idle, freeBytes: null, hours: null })).text()).toContain('Vaba ruumi—')
+    expect((await mount({ ...idle, freeBytes: null, hours: null })).text()).toContain('Free space—')
   })
 
   it('should play the station live through the server', async () => {
@@ -142,6 +140,6 @@ describe('RadioStation', () => {
       end: SATURDAY_NOON + 7200,
       recorded: false,
     }
-    expect((await mount({ ...idle, onAir })).text()).toContain('13:00–14:00 · ei salvestata')
+    expect((await mount({ ...idle, onAir })).text()).toContain('13:00–14:00 · not being recorded')
   })
 })

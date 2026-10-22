@@ -1,11 +1,11 @@
 <template>
   <section>
     <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-      <h3 class="mb-0 text-heading">Saatekava</h3>
+      <h3 class="mb-0 text-heading">Schedule</h3>
       <span class="text-sm text-ink-soft">{{ fullDay(day.from) }}</span>
     </div>
     <p v-if="!day.day.length && !day.night.length" class="text-ink-soft">
-      Selle päeva kava pole veel laaditud.
+      The schedule for this day has not been loaded yet.
     </p>
     <div
       v-else

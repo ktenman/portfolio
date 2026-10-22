@@ -17,7 +17,7 @@
     <span class="col-start-2 max-md:empty:hidden md:col-start-auto">
       <radio-badge v-if="badge" :tone="badge.tone">{{ badge.label }}</radio-badge>
       <span v-else-if="airing.state === AiringState.ARCHIVED" class="text-sm text-ink-soft">
-        Originaal arhiivis
+        Original archived
       </span>
     </span>
     <span
@@ -89,30 +89,30 @@ const record = (value: boolean) => () =>
         )
       )
     )
-    .catch(() => toast.error('Valikut ei saanud salvestada'))
+    .catch(() => toast.error('Could not save the choice'))
 
 const action = computed(() => {
   const airing = props.airing
   switch (airing.state) {
     case AiringState.RECORDED:
-      return { label: 'Kuula', run: listen(airing.recording), icon: 'play' as const }
+      return { label: 'Listen', run: listen(airing.recording), icon: 'play' as const }
     case AiringState.PARTIAL:
       return {
-        label: coversEnd(airing) ? 'Kuula lõppu' : 'Kuula',
+        label: coversEnd(airing) ? 'Hear the end' : 'Listen',
         run: listen(airing.recording),
         quiet: true,
       }
     case AiringState.ARCHIVED:
-      return { label: 'Kuula', run: listen(airing.original?.recording), quiet: true }
+      return { label: 'Listen', run: listen(airing.original?.recording), quiet: true }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
       return player.live.value && player.playing.value
-        ? { label: 'Peata', run: player.toggle, quiet: true, icon: 'pause' as const }
-        : { label: 'Kuula otse', run: player.listen, quiet: true, icon: 'play' as const }
+        ? { label: 'Pause', run: player.toggle, quiet: true, icon: 'pause' as const }
+        : { label: 'Listen live', run: player.listen, quiet: true, icon: 'play' as const }
     case AiringState.OPEN:
-      return { label: 'Salvesta', run: record(true) }
+      return { label: 'Record', run: record(true) }
     case AiringState.PLANNED:
-      return airing.once ? { label: 'Tühista', run: record(false) } : null
+      return airing.once ? { label: 'Cancel', run: record(false) } : null
     default:
       return null
   }

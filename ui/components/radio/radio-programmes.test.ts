@@ -41,23 +41,23 @@ describe('RadioProgrammes', () => {
     ])
   })
 
-  it('should show a weekday run as a range of day letters', async () => {
-    expect((await mount()).text()).toContain('E–K, R 01:00–02:00')
+  it('should show a weekday run as a range of weekdays', async () => {
+    expect((await mount()).text()).toContain('Mon–Wed, Fri 01:00–02:00')
   })
 
   it('should say the schedule is not loaded before the first import', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue([])
-    expect((await mount()).text()).toContain('Kuku kava pole veel laaditud.')
+    expect((await mount()).text()).toContain("Kuku's schedule has not been loaded yet.")
   })
 
   it('should show the air time of a programme', async () => {
-    expect((await mount()).text()).toContain('L 12:00–13:00')
+    expect((await mount()).text()).toContain('Sat 12:00–13:00')
   })
 
   it('should ask to record a programme every time it is ticked', async () => {
     vi.mocked(radioService.choose).mockResolvedValue()
     await (await mount())
-      .find('input[aria-label="Salvesta iga kord: Keskpäevatund"]')
+      .find('input[aria-label="Record every time: Keskpäevatund"]')
       .setValue(true)
     expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true })
   })
@@ -66,7 +66,7 @@ describe('RadioProgrammes', () => {
     vi.mocked(radioService.choose).mockRejectedValue(new Error('offline'))
     const wrapper = await mount()
     const box = wrapper.find<HTMLInputElement>(
-      'input[aria-label="Salvesta iga kord: Keskpäevatund"]'
+      'input[aria-label="Record every time: Keskpäevatund"]'
     )
     await box.setValue(true)
     await flushPromises()
@@ -88,7 +88,7 @@ describe('RadioProgrammes', () => {
 
   it('should show a programme on a phone as one row with its name and air time', async () => {
     expect((await mount()).find('[data-testid="radio-programme-row"]').text()).toBe(
-      'KeskpäevatundL 12:00–13:00 · E–K, R 01:00–02:00 Iga kord'
+      'KeskpäevatundSat 12:00–13:00 · Mon–Wed, Fri 01:00–02:00 Every time'
     )
   })
 
@@ -99,6 +99,6 @@ describe('RadioProgrammes', () => {
 
   it('should offer no link to more programmes', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue(many(10))
-    expect((await mount()).text()).not.toContain('saadet saatekavas')
+    expect((await mount()).text()).not.toContain('shows on the schedule')
   })
 })

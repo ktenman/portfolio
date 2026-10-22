@@ -5,12 +5,12 @@ import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 
 class RadioSectionsTest {
-  private val cut = Cut(CutKind.BREAK, "Reklaamipaus", 100.0, 160.0, emptyList(), review = false, removed = true)
+  private val cut = Cut(CutKind.BREAK, "Ad break", 100.0, 160.0, emptyList(), review = false, removed = true)
 
   private val timeline =
     listOf(
       TimelineEntry(0.0, 100.0, "Ooperi tüli", false),
-      TimelineEntry(100.0, 160.0, "Reklaamipaus", true),
+      TimelineEntry(100.0, 160.0, "Ad break", true),
       TimelineEntry(160.0, 300.0, "Šokolaadi hind", false),
     )
 
@@ -60,7 +60,7 @@ class RadioSectionsTest {
   @Test
   fun `should keep a section without lines`() {
     expect(sections(timeline, listOf(cut), audible, emptyList(), PROGRAMME).map { it.title })
-      .toEqual(listOf("Ooperi tüli", "Reklaamipaus", "Šokolaadi hind"))
+      .toEqual(listOf("Ooperi tüli", "Ad break", "Šokolaadi hind"))
   }
 
   @Test

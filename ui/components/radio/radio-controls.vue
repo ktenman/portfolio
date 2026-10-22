@@ -10,7 +10,7 @@
         data-testid="radio-speed"
         :class="SUNKEN"
         class="text-sm font-medium"
-        :aria-label="`Kiirus ${player.rate.value}×, muuda`"
+        :aria-label="`Speed ${player.rate.value}×, change`"
         @click="step"
       >
         {{ player.rate.value }}×
@@ -21,7 +21,7 @@
         v-if="!player.live.value"
         type="button"
         :class="[ROUND, large ? 'size-13' : 'size-12', 'flex-col']"
-        aria-label="15 s tagasi"
+        aria-label="Back 15 s"
         @click="player.skip(-15)"
       >
         <radio-icon name="back" />
@@ -31,7 +31,7 @@
         type="button"
         class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
         :class="large ? 'size-14 max-md:size-16' : 'size-14 md:size-12'"
-        :aria-label="player.playing.value ? 'Peata' : 'Mängi'"
+        :aria-label="player.playing.value ? 'Pause' : 'Play'"
         data-testid="radio-play"
         @click="player.toggle()"
       >
@@ -41,7 +41,7 @@
         v-if="!player.live.value"
         type="button"
         :class="[ROUND, large ? 'size-13' : 'size-12', 'flex-col-reverse']"
-        aria-label="30 s edasi"
+        aria-label="Forward 30 s"
         @click="player.skip(30)"
       >
         30
@@ -52,7 +52,7 @@
       <button
         type="button"
         :class="SUNKEN"
-        aria-label="Vaigista"
+        aria-label="Mute"
         :aria-pressed="player.muted.value"
         @click="player.muted.value = !player.muted.value"
       >
@@ -67,7 +67,7 @@
         min="0"
         max="1"
         step="0.05"
-        aria-label="Helitugevus"
+        aria-label="Volume"
         :aria-valuetext="`${Math.round(player.volume.value * 100)}%`"
         @input="player.muted.value = false"
       />

@@ -19,9 +19,9 @@ class RadioEpisodeTest {
     expect(chapters(keep, topics, PROGRAMME).map { round(it.first * 100) / 100 to it.second }).toEqual(
       listOf(
         0.0 to "Rahvusooper Estonia juhtimiskriis",
-        1354.09 to "Lõige 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",
+        1354.09 to "Cut 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",
         1815.62 to "Umbusaldusavaldus ja sotside dilemma",
-        2184.12 to "Lõige 2 (36:29) – President Ülle Madise ja tema nõunikud",
+        2184.12 to "Cut 2 (36:29) – President Ülle Madise ja tema nõunikud",
       ),
     )
   }

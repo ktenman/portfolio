@@ -1,9 +1,9 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div ref="main" class="grid min-w-0 gap-4 max-md:hidden" data-testid="radio-transcript">
-      <radio-card title="Tekst">
-        <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
-        <p v-else-if="!topics.length" class="mb-0 text-ink-soft">Teksti veel pole.</p>
+      <radio-card title="Transcript">
+        <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Loading…</p>
+        <p v-else-if="!topics.length" class="mb-0 text-ink-soft">No transcript yet.</p>
         <div v-else ref="list">
           <radio-section
             v-for="section in topics"
@@ -97,19 +97,17 @@ const jingle = (index: number, saved: boolean) =>
   radioService
     .jingle(props.recording.name, index, { saved })
     .then(() => {
-      toast.success(saved ? 'Džingel salvestatud' : 'Džingel unustatud')
+      toast.success(saved ? 'Jingle saved' : 'Jingle forgotten')
       return queryClient.invalidateQueries({ queryKey: ['radio'], exact: true })
     })
-    .catch(() =>
-      toast.error(saved ? 'Džinglit ei saanud salvestada' : 'Džinglit ei saanud unustada')
-    )
+    .catch(() => toast.error(saved ? 'Could not save the jingle' : 'Could not forget the jingle'))
 
 const drop = (index: number) =>
   decisions
     .flush()
     .then(() => radioService.dropCut(props.recording.name, index))
     .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
-    .catch(() => toast.error('Lõiget ei saanud kustutada'))
+    .catch(() => toast.error('Could not delete the cut'))
 const player = useRadioPlayer()
 
 const raw = computed(() => player.version.value === 'raw')

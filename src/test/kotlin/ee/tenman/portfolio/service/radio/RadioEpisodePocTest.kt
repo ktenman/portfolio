@@ -135,8 +135,8 @@ class RadioEpisodePocTest {
         true,
         "",
         4,
-        "Lõige 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",
-        "Lõige 2 (36:29) – President Ülle Madise ja tema nõunikud",
+        "Cut 1 (22:39) – Üleminekud sotsidesse ja Eesti 200 kriis",
+        "Cut 2 (36:29) – President Ülle Madise ja tema nõunikud",
       ),
     )
   }

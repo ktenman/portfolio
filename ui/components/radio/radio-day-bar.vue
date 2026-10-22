@@ -1,7 +1,7 @@
 <template>
-  <radio-card title="Salvestatud aeg">
+  <radio-card title="Recorded time">
     <template v-if="radioDay.seconds" #aside>
-      <span class="text-sm text-ink-soft">{{ length(radioDay.seconds) }} ööpäevast</span>
+      <span class="text-sm text-ink-soft">{{ length(radioDay.seconds) }} of 24 h</span>
     </template>
     <div
       class="relative h-6 rounded-control border border-hairline bg-surface-sunken"
@@ -47,7 +47,7 @@
       </span>
       <span v-if="current" class="inline-flex items-center gap-2">
         <span class="h-3.5 w-0.5 bg-notice" />
-        Praegu {{ clock(radioDay.now, 0) }}
+        Now {{ clock(radioDay.now, 0) }}
       </span>
     </p>
   </radio-card>
@@ -78,14 +78,13 @@ const spans = (recording: boolean): RecordedSpan[] =>
 
 const finished = computed(() => {
   const done = spans(false)
-  if (done.length)
-    return `Salvestatud ${done.map(s => range(s.start, 0, s.end - s.start)).join(', ')}`
-  return props.radioDay.recorded.length ? null : 'Midagi pole salvestatud'
+  if (done.length) return `Recorded ${done.map(s => range(s.start, 0, s.end - s.start)).join(', ')}`
+  return props.radioDay.recorded.length ? null : 'Nothing recorded'
 })
 
 const running = computed(() => {
   const live = spans(true)
-  return live.length ? `Salvestab ${live.map(s => `${clock(s.start, 0)}–`).join(', ')}` : null
+  return live.length ? `Recording ${live.map(s => `${clock(s.start, 0)}–`).join(', ')}` : null
 })
 
 const label = computed(() => [finished.value, running.value].filter(Boolean).join(', '))

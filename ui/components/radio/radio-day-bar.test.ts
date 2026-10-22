@@ -21,15 +21,15 @@ describe('RadioDayBar', () => {
   })
 
   it('should list the recorded spans of the day', () => {
-    expect(bar().text()).toContain('Salvestatud 11:55–13:05')
+    expect(bar().text()).toContain('Recorded 11:55–13:05')
   })
 
   it('should give the recorded time of the day', () => {
-    expect(bar().text()).toContain('1 h 10 min ööpäevast')
+    expect(bar().text()).toContain('1 h 10 min of 24 h')
   })
 
   it('should show the current time on today', () => {
-    expect(bar().text()).toContain('Praegu 13:20')
+    expect(bar().text()).toContain('Now 13:20')
   })
 
   it('should not show the current time on another day', () => {
@@ -42,19 +42,19 @@ describe('RadioDayBar', () => {
   })
 
   it('should say nothing was recorded on an empty day', () => {
-    expect(bar({ recorded: [], seconds: 0 }).text()).toContain('Midagi pole salvestatud')
+    expect(bar({ recorded: [], seconds: 0 }).text()).toContain('Nothing recorded')
   })
 
   it('should name the recording in progress apart from the finished ones', () => {
     expect(legend({ recorded: [FINISHED, RUNNING] })).toEqual([
-      'Salvestatud 11:55–13:05',
-      'Salvestab 13:10–',
-      'Praegu 13:20',
+      'Recorded 11:55–13:05',
+      'Recording 13:10–',
+      'Now 13:20',
     ])
   })
 
   it('should name only the recording in progress on a day without finished ones', () => {
-    expect(legend({ recorded: [RUNNING] })).toEqual(['Salvestab 13:10–', 'Praegu 13:20'])
+    expect(legend({ recorded: [RUNNING] })).toEqual(['Recording 13:10–', 'Now 13:20'])
   })
 
   it('should stripe only the span still being recorded', () => {
@@ -66,7 +66,7 @@ describe('RadioDayBar', () => {
     const label = bar({ recorded: [FINISHED, RUNNING] })
       .find('[role="img"]')
       .attributes('aria-label')
-    expect(label).toBe('Salvestatud 11:55–13:05, Salvestab 13:10–')
+    expect(label).toBe('Recorded 11:55–13:05, Recording 13:10–')
   })
 
   it('should mark six, twelve and eighteen inside the bar', () => {

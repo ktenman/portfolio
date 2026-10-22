@@ -12,7 +12,7 @@
             </span>
           </p>
           <p class="mb-0 text-sm text-ink-soft max-md:row-start-1">
-            Eetris
+            Aired
             <span class="max-md:font-medium max-md:text-ink">
               {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
             </span>
@@ -20,13 +20,13 @@
         </div>
         <select
           v-model="version"
-          aria-label="Versioon"
+          aria-label="Version"
           class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium max-md:row-start-1 md:hidden"
         >
-          <option value="raw">Toorsalvestus</option>
-          <option v-if="cleaned" value="episode">Puhastatud</option>
+          <option value="raw">Raw</option>
+          <option v-if="cleaned" value="episode">Clean</option>
         </select>
-        <div role="group" aria-label="Versioon" class="flex max-md:hidden">
+        <div role="group" aria-label="Version" class="flex max-md:hidden">
           <button
             v-for="option in VERSIONS"
             :key="option.value"
@@ -45,7 +45,7 @@
           :value="player.seconds.value"
           :total="player.total.value"
           :parts="parts"
-          label="Asukoht salvestuses"
+          label="Position in the recording"
           @seek="player.seek"
           @play="player.playFrom($event, player.version.value)"
         />
@@ -55,11 +55,11 @@
         >
           <span class="flex items-center gap-1.5">
             <span class="size-3 rounded-control border border-hairline" :class="HATCH" />
-            Eemaldatakse
+            Removed
           </span>
           <span class="flex items-center gap-1.5">
             <span class="size-3 rounded-control border border-hairline bg-surface" />
-            Jääb alles
+            Kept
           </span>
         </p>
       </div>
@@ -78,8 +78,8 @@ import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 
 const VERSIONS = [
-  { value: 'raw', label: 'Toorsalvestus' },
-  { value: 'episode', label: 'Puhastatud' },
+  { value: 'raw', label: 'Raw' },
+  { value: 'episode', label: 'Clean' },
 ] as const
 
 const props = defineProps<{ recording: RecordingSummary }>()

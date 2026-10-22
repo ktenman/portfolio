@@ -1,14 +1,14 @@
 <template>
   <div>
-    <h3 class="mt-8 mb-3 text-heading">Saated</h3>
+    <h3 class="mt-8 mb-3 text-heading">Shows</h3>
     <data-table
       :items="programmes ?? []"
       :columns="columns"
       key-field="id"
       :is-loading="isLoading"
       :is-error="isError"
-      error-message="Saateid ei õnnestunud laadida."
-      empty-message="Kuku kava pole veel laaditud."
+      error-message="Could not load the shows."
+      empty-message="Kuku's schedule has not been loaded yet."
       mobile-list
     >
       <template #mobile-card="{ item }">
@@ -54,9 +54,9 @@ import RadioRecordEvery from './radio-record-every.vue'
 const { data: programmes, isLoading, isError } = useRadioProgrammes()
 
 const columns: ColumnDefinition[] = [
-  { key: 'name', label: 'Saade' },
-  { key: 'slots', label: 'Eetris' },
-  { key: 'recordings', label: 'Arhiivis' },
-  { key: 'recordEvery', label: 'Salvestamine' },
+  { key: 'name', label: 'Show' },
+  { key: 'slots', label: 'On air' },
+  { key: 'recordings', label: 'Archived' },
+  { key: 'recordEvery', label: 'Recording' },
 ]
 </script>

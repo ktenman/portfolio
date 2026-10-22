@@ -185,15 +185,15 @@ class RadioCutsTest {
   fun `should list the cuts and the topics in recording order`() {
     expect(timeline(cuts(edit(), 4200.0), edit().topics, 4200.0).map { Triple(it.start, it.title, it.cut) }).toEqual(
       listOf(
-        Triple(0.0, "Enne saadet", true),
+        Triple(0.0, "Before the show", true),
         Triple(761.5, "Rahvusooperi tüli", false),
-        Triple(2120.0, "Reklaamipaus", true),
+        Triple(2120.0, "Ad break", true),
         Triple(2255.0, "Rahvusooperi tüli", false),
         Triple(2700.0, "Mis toimub poliitikas?", false),
-        Triple(3025.0, "Reklaamipaus", true),
+        Triple(3025.0, "Ad break", true),
         Triple(3137.0, "Mis toimub poliitikas?", false),
         Triple(3400.0, "President Ülle Madise", false),
-        Triple(3837.0, "Pärast saadet", true),
+        Triple(3837.0, "After the show", true),
       ),
     )
   }
@@ -216,7 +216,7 @@ class RadioCutsTest {
 
   @Test
   fun `should place each heard topic on the episode clock`() {
-    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Reklaamipaus", true), entry(160.0, 300.0, "Valimised"))
+    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Ad break", true), entry(160.0, 300.0, "Valimised"))
     val audible = listOf(KeptSpan(0.0, 100.0), KeptSpan(160.0, 300.0))
     expect(heard(timeline, audible).spans()).toEqual(listOf(Triple(0.0, 100.0, "Ooper"), Triple(100.0, 240.0, "Valimised")))
   }
@@ -226,7 +226,7 @@ class RadioCutsTest {
     val timeline =
       listOf(
         entry(0.0, 100.0, "Ooper"),
-        entry(100.0, 160.0, "Reklaamipaus", true),
+        entry(100.0, 160.0, "Ad break", true),
         entry(160.0, 200.0, "Ooper"),
         entry(200.0, 300.0, "Valimised"),
       )
@@ -236,13 +236,13 @@ class RadioCutsTest {
 
   @Test
   fun `should leave out a part that is not heard`() {
-    val timeline = listOf(entry(0.0, 50.0, "Enne saadet", true), entry(50.0, 100.0, "Ooper"))
+    val timeline = listOf(entry(0.0, 50.0, "Before the show", true), entry(50.0, 100.0, "Ooper"))
     expect(heard(timeline, listOf(KeptSpan(50.0, 100.0))).spans()).toEqual(listOf(Triple(0.0, 50.0, "Ooper")))
   }
 
   @Test
   fun `should keep a restored cut apart from the topics around it`() {
-    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Reklaamipaus", true), entry(160.0, 300.0, "Ooper"))
+    val timeline = listOf(entry(0.0, 100.0, "Ooper"), entry(100.0, 160.0, "Ad break", true), entry(160.0, 300.0, "Ooper"))
     expect(heard(timeline, listOf(KeptSpan(0.0, 300.0))).map { it.cut }).toEqual(listOf(false, true, false))
   }
 

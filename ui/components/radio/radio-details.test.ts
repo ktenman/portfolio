@@ -29,13 +29,13 @@ describe('RadioDetails', () => {
     const links = render()
       .findAll('a[download]')
       .map(a => a.attributes('aria-label'))
-    expect(links).toEqual(['Laadi alla puhastatud, 34 MB'])
+    expect(links).toEqual(['Download the clean version, 34 MB'])
   })
 
   it('should leave the cuts out of the facts', async () => {
     const wrapper = render()
     await wrapper.get('button').trigger('click')
-    expect(wrapper.text()).not.toContain('Lõiked')
+    expect(wrapper.text()).not.toContain('Cuts')
   })
 
   const opened = async (item: RecordingSummary = recording()) => {
@@ -58,7 +58,7 @@ describe('RadioDetails', () => {
 
   it('should say the show is not analysed yet', async () => {
     expect((await opened(recording({ editList: null }))).text()).toContain(
-      'Saadet pole veel analüüsitud.'
+      'The show has not been analyzed yet.'
     )
   })
 

@@ -349,7 +349,7 @@ class RadioArchiveServiceTest {
       .single()
       .timeline
       .map { it.title },
-        ).toEqual(listOf("Enne saadet", null))
+        ).toEqual(listOf("Before the show", null))
   }
 
   @Test

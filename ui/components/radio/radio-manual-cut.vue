@@ -1,5 +1,5 @@
 <template>
-  <radio-card title="Lisa lõige käsitsi">
+  <radio-card title="Add a cut manually">
     <form class="grid gap-3" @submit.prevent="add">
       <div class="grid gap-3 sm:grid-cols-2">
         <div v-for="end in ENDS" :key="end.key" class="grid gap-1">
@@ -18,10 +18,10 @@
             <app-button
               class="whitespace-nowrap"
               :disabled="here === null"
-              :aria-label="`${end.label}: praegune koht`"
+              :aria-label="`${end.label}: current position`"
               @click="mark(end.key)"
             >
-              Praegune koht
+              Current position
             </app-button>
           </div>
         </div>
@@ -29,10 +29,10 @@
       <div class="flex flex-wrap gap-2">
         <app-button :disabled="!span" @click="span && player.preview(span.start, span.end)">
           <radio-icon name="play" class="me-1.5" />
-          Kuula üleminekut
+          Listen to the transition
         </app-button>
         <app-button type="submit" variant="primary" :disabled="!span" :loading="adding">
-          Lisa lõige
+          Add cut
         </app-button>
       </div>
     </form>
@@ -55,8 +55,8 @@ import RadioIcon from './radio-icon.vue'
 const props = defineProps<{ recording: RecordingSummary }>()
 
 const ENDS = [
-  { key: 'start', label: 'Algus' },
-  { key: 'end', label: 'Lõpp' },
+  { key: 'start', label: 'Start' },
+  { key: 'end', label: 'End' },
 ] as const
 
 const player = useRadioPlayer()
@@ -90,10 +90,10 @@ const add = async () => {
     .then(() => {
       decisions.choose(props.recording.cuts.length, true)
       Object.assign(times, { start: '', end: '' })
-      toast.success('Lõige lisatud')
+      toast.success('Cut added')
       return queryClient.invalidateQueries({ queryKey: ['radio'] })
     })
-    .catch(() => toast.error('Lõiget ei saanud lisada: kas see kattub teise lõikega?'))
+    .catch(() => toast.error('Could not add the cut: does it overlap another cut?'))
     .finally(() => (adding.value = false))
 }
 </script>

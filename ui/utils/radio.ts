@@ -18,19 +18,19 @@ import {
   TranscriptState,
 } from '../models/generated/domain-models'
 import type { BadgeTone } from '../components/radio/radio-badge.vue'
+import { WEEKDAYS } from './iso-dates'
 
 const ZONE = 'Europe/Tallinn'
 
 export const METHODS: Record<BoundaryMethod, string> = {
-  [BoundaryMethod.DIGITAL_SILENCE]: 'digivaikus',
-  [BoundaryMethod.STATION_JINGLE]: 'jaama džingel',
-  [BoundaryMethod.LEVEL_DIP]: 'helitaseme langus',
-  [BoundaryMethod.TRANSCRIPT_ONLY]: 'ainult tekst',
-  [BoundaryMethod.MANUAL]: 'käsitsi',
+  [BoundaryMethod.DIGITAL_SILENCE]: 'digital silence',
+  [BoundaryMethod.STATION_JINGLE]: 'station jingle',
+  [BoundaryMethod.LEVEL_DIP]: 'level dip',
+  [BoundaryMethod.TRANSCRIPT_ONLY]: 'text only',
+  [BoundaryMethod.MANUAL]: 'manual',
 }
 
 const DAYS = Object.values(DayOfWeek)
-const LETTER = 'ETKNRLP'
 
 const weekdays = (days: DayOfWeek[]): string =>
   days
@@ -43,8 +43,8 @@ const weekdays = (days: DayOfWeek[]): string =>
     }, [])
     .map(run =>
       run.length > 2
-        ? `${LETTER[run[0]]}–${LETTER[run[run.length - 1]]}`
-        : run.map(i => LETTER[i]).join(', ')
+        ? `${WEEKDAYS[run[0]]}–${WEEKDAYS[run[run.length - 1]]}`
+        : run.map(i => WEEKDAYS[i]).join(', ')
     )
     .join(', ')
 
@@ -89,14 +89,14 @@ export const minutes = (seconds: number): string => `${Math.max(1, Math.round(se
 
 export const megabytes = (bytes: number): string => `${Math.round(bytes / 1_000_000)} MB`
 
-const formatter = (options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat('et-EE', { timeZone: ZONE, ...options })
+const formatter = (options: Intl.DateTimeFormatOptions, locale = 'et-EE') =>
+  new Intl.DateTimeFormat(locale, { timeZone: ZONE, ...options })
 
 const TIME = formatter({ hour: '2-digit', minute: '2-digit' })
 const TIME_SECONDS = formatter({ hour: '2-digit', minute: '2-digit', second: '2-digit' })
 const DATE = formatter({ day: '2-digit', month: '2-digit', year: 'numeric' })
-const WEEKDAY = formatter({ weekday: 'narrow' })
-const WEEKDAY_LONG = formatter({ weekday: 'long' })
+const WEEKDAY = formatter({ weekday: 'short' }, 'en-GB')
+const WEEKDAY_LONG = formatter({ weekday: 'long' }, 'en-GB')
 
 const instant = (startedAt: number, seconds = 0) => new Date((startedAt + seconds) * 1000)
 
@@ -106,18 +106,18 @@ export const clock = (startedAt: number, seconds: number, withSeconds = false): 
 export const left = (seconds: number, now = new Date()): string => {
   const text =
     seconds >= 60
-      ? `~${Math.round(seconds / 60)} min jäänud`
-      : `~${Math.max(5, Math.round(seconds / 5) * 5)} s jäänud`
+      ? `~${Math.round(seconds / 60)} min left`
+      : `~${Math.max(5, Math.round(seconds / 5) * 5)} s left`
   if (seconds <= 600) return text
-  return `${text} · valmis ~${TIME.format(new Date(now.getTime() + seconds * 1000))}`
+  return `${text} · ready at ~${TIME.format(new Date(now.getTime() + seconds * 1000))}`
 }
 
 const STEPS: Record<CutStep, string> = {
-  [CutStep.DECODE]: 'Loen helifaili',
-  [CutStep.SILENCE]: 'Otsin vaikuseid',
-  [CutStep.READ]: 'AI loeb saadet',
-  [CutStep.BOUNDARIES]: 'Panen lõiked paika',
-  [CutStep.RENDER]: 'Teen saatefaili',
+  [CutStep.DECODE]: 'Decoding the audio',
+  [CutStep.SILENCE]: 'Finding silences',
+  [CutStep.READ]: 'Reading the show with AI',
+  [CutStep.BOUNDARIES]: 'Placing the cuts',
+  [CutStep.RENDER]: 'Making the clean version',
 }
 
 export const stepLabel = ({ step, read }: CutProgress): string =>
@@ -167,24 +167,22 @@ export const range = (startedAt: number, start: number, end: number, withSeconds
 export const day = (startedAt: number): string =>
   `${WEEKDAY.format(instant(startedAt))} ${DATE.format(instant(startedAt)).slice(0, 5)}`
 
-export const fullDay = (startedAt: number): string => {
-  const weekday = WEEKDAY_LONG.format(instant(startedAt))
-  return `${weekday[0].toUpperCase()}${weekday.slice(1)}, ${DATE.format(instant(startedAt))}`
-}
+export const fullDay = (startedAt: number): string =>
+  `${WEEKDAY_LONG.format(instant(startedAt))}, ${DATE.format(instant(startedAt))}`
 
 export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> = {
-  [RecordingState.RECORDING]: { label: 'Salvestab', tone: 'live' },
-  [RecordingState.CAPTURED]: { label: 'Salvestatud', tone: 'plain' },
-  [RecordingState.PARTIAL]: { label: 'Osaline', tone: 'warn' },
-  [RecordingState.FAILED]: { label: 'Ebaõnnestus', tone: 'error' },
+  [RecordingState.RECORDING]: { label: 'Recording', tone: 'live' },
+  [RecordingState.CAPTURED]: { label: 'Recorded', tone: 'plain' },
+  [RecordingState.PARTIAL]: { label: 'Partial', tone: 'warn' },
+  [RecordingState.FAILED]: { label: 'Failed', tone: 'error' },
 }
 
 export const AIRING_STATES: Partial<Record<AiringState, { label: string; tone: BadgeTone }>> = {
-  [AiringState.RECORDED]: { label: 'Salvestatud', tone: 'plain' },
-  [AiringState.PARTIAL]: { label: 'Osaline', tone: 'warn' },
-  [AiringState.RECORDING]: { label: 'Salvestab', tone: 'live' },
-  [AiringState.ON_AIR]: { label: 'Eetris', tone: 'live' },
-  [AiringState.PLANNED]: { label: 'Plaanis', tone: 'plain' },
+  [AiringState.RECORDED]: { label: 'Recorded', tone: 'plain' },
+  [AiringState.PARTIAL]: { label: 'Partial', tone: 'warn' },
+  [AiringState.RECORDING]: { label: 'Recording', tone: 'live' },
+  [AiringState.ON_AIR]: { label: 'On air', tone: 'live' },
+  [AiringState.PLANNED]: { label: 'Planned', tone: 'plain' },
 }
 
 export const airLength = (seconds: number): string => {
@@ -196,32 +194,32 @@ export const coversEnd = (airing: DayAiring): boolean =>
   !!airing.recording && airing.recording.to >= airing.end - 60
 
 const covered = (airing: DayAiring, recording: AiringRecording): string =>
-  `${coversEnd(airing) ? 'Viimased ' : ''}${minutes(recording.to - recording.from)} on salvestuses „${recording.programme}“`
+  `${coversEnd(airing) ? 'Last ' : ''}${minutes(recording.to - recording.from)} recorded in “${recording.programme}”`
 
 const repeatNote = (airing: DayAiring): string | null => {
   const original = airing.original
-  if (original?.state === AiringState.PARTIAL) return 'saab salvestada täispikalt'
+  if (original?.state === AiringState.PARTIAL) return 'can be recorded in full'
   if (original?.state === AiringState.MISSED)
-    return `${day(original.start)} ${clock(original.start, 0)} jäi salvestamata`
+    return `${day(original.start)} ${clock(original.start, 0)} not recorded`
   return airing.episode ?? (original ? day(original.start) : null)
 }
 
 export const airingNote = (airing: DayAiring): string | null => {
   const recording = airing.recording
   if (airing.state === AiringState.RECORDED && recording)
-    return `Salvestus ${range(recording.start, 0, recording.end - recording.start)}`
+    return `Recorded ${range(recording.start, 0, recording.end - recording.start)}`
   if (airing.state === AiringState.PARTIAL && recording) return covered(airing, recording)
-  if (airing.state === AiringState.RECORDING) return 'Salvestatakse'
-  if (airing.repeat) return ['Kordus', repeatNote(airing)].filter(Boolean).join(' · ')
-  if (airing.state === AiringState.ON_AIR) return 'Ei salvestata'
+  if (airing.state === AiringState.RECORDING) return 'Being recorded'
+  if (airing.repeat) return ['Repeat', repeatNote(airing)].filter(Boolean).join(' · ')
+  if (airing.state === AiringState.ON_AIR) return 'Not being recorded'
   return airing.episode
 }
 
 export const missedRun = (airings: DayAiring[]): string => {
   const first = airings[0]
   const last = airings[airings.length - 1]
-  const count = `${airings.length} ${airings.length === 1 ? 'saade' : 'saadet'}`
-  return `${range(first.start, 0, last.end - first.start)} · ${count}, salvestamata`
+  const count = `${airings.length} ${airings.length === 1 ? 'show' : 'shows'}`
+  return `${range(first.start, 0, last.end - first.start)} · ${count}, not recorded`
 }
 
 export const dateDay = (date: string): string => day(Date.parse(`${date}T12:00:00Z`) / 1000)
@@ -229,19 +227,19 @@ export const dateDay = (date: string): string => day(Date.parse(`${date}T12:00:0
 export const nightOf = (until: number): string => {
   const weekday = WEEKDAY_LONG.format(instant(until))
   const date = DATE.format(instant(until)).slice(0, 5)
-  return `Öö vastu ${weekday.endsWith('päev') ? `${weekday}a` : weekday}, ${date}`
+  return `Overnight into ${weekday}, ${date}`
 }
 
 export const RECORDER_STATES: Record<RecorderState, { label: string; tone: BadgeTone }> = {
-  [RecorderState.WAITING]: { label: 'Ootel', tone: 'plain' },
-  [RecorderState.RECORDING]: { label: 'Salvestab', tone: 'live' },
-  [RecorderState.OFF]: { label: 'Väljas', tone: 'error' },
+  [RecorderState.WAITING]: { label: 'Waiting', tone: 'plain' },
+  [RecorderState.RECORDING]: { label: 'Recording', tone: 'live' },
+  [RecorderState.OFF]: { label: 'Off', tone: 'error' },
 }
 
 const TEXT_STATES: Record<TranscriptState, string> = {
   [TranscriptState.NONE]: '—',
-  [TranscriptState.RECORDING]: 'Salvestamisel',
-  [TranscriptState.TRANSCRIBED]: 'Olemas',
+  [TranscriptState.RECORDING]: 'In progress',
+  [TranscriptState.TRANSCRIBED]: 'Ready',
 }
 
 export const textState = (recording: RecordingSummary): string =>
@@ -280,7 +278,7 @@ export const rawParts = (
   timeline.map((entry, i) => {
     const { start, end, title, cut } = entry
     const out = cut && removed.includes(cuts.findIndex(c => c.start === start))
-    const fate = out ? 'Eemaldatakse' : 'Jääb alles'
+    const fate = out ? 'Removed' : 'Kept'
     const before = timeline.slice(0, i).filter(e => !e.cut)
     const resumed = !cut && before[before.length - 1]?.title === title
     return {
@@ -300,7 +298,7 @@ export const episodeParts = ({ topics, programme }: RecordingSummary): StripPart
     const resumed = !entry.cut && heard[heard.length - 1]?.title === entry.title
     const number = heard.length + (resumed ? 0 : 1)
     const lead =
-      entry.cut || !entry.title ? (entry.title ?? programme) : `Teema ${number}: ${entry.title}`
+      entry.cut || !entry.title ? (entry.title ?? programme) : `Topic ${number}: ${entry.title}`
     const part = {
       ...named(entry),
       start: entry.start,

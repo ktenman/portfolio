@@ -30,7 +30,7 @@ class RadioRenderServiceTest {
     )
     val found = probe(episode)
     expect((abs(duration(episode) - 18.0) <= 0.1) to found["chapters"].toList().map { it["tags"]["title"].asString() })
-      .toEqual(true to listOf("Õhtu; uudised = #1", "Lõige 1 (0:08) – Õhtu; uudised = #1"))
+      .toEqual(true to listOf("Õhtu; uudised = #1", "Cut 1 (0:08) – Õhtu; uudised = #1"))
   }
 
   @Test

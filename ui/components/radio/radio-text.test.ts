@@ -101,7 +101,7 @@ describe('RadioText', () => {
     const wrapper = await render()
     await hear(wrapper, 2257)
     expect(wrapper.get('[data-testid="radio-section"][aria-current="true"]').text()).not.toContain(
-      'Praegu'
+      'Now'
     )
   })
 
@@ -120,17 +120,24 @@ describe('RadioText', () => {
   })
 
   it('should show one card for the detection and the processing', async () => {
-    expect((await render()).text()).not.toContain('Tuvastus')
+    expect((await render()).text()).not.toContain('Detection')
   })
 
   it('should show each line of the transcript', async () => {
     expect(lines(await render())).toHaveLength(3)
   })
 
-  it('should show a run of music as one Muusika row with its time', async () => {
+  it('should show a run of music as one Music row with its time', async () => {
     const [first, ...rest] = transcript()
     vi.mocked(radioService.transcript).mockResolvedValue(sections([first, song(), ...rest]))
-    expect(lines(await render())[1].text()).toBe('12:08:15Muusika')
+    expect(lines(await render())[1].text()).toBe('12:08:15Music')
+  })
+
+  it('should mark only the spoken lines as Estonian', async () => {
+    const [first, ...rest] = transcript()
+    vi.mocked(radioService.transcript).mockResolvedValue(sections([first, song(), ...rest]))
+    const marked = lines(await render()).map(line => line.find('p').attributes('lang'))
+    expect(marked.slice(0, 2)).toEqual(['et', undefined])
   })
 
   it('should play the recording from the time of a line', async () => {
@@ -149,17 +156,15 @@ describe('RadioText', () => {
   })
 
   it('should say where a cut splits a sentence', async () => {
-    expect(lines(await render())[1].text()).toContain(
-      'Lõige poolitab lauseReklaamipaus 12:30–12:32'
-    )
+    expect(lines(await render())[1].text()).toContain('Cut splits a sentenceAd break 12:30–12:32')
   })
 
   it('should not offer to mark the transcript checked', async () => {
-    expect((await render()).text()).not.toContain('Märgi kontrollituks')
+    expect((await render()).text()).not.toContain('Mark as checked')
   })
 
   it('should not label a transcript that is there', async () => {
-    expect((await render()).find('[data-testid="radio-transcript"]').text()).not.toContain('Olemas')
+    expect((await render()).find('[data-testid="radio-transcript"]').text()).not.toContain('Ready')
   })
 
   it('should offer no text search', async () => {

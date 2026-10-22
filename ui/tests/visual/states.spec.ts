@@ -250,7 +250,7 @@ test('the raw radio recording shows the cut decisions', async ({ page }, testInf
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
-  await page.getByRole('button', { name: /^Toorsalvestus/ }).click()
+  await page.getByRole('button', { name: /^Raw/ }).click()
   await expect(page.getByTestId('radio-cut').first()).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 0))
   await settleAndFreeze(page)
@@ -267,8 +267,8 @@ test('the radio player keeps every control at least 44 px tall on a phone', asyn
   await openRoute(page, '/radio/2026-10-17')
   const card = page.getByTestId('radio-player')
   const targets = [
-    card.getByRole('slider', { name: 'Asukoht salvestuses' }),
-    card.getByRole('combobox', { name: 'Versioon' }),
+    card.getByRole('slider', { name: 'Position in the recording' }),
+    card.getByRole('combobox', { name: 'Version' }),
     ...(await card.getByRole('button').all()),
   ]
   const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))

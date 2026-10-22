@@ -51,7 +51,7 @@ describe('RadioCatchUp', () => {
   })
 
   it('should fold the morning that was not recorded into one row', async () => {
-    expect((await mount()).text()).toContain('05:00–10:00 · 3 saadet, salvestamata')
+    expect((await mount()).text()).toContain('05:00–10:00 · 3 shows, not recorded')
   })
 
   it('should hide the airings of a folded morning', async () => {
@@ -65,24 +65,29 @@ describe('RadioCatchUp', () => {
   })
 
   it('should set the night after midnight apart from the day', async () => {
-    expect((await mount()).text()).toContain('Öö vastu pühapäeva, 18.10')
+    expect((await mount()).text()).toContain('Overnight into Sunday, 18.10')
   })
 
   it('should mark today among the days to choose from', async () => {
     const today = (await mount()).get('[aria-current="date"]')
-    expect(today.findAll('span').map(s => s.text())).toEqual(['L', '17'])
+    expect(today.findAll('span').map(s => s.text())).toEqual(['Sa', '17'])
+  })
+
+  it('should tell the days apart that share a first letter', async () => {
+    const days = (await mount()).get('nav[aria-label="Day"]').findAll('button')
+    expect(days.map(d => d.get('span').text())).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'])
   })
 
   it('should offer every day of the week from Monday', async () => {
-    const days = (await mount()).get('nav[aria-label="Päev"]').findAll('button')
+    const days = (await mount()).get('nav[aria-label="Day"]').findAll('button')
     expect(days.map(d => d.attributes('aria-label'))).toEqual([
-      'E 12.10',
-      'T 13.10',
-      'K 14.10',
-      'N 15.10',
-      'R 16.10',
-      'L 17.10',
-      'P 18.10',
+      'Mon 12.10',
+      'Tue 13.10',
+      'Wed 14.10',
+      'Thu 15.10',
+      'Fri 16.10',
+      'Sat 17.10',
+      'Sun 18.10',
     ])
   })
 
@@ -102,7 +107,7 @@ describe('RadioCatchUp', () => {
   })
 
   it('should leave the day buttons to screens wider than a phone', async () => {
-    expect((await mount()).get('nav[aria-label="Päev"]').classes()).toContain('max-md:hidden')
+    expect((await mount()).get('nav[aria-label="Day"]').classes()).toContain('max-md:hidden')
   })
 
   it("should list tomorrow's schedule under today's on a phone", async () => {
@@ -117,61 +122,61 @@ describe('RadioCatchUp', () => {
     )
     const wrapper = await mount()
     vi.unstubAllGlobals()
-    expect(wrapper.findAll('h3').filter(h => h.text() === 'Saatekava')).toHaveLength(2)
+    expect(wrapper.findAll('h3').filter(h => h.text() === 'Schedule')).toHaveLength(2)
   })
 
   it("should show only the chosen day's schedule on a wider screen", async () => {
-    expect((await mount()).findAll('h3').filter(h => h.text() === 'Saatekava')).toHaveLength(1)
+    expect((await mount()).findAll('h3').filter(h => h.text() === 'Schedule')).toHaveLength(1)
   })
 
   it('should ask for the day that is chosen', async () => {
     const wrapper = await mount()
     await wrapper
       .findAll('button')
-      .find(b => b.attributes('aria-label') === 'R 16.10')!
+      .find(b => b.attributes('aria-label') === 'Fri 16.10')!
       .trigger('click')
     await flushPromises()
     expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16')
   })
 
   it('should say when the recording of an airing was made', async () => {
-    expect((await row('12:00')).text()).toContain('Salvestus 11:55–13:05')
+    expect((await row('12:00')).text()).toContain('Recorded 11:55–13:05')
   })
 
   it('should say how much of a partly recorded airing is kept and where', async () => {
-    expect((await row('10:00')).text()).toContain('Viimased 5 min on salvestuses „Keskpäevatund“')
+    expect((await row('10:00')).text()).toContain('Last 5 min recorded in “Keskpäevatund”')
   })
 
   it('should say a repeat can be recorded in full when its original is partial', async () => {
-    expect((await row('00:00')).text()).toContain('Kordus · saab salvestada täispikalt')
+    expect((await row('00:00')).text()).toContain('Repeat · can be recorded in full')
   })
 
   it('should say when the original of a repeat was missed', async () => {
-    expect((await row('21:00Meretund')).text()).toContain('Kordus · L 17.10 09:00 jäi salvestamata')
+    expect((await row('21:00Meretund')).text()).toContain('Repeat · Sat 17.10 09:00 not recorded')
   })
 
   it('should show a repeat whose original is archived', async () => {
-    expect((await row('18:00')).text()).toContain('Originaal arhiivis')
+    expect((await row('18:00')).text()).toContain('Original archived')
   })
 
   it('should play a partly recorded airing from where it is covered', async () => {
-    await (await button('Kuula lõppu')).trigger('click')
+    await (await button('Hear the end')).trigger('click')
     expect(player.playFrom).toHaveBeenCalledWith(0)
   })
 
   it('should play the original of an archived repeat from its start', async () => {
-    await (await button('Kuula: Keskpäevatund 18:00')).trigger('click')
+    await (await button('Listen: Keskpäevatund 18:00')).trigger('click')
     expect(player.playFrom).toHaveBeenCalledWith(300)
   })
 
   it('should listen live to an airing that is on air', async () => {
-    await (await button('Kuula otse')).trigger('click')
+    await (await button('Listen live')).trigger('click')
     expect(player.listen).toHaveBeenCalled()
   })
 
   it('should open the recording of an airing it plays', async () => {
     const wrapper = await mount()
-    const play = wrapper.findAll('button').find(b => b.text().includes('Kuula lõppu'))!
+    const play = wrapper.findAll('button').find(b => b.text().includes('Hear the end'))!
     await play.trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.vm.$router.currentRoute.value.path).toBe(`/radio/${recording().name}`)
@@ -179,40 +184,40 @@ describe('RadioCatchUp', () => {
   })
 
   it('should show the play icon on the live button of an airing on air', async () => {
-    expect((await button('Kuula otse')).find('path').attributes('d')).toBe('M7 4v16l13-8z')
+    expect((await button('Listen live')).find('path').attributes('d')).toBe('M7 4v16l13-8z')
   })
 
   it('should show the pause icon on the stop button of an airing on air', async () => {
     player.live.value = true
     player.playing.value = true
-    expect((await button('Peata')).find('path').attributes('d')).toBe('M6 4h4v16H6z')
+    expect((await button('Pause')).find('path').attributes('d')).toBe('M6 4h4v16H6z')
   })
 
   it('should stop the live radio from an airing on air', async () => {
     player.live.value = true
     player.playing.value = true
-    await (await button('Peata')).trigger('click')
+    await (await button('Pause')).trigger('click')
     expect(player.toggle).toHaveBeenCalled()
   })
 
   it('should ask to record a later airing once', async () => {
-    await (await button('Salvesta: Ilmaparandaja')).trigger('click')
+    await (await button('Record: Ilmaparandaja')).trigger('click')
     expect(radioService.record).toHaveBeenCalledWith(7, { record: true })
   })
 
   it('should ask to cancel an airing chosen once', async () => {
-    await (await button('Tühista')).trigger('click')
+    await (await button('Cancel')).trigger('click')
     expect(radioService.record).toHaveBeenCalledWith(17, { record: false })
   })
 
   it('should not offer to play an airing whose recording is not listed', async () => {
     vi.mocked(radioService.recordings).mockResolvedValue([])
-    expect((await button('Kuula: Keskpäevatund 12:00')).attributes('disabled')).toBeDefined()
+    expect((await button('Listen: Keskpäevatund 12:00')).attributes('disabled')).toBeDefined()
   })
 
   it('should say the schedule is not loaded for a day without airings', async () => {
     vi.mocked(radioService.day).mockResolvedValue(radioDay({ day: [], night: [] }))
-    expect((await mount()).text()).toContain('Selle päeva kava pole veel laaditud.')
+    expect((await mount()).text()).toContain('The schedule for this day has not been loaded yet.')
   })
 
   it('should give the length of an airing in whole hours', async () => {

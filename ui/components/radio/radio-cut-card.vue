@@ -4,8 +4,8 @@
       <button
         type="button"
         class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-control-border bg-surface-sunken text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep md:size-9"
-        :aria-label="`Kuula üleminekut: ${name}`"
-        :title="`Kuula üleminekut: ${name}`"
+        :aria-label="`Listen to the transition: ${name}`"
+        :title="`Listen to the transition: ${name}`"
         @click="player.preview(cut.start, cut.end)"
       >
         <radio-icon name="play" />
@@ -13,7 +13,7 @@
       <div class="min-w-0 grow">
         <div class="flex flex-wrap items-center gap-2">
           <h4 class="mb-0 text-base font-semibold">{{ cut.title }}</h4>
-          <radio-badge v-if="cut.review" tone="warn">Kontrolli</radio-badge>
+          <radio-badge v-if="cut.review" tone="warn">Check</radio-badge>
         </div>
         <p class="mb-0 text-sm text-ink-soft tabular-nums">
           {{ range(startedAt, cut.start, cut.end, true) }} ·
@@ -23,7 +23,7 @@
       <div
         class="grid w-full grid-cols-2 gap-2 md:flex md:w-auto"
         role="group"
-        :aria-label="`Otsus: ${name}`"
+        :aria-label="`Decision: ${name}`"
       >
         <button
           v-for="choice in CHOICES"
@@ -40,12 +40,12 @@
     </div>
     <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
     <p class="mb-0 text-sm text-ink-soft">
-      Piir: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
+      Boundary: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
     </p>
     <div v-if="cut.jingle" class="flex flex-wrap items-center justify-between gap-2 text-sm">
       <span class="text-ink-soft">
-        Džingel r = {{ cut.jingle.r.toFixed(2).replace('.', ',') }} ·
-        {{ cut.jingle.saved ? 'salvestatud' : 'kinnitamata' }}
+        Jingle r = {{ cut.jingle.r.toFixed(2) }} ·
+        {{ cut.jingle.saved ? 'saved' : 'unconfirmed' }}
       </span>
       <app-button
         :aria-label="`${jingleAction}: ${name}`"
@@ -55,7 +55,7 @@
       </app-button>
     </div>
     <div v-if="cut.kind === CutKind.MANUAL && !removed">
-      <app-button :aria-label="`Kustuta: ${name}`" @click="emit('drop')">Kustuta</app-button>
+      <app-button :aria-label="`Delete: ${name}`" @click="emit('drop')">Delete</app-button>
     </div>
   </div>
 </template>
@@ -80,20 +80,18 @@ const props = defineProps<{
 const emit = defineEmits<{ choose: [removed: boolean]; jingle: [saved: boolean]; drop: [] }>()
 
 const CHOICES = [
-  { label: 'Eemalda', removed: true },
-  { label: 'Jäta alles', removed: false },
+  { label: 'Remove', removed: true },
+  { label: 'Keep', removed: false },
 ]
 
 const player = useRadioPlayer()
 
 const quote = (line: TranscriptLine) =>
-  `${clock(props.startedAt, line.start)} „${line.text.trim()}“`
+  `${clock(props.startedAt, line.start)} “${line.text.trim()}”`
 
 const name = computed(() => `${props.cut.title} ${clock(props.startedAt, props.cut.start)}`)
 
-const jingleAction = computed(() =>
-  props.cut.jingle?.saved ? 'Unusta džingel' : 'Kinnita džingel'
-)
+const jingleAction = computed(() => (props.cut.jingle?.saved ? 'Forget jingle' : 'Confirm jingle'))
 
 const quotes = computed(() =>
   [props.context?.before, props.context?.after]

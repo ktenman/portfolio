@@ -52,13 +52,13 @@ describe('RadioPlayer', () => {
     expect(hatched(timeline(wrapper)[2]!)).toBe(false)
   })
 
-  it('should play the raw topic clicked on Toorsalvestus', async () => {
+  it('should play the raw topic clicked on Raw', async () => {
     const wrapper = render()
     await labels(wrapper)[1]!.trigger('click')
     expect([player.version.value, player.recordingSeconds.value]).toEqual(['raw', 2700])
   })
 
-  it('should play the episode topic clicked on Puhastatud', async () => {
+  it('should play the episode topic clicked on Clean', async () => {
     const wrapper = render('episode')
     await labels(wrapper)[1]!.trigger('click')
     expect([player.version.value, audio.currentTime]).toEqual(['episode', 1803.5])
@@ -66,7 +66,7 @@ describe('RadioPlayer', () => {
 
   it('should label a resumed topic once', () => {
     const [first, second, third] = recording().topics
-    const pause = { ...first!, start: 900, end: 1000, title: 'Reklaamipaus', cut: true }
+    const pause = { ...first!, start: 900, end: 1000, title: 'Ad break', cut: true }
     const topics = [{ ...first!, end: 900 }, pause, { ...first!, start: 1000 }, second!, third!]
     const wrapper = render('episode', recording({ topics }))
     expect(labels(wrapper).map(label => label.findAll('span').map(span => span.text()))).toEqual([
@@ -84,7 +84,7 @@ describe('RadioPlayer', () => {
 
   it('should jump to the spot tapped on the timeline', async () => {
     const wrapper = render()
-    const input = wrapper.get('input[aria-label="Asukoht salvestuses"]')
+    const input = wrapper.get('input[aria-label="Position in the recording"]')
     vi.spyOn(input.element, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 0, 200, 28))
     await input.trigger('click', { clientX: 160 })
     expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
@@ -96,30 +96,30 @@ describe('RadioPlayer', () => {
   })
 
   it('should leave out the parts row and its ticks', () => {
-    expect(render().text()).not.toContain('Klõpsa osal')
+    expect(render().text()).not.toContain('Click a part')
   })
 
   it('should leave out a jump to the start of the show', () => {
-    expect(render().text()).not.toContain('Saate algusesse')
+    expect(render().text()).not.toContain('To the start of the show')
   })
 
   it('should mute from the speaker', async () => {
     const wrapper = render()
-    await wrapper.find('button[aria-label="Vaigista"]').trigger('click')
+    await wrapper.find('button[aria-label="Mute"]').trigger('click')
     expect([
-      wrapper.find('button[aria-label="Vaigista"]').attributes('aria-pressed'),
+      wrapper.find('button[aria-label="Mute"]').attributes('aria-pressed'),
       player.muted.value,
     ]).toEqual(['true', true])
   })
 
   it('should show the speaker as a sunken button', () => {
-    expect(render().get('button[aria-label="Vaigista"]').classes()).toContain('bg-surface-sunken')
+    expect(render().get('button[aria-label="Mute"]').classes()).toContain('bg-surface-sunken')
   })
 
   it('should unmute when the volume slider moves', async () => {
     const wrapper = render()
     player.muted.value = true
-    await wrapper.get('input[aria-label="Helitugevus"]').setValue(0.4)
+    await wrapper.get('input[aria-label="Volume"]').setValue(0.4)
     expect([player.muted.value, player.volume.value]).toEqual([false, 0.4])
   })
 
@@ -127,23 +127,21 @@ describe('RadioPlayer', () => {
     const wrapper = render()
     player.volume.value = 0.4
     await wrapper.vm.$nextTick()
-    expect(wrapper.get('input[aria-label="Helitugevus"]').attributes('aria-valuetext')).toBe('40%')
+    expect(wrapper.get('input[aria-label="Volume"]').attributes('aria-valuetext')).toBe('40%')
   })
 
   it('should fill the volume slider up to its level', async () => {
     const wrapper = render()
     player.volume.value = 0.4
     await wrapper.vm.$nextTick()
-    expect(wrapper.get('input[aria-label="Helitugevus"]').attributes('style')).toContain(
-      '--level: 40%'
-    )
+    expect(wrapper.get('input[aria-label="Volume"]').attributes('style')).toContain('--level: 40%')
   })
 
   it('should grey the volume slider while muted', async () => {
     const wrapper = render()
     player.muted.value = true
     await wrapper.vm.$nextTick()
-    expect(wrapper.get('input[aria-label="Helitugevus"]').classes()).toContain('muted')
+    expect(wrapper.get('input[aria-label="Volume"]').classes()).toContain('muted')
   })
 
   it('should step the speed from the chip', async () => {
@@ -166,7 +164,7 @@ describe('RadioPlayer', () => {
 
   it('should leave speed to the chip alone', () => {
     const selects = render().findAll('select')
-    expect(selects.map(select => select.attributes('aria-label'))).toEqual(['Versioon'])
+    expect(selects.map(select => select.attributes('aria-label'))).toEqual(['Version'])
   })
 
   it('should offer the speed chip at every width', () => {
@@ -193,52 +191,52 @@ describe('RadioPlayer', () => {
     audio.currentTime = 761.5
     audio.dispatchEvent(new Event('timeupdate'))
     await wrapper.vm.$nextTick()
-    expect(wrapper.text()).toContain('Eetris 12:07:41')
+    expect(wrapper.text()).toContain('Aired 12:07:41')
   })
 
   it('should name the versions without their lengths', () => {
     const options = render()
-      .findAll('select[aria-label="Versioon"] option')
+      .findAll('select[aria-label="Version"] option')
       .map(o => o.text())
-    expect(options).toEqual(['Toorsalvestus', 'Puhastatud'])
+    expect(options).toEqual(['Raw', 'Clean'])
   })
 
   it('should not offer the cleaned episode before it is rendered', () => {
     const wrapper = render('raw', recording({ editList: null, episodeBytes: null }))
-    expect(wrapper.findAll('select[aria-label="Versioon"] option')).toHaveLength(1)
+    expect(wrapper.findAll('select[aria-label="Version"] option')).toHaveLength(1)
   })
 
   it('should name each version without its length from tablets up', () => {
     const segments = render()
-      .findAll('[role="group"][aria-label="Versioon"] button')
+      .findAll('[role="group"][aria-label="Version"] button')
       .map(b => b.text())
-    expect(segments).toEqual(['Toorsalvestus', 'Puhastatud'])
+    expect(segments).toEqual(['Raw', 'Clean'])
   })
 
   it('should press the segment of the version that plays', () => {
     const pressed = render('episode')
-      .findAll('[role="group"][aria-label="Versioon"] button')
+      .findAll('[role="group"][aria-label="Version"] button')
       .map(b => b.attributes('aria-pressed'))
     expect(pressed).toEqual(['false', 'true'])
   })
 
   it('should switch to the version of the segment clicked', async () => {
     const wrapper = render()
-    await wrapper.findAll('[role="group"][aria-label="Versioon"] button')[1]!.trigger('click')
+    await wrapper.findAll('[role="group"][aria-label="Version"] button')[1]!.trigger('click')
     expect(player.version.value).toBe('episode')
   })
 
   it('should disable the cleaned segment before the episode is rendered', () => {
     const wrapper = render('raw', recording({ editList: null, episodeBytes: null }))
-    const segment = wrapper.findAll('[role="group"][aria-label="Versioon"] button')[1]!
-    expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Puhastatud'])
+    const segment = wrapper.findAll('[role="group"][aria-label="Version"] button')[1]!
+    expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Clean'])
   })
 
   it('should keep the select for phones only', () => {
     const wrapper = render()
     expect([
-      wrapper.get('select[aria-label="Versioon"]').classes(),
-      wrapper.get('[role="group"][aria-label="Versioon"]').classes(),
+      wrapper.get('select[aria-label="Version"]').classes(),
+      wrapper.get('[role="group"][aria-label="Version"]').classes(),
     ]).toEqual([expect.arrayContaining(['md:hidden']), expect.arrayContaining(['max-md:hidden'])])
   })
 
@@ -253,6 +251,6 @@ describe('RadioPlayer', () => {
     const wrapper = render()
     player.lost.value = true
     await wrapper.vm.$nextTick()
-    expect(wrapper.findAll('button').some(b => b.text() === 'Tagasi praegusele')).toBe(false)
+    expect(wrapper.findAll('button').some(b => b.text() === 'Back to the current line')).toBe(false)
   })
 })

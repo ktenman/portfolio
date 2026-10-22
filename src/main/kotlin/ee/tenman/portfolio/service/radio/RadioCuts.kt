@@ -26,11 +26,11 @@ enum class BoundaryMethod(
 enum class CutKind(
   val title: String,
 ) {
-  BEFORE("Enne saadet"),
-  BREAK("Reklaamipaus"),
-  BETWEEN("Saadete vahel"),
-  AFTER("Pärast saadet"),
-  MANUAL("Käsitsi lõige"),
+  BEFORE("Before the show"),
+  BREAK("Ad break"),
+  BETWEEN("Between shows"),
+  AFTER("After the show"),
+  MANUAL("Manual cut"),
 }
 
 data class Cut(

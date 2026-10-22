@@ -107,19 +107,19 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   renderFailure: null,
   episodeBytes: 34_000_000,
   cuts: [
-    cut(CutKind.BEFORE, 'Enne saadet', 0, 761.5, [DIGITAL]),
+    cut(CutKind.BEFORE, 'Before the show', 0, 761.5, [DIGITAL]),
     {
-      ...cut(CutKind.BREAK, 'Reklaamipaus', 2120, 2255, [
+      ...cut(CutKind.BREAK, 'Ad break', 2120, 2255, [
         BoundaryMethod.LEVEL_DIP,
         BoundaryMethod.STATION_JINGLE,
       ]),
       jingle: { r: 0.93, saved: false },
     },
-    cut(CutKind.BREAK, 'Reklaamipaus', 3025, 3137, [DIGITAL, BoundaryMethod.TRANSCRIPT_ONLY], true),
-    cut(CutKind.AFTER, 'Pärast saadet', 3837, 4200, [DIGITAL]),
+    cut(CutKind.BREAK, 'Ad break', 3025, 3137, [DIGITAL, BoundaryMethod.TRANSCRIPT_ONLY], true),
+    cut(CutKind.AFTER, 'After the show', 3837, 4200, [DIGITAL]),
   ],
   timeline: [
-    { start: 0, end: 761.5, title: 'Enne saadet', cut: true, label: null, summary: null },
+    { start: 0, end: 761.5, title: 'Before the show', cut: true, label: null, summary: null },
     {
       start: 761.5,
       end: 2120,
@@ -128,7 +128,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
       label: 'Ooperitüli',
       summary: 'Rahvusooper Estonia juhtkond ja nõukogu ei leia ühist keelt.',
     },
-    { start: 2120, end: 2255, title: 'Reklaamipaus', cut: true, label: null, summary: null },
+    { start: 2120, end: 2255, title: 'Ad break', cut: true, label: null, summary: null },
     {
       start: 2255,
       end: 2700,
@@ -145,7 +145,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
       label: 'Poliitika',
       summary: 'Nädala poliitilised uudised ja eelarvevaidlus.',
     },
-    { start: 3025, end: 3137, title: 'Reklaamipaus', cut: true, label: null, summary: null },
+    { start: 3025, end: 3137, title: 'Ad break', cut: true, label: null, summary: null },
     {
       start: 3137,
       end: 3400,
@@ -162,7 +162,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
       label: 'Ülle Madise',
       summary: 'Õiguskantsler räägib oma presidendikandidatuurist.',
     },
-    { start: 3837, end: 4200, title: 'Pärast saadet', cut: true, label: null, summary: null },
+    { start: 3837, end: 4200, title: 'After the show', cut: true, label: null, summary: null },
   ],
   audible: [
     { start: 761.5, end: 2120 },

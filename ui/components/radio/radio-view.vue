@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto mt-4 w-full max-w-app px-3" lang="et">
+  <div class="mx-auto mt-4 w-full max-w-app px-3">
     <audio ref="audio" preload="metadata" />
     <router-view />
   </div>

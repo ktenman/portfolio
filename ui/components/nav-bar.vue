@@ -37,7 +37,7 @@ const routes = ref([
   { path: '/etf-breakdown', name: 'ETF Breakdown' },
   { path: '/diversification', name: 'Diversification' },
   { path: '/monitoring', name: 'Monitoring' },
-  { path: '/radio', name: 'Raadio' },
+  { path: '/radio', name: 'Radio' },
 ])
 
 const list = useTemplateRef<HTMLUListElement>('list')

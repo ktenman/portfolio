@@ -1,16 +1,16 @@
 <template>
-  <radio-card title="Tulemus">
+  <radio-card title="Result">
     <div data-testid="radio-cut-result">
       <radio-facts :rows="facts" />
     </div>
     <div v-if="rendered" class="mt-3 grid gap-2">
       <div
         role="progressbar"
-        aria-label="Puhastatud versioon"
+        aria-label="Clean version"
         aria-valuemin="0"
         aria-valuemax="100"
         :aria-valuenow="rendered.percent"
-        :aria-valuetext="`${rendered.percent} %, ${UPDATING}, ${left(rendered.secondsLeft)}`"
+        :aria-valuetext="`${rendered.percent}%, ${UPDATING}, ${left(rendered.secondsLeft)}`"
         class="h-1.5 overflow-hidden rounded-full bg-hairline"
       >
         <div
@@ -19,27 +19,27 @@
         />
       </div>
       <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
-        <span>{{ UPDATING }} · {{ rendered.percent }} %</span>
+        <span>{{ UPDATING }} · {{ rendered.percent }}%</span>
         <span class="text-ink-soft tabular-nums">{{ left(rendered.secondsLeft) }}</span>
       </div>
     </div>
     <p v-else-if="decisions.waiting.value" class="mt-3 mb-0 text-sm">{{ UPDATING }}</p>
     <p v-else-if="recording.renderFailure" class="mt-3 mb-0 flex items-center gap-1.5 text-sm">
       <radio-icon name="alert" />
-      Puhastatud versiooni ei saanud teha: {{ recording.renderFailure.reason }}
+      Could not make the clean version: {{ recording.renderFailure.reason }}
     </p>
     <p
       v-else-if="recording.episodeBytes"
       class="mt-3 mb-0 flex items-center gap-1.5 text-sm text-ink-soft"
     >
       <radio-icon name="check" />
-      Puhastatud versioon on ajakohane
+      The clean version is up to date
     </p>
     <div class="mt-3 flex flex-wrap gap-2">
-      <app-button :disabled="machine" @click="decisions.reset">Lähtesta</app-button>
+      <app-button :disabled="machine" @click="decisions.reset">Reset</app-button>
     </div>
     <p class="mt-3 mb-0 text-sm text-ink-soft">
-      Toorsalvestus jääb muutmata. Otsused salvestuvad ise.
+      The raw recording stays as it is. Decisions save automatically.
     </p>
   </radio-card>
 </template>
@@ -57,7 +57,7 @@ import RadioIcon from './radio-icon.vue'
 
 const props = defineProps<{ recording: RecordingSummary }>()
 
-const UPDATING = 'Uuendan puhastatud versiooni'
+const UPDATING = 'Updating the clean version'
 
 const decisions = useRadioDecisions(() => props.recording)
 
@@ -77,9 +77,12 @@ const rendered = computed(() => {
   return { percent: Math.min(percent, Math.floor(render.percent / 10) * 10 + 9), secondsLeft }
 })
 
-const facts = computed<[string, string][]>(() => [
-  ['Toorsalvestus', position(props.recording.status.seconds)],
-  ['Eemaldatakse', `${position(cutSeconds.value)} · ${removed.value.length} lõiget`],
-  ['Puhastatud', position(props.recording.status.seconds - cutSeconds.value)],
-])
+const facts = computed<[string, string][]>(() => {
+  const count = removed.value.length
+  return [
+    ['Raw', position(props.recording.status.seconds)],
+    ['Removed', `${position(cutSeconds.value)} · ${count} ${count === 1 ? 'cut' : 'cuts'}`],
+    ['Clean', position(props.recording.status.seconds - cutSeconds.value)],
+  ]
+})
 </script>
