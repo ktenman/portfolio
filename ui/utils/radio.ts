@@ -171,7 +171,7 @@ export const day = (startedAt: number): string =>
   `${WEEKDAY.format(instant(startedAt))} ${DATE.format(instant(startedAt)).slice(0, 5)}`
 
 export const fullDay = (startedAt: number): string =>
-  `${WEEKDAY_LONG.format(instant(startedAt))}, ${DATE.format(instant(startedAt))}`
+  `${WEEKDAY_LONG.format(instant(startedAt))}, ${DATE.format(instant(startedAt)).slice(0, 5)}`
 
 export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> = {
   [RecordingState.RECORDING]: { label: 'Recording', tone: 'live' },

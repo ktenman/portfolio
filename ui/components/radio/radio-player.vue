@@ -1,27 +1,17 @@
 <template>
   <section class="card sticky top-0 z-10 mb-4 lg:top-[60.5px]" data-testid="radio-player">
     <div class="card-body grid gap-4">
-      <div
-        class="flex flex-wrap items-end justify-between gap-3 max-md:grid max-md:grid-cols-[1fr_auto] max-md:items-center max-md:gap-y-4"
-      >
-        <div class="max-md:contents">
-          <p class="mb-0 text-3xl font-semibold tabular-nums max-md:col-span-2 max-md:row-start-2">
-            {{ position(player.seconds.value) }}
-            <span class="text-ink-soft max-md:text-lg max-md:font-normal">
-              / {{ position(player.total.value) }}
-            </span>
-          </p>
-          <p class="mb-0 text-sm text-ink-soft max-md:row-start-1">
-            Aired
-            <span class="max-md:font-medium max-md:text-ink">
-              {{ clock(recording.status.startedAt, player.recordingSeconds.value, true) }}
-            </span>
-          </p>
-        </div>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="mb-0 text-3xl font-semibold tabular-nums">
+          {{ position(player.seconds.value) }}
+          <span class="text-ink-soft max-md:text-lg max-md:font-normal">
+            / {{ position(player.total.value) }}
+          </span>
+        </p>
         <select
           v-model="version"
           aria-label="Version"
-          class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium max-md:row-start-1 md:hidden"
+          class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium md:hidden"
         >
           <option value="raw">Raw</option>
           <option v-if="cleaned" value="episode">Clean</option>
@@ -74,7 +64,7 @@ import { computed, onBeforeUnmount } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
+import { episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 
