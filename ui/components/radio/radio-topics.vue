@@ -10,7 +10,7 @@
       :key="topic.start"
       type="button"
       data-testid="radio-topics-row"
-      class="grid w-full cursor-pointer grid-cols-[2.75rem_minmax(0,1fr)] items-baseline gap-2.5 rounded-container px-2 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-brass-deep"
+      class="-mx-5 grid w-[calc(100%+2.5rem)] cursor-pointer grid-cols-[2.75rem_minmax(0,1fr)] items-baseline gap-2.5 px-5 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-brass-deep"
       :class="topic === current ? 'bg-brass-wash' : 'hover:bg-surface-hover'"
       :aria-current="topic === current ? 'true' : undefined"
       @click="emit('play', topic.start)"
