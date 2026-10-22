@@ -50,7 +50,6 @@
         />
         <radio-result v-if="raw && recording.editList" :recording="recording" />
         <radio-cuts v-if="raw" :recording="recording" />
-        <radio-analysis :recording="recording" />
         <radio-details :recording="recording" />
       </div>
     </div>
@@ -72,7 +71,6 @@ import { useRadioCuts, useRadioTranscript } from '../../composables/use-radio-re
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
 import { episodeParts, HATCH, rawParts } from '../../utils/radio'
-import RadioAnalysis from './radio-analysis.vue'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioCuts from './radio-cuts.vue'

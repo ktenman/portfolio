@@ -16,14 +16,14 @@ describe('RadioTopics', () => {
   const playing = (wrapper: ReturnType<typeof render>) =>
     rows(wrapper).map(row => row.attributes('aria-current') === 'true')
 
-  it('should list each topic once with its start and length', () => {
+  it('should list each topic once with its length under its start', () => {
     const wrapper = render()
+    const [column, title] = rows(wrapper)[0]!.findAll(':scope > span')
     expect([
       rows(wrapper).length,
-      rows(wrapper)[0]!
-        .findAll('span')
-        .map(s => s.text()),
-    ]).toEqual([3, ['0:00', 'Rahvusooperi tüli', '30 min']])
+      column!.findAll('span').map(s => s.text()),
+      title!.text(),
+    ]).toEqual([3, ['0:00', '30 min'], 'Rahvusooperi tüli'])
   })
 
   it('should hide the card before the recording has topics', () => {

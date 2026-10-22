@@ -35,7 +35,7 @@
         :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)}`"
         @click="action.run?.()"
       >
-        <radio-icon v-if="airing.state === AiringState.RECORDED" name="play" />
+        <radio-icon v-if="action.icon" :name="action.icon" />
         {{ action.label }}
       </button>
     </span>
@@ -95,7 +95,7 @@ const action = computed(() => {
   const airing = props.airing
   switch (airing.state) {
     case AiringState.RECORDED:
-      return { label: 'Kuula', run: listen(airing.recording) }
+      return { label: 'Kuula', run: listen(airing.recording), icon: 'play' as const }
     case AiringState.PARTIAL:
       return {
         label: coversEnd(airing) ? 'Kuula lõppu' : 'Kuula',
@@ -107,8 +107,8 @@ const action = computed(() => {
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
       return player.live.value && player.playing.value
-        ? { label: 'Peata', run: player.toggle, quiet: true }
-        : { label: 'Kuula otse', run: player.listen, quiet: true }
+        ? { label: 'Peata', run: player.toggle, quiet: true, icon: 'pause' as const }
+        : { label: 'Kuula otse', run: player.listen, quiet: true, icon: 'play' as const }
     case AiringState.OPEN:
       return { label: 'Salvesta', run: record(true) }
     case AiringState.PLANNED:
