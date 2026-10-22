@@ -2,13 +2,14 @@
   <div>
     <h3 class="mt-8 mb-3 text-heading">Saated</h3>
     <data-table
-      :items="shown"
+      :items="programmes ?? []"
       :columns="columns"
       key-field="id"
       :is-loading="isLoading"
       :is-error="isError"
       error-message="Saateid ei õnnestunud laadida."
       empty-message="Kuku kava pole veel laaditud."
+      mobile-list
     >
       <template #mobile-card="{ item }">
         <div data-testid="radio-programme-row" class="flex items-center justify-between gap-3">
@@ -41,32 +42,16 @@
         <radio-record-every :programme="item" />
       </template>
     </data-table>
-    <button
-      v-if="shown.length < (programmes?.length ?? 0)"
-      type="button"
-      class="mt-3 cursor-pointer text-sm font-semibold hover:text-brass-deep"
-      @click="everything = true"
-    >
-      Kõik {{ programmes?.length }} saadet saatekavas
-    </button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
 import { useRadioProgrammes } from '../../composables/use-radio-recordings'
 import { airTime } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioRecordEvery from './radio-record-every.vue'
 
-const FEW = 8
-
 const { data: programmes, isLoading, isError } = useRadioProgrammes()
-const everything = ref(false)
-
-const shown = computed(() =>
-  (programmes.value ?? []).filter((p, i) => everything.value || p.recordEvery || i < FEW)
-)
 
 const columns: ColumnDefinition[] = [
   { key: 'name', label: 'Saade' },

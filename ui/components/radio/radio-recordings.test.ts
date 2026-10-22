@@ -142,8 +142,10 @@ describe('RadioRecordings', () => {
     expect((await mount()).get('[data-testid="radio-recording-row"]').text()).toContain('42 min')
   })
 
-  it('should leave the raw recording time out of a phone row', async () => {
-    expect((await mount()).get('[data-testid="radio-recording-row"]').text()).not.toContain('–')
+  it('should give a phone row the time the recording started', async () => {
+    expect((await mount()).get('[data-testid="radio-recording-row"]').text()).toMatch(
+      /11:55 ·\s+42 min/
+    )
   })
 
   it('should call a phone row without an edit list not cleaned', async () => {
@@ -155,7 +157,7 @@ describe('RadioRecordings', () => {
 
   it('should mark a phone row that is still being recorded', async () => {
     const rows = (await mount()).findAll('[data-testid="radio-recording-row"]')
-    expect(rows[1]!.text()).toContain('Salvestab')
+    expect(rows[1]!.text()).toContain('salvestab')
   })
 
   it('should leave the actions empty for a recording still being recorded', async () => {

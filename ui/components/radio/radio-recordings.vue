@@ -39,15 +39,15 @@
                 >
                   {{ item.programme }}
                 </router-link>
-                <span
-                  class="text-sm tabular-nums"
-                  :class="TONE_TEXT[STATES[item.status.state].tone]"
-                >
-                  {{
-                    item.status.state === RecordingState.CAPTURED
-                      ? cleaned(item)
-                      : STATES[item.status.state].label
-                  }}
+                <span class="text-sm text-ink-soft tabular-nums">
+                  {{ clock(item.span.start, 0) }} ·
+                  <span :class="TONE_TEXT[STATES[item.status.state].tone]">
+                    {{
+                      item.status.state === RecordingState.CAPTURED
+                        ? cleaned(item)
+                        : STATES[item.status.state].label.toLowerCase()
+                    }}
+                  </span>
                 </span>
               </span>
               <button
@@ -110,7 +110,7 @@ import { useConfirm } from '../../composables/use-confirm'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { day, length, span, STATES, textState } from '../../utils/radio'
+import { clock, day, length, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge, { type BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'

@@ -72,6 +72,29 @@ describe('RadioCatchUp', () => {
     expect((await mount()).text()).toContain('L 17.10 · täna')
   })
 
+  it('should leave the day buttons to screens wider than a phone', async () => {
+    expect((await mount()).get('nav[aria-label="Päev"]').classes()).toContain('max-md:hidden')
+  })
+
+  it("should list tomorrow's schedule under today's on a phone", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    vi.mocked(radioService.day).mockImplementation(async date =>
+      radioDay(date ? { date, from: radioDay().from + 86_400 } : {})
+    )
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+    expect(wrapper.findAll('h3').filter(h => h.text() === 'Saatekava')).toHaveLength(2)
+  })
+
+  it("should show only the chosen day's schedule on a wider screen", async () => {
+    expect((await mount()).findAll('h3').filter(h => h.text() === 'Saatekava')).toHaveLength(1)
+  })
+
   it('should ask for the day that is chosen', async () => {
     const wrapper = await mount()
     await wrapper
