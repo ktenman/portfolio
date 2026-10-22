@@ -223,7 +223,7 @@ test('the radio player stays in view while the page scrolls', async ({ page }, t
   await stubBuildInfo(page)
   await stubEnums(page)
   await stubRadio(page)
-  await page.setViewportSize({ width: page.viewportSize()!.width, height: 600 })
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 500 })
   await openRoute(page, '/radio/2026-10-17')
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   await expect(page.getByTestId('radio-play')).toBeInViewport()
