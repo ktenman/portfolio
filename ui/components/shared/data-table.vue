@@ -18,12 +18,22 @@
 
     <template v-else>
       <!-- Mobile Card View -->
-      <div class="mobile-cards-wrapper block md:hidden">
+      <div
+        class="mobile-cards-wrapper block md:hidden"
+        :class="{
+          'divide-y divide-hairline overflow-hidden rounded-container border border-hairline bg-surface shadow-card':
+            mobileList,
+        }"
+      >
         <div
           v-for="(item, index) in items"
           :key="getItemKey(item, index)"
-          class="mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:border-gray-300 hover:shadow-lifted"
-          :class="rowClass?.(item, index)"
+          :class="[
+            mobileList
+              ? 'py-3 pr-3 pl-5'
+              : 'mobile-card mb-2 overflow-hidden rounded-container border border-gray-200 bg-surface px-3 py-5 shadow-[0_1px_2px_0_rgb(0_0_0/0.03)] transition-all min-[389px]:px-2 min-[389px]:py-3 hover:border-gray-300 hover:shadow-lifted',
+            rowClass?.(item, index),
+          ]"
           @click="onRowClick?.(item)"
         >
           <slot name="mobile-card" :item="item" :index="index" :columns="columns">
@@ -169,6 +179,7 @@ interface Props {
   onSort?: (key: string, sortKey?: string) => void
   expandedKey?: string | number | null
   onRowClick?: (item: T) => void
+  mobileList?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {

@@ -1,5 +1,5 @@
 <template>
-  <section class="card">
+  <section class="card mb-0">
     <div class="card-body" :class="{ 'py-1.5': fold }">
       <div
         class="flex flex-wrap justify-between gap-2"

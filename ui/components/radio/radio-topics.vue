@@ -1,8 +1,8 @@
 <template>
   <radio-card v-if="topics.length" title="Teemad" fold="open" data-testid="radio-topics">
     <template #aside="{ open }">
-      <span class="text-sm text-ink-soft tabular-nums">
-        {{ open || !current ? count : current.time }}
+      <span v-if="!open && current" class="text-sm text-ink-soft tabular-nums">
+        {{ current.time }}
       </span>
     </template>
     <button
@@ -39,10 +39,6 @@ const props = defineProps<{ parts: StripPart[]; at: number }>()
 const emit = defineEmits<{ play: [start: number] }>()
 
 const topics = computed(() => props.parts.filter(part => part.name !== null))
-
-const count = computed(() =>
-  topics.value.length === 1 ? '1 teema' : `${topics.value.length} teemat`
-)
 
 const current = computed(() => {
   const here = props.parts.find(part => part.start <= props.at && props.at < part.end)

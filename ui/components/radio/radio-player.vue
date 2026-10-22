@@ -63,12 +63,6 @@
           </span>
         </p>
       </div>
-      <radio-now
-        v-if="!raw"
-        :parts="parts"
-        :at="player.seconds.value"
-        @play="player.playFrom($event, player.version.value)"
-      />
       <radio-controls large />
     </div>
   </section>
@@ -81,7 +75,6 @@ import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, HATCH, position, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
-import RadioNow from './radio-now.vue'
 import RadioScrubber from './radio-scrubber.vue'
 
 const VERSIONS = [
