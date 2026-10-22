@@ -14,6 +14,48 @@
           empty-message="Salvestusi veel pole."
           :row-class="() => 'relative cursor-pointer'"
         >
+          <template #mobile-card="{ item }">
+            <div data-testid="radio-recording-row" class="flex items-center gap-3.5">
+              <span
+                class="grid w-14 shrink-0 justify-items-center rounded-container py-1.5 leading-tight"
+                :class="live(item) ? 'bg-notice-wash text-notice' : 'bg-surface-sunken'"
+              >
+                <span class="text-label font-medium" :class="{ 'text-ink-soft': !live(item) }">
+                  {{ day(item.status.startedAt).split(' ')[0] }}
+                </span>
+                <span class="font-semibold tabular-nums">
+                  {{ day(item.status.startedAt).split(' ')[1] }}
+                </span>
+              </span>
+              <span class="grid min-w-0 grow justify-items-start gap-0.5">
+                <router-link
+                  :to="`/radio/${item.name}`"
+                  class="font-semibold after:absolute after:inset-0 after:rounded-container focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
+                  :aria-label="`${item.programme} ${day(item.status.startedAt)} · ${span(item)}`"
+                >
+                  {{ item.programme }}
+                </router-link>
+                <radio-badge
+                  v-if="item.status.state !== RecordingState.CAPTURED"
+                  :tone="STATES[item.status.state].tone"
+                >
+                  {{ STATES[item.status.state].label }}
+                </radio-badge>
+                <span v-else class="text-sm text-ink-soft tabular-nums">
+                  {{ cleaned(item) }}
+                </span>
+              </span>
+              <button
+                v-if="!live(item)"
+                type="button"
+                class="relative z-10 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep"
+                :aria-label="`Kustuta: ${item.programme} ${day(item.status.startedAt)}`"
+                @click="remove(item)"
+              >
+                <radio-icon name="trash" />
+              </button>
+            </div>
+          </template>
           <template #cell-programme="{ item }">
             <router-link
               :to="`/radio/${item.name}`"
@@ -75,6 +117,11 @@ const { data: recordings, isLoading, isError } = useRadioRecordings()
 const { confirm } = useConfirm()
 const toast = useToast()
 const queryClient = useQueryClient()
+
+const live = (item: RecordingSummary) => item.status.state === RecordingState.RECORDING
+
+const cleaned = (item: RecordingSummary) =>
+  item.editList ? length(Math.round(item.editList.durationSeconds / 60) * 60) : 'Puhastamata'
 
 const remove = async (item: RecordingSummary) => {
   const confirmed = await confirm({

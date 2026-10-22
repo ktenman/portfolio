@@ -55,8 +55,8 @@ describe('RadioTopics', () => {
     expect(wrapper.emitted('play')).toEqual([[1803.5]])
   })
 
-  it('should count the topics beside the title', () => {
-    expect(render().get('h3').element.parentElement!.textContent).toContain('3 teemat')
+  it('should leave the title alone while open', () => {
+    expect(render(1900).get('h3').element.parentElement!.textContent!.trim()).toBe('Teemad')
   })
 
   it("should show the playing topic's start while folded", () => {

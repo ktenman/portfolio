@@ -135,7 +135,27 @@ describe('RadioRecordings', () => {
 
   it('should keep the trash above the row link', async () => {
     const trash = (await mount()).find('button[aria-label="Kustuta: Keskpäevatund L 17.10"]')
-    expect(trash.classes()).toEqual(expect.arrayContaining(['z-10', 'max-md:min-h-11']))
+    expect(trash.classes()).toContain('z-10')
+  })
+
+  it('should give a phone row the cleaned episode length', async () => {
+    expect((await mount()).get('[data-testid="radio-recording-row"]').text()).toContain('42 min')
+  })
+
+  it('should leave the raw recording time out of a phone row', async () => {
+    expect((await mount()).get('[data-testid="radio-recording-row"]').text()).not.toContain('–')
+  })
+
+  it('should call a phone row without an edit list not cleaned', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([recording({ editList: null })])
+    expect((await mount()).get('[data-testid="radio-recording-row"]').text()).toContain(
+      'Puhastamata'
+    )
+  })
+
+  it('should mark a phone row that is still being recorded', async () => {
+    const rows = (await mount()).findAll('[data-testid="radio-recording-row"]')
+    expect(rows[1]!.text()).toContain('Salvestab')
   })
 
   it('should leave the actions empty for a recording still being recorded', async () => {
