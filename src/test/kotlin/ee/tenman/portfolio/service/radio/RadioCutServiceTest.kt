@@ -229,4 +229,41 @@ class RadioCutServiceTest {
     expect(listOf(found[2], found[4]).map { it.method.substringBefore(",") to it.jingle?.saved })
       .toEqual(listOf("station jingle" to null, "station jingle" to null))
   }
+
+  private fun levels(vararg quiet: Pair<Int, Double>): DoubleArray =
+    DoubleArray(2000) { -20.0 }.also { db -> quiet.forEach { (frame, level) -> db[frame] = level } }
+
+  @Test
+  fun `should cue a topic at the quietest moment of the pause before its first word`() {
+    val db = levels(905 to -60.0, 960 to -40.0)
+    expect(abs(cue(db, listOf(line(5.0), line(10.0)), 10.0) - 9.055) <= 0.001).toEqual(true)
+  }
+
+  @Test
+  fun `should not cue a topic inside the previous line`() {
+    val db = levels(920 to -60.0, 970 to -40.0)
+    expect(abs(cue(db, listOf(line(8.5), line(10.0)), 10.0) - 9.705) <= 0.001).toEqual(true)
+  }
+
+  @Test
+  fun `should cue a topic at most one and a half seconds before its first word`() {
+    val db = levels(800 to -60.0, 900 to -40.0)
+    expect(abs(cue(db, listOf(line(1.0), line(10.0)), 10.0) - 9.005) <= 0.001).toEqual(true)
+  }
+
+  @Test
+  fun `should keep the time of a topic on the first line of the transcript`() {
+    expect(cue(levels(905 to -60.0), listOf(line(10.0)), 10.0)).toEqual(10.0)
+  }
+
+  @Test
+  fun `should keep the time of a topic that follows the previous line without a pause`() {
+    expect(cue(levels(905 to -60.0), listOf(line(9.0), line(10.0)), 10.0)).toEqual(10.0)
+  }
+
+  @Test
+  fun `should keep the time of a topic whose audio before it was lost`() {
+    val db = levels().also { it.fill(Double.NaN, 800, 1000) }
+    expect(cue(db, listOf(line(5.0), line(10.0)), 10.0)).toEqual(10.0)
+  }
 }
