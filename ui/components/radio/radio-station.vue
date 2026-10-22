@@ -14,11 +14,11 @@
       <p class="mb-3 text-sm text-body-secondary">{{ airing(station.onAir) }}</p>
       <button
         type="button"
-        :class="[LINK, 'cursor-pointer']"
+        :class="[PLAY, 'size-9']"
+        :aria-label="on ? 'Pause' : 'Listen live'"
         @click="on ? player.toggle() : player.listen()"
       >
         <radio-icon :name="on ? 'pause' : 'play'" />
-        {{ on ? 'Pause' : 'Listen live' }}
       </button>
       <p v-if="station.next" class="mt-3 mb-0 text-sm text-body-secondary">
         Next: {{ station.next.name }} at {{ clock(station.next.start, 0) }}
@@ -32,7 +32,7 @@ import { computed } from 'vue'
 import type { StationAiring } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
-import { audioFormat, clock, day, LINK, range, RECORDER_STATES } from '../../utils/radio'
+import { audioFormat, clock, day, PLAY, range, RECORDER_STATES } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'

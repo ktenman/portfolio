@@ -27,16 +27,17 @@
         v-if="action"
         type="button"
         :class="[
-          LINK,
+          action.icon
+            ? [PLAY, 'size-9']
+            : [LINK, action.quiet ? 'bg-surface-sunken text-ink-soft' : 'bg-surface'],
           'cursor-pointer disabled:cursor-default disabled:opacity-50',
-          action.quiet ? 'bg-surface-sunken text-ink-soft' : 'bg-surface',
         ]"
         :disabled="!action.run"
         :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)}`"
         @click="action.run?.()"
       >
         <radio-icon v-if="action.icon" :name="action.icon" />
-        {{ action.label }}
+        <template v-else>{{ action.label }}</template>
       </button>
     </span>
   </div>
@@ -55,7 +56,15 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { AIRING_STATES, airingNote, airLength, clock, coversEnd, LINK } from '../../utils/radio'
+import {
+  AIRING_STATES,
+  airingNote,
+  airLength,
+  clock,
+  coversEnd,
+  LINK,
+  PLAY,
+} from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 
@@ -107,8 +116,8 @@ const action = computed(() => {
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
       return player.live.value && player.playing.value
-        ? { label: 'Pause', run: player.toggle, quiet: true, icon: 'pause' as const }
-        : { label: 'Listen live', run: player.listen, quiet: true, icon: 'play' as const }
+        ? { label: 'Pause', run: player.toggle, icon: 'pause' as const }
+        : { label: 'Listen live', run: player.listen, icon: 'play' as const }
     case AiringState.OPEN:
       return { label: 'Record', run: record(true) }
     case AiringState.PLANNED:
