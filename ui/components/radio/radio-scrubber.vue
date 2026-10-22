@@ -25,6 +25,13 @@
           <span class="truncate text-sm @max-[6rem]:hidden" :class="tone(part)">
             {{ part.name }}
           </span>
+          <span
+            v-if="programme && part === named[0]"
+            class="hidden truncate text-sm @max-[6rem]:block"
+            :class="tone(part)"
+          >
+            {{ programme }}
+          </span>
         </button>
       </div>
     </div>
@@ -76,6 +83,7 @@ const props = defineProps<{
   total: number
   label: string
   parts: StripPart[]
+  programme?: string
   bare?: boolean
 }>()
 
