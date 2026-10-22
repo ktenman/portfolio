@@ -199,16 +199,21 @@ fun silences(
     .sortedWith(compareBy({ it.first }, { it.second }))
 }
 
+fun quietest(
+  db: DoubleArray,
+  start: Double,
+  end: Double,
+): Double? {
+  val i = max(index(start), 0)
+  val found = (i until min(index(end), db.size)).filterNot { db[it].isNaN() }.minByOrNull { db[it] } ?: return null
+  return found * FRAME + FRAME / 2
+}
+
 fun valley(
   db: DoubleArray,
   start: Double,
   end: Double,
-): Double {
-  val i = max(index(start), 0)
-  val found = (i until min(index(end), db.size)).filterNot { db[it].isNaN() }.minByOrNull { db[it] }
-  checkNotNull(found) { "No audio between $start and $end s" }
-  return found * FRAME + FRAME / 2
-}
+): Double = checkNotNull(quietest(db, start, end)) { "No audio between $start and $end s" }
 
 private fun median(values: DoubleArray): Double {
   if (values.any { it.isNaN() }) return Double.NaN
