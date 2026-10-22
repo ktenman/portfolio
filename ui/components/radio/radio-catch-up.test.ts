@@ -200,6 +200,22 @@ describe('RadioCatchUp', () => {
     expect(player.toggle).toHaveBeenCalled()
   })
 
+  it("should show the player's round play button on a recorded airing", async () => {
+    expect((await button('Listen: Keskpäevatund 12:00')).classes()).toEqual(
+      expect.arrayContaining(['rounded-full', 'bg-brass'])
+    )
+  })
+
+  it('should show only the icon on the play button of a recorded airing', async () => {
+    expect((await button('Listen: Keskpäevatund 12:00')).text()).toBe('')
+  })
+
+  it("should show the player's round play button on an airing on air", async () => {
+    expect((await button('Listen live')).classes()).toEqual(
+      expect.arrayContaining(['rounded-full', 'bg-brass'])
+    )
+  })
+
   it('should ask to record a later airing once', async () => {
     await (await button('Record: Ilmaparandaja')).trigger('click')
     expect(radioService.record).toHaveBeenCalledWith(7, { record: true })

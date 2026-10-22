@@ -29,8 +29,7 @@
       </button>
       <button
         type="button"
-        class="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
-        :class="large ? 'size-14 max-md:size-16' : 'size-14 md:size-12'"
+        :class="[PLAY, large ? 'size-14 max-md:size-16' : 'size-14 md:size-12']"
         :aria-label="player.playing.value ? 'Pause' : 'Play'"
         data-testid="radio-play"
         @click="player.toggle()"
@@ -77,6 +76,7 @@
 
 <script lang="ts" setup>
 import { RATES, useRadioPlayer } from '../../composables/use-radio-player'
+import { PLAY } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 
 defineProps<{ large?: boolean }>()
