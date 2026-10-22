@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.radio
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 
 class RadioDayTest {
   private fun recording(
@@ -11,6 +12,16 @@ class RadioDayTest {
   ) = AiringRecording("2026-10-17-1200-keskpaevatund", "Keskpäevatund", 0, 4200, from, to)
 
   private fun airing(state: AiringState) = DayAiring(1, "Keskpäevatund", null, 0, 3600, state, false, false, null, null)
+
+  @Test
+  fun `should offer the calendar week from Monday to Sunday`() {
+    expect(week(LocalDate.of(2026, 10, 22))).toEqual((19..25).map { LocalDate.of(2026, 10, it) })
+  }
+
+  @Test
+  fun `should keep a Sunday in the week that started on Monday`() {
+    expect(week(LocalDate.of(2026, 10, 25)).first()).toEqual(LocalDate.of(2026, 10, 19))
+  }
 
   @Test
   fun `should cover an airing by the recording that holds most of it`() {

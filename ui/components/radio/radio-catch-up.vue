@@ -2,21 +2,27 @@
   <div>
     <radio-tabs />
     <div class="grid gap-6">
-      <nav
-        v-if="radioDay"
-        class="flex w-fit gap-1 rounded-container bg-surface-sunken p-1 max-md:hidden"
-        aria-label="Päev"
-      >
+      <nav v-if="radioDay" class="grid w-fit grid-cols-7 gap-1.5 max-md:hidden" aria-label="Päev">
         <button
           v-for="d in radioDay.days"
           :key="d"
           type="button"
-          class="platform-btn"
-          :class="{ active: d === selected }"
+          class="relative grid w-13 cursor-pointer justify-items-center rounded-container border pt-1.5 pb-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
+          :class="[
+            d === selected
+              ? 'border-brass bg-brass-wash text-brass-deep inset-ring inset-ring-brass'
+              : 'border-transparent bg-surface-sunken hover:border-hairline-strong hover:bg-surface-hover',
+            { [TODAY]: d === radioDay.today },
+          ]"
           :aria-pressed="d === selected"
+          :aria-current="d === radioDay.today ? 'date' : undefined"
+          :aria-label="dateDay(d)"
           @click="date = d"
         >
-          {{ dateDay(d) }}{{ d === radioDay.today ? ' · täna' : '' }}
+          <span class="text-sm" :class="{ 'text-ink-soft': d !== selected }">
+            {{ dateDay(d).charAt(0) }}
+          </span>
+          <span class="text-xl leading-tight font-bold tabular-nums">{{ Number(d.slice(8)) }}</span>
         </button>
       </nav>
       <p v-if="isError" class="mb-0 text-loss-deep">Saatekava ei õnnestunud laadida.</p>
@@ -43,13 +49,22 @@ import RadioDayBar from './radio-day-bar.vue'
 import RadioSchedule from './radio-schedule.vue'
 import RadioTabs from './radio-tabs.vue'
 
+const TODAY =
+  "after:absolute after:bottom-1 after:size-1 after:rounded-full after:bg-brass after:content-['']"
+
 const date = ref<string | null>(null)
 const { data: radioDay, isLoading, isError } = useRadioDay(date)
 const phone = useMediaQuery('(max-width: 767px)')
 
 const selected = computed(() => date.value ?? radioDay.value?.date)
 
-const tomorrow = computed(() => radioDay.value?.days.find(d => d > radioDay.value!.today) ?? null)
+const tomorrow = computed(() =>
+  radioDay.value
+    ? new Date(Date.parse(`${radioDay.value.today}T12:00:00Z`) + 86_400_000)
+        .toISOString()
+        .slice(0, 10)
+    : null
+)
 
 const { data: next } = useRadioDay(() => (phone.value ? tomorrow.value : null))
 </script>
