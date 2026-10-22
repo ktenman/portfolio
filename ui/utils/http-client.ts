@@ -30,7 +30,8 @@ const parseBody = async (response: Response): Promise<unknown> => {
 
 const fail = (status: number, message: string, url: string, data?: ApiErrorResponse): never => {
   if (status === 401) {
-    window.location.href = '/oauth2/start?rd=' + encodeURIComponent(window.location.pathname)
+    window.location.href =
+      '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search)
   }
   throw new ApiError(
     status,

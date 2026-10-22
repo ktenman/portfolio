@@ -106,7 +106,12 @@ describe('httpClient', () => {
 
     beforeEach(() => {
       Object.defineProperty(window, 'location', {
-        value: { ...originalLocation, href: '', pathname: '/instruments' },
+        value: {
+          ...originalLocation,
+          href: '',
+          pathname: '/radio/catch-up',
+          search: '?day=2026-10-21',
+        },
         writable: true,
       })
     })
@@ -118,10 +123,10 @@ describe('httpClient', () => {
       })
     })
 
-    it('should redirect to OAuth start on 401 error', async () => {
+    it('should send a 401 to the login page with the page to return to', async () => {
       fetchMock.mockResolvedValue(jsonResponse({}, 401, 'Unauthorized'))
       await expect(httpClient.get('/test')).rejects.toThrow()
-      expect(window.location.href).toBe('/oauth2/start?rd=%2Finstruments')
+      expect(window.location.href).toBe('/login?redirect=%2Fradio%2Fcatch-up%3Fday%3D2026-10-21')
     })
 
     it('should throw ApiError with response data', async () => {
@@ -186,7 +191,7 @@ describe('httpClient', () => {
         status: 401,
         message: 'Session expired',
       })
-      expect(window.location.href).toContain('/oauth2/start?rd=')
+      expect(window.location.href).toContain('/login?redirect=')
     })
   })
 })
