@@ -41,6 +41,37 @@ describe('RadioScrubber', () => {
 
   const name = (value: number) => labels(value)[0]!.findAll('span')[1]!
 
+  const opening = (value = 0) =>
+    mount(RadioScrubber, {
+      props: { value, total: 40, label: 'Position', parts: PARTS, programme: 'Sihik' },
+    }).findAll('[data-testid="radio-timeline-label"]')
+
+  it('should name the show on the opening label', () => {
+    expect(
+      opening()[0]!
+        .findAll('span')
+        .map(span => span.text())
+    ).toEqual(['10 s', 'Madise', 'Sihik'])
+  })
+
+  it("should show the show's name only in an opening too narrow for its topic", () => {
+    expect(opening()[0]!.findAll('span')[2]!.classes()).toEqual(
+      expect.arrayContaining(['hidden', '@max-[6rem]:block'])
+    )
+  })
+
+  it('should name the show on the opening label only', () => {
+    expect(
+      opening()[1]!
+        .findAll('span')
+        .map(span => span.text())
+    ).toEqual(['30 s', 'Pärast'])
+  })
+
+  it("should set the show's name in brass while the opening plays", () => {
+    expect(opening(15)[0]!.findAll('span')[2]!.classes()).toContain('text-brass-deep')
+  })
+
   it('should play a topic from its label', async () => {
     const wrapper = render()
     await wrapper.findAll('[data-testid="radio-timeline-label"]')[1]!.trigger('click')

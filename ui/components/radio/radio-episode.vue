@@ -1,11 +1,11 @@
 <template>
   <div :style="{ '--radio-player': `${height}px` }">
     <router-link
-      to="/radio"
+      :to="origin.to"
       class="mb-3 inline-flex items-center gap-1 text-sm text-ink-soft hover:text-ink"
     >
       <radio-icon name="left" />
-      Shows
+      {{ origin.label }}
     </router-link>
     <p v-if="isLoading" class="text-ink-soft">Loading…</p>
     <p v-else-if="!recording" class="text-ink-soft">Recording {{ name }} not found.</p>
@@ -25,7 +25,7 @@
 <script lang="ts" setup>
 import { useTemplateRef, watch } from 'vue'
 import { useElementSize } from '@vueuse/core'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
 import { fullDay, span } from '../../utils/radio'
@@ -34,7 +34,13 @@ import RadioPlayer from './radio-player.vue'
 import RadioText from './radio-text.vue'
 
 const route = useRoute()
+const router = useRouter()
 const name = route.params.name as string
+const { back } = router.options.history.state
+const origin =
+  typeof back === 'string' && router.resolve(back).name === 'RadioCatchUp'
+    ? { to: back, label: 'Catch-up' }
+    : { to: '/radio', label: 'Shows' }
 const { recording, isLoading } = useRadioRecording(name)
 const player = useRadioPlayer()
 const { height } = useElementSize(useTemplateRef('card'), undefined, { box: 'border-box' })

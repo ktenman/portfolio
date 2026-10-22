@@ -45,6 +45,7 @@
           :value="player.seconds.value"
           :total="player.total.value"
           :parts="parts"
+          :programme="recording.status.programmes[0]"
           label="Position in the recording"
           @seek="player.seek"
           @play="player.playFrom($event, player.version.value)"

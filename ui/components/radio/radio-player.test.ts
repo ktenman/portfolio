@@ -70,10 +70,22 @@ describe('RadioPlayer', () => {
     const topics = [{ ...first!, end: 900 }, pause, { ...first!, start: 1000 }, second!, third!]
     const wrapper = render('episode', recording({ topics }))
     expect(labels(wrapper).map(label => label.findAll('span').map(span => span.text()))).toEqual([
-      ['0:00', 'Ooperitüli'],
+      ['0:00', 'Ooperitüli', 'Keskpäevatund'],
       ['30:03', 'Poliitika'],
       ['39:51', 'Ülle Madise'],
     ])
+  })
+
+  it('should name the opening after the show the recording starts with', () => {
+    const { status } = recording()
+    const item = recording({ status: { ...status, programmes: ['Sihik', 'Digitund'] } })
+    expect(labels(render('episode', item))[0]!.findAll('span')[2]!.text()).toBe('Sihik')
+  })
+
+  it('should keep the bare time on the opening of a recording without a programme', () => {
+    const { status } = recording()
+    const item = recording({ status: { ...status, programmes: [] } })
+    expect(labels(render('episode', item))[0]!.findAll('span')).toHaveLength(2)
   })
 
   it('should keep a played removed part faded on the timeline', async () => {
