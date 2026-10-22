@@ -227,7 +227,7 @@ fun dips(
   if (i >= j) return emptyList()
   val depth = DoubleArray(j - i) { median(db.copyOfRange(i + it - 100, i + it + 101)) - db[i + it] }
   return runs(BooleanArray(depth.size) { depth[it] > 8 })
-    .filter { (a, b) -> (a until b).maxOf { depth[it] } > 15 }
+    .filter { (a, b) -> b - a >= 3 && (a until b).maxOf { depth[it] } > 15 }
     .map { (a, b) -> valley(db, (i + a) * FRAME, (i + b) * FRAME) }
 }
 
