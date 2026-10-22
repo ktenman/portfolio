@@ -1,5 +1,5 @@
 const DAY_MS = 86400000
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const MONTHS = [
   'Jan',
   'Feb',

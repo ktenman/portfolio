@@ -1,5 +1,5 @@
 <template>
-  <radio-card v-if="topics.length" title="Teemad" fold="open" data-testid="radio-topics">
+  <radio-card v-if="topics.length" title="Topics" fold="open" data-testid="radio-topics">
     <template #aside="{ open }">
       <span v-if="!open && current" class="text-sm text-ink-soft tabular-nums">
         {{ current.time }}

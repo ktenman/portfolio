@@ -22,7 +22,7 @@ describe('RadioSection', () => {
         raw: true,
         playing: false,
       },
-      slots: { heading: '<div data-testid="radio-cut">Reklaamipaus</div>' },
+      slots: { heading: '<div data-testid="radio-cut">Ad break</div>' },
     })
 
   const lines = (wrapper: ReturnType<typeof render>) =>
@@ -41,13 +41,17 @@ describe('RadioSection', () => {
     expect([
       lines(wrapper).length,
       wrapper.find('[data-testid="radio-section-more"]').text(),
-    ]).toEqual([3, 'Näita veel 2 rida'])
+    ]).toEqual([3, 'Show 2 more lines'])
   })
 
-  it("should show all of a cut's lines after Näita veel", async () => {
+  it("should show all of a cut's lines after Show more", async () => {
     const wrapper = render(5)
     await wrapper.find('[data-testid="radio-section-more"]').trigger('click')
     expect(lines(wrapper)).toHaveLength(5)
+  })
+
+  it("should call a cut's one folded line a line", () => {
+    expect(render(4).get('[data-testid="radio-section-more"]').text()).toBe('Show 1 more line')
   })
 
   it('should not fold three lines of a cut', () => {

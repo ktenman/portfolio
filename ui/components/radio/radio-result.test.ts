@@ -43,17 +43,23 @@ describe('RadioResult', () => {
     wrapper.findAll('button').find(b => b.text().includes(text))
 
   const meter = (wrapper: VueWrapper) =>
-    wrapper.find('[aria-label="Puhastatud versioon"]').attributes('aria-valuenow')
+    wrapper.find('[aria-label="Clean version"]').attributes('aria-valuenow')
 
   const rendering = recording({ render: { percent: 57, secondsLeft: 40 } })
 
   it('should add up what the suggested cuts remove', () => {
-    expect(facts(render())).toContain('22:51 · 4 lõiget')
+    expect(facts(render())).toContain('22:51 · 4 cuts')
   })
 
   it('should start from the cuts the episode already leaves in', () => {
     const cuts = recording().cuts.map((cut, i) => ({ ...cut, removed: i !== 1 }))
-    expect(facts(render(recording({ cuts })))).toContain('20:36 · 3 lõiget')
+    expect(facts(render(recording({ cuts })))).toContain('20:36 · 3 cuts')
+  })
+
+  it('should count one removed cut in the singular', () => {
+    const cuts = recording().cuts.map((cut, i) => ({ ...cut, removed: i === 1 }))
+    const removed = render(recording({ cuts })).findAll('[data-testid="radio-cut-result"] dd')[1]!
+    expect(removed.text()).toBe('2:15 · 1 cut')
   })
 
   it('should leave a kept break in the episode', async () => {
@@ -61,7 +67,7 @@ describe('RadioResult', () => {
     const wrapper = render(item)
     useRadioDecisions(() => item).choose(1, false)
     await wrapper.vm.$nextTick()
-    expect(facts(wrapper)).toContain('Puhastatud49:23')
+    expect(facts(wrapper)).toContain('Clean49:23')
   })
 
   it('should restore the machine choice', async () => {
@@ -69,16 +75,16 @@ describe('RadioResult', () => {
     const wrapper = render(item)
     useRadioDecisions(() => item).choose(1, false)
     await wrapper.vm.$nextTick()
-    await button(wrapper, 'Lähtesta')!.trigger('click')
-    expect(facts(wrapper)).toContain('22:51 · 4 lõiget')
+    await button(wrapper, 'Reset')!.trigger('click')
+    expect(facts(wrapper)).toContain('22:51 · 4 cuts')
   })
 
   it('should show the render percent while the episode updates', () => {
     const wrapper = render(rendering)
-    expect([
-      meter(wrapper),
-      wrapper.text().includes('Uuendan puhastatud versiooni · 57 %'),
-    ]).toEqual(['57', true])
+    expect([meter(wrapper), wrapper.text().includes('Updating the clean version · 57%')]).toEqual([
+      '57',
+      true,
+    ])
   })
 
   it('should not pass the next tenth before the render reports it', async () => {
@@ -95,11 +101,11 @@ describe('RadioResult', () => {
     const wrapper = render(item)
     useRadioDecisions(() => item).choose(1, false)
     await wrapper.vm.$nextTick()
-    expect(wrapper.text()).toContain('Uuendan puhastatud versiooni')
+    expect(wrapper.text()).toContain('Updating the clean version')
   })
 
   it('should say the episode is up to date once nothing waits or renders', () => {
-    expect(render().text()).toContain('Puhastatud versioon on ajakohane')
+    expect(render().text()).toContain('The clean version is up to date')
   })
 
   it('should show why the render failed', () => {
@@ -107,7 +113,7 @@ describe('RadioResult', () => {
       renderFailure: { reason: 'FFmpeg exited with 1 – õ', failedAt: '2026-10-17T12:00:00Z' },
     })
     expect(render(failed).text()).toContain(
-      'Puhastatud versiooni ei saanud teha: FFmpeg exited with 1 – õ'
+      'Could not make the clean version: FFmpeg exited with 1 – õ'
     )
   })
 })

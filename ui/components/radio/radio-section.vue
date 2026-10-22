@@ -40,7 +40,11 @@
           {{ clock(startedAt, line.start, true) }}
         </button>
         <div>
-          <p class="mb-0" :class="{ 'text-ink-soft': line.music }">
+          <p
+            class="mb-0"
+            :class="{ 'text-ink-soft': line.music }"
+            :lang="line.music ? undefined : 'et'"
+          >
             <template v-if="line === current && line.words.length">
               <template v-for="word in line.words" :key="word.start">
                 <span
@@ -52,10 +56,10 @@
                 {{ ' ' }}
               </template>
             </template>
-            <template v-else>{{ line.music ? 'Muusika' : line.text.trim() }}</template>
+            <template v-else>{{ line.music ? 'Music' : line.text.trim() }}</template>
           </p>
           <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
-            <radio-badge tone="warn">Lõige poolitab lause</radio-badge>
+            <radio-badge tone="warn">Cut splits a sentence</radio-badge>
             <span class="text-ink-soft">
               {{ line.split.title }}
               {{ range(startedAt, line.split.start, line.split.end) }}
@@ -71,7 +75,7 @@
       class="min-h-11 cursor-pointer px-2 text-sm font-semibold text-ink-soft hover:text-ink"
       @click="open = true"
     >
-      Näita veel {{ hidden }} rida
+      Show {{ hidden }} more {{ hidden === 1 ? 'line' : 'lines' }}
     </button>
   </section>
 </template>

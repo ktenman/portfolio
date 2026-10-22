@@ -33,7 +33,7 @@ const mount = async () => {
 
 const remove = async () => {
   const wrapper = await mount()
-  await wrapper.find('button[aria-label="Kustuta: Keskpäevatund L 17.10"]').trigger('click')
+  await wrapper.find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]').trigger('click')
   await flushPromises()
   return wrapper
 }
@@ -71,7 +71,7 @@ describe('RadioRecordings', () => {
   })
 
   it('should show when and how long the show was recorded', async () => {
-    expect((await mount()).text()).toContain('L 17.10 · 11:55–13:05')
+    expect((await mount()).text()).toContain('Sat 17.10 · 11:55–13:05')
   })
 
   it('should show a recording over the airing it was planned for', async () => {
@@ -79,15 +79,15 @@ describe('RadioRecordings', () => {
     vi.mocked(radioService.recordings).mockResolvedValue([
       recording({ span: { start: noon, end: noon + 3600 } }),
     ])
-    expect((await mount()).text()).toContain('L 17.10 · 12:00–13:00')
+    expect((await mount()).text()).toContain('Sat 17.10 · 12:00–13:00')
   })
 
   it('should leave the cuts out of the table', async () => {
-    expect((await mount()).text()).not.toContain('Lõiked')
+    expect((await mount()).text()).not.toContain('Cuts')
   })
 
   it('should say a transcribed recording has its transcript', async () => {
-    expect((await mount()).text()).toContain('Olemas')
+    expect((await mount()).text()).toContain('Ready')
   })
 
   it('should not bold a transcript', async () => {
@@ -97,12 +97,12 @@ describe('RadioRecordings', () => {
   })
 
   it('should say a recording in progress is being recorded', async () => {
-    expect((await mount()).text()).toContain('Salvestab')
+    expect((await mount()).findAll('tbody tr')[1]!.text()).toContain('Recording')
   })
 
   it('should name each recording link after its programme, day and time', async () => {
     const link = (await mount()).find('a[href="/radio/2026-10-17"]')
-    expect(link.attributes('aria-label')).toBe('Keskpäevatund L 17.10 · 11:55–13:05')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund Sat 17.10 · 11:55–13:05')
   })
 
   it('should stretch the recording link over its row', async () => {
@@ -129,12 +129,12 @@ describe('RadioRecordings', () => {
     expect((await mount()).find('a[href="/radio/2026-10-16"]').exists()).toBe(true)
   })
 
-  it('should not offer a Kuula button', async () => {
-    expect((await mount()).text()).not.toContain('Kuula')
+  it('should not offer a Listen button', async () => {
+    expect((await mount()).text()).not.toContain('Listen')
   })
 
   it('should keep the trash above the row link', async () => {
-    const trash = (await mount()).find('button[aria-label="Kustuta: Keskpäevatund L 17.10"]')
+    const trash = (await mount()).find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]')
     expect(trash.classes()).toContain('z-10')
   })
 
@@ -151,13 +151,13 @@ describe('RadioRecordings', () => {
   it('should call a phone row without an edit list not cleaned', async () => {
     vi.mocked(radioService.recordings).mockResolvedValue([recording({ editList: null })])
     expect((await mount()).get('[data-testid="radio-recording-row"]').text()).toContain(
-      'Puhastamata'
+      'not cleaned'
     )
   })
 
   it('should mark a phone row that is still being recorded', async () => {
     const rows = (await mount()).findAll('[data-testid="radio-recording-row"]')
-    expect(rows[1]!.text()).toContain('salvestab')
+    expect(rows[1]!.text()).toContain('recording')
   })
 
   it('should leave the actions empty for a recording still being recorded', async () => {
@@ -166,17 +166,17 @@ describe('RadioRecordings', () => {
   })
 
   it('should name the actions column for screen readers', async () => {
-    expect((await mount()).find('thead th .sr-only').text()).toBe('Toimingud')
+    expect((await mount()).find('thead th .sr-only').text()).toBe('Actions')
   })
 
   it('should ask before deleting a recording', async () => {
     await remove()
     expect(confirm).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Kustuta salvestus?',
-        message: expect.stringContaining('Keskpäevatund, L 17.10 · 11:55–13:05'),
-        confirmText: 'Kustuta',
-        cancelText: 'Loobu',
+        title: 'Delete recording?',
+        message: expect.stringContaining('Keskpäevatund, Sat 17.10 · 11:55–13:05'),
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
       })
     )
   })
@@ -209,14 +209,14 @@ describe('RadioRecordings', () => {
     vi.mocked(radioService.deleteRecording).mockRejectedValue(new Error('409'))
     await remove()
     expect(toasts.value.map(toast => [toast.message, toast.type])).toEqual([
-      ['Salvestust ei saanud kustutada', 'error'],
+      ['Could not delete the recording', 'error'],
     ])
   })
 
   it('should offer no delete for a recording still being recorded', async () => {
     const labels = (await mount())
-      .findAll('button[aria-label^="Kustuta"]')
+      .findAll('button[aria-label^="Delete"]')
       .map(button => button.attributes('aria-label'))
-    expect(new Set(labels)).toEqual(new Set(['Kustuta: Keskpäevatund L 17.10']))
+    expect(new Set(labels)).toEqual(new Set(['Delete: Keskpäevatund Sat 17.10']))
   })
 })

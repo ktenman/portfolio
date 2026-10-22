@@ -2,7 +2,7 @@
   <div>
     <radio-tabs />
     <div class="grid gap-6">
-      <nav v-if="radioDay" class="grid w-fit grid-cols-7 gap-1.5 max-md:hidden" aria-label="Päev">
+      <nav v-if="radioDay" class="grid w-fit grid-cols-7 gap-1.5 max-md:hidden" aria-label="Day">
         <button
           v-for="d in radioDay.days"
           :key="d"
@@ -20,20 +20,20 @@
           @click="date = d"
         >
           <span class="text-sm" :class="{ 'text-ink-soft': d !== selected }">
-            {{ dateDay(d).charAt(0) }}
+            {{ dateDay(d).slice(0, 2) }}
           </span>
           <span class="text-xl leading-tight font-bold tabular-nums">{{ Number(d.slice(8)) }}</span>
         </button>
       </nav>
-      <p v-if="isError" class="mb-0 text-loss-deep">Saatekava ei õnnestunud laadida.</p>
-      <p v-else-if="isLoading" class="mb-0 text-ink-soft">Laadin…</p>
+      <p v-if="isError" class="mb-0 text-loss-deep">Could not load the schedule.</p>
+      <p v-else-if="isLoading" class="mb-0 text-ink-soft">Loading…</p>
       <template v-if="radioDay">
         <radio-day-bar :radio-day="radioDay" />
         <radio-schedule :day="radioDay" />
         <radio-schedule v-if="phone && next && next.date !== radioDay.date" :day="next" />
         <p class="-mt-3 mb-0 text-sm text-ink-soft">
-          Kordust ei salvestata, kui originaal on arhiivis. Kui originaal jäi vahele või salvestus
-          on osaline, saab salvestada korduse.
+          Repeats are not recorded when the original is archived. If the original was missed or
+          recorded only in part, you can record the repeat.
         </p>
       </template>
     </div>

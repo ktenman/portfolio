@@ -5,10 +5,10 @@
       class="mb-3 inline-flex items-center gap-1 text-sm text-ink-soft hover:text-ink"
     >
       <radio-icon name="left" />
-      Saated
+      Shows
     </router-link>
-    <p v-if="isLoading" class="text-ink-soft">Laadin…</p>
-    <p v-else-if="!recording" class="text-ink-soft">Salvestust {{ name }} ei leitud.</p>
+    <p v-if="isLoading" class="text-ink-soft">Loading…</p>
+    <p v-else-if="!recording" class="text-ink-soft">Recording {{ name }} not found.</p>
     <template v-else>
       <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 class="mb-0">{{ recording.programme }}</h2>

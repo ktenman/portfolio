@@ -1,6 +1,6 @@
 <template>
-  <aside class="flex flex-col gap-4" aria-label="Salvestaja ja eeter">
-    <radio-card title="Salvestaja">
+  <aside class="flex flex-col gap-4" aria-label="Recorder and broadcast">
+    <radio-card title="Recorder">
       <template v-if="station" #aside>
         <radio-badge :tone="RECORDER_STATES[station.recorder].tone">
           {{ RECORDER_STATES[station.recorder].label }}
@@ -8,8 +8,8 @@
       </template>
       <radio-facts :rows="recorder" />
     </radio-card>
-    <radio-card v-if="station?.onAir" title="Eetris">
-      <template #aside><radio-badge tone="live">Otse</radio-badge></template>
+    <radio-card v-if="station?.onAir" title="On air">
+      <template #aside><radio-badge tone="live">Live</radio-badge></template>
       <p class="mb-0 font-semibold">{{ station.onAir.name }}</p>
       <p class="mb-3 text-sm text-body-secondary">{{ airing(station.onAir) }}</p>
       <button
@@ -18,10 +18,10 @@
         @click="on ? player.toggle() : player.listen()"
       >
         <radio-icon :name="on ? 'pause' : 'play'" />
-        {{ on ? 'Peata' : 'Kuula otse' }}
+        {{ on ? 'Pause' : 'Listen live' }}
       </button>
       <p v-if="station.next" class="mt-3 mb-0 text-sm text-body-secondary">
-        Järgmisena {{ clock(station.next.start, 0) }} {{ station.next.name }}
+        Next: {{ station.next.name }} at {{ clock(station.next.start, 0) }}
       </p>
     </radio-card>
   </aside>
@@ -43,21 +43,21 @@ const player = useRadioPlayer()
 const on = computed(() => player.live.value && player.playing.value)
 
 const airing = (a: StationAiring) =>
-  `${range(a.start, 0, a.end - a.start)} · ${a.recorded ? 'salvestatakse' : 'ei salvestata'}`
+  `${range(a.start, 0, a.end - a.start)} · ${a.recorded ? 'being recorded' : 'not being recorded'}`
 
 const recorder = computed<[string, string][]>(() => {
   const s = station.value
   if (!s) return []
   const next = s.capture
     ? `${s.capture.programmes.join(', ')}, ${day(s.capture.slot.start)} ${clock(s.capture.slot.start, 0)}`
-    : 'Pole valitud'
+    : 'None selected'
   const last = s.last ? `${s.last.programme}, ${day(s.last.end)} ${clock(s.last.end, 0)}` : '—'
   return [
-    ['Viimane', last],
-    ['Järgmine', next],
-    ['Vorming', audioFormat(s.format)],
-    ['Vaba ruumi', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
-    ['Jätkub', s.hours == null ? '—' : `≈ ${s.hours.toLocaleString('et')} tundi`],
+    ['Last', last],
+    ['Next', next],
+    ['Format', audioFormat(s.format)],
+    ['Free space', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
+    ['Room for', s.hours == null ? '—' : `≈ ${s.hours.toLocaleString('en-US')} h`],
   ]
 })
 </script>

@@ -7,8 +7,8 @@ describe('RadioCard', () => {
 
   const render = (fold?: 'open' | 'shut') =>
     mount(RadioCard, {
-      props: { title: 'Töötlus', fold },
-      slots: { default: '<p class="body">Sisu</p>', aside: '<span class="aside">34 MB</span>' },
+      props: { title: 'Processing', fold },
+      slots: { default: '<p class="body">Content</p>', aside: '<span class="aside">34 MB</span>' },
     })
 
   it('should start shut when asked to', () => {

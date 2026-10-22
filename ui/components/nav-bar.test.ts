@@ -69,10 +69,10 @@ describe('NavBar', () => {
       expect(wrapper.text()).toContain('Transactions')
     })
 
-    it('should list Raadio as the last navigation link', () => {
+    it('should list Radio as the last navigation link', () => {
       const wrapper = createWrapper()
 
-      expect(wrapper.findAll('.nav-link').slice(-1)[0]?.text()).toBe('Raadio')
+      expect(wrapper.findAll('.nav-link').slice(-1)[0]?.text()).toBe('Radio')
     })
 
     it('should scroll the active link into view', async () => {

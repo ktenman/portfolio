@@ -16,6 +16,7 @@ import {
   length,
   megabytes,
   minutes,
+  missedRun,
   offset,
   poll,
   position,
@@ -23,7 +24,7 @@ import {
   recordingTime,
   textState,
 } from './radio'
-import { programme, recording } from '../components/radio/radio-fixture'
+import { airing, programme, recording } from '../components/radio/radio-fixture'
 
 const STARTED = Date.UTC(2026, 9, 17, 8, 55, 0) / 1000
 
@@ -101,15 +102,21 @@ describe('labels', () => {
   })
 
   it('should give the short day of a recording', () => {
-    expect(day(STARTED)).toEqual('L 17.10')
+    expect(day(STARTED)).toEqual('Sat 17.10')
   })
 
   it('should give the full day of a recording', () => {
-    expect(fullDay(STARTED)).toEqual('Laupäev, 17.10.2026')
+    expect(fullDay(STARTED)).toEqual('Saturday, 17.10.2026')
   })
 
-  it('should call a finished transcript Olemas', () => {
-    expect(textState(recording({ transcriptState: TranscriptState.TRANSCRIBED }))).toEqual('Olemas')
+  it('should call a finished transcript ready', () => {
+    expect(textState(recording({ transcriptState: TranscriptState.TRANSCRIBED }))).toEqual('Ready')
+  })
+})
+
+describe('missedRun', () => {
+  it('should count one missed airing as one show', () => {
+    expect(missedRun([airing()])).toBe('14:00–15:00 · 1 show, not recorded')
   })
 })
 
@@ -121,16 +128,16 @@ describe('stream', () => {
 
 describe('left', () => {
   it.each([
-    [45, '~45 s jäänud'],
-    [42, '~40 s jäänud'],
-    [3, '~5 s jäänud'],
-    [90, '~2 min jäänud'],
+    [45, '~45 s left'],
+    [42, '~40 s left'],
+    [3, '~5 s left'],
+    [90, '~2 min left'],
   ])('should round %i seconds left to %s', (seconds, text) => {
     expect(left(seconds)).toBe(text)
   })
 
   it('should add the clock time once more than ten minutes are left', () => {
-    expect(left(1920, new Date('2026-10-19T09:30:00Z'))).toBe('~32 min jäänud · valmis ~13:02')
+    expect(left(1920, new Date('2026-10-19T09:30:00Z'))).toBe('~32 min left · ready at ~13:02')
   })
 })
 
@@ -182,9 +189,9 @@ describe('rawParts', () => {
         .slice(0, 3)
         .map(part => part.label)
     ).toEqual([
-      'Enne saadet 11:55–12:07 · Jääb alles',
-      'Rahvusooperi tüli 12:07–12:30 · Jääb alles',
-      'Reklaamipaus 12:30–12:32 · Eemaldatakse',
+      'Before the show 11:55–12:07 · Kept',
+      'Rahvusooperi tüli 12:07–12:30 · Kept',
+      'Ad break 12:30–12:32 · Removed',
     ])
   })
 })
@@ -205,7 +212,7 @@ describe('rawParts names', () => {
   it('should label a part no topic covers by the programme', () => {
     const untitled = { start: 0, end: 4200, title: null, cut: false, label: null, summary: null }
     expect(rawParts(recording({ timeline: [untitled] }), [])[0]!.label).toBe(
-      'Keskpäevatund 11:55–13:05 · Jääb alles'
+      'Keskpäevatund 11:55–13:05 · Kept'
     )
   })
 
@@ -235,9 +242,9 @@ describe('episodeParts', () => {
 
   it('should name each topic by its number, title and start', () => {
     expect(episodeParts(recording()).map(part => part.label)).toEqual([
-      'Teema 1: Rahvusooperi tüli · 0:00',
-      'Teema 2: Mis toimub poliitikas? · 30:03',
-      'Teema 3: President Ülle Madise · 39:51',
+      'Topic 1: Rahvusooperi tüli · 0:00',
+      'Topic 2: Mis toimub poliitikas? · 30:03',
+      'Topic 3: President Ülle Madise · 39:51',
     ])
   })
 
@@ -262,15 +269,15 @@ describe('episodeParts', () => {
     })
     const topics = [
       entry(0, 100, 'Ooper'),
-      entry(100, 160, 'Reklaamipaus', true),
+      entry(100, 160, 'Ad break', true),
       entry(160, 300, 'Ooper'),
       entry(300, 400, 'Valimised'),
     ]
     expect(episodeParts(recording({ topics })).map(part => [part.name, part.label])).toEqual([
-      ['Ooper', 'Teema 1: Ooper · 0:00'],
-      [null, 'Reklaamipaus · 1:40'],
-      [null, 'Teema 1: Ooper · 2:40'],
-      ['Valimised', 'Teema 2: Valimised · 5:00'],
+      ['Ooper', 'Topic 1: Ooper · 0:00'],
+      [null, 'Ad break · 1:40'],
+      [null, 'Topic 1: Ooper · 2:40'],
+      ['Valimised', 'Topic 2: Valimised · 5:00'],
     ])
   })
 
@@ -281,7 +288,7 @@ describe('episodeParts', () => {
     ]
     expect(episodeParts(recording({ topics })).map(part => [part.name, part.label])).toEqual([
       [null, 'Keskpäevatund · 0:00'],
-      ['Šokolaadi hind', 'Teema 1: Šokolaadi hind · 2:00'],
+      ['Šokolaadi hind', 'Topic 1: Šokolaadi hind · 2:00'],
     ])
   })
 

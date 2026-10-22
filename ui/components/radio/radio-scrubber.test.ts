@@ -21,21 +21,21 @@ const part = (
 })
 
 const PARTS: StripPart[] = [
-  part(0, 10, 'Enne saadet', null),
+  part(0, 10, 'Before the show', null),
   part(10, 30, 'Ülle Madise', 'Madise', 'Õiguskantsler räägib kandidatuurist.'),
   part(30, 40, 'Pärast', 'Pärast'),
 ]
 
 const RESUMED: StripPart[] = [
   part(0, 10, 'Ülle Madise', 'Madise'),
-  part(10, 20, 'Reklaamipaus', null),
+  part(10, 20, 'Ad break', null),
   { ...part(20, 30, 'Ülle Madise', null), removed: false },
   part(30, 40, 'Pärast', 'Pärast'),
 ]
 
 describe('RadioScrubber', () => {
   const render = (value = 0, parts = PARTS) =>
-    mount(RadioScrubber, { props: { value, total: 40, label: 'Asukoht', parts } })
+    mount(RadioScrubber, { props: { value, total: 40, label: 'Position', parts } })
 
   const labels = (value = 0) => render(value).findAll('[data-testid="radio-timeline-label"]')
 
@@ -96,7 +96,7 @@ describe('RadioScrubber', () => {
 
   it('should leave out the labels when bare', () => {
     const wrapper = mount(RadioScrubber, {
-      props: { value: 0, total: 40, label: 'Asukoht', parts: PARTS, bare: true },
+      props: { value: 0, total: 40, label: 'Position', parts: PARTS, bare: true },
     })
     expect(wrapper.find('[data-testid="radio-timeline-labels"]').exists()).toBe(false)
   })

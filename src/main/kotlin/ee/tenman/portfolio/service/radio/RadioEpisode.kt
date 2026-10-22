@@ -38,7 +38,7 @@ fun chapters(
   val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
   val marks =
     seams.withIndex().drop(1).map { (index, seam) ->
-      seam - 5 to "Lõige $index (${position(seam)}) – ${opened.last { it.first <= seam + 30 }.second}"
+      seam - 5 to "Cut $index (${position(seam)}) – ${opened.last { it.first <= seam + 30 }.second}"
     }
   val untouched = opened.filterNot { (t, _) -> seams.drop(1).any { seam -> t in seam - 5..seam + 30 } }
   return (marks + untouched).sortedWith(order)
