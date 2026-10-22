@@ -1,7 +1,7 @@
 <template>
   <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-    <div ref="main" class="grid min-w-0 gap-4">
-      <radio-card title="Tekst" class="max-md:hidden" data-testid="radio-transcript">
+    <div ref="main" class="grid min-w-0 gap-4 max-md:hidden" data-testid="radio-transcript">
+      <radio-card title="Tekst">
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Laadin…</p>
         <p v-else-if="!topics.length" class="mb-0 text-ink-soft">Teksti veel pole.</p>
         <div v-else ref="list">

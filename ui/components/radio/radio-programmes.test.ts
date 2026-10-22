@@ -92,25 +92,13 @@ describe('RadioProgrammes', () => {
     )
   })
 
-  it('should show only the next few programmes on the schedule', async () => {
+  it('should show every programme on the schedule', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue(many(10))
-    expect(rows(await mount())).toBe(8)
-  })
-
-  it('should show every programme on the schedule from the link', async () => {
-    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
-    const wrapper = await mount()
-    await wrapper.find('button').trigger('click')
-    expect(rows(wrapper)).toBe(10)
-  })
-
-  it('should name how many programmes the link shows', async () => {
-    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
-    expect((await mount()).find('button').text()).toBe('Kõik 10 saadet saatekavas')
-  })
-
-  it('should show every programme ticked to record however many there are', async () => {
-    vi.mocked(radioService.programmes).mockResolvedValue(many(10, true))
     expect(rows(await mount())).toBe(10)
+  })
+
+  it('should offer no link to more programmes', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue(many(10))
+    expect((await mount()).text()).not.toContain('saadet saatekavas')
   })
 })

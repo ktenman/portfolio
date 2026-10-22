@@ -4,7 +4,7 @@
       <a
         :href="url('episode.m4a')"
         download
-        :class="LINK"
+        class="-mr-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep"
         :aria-label="`Laadi alla puhastatud, ${megabytes(recording.episodeBytes)}`"
       >
         <radio-icon name="download" />
@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
-import { megabytes, LINK, textState } from '../../utils/radio'
+import { megabytes, textState } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 import RadioIcon from './radio-icon.vue'

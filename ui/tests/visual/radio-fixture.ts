@@ -220,7 +220,12 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: STATION })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route => {
-    const day = radioDay()
+    const date = new URL(route.request().url()).searchParams.get('date')
+    const today = radioDay()
+    const day =
+      date && date !== today.date
+        ? radioDay({ date, from: today.from + 86_400, until: today.until + 86_400 })
+        : today
     const running = { start: day.now - 600, end: day.now, recording: true }
     route.fulfill({ json: { ...day, recorded: [...day.recorded, running] } })
   })

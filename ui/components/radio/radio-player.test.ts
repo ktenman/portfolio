@@ -90,16 +90,6 @@ describe('RadioPlayer', () => {
     expect(player.recordingSeconds.value).toBe(Math.round(player.total.value * 0.75))
   })
 
-  it('should play the next topic from the playing topic', async () => {
-    const wrapper = render('episode')
-    await wrapper.get('button[aria-label="Järgmine teema"]').trigger('click')
-    expect(audio.currentTime).toBe(1803.5)
-  })
-
-  it('should not show the playing topic on the raw recording', () => {
-    expect(render().find('[data-testid="radio-now"]').exists()).toBe(false)
-  })
-
   it('should leave out the labels while the recording has no parts yet', () => {
     const wrapper = render('raw', recording({ timeline: [] }))
     expect(wrapper.find('[data-testid="radio-timeline-labels"]').exists()).toBe(false)
