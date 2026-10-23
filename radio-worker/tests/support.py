@@ -72,6 +72,22 @@ def noise(seconds: float, silences: list[float]) -> np.ndarray:
     return samples
 
 
+def melody(seconds: float) -> np.ndarray:
+    notes = [261.63, 329.63, 392.0, 523.25]
+    plucks = [pluck(notes[index % len(notes)], 0.5) for index in range(int(seconds * 2))]
+    return (np.concatenate(plucks) * 16000).astype(np.int16)
+
+
+def pluck(frequency: float, seconds: float) -> np.ndarray:
+    period = int(RATE / frequency)
+    ring = np.random.default_rng(int(frequency)).uniform(-1, 1, period)
+    out = np.zeros(int(seconds * RATE))
+    for index in range(len(out)):
+        out[index] = ring[index % period]
+        ring[index % period] = 0.996 * 0.5 * (ring[index % period] + ring[(index + 1) % period])
+    return out
+
+
 def write_recording(directory: Path, parts: list[tuple[str, float, np.ndarray, bool]], state: str) -> None:
     for file, _, samples, _ in parts:
         samples.astype("<i2").tofile(directory / Path(file).with_suffix(".pcm"))

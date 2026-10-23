@@ -236,6 +236,25 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
+  fun `should leave a song inside the show out of the episode`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    save(directory.resolve(SOUNDS_FILE), Sounds(heard(0.0, 20.0, 0.98, 0.0) + heard(20.0, 35.0, 0.0, 0.9) + heard(35.0, 60.0, 0.98, 0.0)))
+    service.make(directory)
+    expect(edit().keep.map { it.start }).toEqual(listOf(4.7, 34.5))
+  }
+
+  @Test
+  fun `should list the song it left out of the episode as a music cut`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    save(directory.resolve(SOUNDS_FILE), Sounds(heard(0.0, 20.0, 0.98, 0.0) + heard(20.0, 35.0, 0.0, 0.9) + heard(35.0, 60.0, 0.98, 0.0)))
+    service.make(directory)
+    val song = cuts(edit(), 60.0).single { it.kind == CutKind.MUSIC }
+    expect(song.start to song.end).toEqual(20.0 to 34.5)
+  }
+
+  @Test
   fun `should end a break at a saved jingle`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
     transcribed(1.0, 5.0, 12.0, 30.0, 50.0)

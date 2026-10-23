@@ -561,6 +561,7 @@ class RadioArchiveServiceTest {
     boundaries: List<Boundary> = listOf(Boundary("show starts", 761.5, "digital silence", false)),
     music: List<KeptSpan> = emptyList(),
     manual: List<ManualCut> = emptyList(),
+    songs: List<KeptSpan> = emptyList(),
   ) {
     val edit =
       EditList(
@@ -575,6 +576,7 @@ class RadioArchiveServiceTest {
         renderedAt = "2026-10-17T10:20:00Z",
         music = music,
         manual = manual,
+        songs = songs,
       )
     Files.writeString(directory.resolve("edit-list.json"), JsonMapperFactory.instance.writeValueAsString(edit))
   }
@@ -598,6 +600,24 @@ class RadioArchiveServiceTest {
     val lines = service.transcript(sung()).orEmpty()
     expect(lines.map { Triple(it.start, it.end, it.music) }).toEqual(
       listOf(Triple(756.8, 760.9, false), Triple(795.0, 886.0, true), Triple(928.0, 938.0, false)),
+    )
+  }
+
+  @Test
+  fun `should give a song cut out of the show as one music line`() {
+    val directory = recording("2026-10-17")
+    edited(directory, songs = listOf(KeptSpan(1500.0, 1700.0)))
+    val segments =
+      listOf(
+        TranscriptSegment(1490.0, 1499.0, "Kuulame nüüd natuke muusikat."),
+        TranscriptSegment(1510.0, 1520.0, "Let's pretend it's not the end of the world."),
+        TranscriptSegment(1600.0, 1610.0, "Kõnnib mööda sust nii, võib-olla oleks meid olnudki."),
+        TranscriptSegment(1700.0, 1705.0, "Tere tagasi, räägime raamatukogudest."),
+      )
+    Files.writeString(directory.resolve(TRANSCRIPT_FILE), JsonMapperFactory.instance.writeValueAsString(Transcript(segments, emptyList())))
+    val lines = service.transcript("2026-10-17").orEmpty()
+    expect(lines.map { Triple(it.start, it.end, it.music) }).toEqual(
+      listOf(Triple(1490.0, 1499.0, false), Triple(1510.0, 1610.0, true), Triple(1700.0, 1705.0, false)),
     )
   }
 

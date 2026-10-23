@@ -12,10 +12,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from radio_worker.recorder import KUKU, hold, prepare, read_status, record
+from radio_worker.recorder import KUKU, RATE, hold, prepare, read_status, record
 from radio_worker.schedule import TALLINN, fetch, planned, ready
 from radio_worker.station import Station
-from radio_worker.transcriber import transcribe
+from radio_worker.transcriber import listen, pcm, transcribe
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
         return broadcast(args.recording, args.host, args.port, args.start, args.speed)
     if args.command == "model":
         return download(args.directory)
+    if args.command == "sounds":
+        return hear(args.directory)
     if args.chunk_seconds < 60:
         parser.error("--chunk-seconds must be at least 60")
     if args.command == "planned":
@@ -61,6 +63,8 @@ def build() -> argparse.ArgumentParser:
     replay.add_argument("--speed", type=float, default=1.0, metavar="FACTOR")
     model = commands.add_parser("model", help="download the pinned TalTech Whisper model into <directory>/ct2")
     model.add_argument("directory", type=Path)
+    hearing = commands.add_parser("sounds", help="find speech and music in a recording into <directory>/sounds.json")
+    hearing.add_argument("directory", type=Path)
     live = commands.add_parser("run", help="record a stream or an MP3 file and transcribe it while it records")
     live.add_argument("--source", default=KUKU, metavar="URL_OR_FILE")
     live.add_argument("--duration", type=float, metavar="SECONDS", help="required for a stream; a file is recorded to its end")
@@ -85,6 +89,23 @@ def broadcast(recording: Path, host: str, port: int, start: float, speed: float)
         with contextlib.suppress(KeyboardInterrupt):
             server.serve_forever()
     return 0
+
+
+def hear(directory: Path) -> int:
+    parts = read_status(directory)["parts"]
+    decoded = [decode(directory, part) for part in parts if not pcm(directory, part).exists()]
+    try:
+        listen(directory, parts)
+    finally:
+        for path in decoded:
+            path.unlink(missing_ok=True)
+    return 0
+
+
+def decode(directory: Path, part: dict) -> Path:
+    target = pcm(directory, part)
+    subprocess.run(["ffmpeg", "-n", "-v", "error", "-i", str(directory / part["file"]), "-ac", "1", "-ar", str(RATE), "-f", "s16le", str(target)], check=True)
+    return target
 
 
 def download(model: Path) -> int:

@@ -16,6 +16,7 @@ enum class BoundaryMethod(
   LEVEL_DIP("level dip"),
   TRANSCRIPT_ONLY(TRANSCRIPT),
   MANUAL("manual"),
+  SOUND("sound analysis"),
   ;
 
   companion object {
@@ -31,6 +32,7 @@ enum class CutKind(
   BETWEEN("Between shows"),
   AFTER("After the show"),
   MANUAL("Manual cut"),
+  MUSIC("Music"),
 }
 
 data class Cut(
@@ -133,18 +135,20 @@ fun cuts(
     cut(CutKind.BETWEEN, end.seconds, start.seconds, listOf(end, start), edit.keep)
   }
   val after = ends.lastOrNull()?.let { cut(CutKind.AFTER, it.seconds, total, listOf(it), edit.keep) }
-  val manual = edit.manual.map { manual(it, edit.keep) }
+  val songs = edit.songs.map { added(CutKind.MUSIC, BoundaryMethod.SOUND, it.start, it.end, edit.keep) }
+  val manual = edit.manual.map { added(CutKind.MANUAL, BoundaryMethod.MANUAL, it.start, it.end, edit.keep) }
   return (listOfNotNull(before) + pauses + between + listOfNotNull(after)).sortedBy { it.start }.filter { it.end - it.start > SHORTEST } +
+    songs +
     manual
 }
 
-private fun manual(
-  span: ManualCut,
+private fun added(
+  kind: CutKind,
+  method: BoundaryMethod,
+  start: Double,
+  end: Double,
   keep: List<KeptSpan>,
-): Cut {
-  val methods = listOf(BoundaryMethod.MANUAL, BoundaryMethod.MANUAL)
-  return Cut(CutKind.MANUAL, CutKind.MANUAL.title, span.start, span.end, methods, false, removed(span.start, span.end, keep))
-}
+): Cut = Cut(kind, kind.title, start, end, listOf(method, method), false, removed(start, end, keep))
 
 private fun removed(
   start: Double,

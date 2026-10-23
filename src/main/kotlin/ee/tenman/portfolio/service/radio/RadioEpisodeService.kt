@@ -69,7 +69,8 @@ class RadioEpisodeService(
   ) {
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts).also { passed(directory, CutStep.DECODE) }
-    val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline)
+    val heard = Heard(readSounds(directory), readTranscript(directory).words)
+    val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline, heard)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
     radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found(), clock.zone), temporary)
@@ -94,14 +95,17 @@ class RadioEpisodeService(
     findings: List<Finding>,
     status: RecordingStatus,
     timeline: Timeline,
+    heard: Heard,
   ): EditList {
     val placed =
       merged(previous?.boundaries.orEmpty().map { it.copy(programme = it.programme ?: PROGRAMME) }, findings.flatMap { it.placed })
-    val keep = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
+    val shows = placed.map { it.seconds }.chunked(2).map { it[0] to it[1] }
+    val songs = songs(heard.frames, shows, heard.words)
+    val keep = without(shows, songs)
     val kept = audible(timeline.spans, keep)
     val topics = topics(previous, findings)
     val marks = chapters(kept, topics, names(status, placed.mapNotNull { it.programme }.toSet()))
-    return editList(previous, findings, status, placed, keep, kept, marks, topics)
+    return editList(previous, findings, status, placed, keep, kept, marks, topics).copy(songs = songs.map { KeptSpan(it.first, it.second) })
   }
 
   private fun topics(

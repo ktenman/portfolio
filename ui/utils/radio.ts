@@ -28,6 +28,7 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.LEVEL_DIP]: 'level dip',
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'text only',
   [BoundaryMethod.MANUAL]: 'manual',
+  [BoundaryMethod.SOUND]: 'sound analysis',
 }
 
 const DAYS = Object.values(DayOfWeek)

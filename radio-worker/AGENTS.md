@@ -2,11 +2,11 @@
 
 Python worker that records Kuku's live HLS stream and transcribes it while it records, with the TalTech Whisper model. A replay station serves a saved recording as a live stream, so the whole run can be tested offline (#2064).
 
-The worker stops at `status.json` and `transcript.json`. The backend's `RadioEpisodeJob` reads them and makes the ad-free `episode.m4a` and its `edit-list.json` in the same directory (#2065).
+The worker stops at `status.json`, `sounds.json` and `transcript.json`. The backend's `RadioEpisodeJob` reads them and makes the ad-free `episode.m4a` and its `edit-list.json` in the same directory (#2065).
 
 ## Tech Stack
 
-Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), numpy, FFmpeg and ffprobe, pytest
+Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), ai-edge-litert 2.3.0 (YAMNet), numpy, FFmpeg and ffprobe, pytest
 
 ## Commands
 
@@ -17,6 +17,7 @@ uv run radio-worker model <directory>              # The pinned TalTech model in
 uv run radio-worker run --duration <seconds> --out <directory> --model <ct2 directory>   # Kuku live
 uv run radio-worker run --source <recording.mp3> --start <ISO time> --out <directory> --model <ct2 directory>   # A file, to its end
 uv run radio-worker planned --recordings <directory> --model <directory>     # Every capture the backend lists in <directory>/plan.json
+uv run radio-worker sounds <directory>             # Speech and music scores of a finished recording into <directory>/sounds.json
 docker build -t radio-worker .                     # Image without the model, which is mounted at /model
 docker build --target test -t radio-worker-test . && docker run --rm radio-worker-test   # Tests inside the image, as CI runs them
 docker network create radio
@@ -28,9 +29,10 @@ docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolu
 
 - `src/radio_worker/station.py` - Replay station: FFmpeg's HLS muxer behind `http.server`
 - `src/radio_worker/recorder.py` - Records the stream into parts and owns `status.json`
-- `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM
+- `src/radio_worker/transcriber.py` - Live transcript in chunks cut at pauses, from each part's 16 kHz PCM; it writes `sounds.json` before `transcript.json`
+- `src/radio_worker/sounds.py` - Speech and music scores every 0.5 s from the bundled YAMNet model (`yamnet.tflite`, Apache 2.0); the backend cuts the songs inside a show from them
 - `src/radio_worker/schedule.py` - Follows the backend's `plan.json`, re-read every minute, and downloads the pinned model's `ct2/` files, checked by SHA-256, between captures; it leaves `heartbeat.json` with the time it will next be seen, so the backend can tell a stopped recorder; it re-executes the worker after each capture and once the model is in place, so every capture starts in a fresh process (#2219)
-- `src/radio_worker/cli.py` - The `station`, `run` and `planned` commands
+- `src/radio_worker/cli.py` - The `station`, `run`, `planned` and `sounds` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
 - `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`
 
@@ -60,7 +62,7 @@ The `radio-worker` service in `docker-compose.yml` runs `planned` with the cappe
 
 - Never write over a recording: FFmpeg runs with `-n`, and an existing directory is reused only for this worker's own unfinished recording
 - Place each part by the stream timestamp FFmpeg reports for its first packet, never by the clock
-- Tests use generated MP3, synthetic audio and a stub model; they never reach Kuku or Hugging Face
+- Tests use generated MP3, synthetic audio, a stub Whisper model and the bundled YAMNet; they never reach Kuku or Hugging Face
 - Test names are full sentences: `test_station_goes_off_air_after_the_replay_ends`
 - Run from project root: `npm run test:radio`
 - CI runs the tests in the `Dockerfile`'s `test` stage, so a command only a test calls (such as `pkill`) is installed there, not in the runtime image

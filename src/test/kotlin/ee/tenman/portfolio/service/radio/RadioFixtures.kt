@@ -31,6 +31,17 @@ fun noise(
   return samples
 }
 
+fun heard(
+  from: Double,
+  to: Double,
+  speech: Double,
+  music: Double,
+): List<SoundFrame> =
+  generateSequence(from) { it + 0.5 }
+    .takeWhile { it < to }
+    .map { SoundFrame(it, speech, music) }
+    .toList()
+
 fun constant(
   seconds: Double,
   value: Int,

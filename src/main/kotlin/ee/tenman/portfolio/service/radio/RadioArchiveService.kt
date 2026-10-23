@@ -27,7 +27,8 @@ class RadioArchiveService(
 
   fun transcript(name: String): List<TranscriptLine>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
-    val music = read<EditList>(directory.resolve(EDIT_LIST))?.music.orEmpty()
+    val edit = read<EditList>(directory.resolve(EDIT_LIST))
+    val music = edit?.music.orEmpty() + edit?.songs.orEmpty()
     return mark(music(lines(readTranscript(directory)), music), cutsOf(directory))
   }
 

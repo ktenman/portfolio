@@ -110,6 +110,7 @@ data class EditList(
   val topics: List<EpisodeChapter> = emptyList(),
   val music: List<KeptSpan> = emptyList(),
   val manual: List<ManualCut> = emptyList(),
+  val songs: List<KeptSpan> = emptyList(),
 )
 
 data class Finding(
