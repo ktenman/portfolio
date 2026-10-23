@@ -1,10 +1,11 @@
+import json
 import os
 import signal
 import threading
 import time
 
 import pytest
-from support import Stub, broadcast, sha256, tone, transcript, wait
+from support import Stub, broadcast, listing, noise, sha256, tone, transcript, wait, write_recording
 
 from radio_worker.cli import main, moment, run, span
 from radio_worker.recorder import read_status, write_status
@@ -87,3 +88,17 @@ def test_run_command_refuses_a_directory_that_is_not_a_recording(tmp_path, capsy
     (tmp_path / "status.json").write_text('{"state": "captured_needs_review"}')
     code = main(["run", "--duration", "4200", "--out", str(tmp_path), "--model", str(tmp_path / "model")])
     assert (code, "holds no recording made by this worker" in capsys.readouterr().err) == (2, True)
+
+
+def test_sounds_hears_a_recording_already_transcribed(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(2, []), True)], "captured")
+    (tmp_path / "transcript.json").write_text("{}")
+    assert (main(["sounds", str(tmp_path)]), (tmp_path / "sounds.json").exists()) == (0, True)
+
+
+def test_sounds_decodes_a_recording_whose_pcm_is_gone_and_leaves_none_behind(tmp_path):
+    tone(tmp_path / "raw.mp3", 4)
+    write_status(tmp_path, {"state": "captured", "source": "x", "startedAt": 0.0, "endsAt": 0.0, "seconds": 4.0, "parts": [listing("raw.mp3", 0.0, 4, True)]})
+    main(["sounds", str(tmp_path)])
+    frames = json.loads((tmp_path / "sounds.json").read_text())["frames"]
+    assert (len(frames), (tmp_path / "raw.pcm").exists()) == (7, False)

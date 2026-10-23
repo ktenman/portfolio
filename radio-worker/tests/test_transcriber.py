@@ -23,6 +23,10 @@ def starts(directory: Path) -> list[float]:
     return [word["start"] for word in transcript(directory)["words"]]
 
 
+def sounds(directory: Path) -> list[float]:
+    return [frame["at"] for frame in json.loads((directory / "sounds.json").read_text())["frames"]]
+
+
 def test_pause_before_returns_the_middle_of_the_quietest_stretch():
     assert pause_before(noise(20, [11.0]) / 32768, 280.0) == approx(291.15, abs=0.01)
 
@@ -126,3 +130,21 @@ def test_transcriber_leaves_a_finished_transcript_alone(tmp_path):
     stub = Stub()
     transcribed(tmp_path, lambda: stub)
     assert stub.calls == []
+
+
+def test_transcriber_hears_each_part_from_the_start_of_the_recording(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(2, []), True), ("raw-part-002.mp3", 15.0, noise(2, []), True)], "partial")
+    transcribed(tmp_path)
+    assert sounds(tmp_path) == approx([0.4875, 0.9875, 1.4875, 15.4875, 15.9875, 16.4875], abs=0.001)
+
+
+def test_transcriber_hears_audio_a_part_repeats_from_the_one_before_once(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(10, []), True), ("raw-part-002.mp3", 4.0, noise(10, []), True)], "partial")
+    transcribed(tmp_path)
+    assert (len(sounds(tmp_path)), sounds(tmp_path)[19]) == (26, approx(10.4875, abs=0.001))
+
+
+def test_transcriber_writes_the_sounds_before_the_transcript(tmp_path):
+    write_recording(tmp_path, [("raw.mp3", 0.0, noise(2, []), True)], "captured")
+    transcribed(tmp_path)
+    assert (tmp_path / "sounds.json").stat().st_mtime_ns <= (tmp_path / "transcript.json").stat().st_mtime_ns

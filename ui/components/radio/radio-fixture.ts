@@ -61,6 +61,7 @@ const editList = (overrides: Partial<EditList> = {}): EditList => ({
   ],
   music: [],
   manual: [],
+  songs: [],
   ...overrides,
 })
 

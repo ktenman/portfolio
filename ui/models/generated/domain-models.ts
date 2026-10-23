@@ -260,11 +260,11 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    drops: number;
     span: Slot;
     topics: TimelineEntry[];
     transcriptState: TranscriptState;
     cutState: CutState;
+    drops: number;
 }
 
 export interface TranscriptLine {
@@ -418,6 +418,7 @@ export interface EditList {
     topics: EpisodeChapter[];
     music: KeptSpan[];
     manual: ManualCut[];
+    songs: KeptSpan[];
 }
 
 export interface EpisodeFailure {
@@ -728,6 +729,7 @@ export enum CutKind {
     BETWEEN = "BETWEEN",
     AFTER = "AFTER",
     MANUAL = "MANUAL",
+    MUSIC = "MUSIC",
 }
 
 export enum BoundaryMethod {
@@ -736,6 +738,7 @@ export enum BoundaryMethod {
     LEVEL_DIP = "LEVEL_DIP",
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
     MANUAL = "MANUAL",
+    SOUND = "SOUND",
 }
 
 export enum ProgrammeCutState {

@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 
+from radio_worker import sounds
 from radio_worker.recorder import RATE, read_status, save
 
 PAUSE = 0.3
@@ -42,6 +43,7 @@ def transcribe(directory: Path, load: Callable[[], Any], name: str, chunk_second
             index += 1
             continue
         time.sleep(POLL_SECONDS)
+    listen(directory, status["parts"])
     publish(directory, status, session.chunks, name, chunk_seconds)
 
 
@@ -118,6 +120,11 @@ def whisper(model: Any, audio: np.ndarray, origin: float) -> list[dict]:
         }
         for segment in segments
     ]
+
+
+def listen(directory: Path, parts: list[dict]) -> None:
+    heard = [(pcm(directory, part), part["offsetSeconds"], overlap(directory, parts, index)) for index, part in enumerate(parts)]
+    save(directory / "sounds.json", json.dumps({"model": sounds.MODEL.name, "frames": sounds.frames(heard)}) + "\n")
 
 
 def publish(directory: Path, status: dict, chunks: list[dict], name: str, chunk_seconds: float) -> None:
