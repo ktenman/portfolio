@@ -52,7 +52,7 @@ def test_planned_records_each_capture_into_its_directory_until_its_end(tmp_path)
     week = Week("2026-10-21T09:00", "2026-10-31T12:00")
     record = lambda directory, seconds, programmes, slot: week.calls.append((directory.name, seconds, programmes, shown(week.now))) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: None)
     assert week.calls == [
         ("2026-10-24-keskpaevatund", 4200, ["Keskpäevatund"], "2026-10-24T11:55:00+03:00"),
         ("2026-10-31-keskpaevatund", 4200, ["Keskpäevatund"], "2026-10-31T11:55:00+02:00"),
@@ -66,7 +66,7 @@ def test_planned_hands_the_recorder_the_air_slot_of_the_capture(tmp_path):
     week = Week("2026-10-24T11:50", "2026-10-24T13:10")
     record = lambda directory, seconds, programmes, slot: week.calls.append(slot) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: None)
     assert week.calls == [slot]
 
 
@@ -75,7 +75,7 @@ def test_planned_started_during_a_capture_records_only_the_rest_of_it(tmp_path):
     week = Week("2026-10-24T12:35", "2026-10-24T14:00")
     record = lambda directory, seconds, programmes, slot: week.calls.append((directory.name, seconds)) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: None)
     assert week.calls == [("2026-10-24-keskpaevatund", 1800)]
 
 
@@ -120,8 +120,17 @@ def test_planned_waits_for_the_next_capture_after_a_failed_recording(tmp_path):
         raise RuntimeError("Kuku is off air")
 
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: None)
     assert week.calls == ["2026-10-24-keskpaevatund", "2026-10-31-keskpaevatund"]
+
+
+def test_planned_restarts_the_worker_once_a_capture_ends(tmp_path):
+    plan(tmp_path, SATURDAY, NEXT_SATURDAY)
+    week = Week("2026-10-24T11:00", "2026-10-31T12:00")
+    record = lambda directory, seconds, programmes, slot: week.calls.append(directory.name) or "captured"
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: week.calls.append(shown(week.now)))
+    assert week.calls == ["2026-10-24-keskpaevatund", "2026-10-24T13:05:00+03:00", "2026-10-31-keskpaevatund"]
 
 
 def test_planned_downloads_a_missing_model_before_the_capture(tmp_path):
@@ -130,7 +139,7 @@ def test_planned_downloads_a_missing_model_before_the_capture(tmp_path):
     download = lambda directory: week.calls.append(("download", shown(week.now))) or model(directory)
     record = lambda directory, seconds, programmes, slot: week.calls.append(("record", shown(week.now))) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, tmp_path / "model", record, download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", record, download, week.clock, week.sleep, restart=lambda: None)
     assert week.calls == [("download", "2026-10-21T09:00:00+03:00"), ("record", "2026-10-24T11:55:00+03:00")]
 
 
@@ -139,7 +148,7 @@ def test_planned_never_downloads_the_model_during_a_capture(tmp_path):
     week = Week("2026-10-24T12:00", "2026-10-24T13:30")
     download = lambda directory: week.calls.append(shown(week.now))
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes, slot: "captured", download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes, slot: "captured", download, week.clock, week.sleep, restart=lambda: None)
     assert week.calls == ["2026-10-24T13:05:00+03:00"]
 
 
@@ -151,8 +160,16 @@ def test_planned_retries_a_failed_download_within_the_hour(tmp_path):
         raise OSError("Hugging Face is unreachable")
 
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes, slot: "captured", download, week.clock, week.sleep)
+        planned(tmp_path, tmp_path / "model", lambda directory, seconds, programmes, slot: "captured", download, week.clock, week.sleep, restart=lambda: week.calls.append("restart"))
     assert week.calls == ["2026-10-21T09:00:00+03:00", "2026-10-21T10:00:00+03:00", "2026-10-21T11:00:00+03:00"]
+
+
+def test_planned_restarts_the_worker_once_the_model_is_downloaded(tmp_path):
+    week = Week("2026-10-21T09:00", "2026-10-21T09:30")
+    download = lambda directory: week.calls.append("download") or model(directory)
+    with pytest.raises(KeyboardInterrupt):
+        planned(tmp_path, tmp_path / "model", lambda *_: "captured", download, week.clock, week.sleep, restart=lambda: week.calls.append("restart"))
+    assert week.calls == ["download", "restart"]
 
 
 def fake_hub(monkeypatch, content: bytes):
@@ -181,7 +198,7 @@ def test_planned_leaves_a_heartbeat_until_the_capture_ends(tmp_path):
     week = Week("2026-10-24T12:35", "2026-10-24T13:10")
     record = lambda directory, seconds, programmes, slot: week.calls.append(heartbeat(tmp_path)) or "captured"
     with pytest.raises(KeyboardInterrupt):
-        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep)
+        planned(tmp_path, model(tmp_path / "model"), record, clock=week.clock, sleep=week.sleep, restart=lambda: None)
     assert week.calls == [{"seen": at("2026-10-24T12:35"), "until": at("2026-10-24T13:05")}]
 
 

@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -45,6 +46,11 @@ def fetch(model: Path) -> None:
     shutil.rmtree(download)
 
 
+def relaunch() -> None:
+    say("Relaunching in a fresh process")
+    os.execv(sys.executable, sys.orig_argv)
+
+
 def planned(
     recordings: Path,
     model: Path,
@@ -52,6 +58,7 @@ def planned(
     download: Callable[[Path], None] = fetch,
     clock: Callable[[], float] = time.time,
     sleep: Callable[[float], None] = time.sleep,
+    restart: Callable[[], None] = relaunch,
 ) -> None:
     tried, announced = float("-inf"), None
     while True:
@@ -64,6 +71,8 @@ def planned(
                 tried = clock()
                 beat(recordings, tried, tried + RETRY_SECONDS)
                 attempt(lambda: download(model), f"Downloading {REPOSITORY} into {model}")
+                if ready(model):
+                    restart()
             wait = min(CHECK_SECONDS, capture["start"] - clock()) if capture else CHECK_SECONDS
             beat(recordings, clock(), clock() + wait)
             sleep(wait)
@@ -75,6 +84,7 @@ def planned(
         else:
             say(f"Skipping {directory}: {model} holds no verified model")
         pause(capture["end"], clock, sleep)
+        restart()
 
 
 def beat(recordings: Path, now: float, until: float) -> None:
