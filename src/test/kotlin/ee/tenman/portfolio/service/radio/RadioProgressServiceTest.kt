@@ -178,6 +178,17 @@ class RadioProgressServiceTest {
   }
 
   @Test
+  fun `should wait for the transcript once and queue the other programmes behind the first`() {
+    val status = chunks().copy(programmes = listOf(PROGRAMME, "Tarkade klubi"))
+    expect(service.programmeCuts(directory, status, null, false)).toEqual(
+      listOf(
+        ProgrammeCuts(PROGRAMME, ProgrammeCutState.WAITING, transcript = TranscriptProgress(0.0, 4200.0, 0, 4200)),
+        ProgrammeCuts("Tarkade klubi", ProgrammeCutState.QUEUED, after = PROGRAMME),
+      ),
+    )
+  }
+
+  @Test
   fun `should leave the transcript chunks unread once the transcript is done`() {
     Files.createDirectory(directory.resolve("transcript.jsonl"))
     Files.writeString(directory.resolve(TRANSCRIPT_FILE), "[]")
