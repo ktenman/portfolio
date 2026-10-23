@@ -69,6 +69,28 @@ class RadioCutsTest {
   }
 
   @Test
+  fun `should list a song cut out of the show as music found by sound analysis`() {
+    val keep = listOf(KeptSpan(761.5, 1500.0), KeptSpan(1700.0, 2120.0)) + machine.drop(1)
+    val song = edit(keep).copy(songs = listOf(KeptSpan(1500.0, 1700.0)))
+    val cut = cuts(song, 4200.0).single { it.kind == CutKind.MUSIC }
+    expect(Triple(cut.start to cut.end, cut.methods, cut.removed))
+      .toEqual(Triple(1500.0 to 1700.0, listOf(BoundaryMethod.SOUND, BoundaryMethod.SOUND), true))
+  }
+
+  @Test
+  fun `should list song cuts after the machine cuts and before the cuts made by hand`() {
+    val listed = cuts(edit().copy(songs = listOf(KeptSpan(1500.0, 1700.0)), manual = listOf(ManualCut(900.0, 960.0))), 4200.0)
+    expect(listed.map { it.kind })
+      .toEqual(listOf(CutKind.BEFORE, CutKind.BREAK, CutKind.BREAK, CutKind.AFTER, CutKind.MUSIC, CutKind.MANUAL))
+  }
+
+  @Test
+  fun `should keep a song in the episode when its cut is not removed`() {
+    val song = edit().copy(songs = listOf(KeptSpan(1500.0, 1700.0)))
+    expect(keep(cuts(song, 4200.0), listOf(0, 1, 2, 3), 4200.0)).toEqual(machine)
+  }
+
+  @Test
   fun `should list a cut made by hand after the machine cuts`() {
     val cut = cuts(edit().copy(manual = listOf(ManualCut(1500.0, 1560.0))), 4200.0).last()
     expect(Triple(cut.kind, cut.start to cut.end, cut.methods)).toEqual(

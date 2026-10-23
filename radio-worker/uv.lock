@@ -1,6 +1,26 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
+
+[[package]]
+name = "ai-edge-litert"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backports-strenum" },
+    { name = "flatbuffers" },
+    { name = "ml-dtypes" },
+    { name = "numpy" },
+    { name = "protobuf" },
+    { name = "tqdm" },
+    { name = "typing-extensions" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/12/86fe17e7069ae792c6e21c523151b34fc03b29a886340e760feaf40237dc/ai_edge_litert-2.3.0-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:2cd92f02fc9616755670027c5b020bfee5c72ae50cf5d33e92465a863b705a8b", size = 12825324, upload-time = "2026-10-06T23:09:56.476Z" },
+    { url = "https://files.pythonhosted.org/packages/77/89/2bdb0260c4182358c0948316109a3850c37aa15b87665f4b12fb51ea706c/ai_edge_litert-2.3.0-cp312-cp312-manylinux_2_27_aarch64.whl", hash = "sha256:9891611b23a87cc2ace60e4b5ee9a2ee6f0fb7f395f009470961ae6e6310e1b8", size = 14380093, upload-time = "2026-10-06T22:53:23.168Z" },
+    { url = "https://files.pythonhosted.org/packages/94/db/defacfb96eb7ddf6145dc6bc0b0c64bc221364e413662ef8216bae8258e8/ai_edge_litert-2.3.0-cp312-cp312-manylinux_2_27_x86_64.whl", hash = "sha256:dc9f56c23e0dcf182b6c35f23fbb102ed048296588882b806d5eff7654c04c88", size = 21781762, upload-time = "2026-10-06T23:36:25.261Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/f6/529d465a222282252226d272325d85bcbcf33e618eb3fc241d18f1a645a5/ai_edge_litert-2.3.0-cp312-cp312-win_amd64.whl", hash = "sha256:b33b039667da6c57815f88d4709c1b31890375fa2cd35f165a3bf9dfd36f23a3", size = 20670680, upload-time = "2026-10-06T23:00:25.792Z" },
+]
 
 [[package]]
 name = "anyio"
@@ -30,6 +50,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7a/41/b9af863f635f64abaf5eb734521306487fc79447f5d55d792339a81c8a4d/av-19.0.1-cp312-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:935a6b6386a6994964e324eb02af4dab01eedbcbbde23b4b21bf1dc59b004244", size = 36008899, upload-time = "2026-10-03T01:47:44.13Z" },
     { url = "https://files.pythonhosted.org/packages/e6/dc/a87a5a5e3ac462734f9befd8bad1447301e5802d8c111e22bf708fba7af3/av-19.0.1-cp312-abi3-win_amd64.whl", hash = "sha256:906fc3db09288319a75ea23ffefb59961c7dbe0d1c074601507a89de7d8593d8", size = 28149519, upload-time = "2026-10-03T01:47:47.372Z" },
     { url = "https://files.pythonhosted.org/packages/a5/78/16864f1aa2c3ac5017f15132b85c6d3c74bb85caca8c45ce836ad30dfe20/av-19.0.1-cp312-abi3-win_arm64.whl", hash = "sha256:e9e1b0cae6cebd2adc2c5c6691fc890112f8f6c846b76a9135307617db1e32e9", size = 20706822, upload-time = "2026-10-03T01:47:50.72Z" },
+]
+
+[[package]]
+name = "backports-strenum"
+version = "1.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/35/c7/2ed54c32fed313591ffb21edbd48db71e68827d43a61938e5a0bc2b6ec91/backports_strenum-1.3.1.tar.gz", hash = "sha256:77c52407342898497714f0596e86188bb7084f89063226f4ba66863482f42414", size = 7257, upload-time = "2023-12-09T14:36:40.937Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/50/56cf20e2ee5127b603b81d5a69580a1a325083e2b921aa8f067da83927c0/backports_strenum-1.3.1-py3-none-any.whl", hash = "sha256:cdcfe36dc897e2615dc793b7d3097f54d359918fc448754a517e6f23044ccf83", size = 8304, upload-time = "2023-12-09T14:36:39.905Z" },
 ]
 
 [[package]]
@@ -211,6 +240,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ml-dtypes"
+version = "0.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/12/72/307d7c4bd0600601c7133fba5cb78af7db968152951c1cd473abb1cda782/ml_dtypes-0.6.0.tar.gz", hash = "sha256:5e60251d32ced5598972e4d5e06a2f044341f9291402551a3f6f0ec44f9299b0", size = 3032327, upload-time = "2026-08-13T14:14:40.215Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/6a/441eb053b078954f7fea284dfb288701884d0a1404d39babb858e1649023/ml_dtypes-0.6.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:5359c588cc62de6f78d7430f06b65853d884955494d86d6ad90b6dd64a3f3a08", size = 565447, upload-time = "2026-08-13T14:14:01.737Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/cf/87e8a6c57eed63a91782a0d229856ddf73e138ce004dd71e2799a9dcdb33/ml_dtypes-0.6.0-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:37da32aa97749251025666d62372775019594577b9c9e9cfda83bed48d778fdb", size = 360227, upload-time = "2026-08-13T14:14:02.938Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/f9/7d76c1eae866f5d4636401b31b6d6dd90e4b4ced1fa7cfdfcca9c60e4bd3/ml_dtypes-0.6.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3b4a480aa8fd54a1805b8ac10f3f91763926a74f73c0c364c10f9231854f4170", size = 409890, upload-time = "2026-08-13T14:14:04.248Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/db/9c61ec2760b5cbfb1c6558d5c991a6d8fd3271053c32db20506a9a90272b/ml_dtypes-0.6.0-cp312-cp312-win_amd64.whl", hash = "sha256:2a3e9d53925597fbffafd2a37048dadeddd0bdaba58058f6ae0869ed709a184d", size = 439333, upload-time = "2026-08-13T14:14:05.501Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/57/780ca3e5ab135b9fbdd8e5441abf5f801b30398371b691291e05ab9834c0/ml_dtypes-0.6.0-cp312-cp312-win_arm64.whl", hash = "sha256:6eaed129a4afe90694b8685e2f9b6294849f5eda4af9a15be83a4326eeebd775", size = 552268, upload-time = "2026-08-13T14:14:06.866Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.5.4"
 source = { registry = "https://pypi.org/simple" }
@@ -328,6 +373,7 @@ name = "radio-worker"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "ai-edge-litert" },
     { name = "faster-whisper" },
     { name = "numpy" },
 ]
@@ -339,6 +385,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ai-edge-litert", specifier = "==2.3.0" },
     { name = "faster-whisper", specifier = "==1.2.1" },
     { name = "numpy", specifier = "==2.5.4" },
 ]
