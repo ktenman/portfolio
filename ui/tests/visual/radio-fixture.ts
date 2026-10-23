@@ -54,9 +54,9 @@ const RECORDINGS = [
   recording({
     ...searching,
     name: '2026-10-25',
-    programme: 'Digitund',
+    programme: 'Digitund, Arenduskeskuste minutid',
     status: {
-      ...capture('2026-10-25T08:55:00Z', ['Digitund']),
+      ...capture('2026-10-25T08:55:00Z', ['Digitund', 'Arenduskeskuste minutid']),
       state: RecordingState.RECORDING,
       seconds: 3180,
     },
@@ -68,6 +68,7 @@ const RECORDINGS = [
       programme('Digitund', ProgrammeCutState.WAITING, {
         transcript: { writtenSeconds: 3180, totalSeconds: 4200, percent: 75, secondsLeft: 540 },
       }),
+      programme('Arenduskeskuste minutid', ProgrammeCutState.QUEUED, { after: 'Digitund' }),
     ],
   }),
   recording({

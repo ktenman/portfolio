@@ -57,12 +57,14 @@ class RadioProgressService(
     val transcript =
       if (Files.exists(directory.resolve(TRANSCRIPT_FILE))) null else transcriptProgress(directory, status, Instant.now(clock))
     val after = runs[name]?.let { it.stages.getOrNull(it.index)?.programme } ?: current()
+    val first = status.programmes.firstOrNull { it !in found }
     return status.programmes.map { programme ->
       when {
         programme in found -> ProgrammeCuts(programme, ProgrammeCutState.FOUND)
         failed -> ProgrammeCuts(programme, ProgrammeCutState.FAILED)
         status.state == RecordingState.FAILED -> ProgrammeCuts(programme, ProgrammeCutState.NONE)
-        transcript != null -> ProgrammeCuts(programme, ProgrammeCutState.WAITING, transcript = transcript)
+        transcript != null && programme == first -> ProgrammeCuts(programme, ProgrammeCutState.WAITING, transcript = transcript)
+        transcript != null -> ProgrammeCuts(programme, ProgrammeCutState.QUEUED, after = first)
         programme in progress -> ProgrammeCuts(programme, ProgrammeCutState.FINDING, progress = progress[programme])
         else -> ProgrammeCuts(programme, ProgrammeCutState.QUEUED, after = after)
       }
