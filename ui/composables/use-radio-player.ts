@@ -1,4 +1,6 @@
 import { computed, ref, shallowRef, watch } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
+import { STORAGE_KEYS } from '../constants'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { episodeTime, recordingTime } from '../utils/radio'
@@ -20,6 +22,7 @@ const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
+const positions = useLocalStorage<Record<string, number>>(STORAGE_KEYS.RADIO_POSITIONS, {})
 let loaded = ''
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
@@ -74,6 +77,22 @@ const seek = (to: number) => {
   current.value = audio.currentTime
 }
 
+const remember = (at: number) => {
+  const name = recording.value?.name
+  if (name) positions.value = { ...positions.value, [name]: at }
+}
+
+const restore = (target: RecordingSummary) => {
+  const at = positions.value[target.name]
+  if (at) seek(version.value === 'raw' ? at : episodeTime(target.audible, at))
+}
+
+const cue = (audio: HTMLAudioElement, target: RecordingSummary) => {
+  if (version.value === 'raw') return source(0)
+  const edit = target.editList
+  audio.src = `${url(target, 'episode.m4a')}?v=${encodeURIComponent(edit?.renderedAt ?? '')}`
+}
+
 const open = () => {
   const audio = element.value
   const target = recording.value
@@ -84,9 +103,8 @@ const open = () => {
   current.value = 0
   playing.value = false
   plan = null
-  if (version.value === 'raw') return source(0)
-  const edit = target.editList
-  audio.src = `${url(target, 'episode.m4a')}?v=${encodeURIComponent(edit?.renderedAt ?? '')}`
+  cue(audio, target)
+  restore(target)
 }
 
 const speed = (audio: HTMLAudioElement, value: number) => {
@@ -175,6 +193,7 @@ const rejoin = () => (lost.value = false)
 const listeners: Record<string, () => void> = {
   timeupdate: () => {
     current.value = element.value?.currentTime ?? 0
+    remember(recordingSeconds.value)
     follow()
   },
   play: () => (playing.value = true),
@@ -186,6 +205,7 @@ const listeners: Record<string, () => void> = {
       return play()
     }
     playing.value = false
+    remember(0)
   },
 }
 
