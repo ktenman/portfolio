@@ -20,10 +20,11 @@
 
 <script lang="ts" setup>
 import { useTemplateRef, watch } from 'vue'
-import { useElementSize } from '@vueuse/core'
+import { useElementSize, useTitle } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
+import { day } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 import RadioPlayer from './radio-player.vue'
 import RadioText from './radio-text.vue'
@@ -37,6 +38,7 @@ const origin =
     ? { to: back, label: 'Catch-up' }
     : { to: '/radio', label: 'Shows' }
 const { recording, isLoading } = useRadioRecording(name)
+const title = useTitle()
 const player = useRadioPlayer()
 const { height } = useElementSize(useTemplateRef('card'), undefined, { box: 'border-box' })
 
@@ -44,6 +46,7 @@ watch(
   recording,
   value => {
     if (!value) return
+    title.value = `${value.programme} · ${day(value.status.startedAt)}`
     const same = player.recording.value?.name === value.name
     const start = value.editList && value.episodeBytes ? 'episode' : 'raw'
     player.load(value, same && value.episodeBytes ? player.version.value : start)

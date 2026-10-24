@@ -106,6 +106,11 @@ describe('RadioEpisode', () => {
     expect(wrapper.find('h2').exists()).toBe(false)
   })
 
+  it('should name the browser tab after the show and its day', async () => {
+    await open(recording())
+    expect(document.title).toBe('Keskpäevatund · Sat 17.10')
+  })
+
   it('should show the text under the player', async () => {
     const { wrapper } = await open(recording())
     expect(wrapper.find('radio-text-stub').exists()).toBe(true)
