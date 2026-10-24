@@ -102,6 +102,7 @@ const remember = (at: number) => {
 
 const place = (at: number) => {
   const target = recording.value
+  heard = at
   if (target && at) seek(version.value === 'raw' ? at : episodeTime(target.audible, at))
 }
 
@@ -256,7 +257,7 @@ const attach = (audio: HTMLAudioElement) => {
 }
 
 const detach = () => {
-  store(heard)
+  if (heard !== saved) store(heard)
   const audio = element.value
   if (audio) {
     audio.pause()

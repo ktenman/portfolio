@@ -346,6 +346,23 @@ describe('useRadioPlayer', () => {
     expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
   })
 
+  it('should keep where the listener left a recording when they leave it without listening', async () => {
+    positions.find.mockResolvedValue({ seconds: 1400 })
+    player.load(recording())
+    await flushPromises()
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([])
+  })
+
+  it('should not save again on leaving a recording the listener has not moved in', async () => {
+    positions.find.mockResolvedValue({ seconds: 1400 })
+    player.load(recording())
+    await flushPromises()
+    tick(1400)
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([])
+  })
+
   it('should not ask again where the recording was left when its version changes', async () => {
     player.load(recording(), 'episode')
     await flushPromises()
