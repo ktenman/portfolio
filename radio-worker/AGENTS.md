@@ -6,7 +6,7 @@ The worker stops at `status.json`, `sounds.json` and `transcript.json`. The back
 
 ## Tech Stack
 
-Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), ai-edge-litert 2.3.0 (YAMNet), numpy, FFmpeg and ffprobe, pytest
+Python 3.12, uv, faster-whisper 1.2.1 (CTranslate2 int8), ai-edge-litert 2.3.0 (YAMNet), numpy, FFmpeg and ffprobe, jemalloc 5.3, pytest
 
 ## Commands
 
@@ -34,7 +34,7 @@ docker run --rm --network radio -v <absolute ct2 directory>:/model:ro -v <absolu
 - `src/radio_worker/schedule.py` - Follows the backend's `plan.json`, re-read every minute, and downloads the pinned model's `ct2/` files, checked by SHA-256, between captures; it leaves `heartbeat.json` with the time it will next be seen, so the backend can tell a stopped recorder; it re-executes the worker after each capture and once the model is in place, so every capture starts in a fresh process (#2219)
 - `src/radio_worker/cli.py` - The `station`, `run`, `planned` and `sounds` commands
 - `tests/support.py` - Generated tone, synthetic PCM recordings, a stub model and station helpers shared by the tests
-- `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`
+- `Dockerfile` - Python 3.12 slim with FFmpeg and the `uv.lock` dependencies, run as the non-root `worker`; its `test` stage adds the dev dependencies and `tests/`. It preloads jemalloc with `oversize_threshold:0`, which keeps the encoder's 180 MB attention buffers mapped from layer to layer, where glibc unmaps them and faults them in again (#2243)
 
 ## From a fresh clone
 

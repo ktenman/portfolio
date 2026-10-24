@@ -5,11 +5,13 @@ FROM python:3.12-slim-trixie AS base
 ENV UV_NO_CACHE=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg \
+    && apt-get install -y --no-install-recommends ffmpeg libjemalloc2 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 1000 --create-home worker \
     && mkdir /recordings /model \
     && chown worker:worker /recordings /model
+
+ENV LD_PRELOAD=libjemalloc.so.2 MALLOC_CONF=oversize_threshold:0
 
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
