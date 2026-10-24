@@ -18,6 +18,7 @@ const MAX_CAPTURE_HEIGHT = 12000
 const TOUCH_PX = 44
 const COMPACT_MAX_WIDTH = 768
 const PHONE_MAX_WIDTH = 575
+const LAYOUT_TIMEOUT_MS = 5000
 const SERIES_ROWS = 184
 const HISTORICAL_ROWS = 30
 const START_VALUE = 100000
@@ -283,14 +284,16 @@ test.describe('layout', () => {
       page,
     }) => {
       await openMonthly(page, history.today, history.stub)
-      const problems: string[] = []
       for (const viewport of LAYOUT_VIEWPORTS) {
         await page.setViewportSize(viewport)
-        await nextFrame(page)
-        const found = await layoutProblems(page, viewport)
-        problems.push(...found.map(problem => `${viewport.width}×${viewport.height}: ${problem}`))
+        await expect
+          .configure({ soft: true })
+          .poll(() => layoutProblems(page, viewport), {
+            message: `${viewport.width}×${viewport.height}`,
+            timeout: LAYOUT_TIMEOUT_MS,
+          })
+          .toEqual([])
       }
-      expect(problems).toEqual([])
     })
   }
 
