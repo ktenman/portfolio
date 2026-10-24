@@ -17,6 +17,7 @@ done
 docker volume prune -f >> $LOG_FILE 2>&1
 docker builder prune -af >> $LOG_FILE 2>&1
 docker image prune -af >> $LOG_FILE 2>&1
+printf 'lock\nvolume.vacuum -garbageThreshold 0.1\nunlock\n' | docker exec -i seaweedfs weed shell >> $LOG_FILE 2>&1
 
 AFTER=$(df / --output=avail | tail -1)
 FREED=$(( (AFTER - BEFORE) / 1024 ))
