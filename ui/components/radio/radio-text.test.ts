@@ -28,6 +28,7 @@ describe('RadioText', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    window.dispatchEvent(new StorageEvent('storage', { storageArea: localStorage }))
     Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.transcript).mockReset().mockResolvedValue(sections())
     audio = document.createElement('audio')
