@@ -7,6 +7,8 @@ import { useRadioPlayer, type Version } from '../../composables/use-radio-player
 
 vi.mock('../../services/api', () => ({
   radioService: {
+    position: () => Promise.resolve({ seconds: 0 }),
+    savePosition: () => Promise.resolve(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
     review: () => Promise.resolve(),
   },

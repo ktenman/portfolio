@@ -12,6 +12,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8081',
         changeOrigin: true,
+        headers: { 'X-User-Id': 'dev' },
       },
     },
   },

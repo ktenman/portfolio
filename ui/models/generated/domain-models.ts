@@ -344,6 +344,10 @@ export interface AiringChoice {
     record: boolean;
 }
 
+export interface RadioPositionDto {
+    seconds: number;
+}
+
 export interface CutChoice {
     programme: string;
 }

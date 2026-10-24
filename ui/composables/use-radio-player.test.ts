@@ -1,12 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 import { recording } from '../components/radio/radio-fixture'
-import { RecordingState } from '../models/generated/domain-models'
+import { type RadioPositionDto, RecordingState } from '../models/generated/domain-models'
+import { deferred } from '../tests/test-utils'
+
+const positions = vi.hoisted(() => ({ find: vi.fn(), save: vi.fn() }))
 
 vi.mock('../services/api', () => ({
   radioService: {
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
     liveUrl: '/api/radio/live',
+    position: positions.find,
+    savePosition: positions.save,
   },
 }))
 
@@ -42,7 +48,8 @@ describe('useRadioPlayer', () => {
   }
 
   beforeEach(async () => {
-    localStorage.clear()
+    positions.find.mockReset().mockResolvedValue({ seconds: 0 })
+    positions.save.mockReset().mockResolvedValue(undefined)
     await reload()
   })
 
@@ -263,44 +270,159 @@ describe('useRadioPlayer', () => {
     expect(player.lost.value).toBe(false)
   })
 
-  it('should start a recording where it was left before the page reloaded', async () => {
+  it('should start a recording where the listener left it', async () => {
+    positions.find.mockResolvedValue({ seconds: 2296.5 })
     player.load(recording(), 'episode')
-    tick(1400)
-    await reload()
-    player.load(recording(), 'episode')
+    await flushPromises()
     expect(audio.currentTime).toBe(1400)
   })
 
-  it('should start a raw recording in the part where it was left before the page reloaded', async () => {
+  it('should start a raw recording in the part where the listener left it', async () => {
+    positions.find.mockResolvedValue({ seconds: 2510 })
     player.load(split())
-    player.seek(2500)
-    tick(510)
-    await reload()
-    player.load(split())
+    await flushPromises()
     expect([audio.src.split('/').pop(), audio.currentTime]).toEqual(['raw-part-002.mp3', 510])
   })
 
-  it('should start the episode at the moment the raw recording was left', async () => {
-    player.load(recording())
-    tick(2296.5)
-    await reload()
+  it('should start another recording from its own beginning', async () => {
+    positions.find.mockImplementation(async (name: string) => ({
+      seconds: name === '2026-10-17' ? 2296.5 : 0,
+    }))
     player.load(recording(), 'episode')
+    await flushPromises()
+    player.load(recording({ name: '2026-10-18' }), 'episode')
+    await flushPromises()
+    expect(player.seconds.value).toBe(0)
+  })
+
+  it('should not move a recording opened before the place of the previous one arrived', async () => {
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
+    player.load(recording(), 'episode')
+    player.load(recording({ name: '2026-10-18' }), 'episode')
+    answer.resolve({ seconds: 2296.5 })
+    await flushPromises()
+    expect(player.seconds.value).toBe(0)
+  })
+
+  it('should keep playing from the time the listener picked before the place of the recording arrived', async () => {
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
+    player.load(recording())
+    player.playFrom(2510)
+    answer.resolve({ seconds: 1400 })
+    await flushPromises()
+    expect(player.seconds.value).toBe(2510)
+  })
+
+  it('should start the next recording where the listener left it after a time picked in another one', async () => {
+    positions.find.mockImplementation((name: string) =>
+      Promise.resolve({ seconds: name === '2026-10-18' ? 1400 : 0 })
+    )
+    player.load(recording())
+    await flushPromises()
+    player.playFrom(600)
+    player.load(recording({ name: '2026-10-18' }))
+    await flushPromises()
+    expect(player.seconds.value).toBe(1400)
+  })
+
+  it('should start a recording where the listener left it after its version changed before the place arrived', async () => {
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
+    player.load(recording())
+    player.swap('episode')
+    answer.resolve({ seconds: 2296.5 })
+    await flushPromises()
     expect(audio.currentTime).toBe(1400)
   })
 
-  it('should start a recording heard to the end from the beginning', async () => {
-    player.load(recording(), 'episode')
-    tick(1400)
-    audio.dispatchEvent(new Event('ended'))
-    await reload()
-    player.load(recording(), 'episode')
-    expect(audio.currentTime).toBe(0)
+  it('should save where the listener is when the player goes away', async () => {
+    positions.find.mockResolvedValue({ seconds: 600 })
+    player.load(recording())
+    await flushPromises()
+    tick(604)
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
   })
 
-  it('should start another recording from its own beginning', () => {
-    player.load(recording(), 'episode')
+  it('should keep where the listener left a recording when they leave it without listening', async () => {
+    positions.find.mockResolvedValue({ seconds: 1400 })
+    player.load(recording())
+    await flushPromises()
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([])
+  })
+
+  it('should not save again on leaving a recording the listener has not moved in', async () => {
+    positions.find.mockResolvedValue({ seconds: 1400 })
+    player.load(recording())
+    await flushPromises()
     tick(1400)
-    player.load(recording({ name: '2026-10-18' }), 'episode')
-    expect(player.seconds.value).toBe(0)
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([])
+  })
+
+  it('should not ask again where the recording was left when its version changes', async () => {
+    player.load(recording(), 'episode')
+    await flushPromises()
+    player.swap('raw')
+    expect(positions.find).toHaveBeenCalledTimes(1)
+  })
+
+  it('should keep the place in the recording when a new render of the episode arrives', async () => {
+    player.load(recording(), 'episode')
+    await flushPromises()
+    tick(1400)
+    const edit = recording().editList!
+    player.load(recording({ editList: { ...edit, renderedAt: '2026-10-18T09:00:00Z' } }), 'episode')
+    expect(player.seconds.value).toBe(1400)
+  })
+
+  it('should save where the listener is after every ten seconds of listening', async () => {
+    player.load(recording())
+    await flushPromises()
+    tick(5)
+    tick(10)
+    tick(15)
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 10 }]])
+  })
+
+  it('should not save where the listener paused before the place of the recording arrived', () => {
+    positions.find.mockReturnValue(new Promise(() => {}))
+    player.load(recording())
+    tick(600)
+    audio.dispatchEvent(new Event('pause'))
+    expect(positions.save).not.toHaveBeenCalled()
+  })
+
+  it('should save where the listener paused', async () => {
+    positions.find.mockResolvedValue({ seconds: 600 })
+    player.load(recording())
+    await flushPromises()
+    tick(604)
+    audio.dispatchEvent(new Event('pause'))
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
+  })
+
+  it('should start a recording heard to the end from the beginning next time', async () => {
+    positions.find.mockResolvedValue({ seconds: 4195 })
+    player.load(recording())
+    await flushPromises()
+    tick(4198)
+    Object.defineProperty(audio, 'ended', { value: true })
+    audio.dispatchEvent(new Event('pause'))
+    audio.dispatchEvent(new Event('ended'))
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 0 }]])
+  })
+
+  it('should tell the listener when the place of the recording cannot be found', async () => {
+    positions.find.mockRejectedValue(new Error('Bad Gateway'))
+    const { toasts } = await import('./use-toast')
+    player.load(recording())
+    await flushPromises()
+    expect(toasts.value.map(toast => toast.message)).toEqual([
+      'Could not find where you left the recording',
+    ])
   })
 })

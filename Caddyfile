@@ -93,6 +93,7 @@ www.fov.ee {
 # Main domain
 fov.ee {
     encode gzip
+    request_header -X-User-Id
     # Redirect all HTTP traffic to HTTPS
     @http {
         protocol http

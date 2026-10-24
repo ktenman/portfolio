@@ -4,6 +4,7 @@
 
 :80 {
     encode gzip
+    request_header -X-User-Id
 
     @auth_routes {
         path /login /login/* /oauth2/* /logout

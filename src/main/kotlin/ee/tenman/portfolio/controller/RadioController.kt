@@ -12,6 +12,8 @@ import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RadioDay
 import ee.tenman.portfolio.service.radio.RadioDayService
 import ee.tenman.portfolio.service.radio.RadioLiveService
+import ee.tenman.portfolio.service.radio.RadioPositionDto
+import ee.tenman.portfolio.service.radio.RadioPositionService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioStation
@@ -34,8 +36,10 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 import kotlin.text.Charsets.UTF_8
@@ -47,6 +51,7 @@ class RadioController(
   private val radioScheduleService: RadioScheduleService,
   private val radioLiveService: RadioLiveService,
   private val radioDayService: RadioDayService,
+  private val radioPositionService: RadioPositionService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
@@ -89,6 +94,20 @@ class RadioController(
   fun getCuts(
     @PathVariable name: String,
   ): ResponseEntity<List<CutContext>> = ResponseEntity.ofNullable(radioArchiveService.contexts(name))
+
+  @GetMapping("/{name}/position")
+  fun getPosition(
+    @PathVariable name: String,
+    @RequestHeader("X-User-Id") listener: String,
+  ): RadioPositionDto = radioPositionService.find(listener, name)
+
+  @PutMapping("/{name}/position")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  fun putPosition(
+    @PathVariable name: String,
+    @RequestHeader("X-User-Id") listener: String,
+    @RequestBody position: RadioPositionDto,
+  ) = radioPositionService.save(listener, name, position)
 
   @GetMapping("/{name}/{file}")
   fun getFile(
