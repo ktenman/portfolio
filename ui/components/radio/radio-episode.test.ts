@@ -13,7 +13,11 @@ vi.mock('../../composables/use-radio-recordings', () => ({
   useRadioRecording: () => ({ recording: ref(shown.value), isLoading: ref(false) }),
 }))
 vi.mock('../../services/api', () => ({
-  radioService: { fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}` },
+  radioService: {
+    fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
+    position: () => Promise.resolve({ seconds: 0 }),
+    savePosition: () => Promise.resolve(),
+  },
 }))
 
 enableAutoUnmount(afterEach)

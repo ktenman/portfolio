@@ -237,4 +237,50 @@ class RadioControllerIT {
     Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(onAir))
     mockMvc.perform(mvcDelete("/api/radio/2026-10-17")).andExpect(status().isConflict)
   }
+
+  @Test
+  fun `should start a recording the listener has not heard at the beginning`() {
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
+  }
+
+  @Test
+  fun `should remember where the listener left a recording`() {
+    leave("mari.tamm@näide.ee", 1400.5)
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(1400.5))
+  }
+
+  @Test
+  fun `should remember the last place the listener left a recording`() {
+    leave("mari.tamm@näide.ee", 1400.5)
+    leave("mari.tamm@näide.ee", 2296.5)
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(2296.5))
+  }
+
+  @Test
+  fun `should keep where each listener left a recording apart`() {
+    leave("mari.tamm@näide.ee", 1400.5)
+    place("jüri.kask@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
+  }
+
+  @Test
+  fun `should refuse to say where a recording was left without a listener`() {
+    mockMvc.perform(mvcGet("/api/radio/2026-10-17/position")).andExpect(status().isInternalServerError)
+  }
+
+  private fun place(listener: String) = mockMvc.perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, listener))
+
+  private fun leave(
+    listener: String,
+    seconds: Double,
+  ) {
+    mockMvc
+      .perform(
+        mvcPut("/api/radio/2026-10-17/position")
+          .header(LISTENER, listener)
+          .contentType(APPLICATION_JSON)
+          .content("""{"seconds":$seconds}"""),
+      ).andExpect(status().isNoContent)
+  }
 }
+
+private const val LISTENER = "X-User-Id"

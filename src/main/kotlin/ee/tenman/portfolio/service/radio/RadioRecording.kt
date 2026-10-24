@@ -255,3 +255,7 @@ fun EditList?.found(): Set<String> =
   ?.map { it.programme ?: PROGRAMME }
   ?.toSet()
   .orEmpty()
+
+data class RadioPositionDto(
+  val seconds: Double,
+)

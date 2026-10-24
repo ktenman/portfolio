@@ -10,6 +10,8 @@ import type { RecordingSummary } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
+    position: () => Promise.resolve({ seconds: 0 }),
+    savePosition: () => Promise.resolve(),
     transcript: vi.fn(),
     cuts: () => Promise.resolve([]),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
@@ -28,7 +30,6 @@ describe('RadioText', () => {
 
   beforeEach(() => {
     localStorage.clear()
-    window.dispatchEvent(new StorageEvent('storage', { storageArea: localStorage }))
     Element.prototype.scrollIntoView = vi.fn()
     vi.mocked(radioService.transcript).mockReset().mockResolvedValue(sections())
     audio = document.createElement('audio')
