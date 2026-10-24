@@ -9,7 +9,12 @@ import type { RecordingSummary } from '../../models/generated/domain-models'
 const { review } = vi.hoisted(() => ({ review: vi.fn() }))
 
 vi.mock('../../services/api', () => ({
-  radioService: { review, fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}` },
+  radioService: {
+    review,
+    fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
+    position: () => Promise.resolve({ seconds: 0 }),
+    savePosition: () => Promise.resolve(),
+  },
 }))
 vi.mock('@tanstack/vue-query', () => ({
   useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }),

@@ -200,6 +200,20 @@ describe('api services', () => {
       '/radio/2026-10-17/cuts/1/jingle',
       { saved: true },
     ],
+    [
+      'radio.position',
+      () => radioService.position('2026-10-17'),
+      'get',
+      '/radio/2026-10-17/position',
+      undefined,
+    ],
+    [
+      'radio.savePosition',
+      () => radioService.savePosition('2026-10-17', { seconds: 2296.5 }),
+      'put',
+      '/radio/2026-10-17/position',
+      { seconds: 2296.5 },
+    ],
   ])('%s calls the right endpoint', async (_name, call, method, url, payload) => {
     await call()
 

@@ -213,6 +213,9 @@ const STATION = {
 
 export const stubRadio: RouteStub = async page => {
   await page.route(/\/api\/radio\/[^/]+\/[^/]+\.(mp3|m4a)/, route => route.abort())
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>
+    route.fulfill({ json: { seconds: 0 } })
+  )
   await page.route(apiRoute(API_ENDPOINTS.RADIO), route => route.fulfill({ json: RECORDINGS }))
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/programmes`), route =>
     route.fulfill({ json: PROGRAMMES })

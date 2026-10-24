@@ -1,13 +1,13 @@
 import { computed, ref, shallowRef, watch } from 'vue'
-import { useLocalStorage } from '@vueuse/core'
-import { STORAGE_KEYS } from '../constants'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { episodeTime, recordingTime } from '../utils/radio'
+import { useToast } from './use-toast'
 
 export type Version = 'raw' | 'episode'
 
 const LEAD = 5
+const SAVE_EVERY = 10
 
 const element = shallowRef<HTMLAudioElement | null>(null)
 const recording = shallowRef<RecordingSummary | null>(null)
@@ -22,8 +22,12 @@ const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
-const positions = useLocalStorage<Record<string, number>>(STORAGE_KEYS.RADIO_POSITIONS, {})
+const toast = useToast()
 let loaded = ''
+let opened = ''
+let at = 0
+let saved: number | null = null
+let moved = false
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
 
 const parts = computed(() =>
@@ -62,6 +66,7 @@ const seek = (to: number) => {
   const audio = element.value
   if (!audio || !recording.value) return
   lost.value = false
+  moved = true
   const target = Math.min(Math.max(0, to), total.value)
   if (version.value === 'episode') {
     audio.currentTime = target
@@ -77,14 +82,42 @@ const seek = (to: number) => {
   current.value = audio.currentTime
 }
 
-const remember = (at: number) => {
+const store = (seconds: number) => {
   const name = recording.value?.name
-  if (name) positions.value = { ...positions.value, [name]: at }
+  if (!name || saved === null) return
+  at = seconds
+  saved = seconds
+  radioService.savePosition(name, { seconds }).catch(() => undefined)
+}
+
+const remember = (seconds: number) => {
+  if (!recording.value) return
+  at = seconds
+  if (saved !== null && Math.abs(seconds - saved) >= SAVE_EVERY) store(seconds)
+}
+
+const place = (seconds: number) => {
+  const target = recording.value
+  if (target && seconds)
+    seek(version.value === 'raw' ? seconds : episodeTime(target.audible, seconds))
+}
+
+const found = (name: string, seconds: number) => {
+  if (opened !== name) return
+  saved = seconds
+  if (!moved) place(seconds)
 }
 
 const restore = (target: RecordingSummary) => {
-  const at = positions.value[target.name]
-  if (at) seek(version.value === 'raw' ? at : episodeTime(target.audible, at))
+  if (opened === target.name) return place(at)
+  opened = target.name
+  at = 0
+  saved = null
+  moved = false
+  radioService.position(target.name).then(
+    ({ seconds }) => found(target.name, seconds),
+    () => toast.error('Could not find where you left the recording')
+  )
 }
 
 const cue = (audio: HTMLAudioElement, target: RecordingSummary) => {
@@ -197,7 +230,10 @@ const listeners: Record<string, () => void> = {
     follow()
   },
   play: () => (playing.value = true),
-  pause: () => (playing.value = false),
+  pause: () => {
+    playing.value = false
+    if (!element.value?.ended) store(at)
+  },
   ended: () => {
     const next = parts.value[part.value + 1]
     if (version.value === 'raw' && next) {
@@ -205,7 +241,7 @@ const listeners: Record<string, () => void> = {
       return play()
     }
     playing.value = false
-    remember(0)
+    store(0)
   },
 }
 
@@ -228,6 +264,7 @@ const detach = () => {
   }
   element.value = null
   loaded = ''
+  opened = ''
   recording.value = null
   live.value = false
   version.value = 'raw'
