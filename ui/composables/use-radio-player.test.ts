@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { useRadioPlayer } from './use-radio-player'
 import { recording } from '../components/radio/radio-fixture'
 import { RecordingState } from '../models/generated/domain-models'
 
@@ -29,16 +28,22 @@ const split = () =>
 
 describe('useRadioPlayer', () => {
   let audio: HTMLAudioElement
-  const player = useRadioPlayer()
+  let player: ReturnType<typeof import('./use-radio-player').useRadioPlayer>
 
-  beforeEach(() => {
+  const reload = async () => {
+    vi.resetModules()
+    const { useRadioPlayer } = await import('./use-radio-player')
+    player = useRadioPlayer()
     audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     vi.spyOn(audio, 'pause').mockImplementation(() => {})
     vi.spyOn(audio, 'load').mockImplementation(() => {})
-    player.rate.value = 1
-    player.volume.value = 1
     player.attach(audio)
+  }
+
+  beforeEach(async () => {
+    localStorage.clear()
+    await reload()
   })
 
   afterEach(() => player.detach())
@@ -256,5 +261,46 @@ describe('useRadioPlayer', () => {
     player.lost.value = true
     player.detach()
     expect(player.lost.value).toBe(false)
+  })
+
+  it('should start a recording where it was left before the page reloaded', async () => {
+    player.load(recording(), 'episode')
+    tick(1400)
+    await reload()
+    player.load(recording(), 'episode')
+    expect(audio.currentTime).toBe(1400)
+  })
+
+  it('should start a raw recording in the part where it was left before the page reloaded', async () => {
+    player.load(split())
+    player.seek(2500)
+    tick(510)
+    await reload()
+    player.load(split())
+    expect([audio.src.split('/').pop(), audio.currentTime]).toEqual(['raw-part-002.mp3', 510])
+  })
+
+  it('should start the episode at the moment the raw recording was left', async () => {
+    player.load(recording())
+    tick(2296.5)
+    await reload()
+    player.load(recording(), 'episode')
+    expect(audio.currentTime).toBe(1400)
+  })
+
+  it('should start a recording heard to the end from the beginning', async () => {
+    player.load(recording(), 'episode')
+    tick(1400)
+    audio.dispatchEvent(new Event('ended'))
+    await reload()
+    player.load(recording(), 'episode')
+    expect(audio.currentTime).toBe(0)
+  })
+
+  it('should start another recording from its own beginning', () => {
+    player.load(recording(), 'episode')
+    tick(1400)
+    player.load(recording({ name: '2026-10-18' }), 'episode')
+    expect(player.seconds.value).toBe(0)
   })
 })
