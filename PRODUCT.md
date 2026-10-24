@@ -78,7 +78,7 @@ Architecture is fixed: Vue 3 SPA over a Spring Boot REST API. No server-rendered
 - `docs/aviva/` — real pension statements, already reconciled against recorded transactions.
 - 200+ Flyway migrations carrying the owner's actual broker transaction history. The app runs on real money, not fixtures.
 
-**Absences future work must not fabricate:** there is no logo or wordmark (the favicon is Vite's default), no voice or brand guide, no testimonials, no customers, no pricing, no marketing copy. The product name in use is simply "Portfolio".
+**Absences future work must not fabricate:** there is no wordmark (the only logo is the allocation-mark favicon), no voice or brand guide, no testimonials, no customers, no pricing, no marketing copy. The product name in use is simply "Portfolio".
 
 ## Product Principles
 

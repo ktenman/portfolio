@@ -389,7 +389,11 @@ Three exceptions exist and are deliberate:
   declarations of three distinct values, at `:13,24,29,30`. It paints before any stylesheet has loaded, so a
   `var()` there would resolve to nothing and the first frame would flash the wrong world. Those three literals
   are paper, hairline, and brass, and they must be updated by hand if those tokens ever move.
-- `ui/public/favicon.svg` sets a `P` in `#8d621f` on no enclosing shape. An SVG file has no access to the theme.
+- `ui/public/favicon.svg` draws the allocation mark on a paper tile: `#fcfaf6` paper, `#8d621f` brass for half the
+  square, then `#241e1a` ink, `#69625b` ink-soft and `#8c857f` ink-faint in cells ranked by size. An SVG file has
+  no access to the theme, so those five literals must be updated by hand if the tokens ever move. The tile, not
+  dark-mode colours, keeps the brass on a dark browser tab. `ui/public/apple-touch-icon.png` is the same mark at
+  180 px on full-bleed paper for the iPhone home screen, which rounds its corners itself; redraw it with the SVG.
 - The `.form-select` chevron (`forms.css:37`) carries a URL-encoded `%23241e1a` stroke inside its data URI.
   A data URI cannot read a `var()`, and the `mask` trick `.btn-close` uses would mask away the field's own
   fill, so the literal is unavoidable — but it is `--color-ink` rendered to hex, not a leftover. It is the one
