@@ -96,6 +96,7 @@
             </span>
           </template>
         </data-table>
+        <radio-on-air class="lg:hidden" />
         <radio-programmes />
       </div>
       <radio-station />
@@ -114,6 +115,7 @@ import { clock, day, length, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge, { type BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
+import RadioOnAir from './radio-on-air.vue'
 import RadioProgrammes from './radio-programmes.vue'
 import RadioStation from './radio-station.vue'
 import RadioTabs from './radio-tabs.vue'

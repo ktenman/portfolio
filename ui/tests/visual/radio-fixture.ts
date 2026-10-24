@@ -239,6 +239,11 @@ export const stubRadio: RouteStub = async page => {
   )
 }
 
+export const stubRadioOnAir: RouteStub = async page => {
+  await page.clock.setFixedTime((SATURDAY_ONE + 37 * 60) * 1000)
+  await stubRadio(page)
+}
+
 export const stubRadioStill: RouteStub = async page => {
   await page.clock.setFixedTime(Date.now())
   await stubRadio(page)

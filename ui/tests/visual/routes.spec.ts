@@ -8,7 +8,7 @@ import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubMonitoring } from './monitoring-fixture'
-import { stubRadio, stubRadioStill } from './radio-fixture'
+import { stubRadio, stubRadioOnAir, stubRadioStill } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -23,7 +23,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/diversification', name: 'diversification', stub: stubDiversification },
   { path: '/calculator', name: 'calculator', stub: stubCalculator },
   { path: '/monitoring', name: 'monitoring', stub: stubMonitoring },
-  { path: '/radio', name: 'radio', stub: stubRadio },
+  { path: '/radio', name: 'radio', stub: stubRadioOnAir },
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },
   { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
   { path: '/radio/2026-10-24', name: 'radio-find-cuts', stub: stubRadioStill },
