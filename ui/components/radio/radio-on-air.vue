@@ -1,12 +1,6 @@
 <template>
   <section v-if="station?.onAir" :class="aside ? 'card mb-0 overflow-hidden' : 'mt-8'">
-    <div
-      class="flex items-baseline gap-2.5"
-      :class="aside ? 'justify-between px-5 pt-5 pb-1.5' : 'mb-3'"
-    >
-      <h3 class="mb-0 text-heading">On air</h3>
-      <radio-badge tone="live">Live</radio-badge>
-    </div>
+    <h3 class="text-heading" :class="aside ? 'mb-0 px-5 pt-5 pb-1.5' : 'mb-3'">On air</h3>
     <div :class="{ 'card mb-0 overflow-hidden': !aside }">
       <div class="flex items-center gap-3.5 px-5 py-3.5">
         <button
@@ -60,7 +54,6 @@ import { useIntervalFn, useNow } from '@vueuse/core'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
 import { clock, minutes, PLAY, range } from '../../utils/radio'
-import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 
 defineProps<{ aside?: boolean }>()

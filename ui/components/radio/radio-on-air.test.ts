@@ -68,9 +68,9 @@ describe('RadioOnAir', () => {
     expect((await mount(idle)).find('section').exists()).toBe(false)
   })
 
-  it('should title the programme on air live', async () => {
+  it('should title the programme on air', async () => {
     expect((await mount({ ...idle, onAir: broadcast })).find('section').text()).toContain(
-      'On airLive'
+      'On airTarkade klubi'
     )
   })
 
