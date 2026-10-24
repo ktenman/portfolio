@@ -240,40 +240,34 @@ class RadioControllerIT {
 
   @Test
   fun `should start a recording the listener has not heard at the beginning`() {
-    mockMvc
-      .perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, "mari.tamm@näide.ee"))
-      .andExpect(jsonPath("$.seconds").value(0.0))
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
   }
 
   @Test
   fun `should remember where the listener left a recording`() {
     leave("mari.tamm@näide.ee", 1400.5)
-    mockMvc
-      .perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, "mari.tamm@näide.ee"))
-      .andExpect(jsonPath("$.seconds").value(1400.5))
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(1400.5))
   }
 
   @Test
   fun `should remember the last place the listener left a recording`() {
     leave("mari.tamm@näide.ee", 1400.5)
     leave("mari.tamm@näide.ee", 2296.5)
-    mockMvc
-      .perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, "mari.tamm@näide.ee"))
-      .andExpect(jsonPath("$.seconds").value(2296.5))
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(2296.5))
   }
 
   @Test
   fun `should keep where each listener left a recording apart`() {
     leave("mari.tamm@näide.ee", 1400.5)
-    mockMvc
-      .perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, "jüri.kask@näide.ee"))
-      .andExpect(jsonPath("$.seconds").value(0.0))
+    place("jüri.kask@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
   }
 
   @Test
   fun `should refuse to say where a recording was left without a listener`() {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/position")).andExpect(status().isInternalServerError)
   }
+
+  private fun place(listener: String) = mockMvc.perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, listener))
 
   private fun leave(
     listener: String,

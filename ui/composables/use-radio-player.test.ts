@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { recording } from '../components/radio/radio-fixture'
-import { RecordingState } from '../models/generated/domain-models'
+import { type RadioPositionDto, RecordingState } from '../models/generated/domain-models'
+import { deferred } from '../tests/test-utils'
 
 const positions = vi.hoisted(() => ({ find: vi.fn(), save: vi.fn() }))
 
@@ -295,21 +296,21 @@ describe('useRadioPlayer', () => {
   })
 
   it('should not move a recording opened before the place of the previous one arrived', async () => {
-    let answer: (position: { seconds: number }) => void = () => {}
-    positions.find.mockReturnValueOnce(new Promise(resolve => (answer = resolve)))
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
     player.load(recording(), 'episode')
     player.load(recording({ name: '2026-10-18' }), 'episode')
-    answer({ seconds: 2296.5 })
+    answer.resolve({ seconds: 2296.5 })
     await flushPromises()
     expect(player.seconds.value).toBe(0)
   })
 
   it('should keep playing from the time the listener picked before the place of the recording arrived', async () => {
-    let answer: (position: { seconds: number }) => void = () => {}
-    positions.find.mockReturnValueOnce(new Promise(resolve => (answer = resolve)))
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
     player.load(recording())
     player.playFrom(2510)
-    answer({ seconds: 1400 })
+    answer.resolve({ seconds: 1400 })
     await flushPromises()
     expect(player.seconds.value).toBe(2510)
   })
@@ -324,6 +325,25 @@ describe('useRadioPlayer', () => {
     player.load(recording({ name: '2026-10-18' }))
     await flushPromises()
     expect(player.seconds.value).toBe(1400)
+  })
+
+  it('should start a recording where the listener left it after its version changed before the place arrived', async () => {
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValueOnce(answer.promise)
+    player.load(recording())
+    player.swap('episode')
+    answer.resolve({ seconds: 2296.5 })
+    await flushPromises()
+    expect(audio.currentTime).toBe(1400)
+  })
+
+  it('should save where the listener is when the player goes away', async () => {
+    positions.find.mockResolvedValue({ seconds: 600 })
+    player.load(recording())
+    await flushPromises()
+    tick(604)
+    player.detach()
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
   })
 
   it('should not ask again where the recording was left when its version changes', async () => {

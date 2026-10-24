@@ -25,7 +25,7 @@ const lost = ref(false)
 const toast = useToast()
 let loaded = ''
 let opened = ''
-let at = 0
+let heard = 0
 let saved: number | null = null
 let moved = false
 let plan: { jumpAt: number; to: number; stopAt: number; jumped: boolean } | null = null
@@ -66,7 +66,6 @@ const seek = (to: number) => {
   const audio = element.value
   if (!audio || !recording.value) return
   lost.value = false
-  moved = true
   const target = Math.min(Math.max(0, to), total.value)
   if (version.value === 'episode') {
     audio.currentTime = target
@@ -82,40 +81,42 @@ const seek = (to: number) => {
   current.value = audio.currentTime
 }
 
-const store = (seconds: number) => {
+const pick = (at: number) => {
+  moved = true
+  seek(at)
+}
+
+const store = (at: number) => {
   const name = recording.value?.name
   if (!name || saved === null) return
-  at = seconds
-  saved = seconds
-  radioService.savePosition(name, { seconds }).catch(() => undefined)
+  heard = at
+  saved = at
+  radioService.savePosition(name, { seconds: at }).catch(() => undefined)
 }
 
-const remember = (seconds: number) => {
+const remember = (at: number) => {
   if (!recording.value) return
-  at = seconds
-  if (saved !== null && Math.abs(seconds - saved) >= SAVE_EVERY) store(seconds)
+  heard = at
+  if (saved !== null && Math.abs(at - saved) >= SAVE_EVERY) store(at)
 }
 
-const place = (seconds: number) => {
+const place = (at: number) => {
   const target = recording.value
-  if (target && seconds)
-    seek(version.value === 'raw' ? seconds : episodeTime(target.audible, seconds))
-}
-
-const found = (name: string, seconds: number) => {
-  if (opened !== name) return
-  saved = seconds
-  if (!moved) place(seconds)
+  if (target && at) seek(version.value === 'raw' ? at : episodeTime(target.audible, at))
 }
 
 const restore = (target: RecordingSummary) => {
-  if (opened === target.name) return place(at)
+  if (opened === target.name) return place(heard)
   opened = target.name
-  at = 0
+  heard = 0
   saved = null
   moved = false
   radioService.position(target.name).then(
-    ({ seconds }) => found(target.name, seconds),
+    position => {
+      if (opened !== target.name) return
+      saved = position.seconds
+      if (!moved) place(position.seconds)
+    },
     () => toast.error('Could not find where you left the recording')
   )
 }
@@ -194,12 +195,12 @@ const toggle = () => {
   return playing.value ? element.value?.pause() : play()
 }
 
-const skip = (by: number) => seek(seconds.value + by)
+const skip = (by: number) => pick(seconds.value + by)
 
 const playFrom = (at: number, wanted: Version = 'raw') => {
   if (recording.value && version.value !== wanted) load(recording.value, wanted)
   plan = null
-  seek(at)
+  pick(at)
   play()
 }
 
@@ -232,7 +233,7 @@ const listeners: Record<string, () => void> = {
   play: () => (playing.value = true),
   pause: () => {
     playing.value = false
-    if (!element.value?.ended) store(at)
+    if (!element.value?.ended) store(heard)
   },
   ended: () => {
     const next = parts.value[part.value + 1]
@@ -255,6 +256,7 @@ const attach = (audio: HTMLAudioElement) => {
 }
 
 const detach = () => {
+  store(heard)
   const audio = element.value
   if (audio) {
     audio.pause()
@@ -308,7 +310,7 @@ export const useRadioPlayer = () => ({
   listen,
   toggle,
   pause,
-  seek,
+  seek: pick,
   skip,
   playFrom,
   preview,
