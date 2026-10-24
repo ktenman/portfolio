@@ -9,31 +9,23 @@
     </div>
     <div :class="{ 'card mb-0 overflow-hidden': !aside }">
       <div class="flex items-center gap-3.5 px-5 py-3.5">
-        <span
-          class="grid h-13 w-15 shrink-0 content-center justify-items-center gap-1 rounded-container bg-notice-wash text-notice"
-        >
-          <span class="text-label leading-none font-medium">Now</span>
-          <span class="text-lg leading-none font-semibold tabular-nums">
-            {{ clock(station.onAir.start, 0) }}
-          </span>
-        </span>
-        <span class="grid min-w-0 grow gap-0.5">
-          <span class="font-semibold">{{ station.onAir.name }}</span>
-          <span class="text-sm text-ink-soft tabular-nums">
-            until {{ clock(station.onAir.end, 0) }} ·
-            <span class="whitespace-nowrap">
-              {{ station.onAir.recorded ? 'recording' : 'not recorded' }}
-            </span>
-          </span>
-        </span>
         <button
           type="button"
-          :class="[PLAY, 'size-11']"
+          :class="[PLAY, 'mx-1 size-13 [&>svg]:size-5']"
           :aria-label="on ? 'Pause' : 'Listen live'"
           @click="on ? player.toggle() : player.listen()"
         >
           <radio-icon :name="on ? 'pause' : 'play'" />
         </button>
+        <span class="grid min-w-0 grow gap-0.5">
+          <span class="font-semibold">{{ station.onAir.name }}</span>
+          <span class="text-sm text-ink-soft tabular-nums">
+            {{ range(station.onAir.start, 0, station.onAir.end - station.onAir.start) }} ·
+            <span class="whitespace-nowrap">
+              {{ station.onAir.recorded ? 'recording' : 'not recorded' }}
+            </span>
+          </span>
+        </span>
       </div>
       <div class="h-0.5 bg-surface-sunken" aria-hidden="true">
         <div
@@ -67,7 +59,7 @@ import { computed } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioStation } from '../../composables/use-radio-recordings'
-import { clock, minutes, PLAY } from '../../utils/radio'
+import { clock, minutes, PLAY, range } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 

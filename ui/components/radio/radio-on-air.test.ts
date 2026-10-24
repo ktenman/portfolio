@@ -74,19 +74,20 @@ describe('RadioOnAir', () => {
     )
   })
 
-  it('should show when the programme on air started', async () => {
-    expect((await mount({ ...idle, onAir: broadcast })).text()).toContain('Now12:00')
-  })
-
-  it('should say until when the programme on air is not recorded', async () => {
+  it('should show the hours of the programme on air', async () => {
     expect((await mount({ ...idle, onAir: broadcast })).text()).toContain(
-      'until 13:00 · not recorded'
+      '12:00–13:00 · not recorded'
     )
   })
 
   it('should say the programme on air is being recorded', async () => {
     const onAir = { ...broadcast, recorded: true }
-    expect((await mount({ ...idle, onAir })).text()).toContain('until 13:00 · recording')
+    expect((await mount({ ...idle, onAir })).text()).toContain('12:00–13:00 · recording')
+  })
+
+  it('should lead the programme on air with the live button', async () => {
+    const button = (await mount({ ...idle, onAir: broadcast })).find('button').element
+    expect(button.parentElement?.firstElementChild).toBe(button)
   })
 
   it('should fill the progress line with the share of the programme that has aired', async () => {
@@ -146,7 +147,7 @@ describe('RadioOnAir', () => {
 
   it("should show the live button as the player's round play button", async () => {
     expect((await mount({ ...idle, onAir: broadcast })).find('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'bg-brass', 'size-11'])
+      expect.arrayContaining(['rounded-full', 'bg-brass', 'size-13', '[&>svg]:size-5'])
     )
   })
 
