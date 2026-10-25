@@ -52,6 +52,7 @@ tasks.test {
   systemProperty("junit.jupiter.execution.timeout.default", "2m")
   filter.isFailOnNoMatchingTests = false
   inputs.dir("ced-tiny")
+  jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-Dradio.classpath=${sourceSets.test.get().runtimeClasspath.asPath}") })
 }
 
 configure<KtlintExtension> {
