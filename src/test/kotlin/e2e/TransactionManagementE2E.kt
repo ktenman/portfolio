@@ -6,9 +6,9 @@ import ch.tutteli.atrium.api.verbs.expect
 import com.codeborne.selenide.Condition.empty
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
-import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
 import com.codeborne.selenide.Selenide.element
 import com.codeborne.selenide.Selenide.elements
+import com.codeborne.selenide.Selenide.localStorage
 import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.ex.ElementNotFound
 import e2e.retry.Retry
@@ -37,7 +37,7 @@ class TransactionManagementE2E {
 
   @AfterEach
   fun tearDown() {
-    clearBrowserLocalStorage()
+    localStorage().clear()
   }
 
   @Test
