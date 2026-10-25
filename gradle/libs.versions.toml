@@ -21,7 +21,7 @@ datafaker = "2.7.0"
 minio = "9.0.3"
 pitest = "1.23.0"
 pitestPlugin = "1.19.0-rc.3"
-kotest = "6.2.5"
+kotest = "6.2.6"
 
 [libraries]
 # Spring Boot
