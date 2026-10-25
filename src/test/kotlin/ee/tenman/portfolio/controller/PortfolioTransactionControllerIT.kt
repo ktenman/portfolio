@@ -556,4 +556,64 @@ class PortfolioTransactionControllerIT {
 
     expect(portfolioTransactionRepository.findById(transaction.id).isEmpty).toEqual(true)
   }
+
+  @Test
+  fun `should list a transaction saved after the list was cached`() {
+    val instrument = setupInstrument()
+    portfolioTransactionRepository.save(
+      PortfolioTransaction(
+        instrument = instrument,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("10"),
+        price = BigDecimal("100"),
+        transactionDate = LocalDate.of(2023, 7, 18),
+        platform = Platform.LHV,
+      ),
+    )
+    val request =
+      TransactionRequestDto(
+        id = null,
+        instrumentId = instrument.id,
+        transactionType = TransactionType.BUY,
+        quantity = BigDecimal("5"),
+        price = BigDecimal("110"),
+        transactionDate = testDate,
+        platform = Platform.LHV,
+      )
+    mockMvc.perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+    mockMvc.perform(
+      post("/api/transactions")
+        .contentType("application/json")
+        .content(objectMapper.writeValueAsString(request))
+        .cookie(DEFAULT_COOKIE),
+    )
+
+    mockMvc
+      .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+      .andExpect(jsonPath("$.transactions.length()").value(2))
+  }
+
+  @Test
+  fun `should drop a deleted transaction from the cached list`() {
+    val instrument = setupInstrument()
+    val transactions =
+      portfolioTransactionRepository.saveAll(
+        listOf(LocalDate.of(2023, 7, 18), LocalDate.of(2023, 7, 19)).map {
+          PortfolioTransaction(
+            instrument = instrument,
+            transactionType = TransactionType.BUY,
+            quantity = BigDecimal("10"),
+            price = BigDecimal("100"),
+            transactionDate = it,
+            platform = Platform.LHV,
+          )
+        },
+      )
+    mockMvc.perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+    mockMvc.perform(delete("/api/transactions/${transactions.first().id}").cookie(DEFAULT_COOKIE))
+
+    mockMvc
+      .perform(get("/api/transactions").cookie(DEFAULT_COOKIE))
+      .andExpect(jsonPath("$.transactions.length()").value(1))
+  }
 }
