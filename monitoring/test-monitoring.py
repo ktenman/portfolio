@@ -324,8 +324,8 @@ def check_production_permissions():
         arguments += ['-v', f'{secret_volume}:/run/monitoring-secrets:ro',
                       '-v', f'{data_volume}:/alertmanager', '--entrypoint', 'sh',
                       ALERTMANAGER, '-c',
-                      'test -r /run/monitoring-secrets/bot_token && '
-                      'printf durable > /alertmanager/permission-check']
+                      ('test -r /run/monitoring-secrets/bot_token && '
+                       'printf durable > /alertmanager/permission-check')]
         run(*arguments)
     finally:
         for volume in (secret_volume, data_volume):
