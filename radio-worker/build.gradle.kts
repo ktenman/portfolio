@@ -51,6 +51,7 @@ tasks.test {
   jvmArgs("--enable-native-access=ALL-UNNAMED")
   systemProperty("junit.jupiter.execution.timeout.default", "2m")
   filter.isFailOnNoMatchingTests = false
+  inputs.dir("ced-tiny")
 }
 
 configure<KtlintExtension> {
