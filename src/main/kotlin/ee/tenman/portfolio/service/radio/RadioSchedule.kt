@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.RadioAiring
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.DayOfWeek
@@ -13,7 +14,7 @@ const val PLAN_FILE = "plan.json"
 const val HEARTBEAT_FILE = "heartbeat.json"
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
-private val LAG = Duration.ofSeconds(20)
+val LAG: Duration = Duration.ofSeconds(20)
 private val PADDING = Duration.ofSeconds(10)
 private val JOIN = Duration.ofMinutes(10)
 private val UNSAFE = Regex("[^0-9a-z]+")
@@ -161,6 +162,9 @@ private fun capture(
     slot = Slot(start.epochSecond, end.epochSecond),
   )
 }
+
+fun List<Capture>.cover(airing: RadioAiring): Boolean =
+  any { it.slot.start <= airing.startsAt.epochSecond && it.slot.end >= airing.endsAt.epochSecond }
 
 private fun safe(slug: String): String = slug.lowercase().replace(UNSAFE, "-").trim('-')
 

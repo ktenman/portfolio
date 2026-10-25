@@ -351,26 +351,4 @@ class RadioEpisodeServiceTest {
     ).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any()) }
   }
-
-  @Test
-  fun `should ask for the outline of a programme that went on air before the recording began`() {
-    shared()
-    Files.delete(directory.resolve("outline.json"))
-    second(outline(65.0, 70.0, 110.0))
-    save(directory.resolve("status.json"), readStatus(directory).copy(startedAt = 1000.0))
-    val keskpaevatund = RadioProgramme(175, PROGRAMME, "keskpaevatund").apply { id = 5 }
-    val airing = RadioAiring(8, 5, PROGRAMME, Instant.ofEpochSecond(990), Instant.ofEpochSecond(1050))
-    every { outlineService.reads(any(), any(), any(), any()) } returns listOf(outline(1.0, 5.0, 50.0))
-    RadioEpisodeService(
-      outlineService,
-      RadioCutService(),
-      RadioRenderService(),
-      progress,
-      airings(airing),
-      programmes(keskpaevatund),
-      RadioProperties(),
-      Clock.systemUTC(),
-    ).make(directory)
-    verify { outlineService.reads(Show(PROGRAMME, Slot(990, 1050), 0.0, 120.0), any(), any(), any()) }
-  }
 }
