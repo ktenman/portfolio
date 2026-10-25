@@ -33,6 +33,9 @@ jobs:
     # Uploading results needs code scanning, which is free only on public repos.
     # On a private repo without GitHub Code Security the upload 403s and fails the job.
     if: github.event.repository.visibility == 'public'
+    # A compile task restored from the Gradle build cache hides its sources from CodeQL
+    env:
+      GRADLE_OPTS: -Dorg.gradle.caching=false
     permissions:
       security-events: write
       packages: read
