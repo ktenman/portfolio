@@ -2,6 +2,7 @@ package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
 import ee.tenman.portfolio.configuration.Trading212SymbolEntry
@@ -11,6 +12,7 @@ import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.dto.HoldingData
+import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.CollectionRunResult
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
@@ -74,6 +76,22 @@ class Trading212DataRetrievalJobTest {
     job.runJob()
 
     verify { jobExecutionService.executeJob(job) }
+  }
+
+  @Test
+  fun `should not rethrow a failed run to the scheduler`() {
+    every { jobExecutionService.executeJob(any()) } throws PriceRefreshException("TRADING212 price refresh incomplete")
+
+    job.runJob()
+
+    verify(exactly = 1) { jobExecutionService.executeJob(job) }
+  }
+
+  @Test
+  fun `should rethrow an unexpected failure to the scheduler`() {
+    every { jobExecutionService.executeJob(any()) } throws IllegalArgumentException("Job execution record not saved")
+
+    expect { job.runJob() }.toThrow<IllegalArgumentException>()
   }
 
   @Test

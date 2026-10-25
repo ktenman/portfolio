@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.exception.PriceRefreshException
 import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
@@ -43,8 +44,9 @@ class Trading212DataRetrievalJob(
   @Scheduled(fixedDelayString = CollectionSchedules.TRADING212_PRICE_INTERVAL)
   fun runJob() {
     log.info("Running Trading212 price update job")
-    jobExecutionService.executeJob(this)
-    log.info("Completed Trading212 price update job")
+    runCatching { jobExecutionService.executeJob(this) }
+      .onSuccess { log.info("Completed Trading212 price update job") }
+      .onFailure { if (it !is PriceRefreshException) throw it }
   }
 
   override fun execute() {
