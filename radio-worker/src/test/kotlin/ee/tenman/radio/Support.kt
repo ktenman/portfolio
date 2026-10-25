@@ -1,5 +1,6 @@
 package ee.tenman.radio
 
+import tools.jackson.module.kotlin.readValue
 import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.net.http.HttpClient
@@ -9,7 +10,12 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.random.Random
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 import kotlin.time.toJavaDuration
@@ -140,4 +146,57 @@ private fun render(
   val process = ProcessBuilder(command).redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT).start()
   check(process.waitFor() == 0) { "FFmpeg could not write $path, exit ${process.exitValue()}" }
   return path
+}
+
+fun noise(seconds: Double): ShortArray {
+  val random = Random(7)
+  return ShortArray((seconds * RATE).toInt()) { random.nextInt(-8000, 8000).toShort() }
+}
+
+fun transcript(directory: Path): Transcript = read(directory.resolve("transcript.json"))
+
+fun chunks(directory: Path): List<Chunk> =
+  Files
+    .readString(directory.resolve("transcript.jsonl"))
+    .split("\n")
+    .dropLast(1)
+    .map { mapper.readValue<Chunk>(it) }
+
+class StubEars(
+  private val every: Double,
+  private val delay: Duration = Duration.ZERO,
+) : Ears {
+  override val name = "stub"
+  private val lengths = CopyOnWriteArrayList<Double>()
+  private val distinct = ConcurrentHashMap.newKeySet<Float>()
+  val heard: List<Double>
+    get() = lengths.toList()
+  val values: Set<Float>
+    get() = distinct.toSet()
+
+  override fun open(): Ear {
+    lengths += 0.0
+    return StubEar(lengths.size)
+  }
+
+  private inner class StubEar(
+    private val number: Int,
+  ) : Ear {
+    private var count = 0
+    private val length: Double
+      get() = count / RATE.toDouble()
+
+    override fun hear(samples: FloatArray): List<Utterance> {
+      Thread.sleep(delay.inWholeMilliseconds)
+      val passed = floor(length / every).toInt()
+      count += samples.size
+      distinct.addAll(samples.asList())
+      lengths[number - 1] = length
+      return (passed + 1..floor(length / every).toInt()).map { Utterance(it * every, emptyList()) }
+    }
+
+    override fun end(): List<Segment> = listOf(Segment(0.0, length, "lõik $number", listOf(Word(0.0, length, " lõik$number"))))
+
+    override fun close() = Unit
+  }
 }
