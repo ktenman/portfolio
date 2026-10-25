@@ -138,7 +138,7 @@ class RadioScheduleService(
   ): StationAiring {
     val start = airing.startsAt.epochSecond
     val end = airing.endsAt.epochSecond
-    return StationAiring(names.getValue(airing.programmeId), start, end, captures.any { it.start <= start && it.end >= end })
+    return StationAiring(names.getValue(airing.programmeId), start, end, captures.any { it.slot.start <= start && it.slot.end >= end })
   }
 
   private fun upsert(shows: List<KukuShow>): Map<Long, Long> {

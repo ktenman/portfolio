@@ -13,7 +13,8 @@ const val PLAN_FILE = "plan.json"
 const val HEARTBEAT_FILE = "heartbeat.json"
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
-private val PADDING = Duration.ofSeconds(30)
+private val LAG = Duration.ofSeconds(20)
+private val PADDING = Duration.ofSeconds(10)
 private val JOIN = Duration.ofMinutes(10)
 private val UNSAFE = Regex("[^0-9a-z]+")
 private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
@@ -155,8 +156,8 @@ private fun capture(
   return Capture(
     name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-"),
     programmes = group.map { it.programme }.distinct(),
-    start = (start - PADDING).epochSecond,
-    end = (end + PADDING).epochSecond,
+    start = (start + LAG - PADDING).epochSecond,
+    end = (end + LAG + PADDING).epochSecond,
     slot = Slot(start.epochSecond, end.epochSecond),
   )
 }

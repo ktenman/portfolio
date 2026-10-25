@@ -14,6 +14,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.kuku.KukuScheduleClient
+import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.AirSlot
@@ -56,6 +57,9 @@ class RadioScheduleJobIT {
 
   @Resource
   private lateinit var radioProgrammeRepository: RadioProgrammeRepository
+
+  @Resource
+  private lateinit var radioAiringRepository: RadioAiringRepository
 
   @Resource
   private lateinit var jobExecutionService: JobExecutionService
@@ -157,18 +161,29 @@ class RadioScheduleJobIT {
   }
 
   @Test
-  fun `should plan to record a programme chosen every time from thirty seconds before it`() {
+  fun `should plan to record a programme chosen every time shifted by the stream lag`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     expect(plan().single()).toEqual(
       Capture(
         "$day-1200-keskpaevatund",
         listOf("Keskpäevatund"),
-        at("11:59:30").toEpochSecond(),
+        at("12:00:10").toEpochSecond(),
         at("13:00:30").toEpochSecond(),
         Slot(at("12:00").toEpochSecond(), at("13:00").toEpochSecond()),
       ),
     )
+  }
+
+  @Test
+  fun `should find only the airings that overlap a recording begun after the first went on air`() {
+    load(
+      episode(1, 231, "Tarkade klubi", "11:00", "12:00"),
+      episode(2, 175, "Keskpäevatund", "12:00", "13:00"),
+      episode(3, 231, "Tarkade klubi", "13:30", "14:00"),
+    )
+    val found = radioAiringRepository.findOverlapping(at("12:00:10").toInstant(), at("13:00:30").toInstant())
+    expect(found.map { it.kukuId }).toContainExactly(2L)
   }
 
   @Test
@@ -206,7 +221,7 @@ class RadioScheduleJobIT {
   fun `should name the next capture of the recorder`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    expect(radioScheduleService.station().capture?.start).toEqual(at("11:59:30").toEpochSecond())
+    expect(radioScheduleService.station().capture?.start).toEqual(at("12:00:10").toEpochSecond())
   }
 
   @Test

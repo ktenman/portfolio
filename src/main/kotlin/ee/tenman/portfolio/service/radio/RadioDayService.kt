@@ -55,7 +55,7 @@ class RadioDayService(
   }
 
   private fun List<Capture>.cover(airing: RadioAiring): Boolean =
-    any { it.start <= airing.startsAt.epochSecond && it.end >= airing.endsAt.epochSecond }
+    any { it.slot.start <= airing.startsAt.epochSecond && it.slot.end >= airing.endsAt.epochSecond }
 
   private fun row(
     airing: RadioAiring,

@@ -142,7 +142,7 @@ class RadioEpisodeService(
 
   private fun slots(status: RecordingStatus): Map<String, Slot> {
     val from = Instant.ofEpochSecond(status.startedAt.toLong())
-    val airings = radioAiringRepository.findStarting(from, from.plusSeconds(status.seconds.toLong()))
+    val airings = radioAiringRepository.findOverlapping(from, from.plusSeconds(status.seconds.toLong()))
     val names = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associate { it.id to it.name }
     val slots = airings.map { names.getValue(it.programmeId) to Slot(it.startsAt.epochSecond, it.endsAt.epochSecond) }
     return slots.distinctBy { it.first }.toMap()
