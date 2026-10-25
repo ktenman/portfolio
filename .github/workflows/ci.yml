@@ -299,9 +299,17 @@ jobs:
       radio-worker: ${{ steps.filter.outputs.radio-worker }}
     steps:
       - uses: actions/checkout@v7
+      - name: Find the last successful main push
+        id: deployed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sha=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push --status success --limit 1 --json headSha --jq '.[0].headSha // empty')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
+          base: ${{ steps.deployed.outputs.sha }}
           filters: |
             backend:
               - 'src/**'
