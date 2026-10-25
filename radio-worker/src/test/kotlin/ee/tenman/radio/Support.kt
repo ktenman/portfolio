@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -88,6 +90,30 @@ fun waitFor(
 }
 
 fun status(directory: Path): Status = read(directory.resolve("status.json"))
+
+fun firstSilence(
+  pcm: Path,
+  after: Double,
+): Double {
+  val audio = ByteBuffer.wrap(Files.readAllBytes(pcm)).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+  val hop = RATE / 100
+  val quiet =
+    (0 until audio.limit() / hop).first { index ->
+      index / 100.0 > after && sqrt((0 until hop).sumOf { audio[index * hop + it].toDouble().pow(2) } / hop) < 50
+    }
+  return quiet / 100.0
+}
+
+fun caughtUp(
+  directory: Path,
+  playlist: Path,
+): Boolean {
+  val listed = if (Files.exists(playlist)) Files.readAllLines(playlist).count { it.endsWith(".ts") } else 0
+  return listed >= 4 && seconds(directory.resolve("raw.pcm")) >= 6 * listed - 6.5
+}
+
+fun recorders(mp3: Path): List<ProcessHandle> =
+  ProcessHandle.allProcesses().toList().filter { "$mp3" in it.info().commandLine().orElse("") }
 
 fun silence(
   path: Path,
