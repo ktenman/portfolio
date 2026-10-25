@@ -54,9 +54,6 @@ class RadioDayService(
     return airings.map { row(it, names.getValue(it.programmeId), it.originalId?.let(originals::get), captures.cover(it), takes, now) }
   }
 
-  private fun List<Capture>.cover(airing: RadioAiring): Boolean =
-    any { it.slot.start <= airing.startsAt.epochSecond && it.slot.end >= airing.endsAt.epochSecond }
-
   private fun row(
     airing: RadioAiring,
     name: String,

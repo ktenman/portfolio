@@ -62,10 +62,7 @@ fun writeRecording(
   Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
 }
 
-fun airings(vararg found: RadioAiring): RadioAiringRepository =
-  mockk {
-    every { findOverlapping(any(), any()) } answers { found.filter { it.endsAt > firstArg() && it.startsAt < secondArg() } }
-  }
+fun airings(vararg found: RadioAiring): RadioAiringRepository = mockk { every { findOverlapping(any(), any()) } returns found.toList() }
 
 fun programmes(vararg found: RadioProgramme): RadioProgrammeRepository = mockk { every { findAllById(any()) } returns found.toList() }
 
