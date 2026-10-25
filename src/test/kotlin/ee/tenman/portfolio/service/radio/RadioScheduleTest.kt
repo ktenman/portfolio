@@ -28,10 +28,10 @@ class RadioScheduleTest {
   ) = PlannedAiring(programme, slug, at(start), at(end))
 
   @Test
-  fun `should record an airing from thirty seconds before it to thirty seconds after it`() {
+  fun `should shift a capture by the stream lag to hold ten seconds either side of the airing`() {
     val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), tallinn)
     val slot = Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond)
-    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start - 30, slot.end + 30, slot)
+    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start + 10, slot.end + 30, slot)
     expect(found).toContainExactly(expected)
   }
 
@@ -107,7 +107,7 @@ class RadioScheduleTest {
     Capture(
       "2026-10-24-1200-keskpaevatund",
       listOf("Keskpäevatund"),
-      at("2026-10-24T11:59:30").epochSecond,
+      at("2026-10-24T12:00:10").epochSecond,
       at("2026-10-24T13:00:30").epochSecond,
       Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond),
     )

@@ -21,6 +21,12 @@ interface RadioAiringRepository : JpaRepository<RadioAiring, Long> {
     until: Instant,
   ): List<RadioAiring>
 
+  @Query("SELECT a FROM RadioAiring a WHERE a.startsAt < :until AND a.endsAt > :from ORDER BY a.startsAt")
+  fun findOverlapping(
+    from: Instant,
+    until: Instant,
+  ): List<RadioAiring>
+
   @Modifying
   @Query("DELETE FROM RadioAiring a WHERE a.startsAt >= :from AND a.startsAt < :until AND a.kukuId NOT IN :kept")
   fun deleteDropped(

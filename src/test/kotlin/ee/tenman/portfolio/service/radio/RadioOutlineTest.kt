@@ -194,6 +194,12 @@ class RadioOutlineTest {
   }
 
   @Test
+  fun `should window a programme that went on air before its shared recording from the start of the recording`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 1000.0, 7800.0, programmes = listOf(PROGRAMME, "Tarkade klubi"))
+    expect(show(status, PROGRAMME, Slot(990, 4590))).toEqual(Show(PROGRAMME, Slot(990, 4590), 0.0, 3770.0))
+  }
+
+  @Test
   fun `should give the whole recording of a single programme to its outline`() {
     val status = RecordingStatus(RecordingState.CAPTURED, 1000.0, 4200.0)
     expect(show(status, PROGRAMME, Slot(1300, 4900))).toEqual(Show(PROGRAMME, Slot(1300, 4900), 0.0, 4200.0))
