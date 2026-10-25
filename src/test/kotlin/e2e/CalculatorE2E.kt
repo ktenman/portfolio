@@ -12,8 +12,8 @@ import com.codeborne.selenide.Condition
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
-import com.codeborne.selenide.Selenide.clearBrowserLocalStorage
 import com.codeborne.selenide.Selenide.element
+import com.codeborne.selenide.Selenide.localStorage
 import com.codeborne.selenide.Selenide.open
 import com.codeborne.selenide.SelenideElement
 import com.codeborne.selenide.ex.ElementNotFound
@@ -48,7 +48,7 @@ class CalculatorE2E {
 
   @AfterEach
   fun tearDown() {
-    clearBrowserLocalStorage()
+    localStorage().clear()
   }
 
   @Test
