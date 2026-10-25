@@ -1,11 +1,18 @@
 package ee.tenman.radio
 
 import java.lang.ProcessBuilder.Redirect
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
+import kotlin.time.toJavaDuration
 
 class Written(
   val file: String,
@@ -19,7 +26,59 @@ fun tone(
   seconds: Double,
 ): Path {
   val wave = "if(between(mod(t,10),7,7.4),0,0.3*sin(2*PI*440*t))"
-  return render(path, "-f", "lavfi", "-i", "aevalsrc='$wave|$wave':s=48000:d=$seconds", "-c:a", "libmp3lame", "-b:a", "256k")
+  val command =
+    listOf(
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "aevalsrc='$wave|$wave':s=48000:d=$seconds",
+      "-c:a",
+      "libmp3lame",
+      "-b:a",
+      "256k",
+      path.toString(),
+    )
+  val process = ProcessBuilder(command).redirectErrorStream(true).start()
+  val output = process.inputReader().readText()
+  check(process.waitFor() == 0) { "FFmpeg could not make $path: ${output.trim()}" }
+  return path
+}
+
+fun replay(
+  directory: Path,
+  seconds: Double = 13.0,
+  from: Double = 0.0,
+  speed: Double = 4.0,
+): Station =
+  Station.open(
+    tone(directory.resolve("in.mp3"), seconds),
+    Files.createDirectory(directory.resolve("hls")),
+    port = 0,
+    from = from,
+    speed = speed,
+  )
+
+val Station.url: String
+  get() = "http://127.0.0.1:${address.port}/stream.m3u8"
+
+fun get(url: String): HttpResponse<String> =
+  HttpClient.newHttpClient().use {
+    it.send(HttpRequest.newBuilder(URI(url)).timeout(30.seconds.toJavaDuration()).build(), HttpResponse.BodyHandlers.ofString())
+  }
+
+fun waitFor(
+  seconds: Double = 30.0,
+  condition: () -> Boolean,
+) {
+  val deadline = TimeSource.Monotonic.markNow() + seconds.seconds
+  while (!condition()) {
+    check(deadline.hasNotPassedNow()) { "The condition was not met within $seconds s" }
+    Thread.sleep(100)
+  }
 }
 
 fun status(directory: Path): Status = read(directory.resolve("status.json"))
