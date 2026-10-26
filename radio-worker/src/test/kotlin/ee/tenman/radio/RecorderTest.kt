@@ -169,6 +169,21 @@ class RecorderTest {
   }
 
   @Test
+  fun `starts no part after the window ended when only a hole is missing`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    val parts = listOf(Part("raw.mp3", 1.4, 0.0, 2.0), Part("raw-part-002.mp3", 4.4, 3.0, 1.0))
+    replay(tmp).use { station ->
+      prepare(directory, station.url, 4.0, started = now() - 10)
+      parts.forEach { Files.createFile(directory.resolve(it.file)) }
+      write(directory.resolve("status.json"), status(directory).copy(parts = parts))
+      record(directory, CountDownLatch(1))
+    }
+    expect(status(directory).parts).toEqual(parts)
+  }
+
+  @Test
   fun `starts a late recording at its start`(
     @TempDir tmp: Path,
   ) {
@@ -322,6 +337,20 @@ class RecorderTest {
     val recorder = thread { record(directory, CountDownLatch(1)) }
     recorder.join(20_000)
     expect(Pair(recorder.isAlive, status(directory).state)).toEqual(Pair(false, RecordingState.PARTIAL))
+  }
+
+  @Test
+  fun `moves the start of a recording with no parts to an hour before it is recorded`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    val port = ServerSocket(0).use { it.localPort }
+    prepare(directory, "http://127.0.0.1:$port/stream.m3u8", 3650.0, started = now() - 3700)
+    val recorded = now()
+    record(directory, CountDownLatch(1))
+    val status = status(directory)
+    expect(Pair(abs(status.startedAt + LOOKBACK - recorded) <= 1.0, status.seconds))
+      .toEqual(Pair(true, round3(status.endsAt - status.startedAt)))
   }
 
   private fun recorded(tmp: Path): Path =

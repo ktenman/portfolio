@@ -158,8 +158,9 @@ private tailrec fun capture(
 ): Status {
   val remaining = round3(status.endsAt - now())
   val reach = reach(status.source, away(directory, status))
-  if (stop.count == 0L || remaining + extra(reach) <= 0 || remaining <= 0 && lost(status.seconds, status.parts) == 0L) return status
-  val attempted = attempt(directory, status, remaining, reach, stop)
+  val tail = round(max(0.0, status.seconds - covered(status.parts)))
+  if (stop.count == 0L || remaining + extra(reach) <= 0 || remaining <= 0 && tail == 0.0) return status
+  val attempted = attempt(directory, trim(directory, status), remaining, reach, stop)
   val part = attempted.parts.drop(status.parts.size).firstOrNull()
   if (remaining <= 0 || part != null && (part.durationSeconds ?: 0.0) >= remaining + extra(reach) - 1) return attempted
   stop.await(2, TimeUnit.SECONDS)
@@ -171,10 +172,18 @@ internal fun away(
   status: Status,
 ): Double {
   val clock = now()
-  val covered = status.parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
-  val behind = clock - status.startedAt - covered
+  val behind = clock - status.startedAt - covered(status.parts)
   val newest = status.parts.lastOrNull() ?: return behind
   return max(behind + BEHIND * SEGMENT, clock - Files.getLastModifiedTime(directory.resolve(newest.file)).toMillis() / 1000.0)
+}
+
+private fun trim(
+  directory: Path,
+  status: Status,
+): Status {
+  val earliest = round3(now() - LOOKBACK)
+  if (!live(status.source) || status.parts.isNotEmpty() || status.startedAt >= earliest || earliest >= status.endsAt) return status
+  return store(directory, status.copy(startedAt = earliest, seconds = round3(status.endsAt - earliest)))
 }
 
 private fun attempt(
@@ -238,6 +247,8 @@ private fun probe(mp3: Path): String {
 }
 
 private fun extra(reach: Int): Int = if (reach > 0) SEGMENT * (reach + 1) else 0
+
+private fun covered(parts: List<Part>): Double = parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
 
 private fun live(source: String): Boolean = source.substringBefore('?').endsWith(".m3u8")
 
