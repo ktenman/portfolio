@@ -247,7 +247,7 @@ def check_compose():
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
     worker = services['radio-worker']
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
-    assert worker['stop_grace_period'] == '90s' and list(worker['networks']) == ['radio']
+    assert worker['stop_grace_period'] == '5m' and list(worker['networks']) == ['radio']
     assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
     backup = services['radio-whisper']
     assert backup['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
