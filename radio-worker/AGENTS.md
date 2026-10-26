@@ -45,7 +45,7 @@ docker run --rm --network radio -v <absolute directory owned by uid 1000>:/recor
 ../gradlew :radio-worker:installDist
 docker build -t radio-worker .
 mkdir -p ../radio-data/model
-docker run --rm -v "$PWD/../radio-data/model:/data" --entrypoint cp radio-worker -r /opt/zipformer /data/
+docker run --rm --user "$(id -u)" -v "$PWD/../radio-data/model:/data" --entrypoint cp radio-worker -r /opt/zipformer /data/
 build/install/radio-worker/bin/radio-worker run --duration 600 --programme Kuku --out ../radio-data/recordings/2026-10-18-1200-kuku --model ../radio-data/model/zipformer --tagger ced-tiny
 build/install/radio-worker/bin/radio-worker run --source ~/keskpaevatund.mp3 --start 2026-10-17T11:55 --programme Keskpäevatund --out ../radio-data/recordings/2026-10-17-1155-keskpaevatund --model ../radio-data/model/zipformer --tagger ced-tiny
 ```
@@ -55,7 +55,7 @@ The directory name is the recording's name in the Raadio tab: lowercase letters,
 From the repository root, the full Docker stack runs the worker as production does, recording every programme ticked „Iga kord“ into the `radio_recordings` volume. The worker's image copies `build/install/radio-worker`, so `installDist` runs before `--build`, as the backend's needs `bootJar`:
 
 ```bash
-./gradlew :radio-worker:installDist && SCHEDULING_ENABLED=true docker compose -f docker-compose.local.yml --profile radio up -d --build
+./gradlew bootJar :radio-worker:installDist && SCHEDULING_ENABLED=true docker compose -f docker-compose.local.yml --profile radio up -d --build
 ```
 
 ## Production

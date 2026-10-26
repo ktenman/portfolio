@@ -236,8 +236,8 @@ def check_configurations():
 def check_compose():
     compose = ROOT.parent / 'docker-compose.yml'
     configured = json.loads(run('docker', 'compose', '-f', str(compose),
-                                '--profile', 'monitoring', '--profile', 'radio', 'config',
-                                '--no-interpolate', '--format', 'json').stdout)
+                                '--profile', 'monitoring', '--profile', 'radio', '--profile', 'whisper',
+                                'config', '--no-interpolate', '--format', 'json').stdout)
     services = configured['services']
     published = sorted(name for name, service in services.items() if 'ports' in service)
     assert published == ['app'], f'only Caddy may publish host ports, found {published}'
@@ -249,6 +249,7 @@ def check_compose():
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '90s' and list(worker['networks']) == ['radio']
     assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
+    assert services['radio-whisper']['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
     shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker')]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
