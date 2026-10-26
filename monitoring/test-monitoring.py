@@ -298,6 +298,8 @@ def check_host_gates():
     for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
         assert step in deploy, f'deploy does not run {step}'
     assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
+    guard = "if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi"
+    assert deploy.index(guard) < deploy.index('docker compose up -d'), 'the deploy must stop the Whisper backup before it starts the radio worker'
     print('Heartbeat and deploy host gates passed')
 
 
