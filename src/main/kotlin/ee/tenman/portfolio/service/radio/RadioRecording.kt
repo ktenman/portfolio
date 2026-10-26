@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
 import org.springframework.boot.context.properties.ConfigurationProperties
-import tools.jackson.core.JsonParser
-import tools.jackson.core.JsonToken
 import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -161,19 +159,9 @@ fun readModel(path: Path): ModelVersion? {
   val fields =
     JsonMapperFactory.instance.createParser(path).use { parser ->
       parser.nextToken()
-      leading(parser)
+      List(2) { parser.nextName() to parser.nextStringValue() }.toMap()
     }
   return ModelVersion(fields["model"] ?: return null, fields["revision"] ?: return null)
-}
-
-private tailrec fun leading(
-  parser: JsonParser,
-  found: Map<String, String> = emptyMap(),
-): Map<String, String> {
-  if (parser.nextToken() != JsonToken.PROPERTY_NAME) return found
-  val name = parser.currentName()
-  if (!parser.nextToken().isScalarValue) return found
-  return leading(parser, found + (name to parser.string))
 }
 
 inline fun <reified T> read(path: Path): T? =

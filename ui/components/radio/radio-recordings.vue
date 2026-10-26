@@ -34,7 +34,7 @@
               <span class="grid min-w-0 grow justify-items-start gap-0.5">
                 <router-link
                   :to="`/radio/${item.name}`"
-                  class="font-semibold after:absolute after:inset-0 after:rounded-container focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
+                  :class="ROW_LINK"
                   :aria-label="`${item.programme} ${day(item.status.startedAt)} · ${span(item)}`"
                 >
                   {{ item.programme }}
@@ -64,7 +64,7 @@
           <template #cell-programme="{ item }">
             <router-link
               :to="`/radio/${item.name}`"
-              class="font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
+              :class="[ROW_LINK, 'hover:underline']"
               :aria-label="`${item.programme} ${day(item.status.startedAt)} · ${span(item)}`"
             >
               {{ item.programme }}
@@ -111,7 +111,7 @@ import { useConfirm } from '../../composables/use-confirm'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { clock, day, length, span, STATES, textState } from '../../utils/radio'
+import { clock, day, length, ROW_LINK, span, STATES, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge, { type BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'

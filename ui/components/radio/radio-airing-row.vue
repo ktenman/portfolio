@@ -11,7 +11,7 @@
       <router-link
         v-if="page"
         :to="page"
-        class="block font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
+        :class="[ROW_LINK, 'block hover:underline']"
         :aria-label="`${airing.name} ${clock(airing.start, 0)}`"
       >
         {{ airing.name }}
@@ -55,11 +55,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
-import {
-  type AiringRecording,
-  AiringState,
-  type DayAiring,
-} from '../../models/generated/domain-models'
+import { AiringState, type DayAiring } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
@@ -72,6 +68,7 @@ import {
   coversEnd,
   LINK,
   PLAY,
+  ROW_LINK,
 } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
@@ -86,23 +83,27 @@ const toast = useToast()
 const note = computed(() => airingNote(props.airing))
 const badge = computed(() => AIRING_STATES[props.airing.state])
 
-const listen = (recording: AiringRecording | null | undefined) => {
-  const summary = recordings.value?.find(r => r.name === recording?.name)
-  if (!recording || !summary) return undefined
+const recording = computed(() =>
+  props.airing.state === AiringState.ARCHIVED
+    ? props.airing.original?.recording
+    : props.airing.recording
+)
+const summary = computed(() => {
+  const name = recording.value?.name
+  return name ? recordings.value?.find(r => r.name === name) : undefined
+})
+const page = computed(() => summary.value && `/radio/${summary.value.name}`)
+
+const listen = () => {
+  const heard = recording.value
+  const found = summary.value
+  if (!heard || !found) return undefined
   return () => {
-    player.load(summary)
-    player.playFrom(recording.from - recording.start)
-    void router.push(`/radio/${summary.name}`)
+    player.load(found)
+    player.playFrom(heard.from - heard.start)
+    void router.push(`/radio/${found.name}`)
   }
 }
-
-const page = computed(() => {
-  const airing = props.airing
-  const recording =
-    airing.state === AiringState.ARCHIVED ? airing.original?.recording : airing.recording
-  const summary = recordings.value?.find(r => r.name === recording?.name)
-  return summary && `/radio/${summary.name}`
-})
 
 const record = (value: boolean) => () =>
   radioService
@@ -120,15 +121,15 @@ const action = computed(() => {
   const airing = props.airing
   switch (airing.state) {
     case AiringState.RECORDED:
-      return { label: 'Listen', run: listen(airing.recording), icon: 'play' as const }
+      return { label: 'Listen', run: listen(), icon: 'play' as const }
     case AiringState.PARTIAL:
       return {
         label: coversEnd(airing) ? 'Hear the end' : 'Listen',
-        run: listen(airing.recording),
+        run: listen(),
         quiet: true,
       }
     case AiringState.ARCHIVED:
-      return { label: 'Listen', run: listen(airing.original?.recording), quiet: true }
+      return { label: 'Listen', run: listen(), quiet: true }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
       return player.live.value && player.playing.value
