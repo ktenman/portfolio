@@ -249,7 +249,11 @@ def check_compose():
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '90s' and list(worker['networks']) == ['radio']
     assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
-    assert services['radio-whisper']['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
+    backup = services['radio-whisper']
+    assert backup['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
+    assert backup['restart'] == 'unless-stopped', 'a stopped Whisper backup must stay stopped when Docker restarts'
+    assert ('radio_model', '/model') in {(volume['source'], volume['target']) for volume in backup['volumes']}, backup['volumes']
+    assert '/model' not in {volume['target'] for volume in worker['volumes']}, worker['volumes']
     shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker')]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
