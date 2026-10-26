@@ -164,7 +164,7 @@ services:
     profiles: [radio]
     command: ["planned"]
     restart: unless-stopped
-    stop_grace_period: 90s
+    stop_grace_period: 5m
     volumes:
       - radio_recordings:/recordings
 
