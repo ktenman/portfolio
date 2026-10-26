@@ -125,7 +125,7 @@ class RadioEpisodeService(
     db: DoubleArray,
   ): Finding {
     val saved = directory.resolve(outline(status, show.name))
-    val (reads, model) = reads(saved, show) { describe(status, show, lines, events(db)) }
+    val (reads, model) = reads(saved, show, lines) { describe(status, show, lines, events(db)) }
     val matched = reads.filterNotNull().mapNotNull { match(it, lines) }
     check(matched.isNotEmpty()) { "No outline read in $saved matches the transcript" }
     val agreed = consensus(matched)
@@ -162,11 +162,13 @@ class RadioEpisodeService(
   private fun reads(
     saved: Path,
     show: Show,
+    lines: List<TranscriptLine>,
     text: () -> String,
   ): Pair<List<OutlineRead?>, String?> {
     if (Files.exists(saved)) return JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(saved)) to null
     val model = radioProperties.outlineModel
-    val reads = radioOutlineService.reads(show, text(), model) { passed(saved.parent, CutStep.READ) }
+    val reads = radioOutlineService.reads(show, text(), model, agreed = { agree(it, lines) }) { passed(saved.parent, CutStep.READ) }
+    repeat(OUTLINE_READS - reads.size) { passed(saved.parent, CutStep.READ) }
     check(reads.any { it != null }) { "No outline read came back from ${model.modelId} for $saved" }
     save(saved, reads)
     return reads to model.modelId

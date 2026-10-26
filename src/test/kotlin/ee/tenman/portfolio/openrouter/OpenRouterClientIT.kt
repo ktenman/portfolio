@@ -132,6 +132,7 @@ class OpenRouterClientIT {
         .withRequestBody(matchingJsonPath("$.messages[1].content", equalTo("Saade algab 11:59.")))
         .withRequestBody(matchingJsonPath("$.response_format.json_schema.strict", equalTo("true")))
         .withRequestBody(matchingJsonPath("$.provider.require_parameters", equalTo("true")))
+        .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("google-ai-studio/flex")))
         .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
     )
     val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade algab 11:59.", mapOf("type" to "object"))
