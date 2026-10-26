@@ -250,7 +250,7 @@ private fun extra(reach: Int): Int = if (reach > 0) SEGMENT * (reach + 1) else 0
 
 private fun covered(parts: List<Part>): Double = parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
 
-private fun length(
+internal fun length(
   status: Status,
   remaining: Double,
   reach: Int,
