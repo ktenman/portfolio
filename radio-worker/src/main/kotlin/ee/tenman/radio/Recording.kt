@@ -9,17 +9,21 @@ import tools.jackson.module.kotlin.readValue
 import java.io.OutputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import java.security.DigestInputStream
 import java.security.MessageDigest
+import java.time.ZoneId
 import java.util.HexFormat
 import kotlin.math.max
 
 const val RATE = 16000
 const val KUKU = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000"
+val TALLINN: ZoneId = ZoneId.of("Europe/Tallinn")
 const val LOOKBACK = 3600.0
 
 enum class RecordingState {
@@ -121,7 +125,8 @@ data class Sounds(
 
 class RecordingRefusedException(
   message: String,
-) : RuntimeException(message)
+  cause: Throwable? = null,
+) : RuntimeException(message, cause)
 
 val mapper: JsonMapper =
   JsonMapper
@@ -168,6 +173,20 @@ fun pcm(
 fun samples(pcm: Path): Long = if (Files.exists(pcm)) Files.size(pcm) / 2 else 0
 
 fun seconds(pcm: Path): Double = samples(pcm) / RATE.toDouble()
+
+fun floats(
+  pcm: Path,
+  first: Long,
+  count: Int,
+): FloatArray {
+  val bytes =
+    Files.newInputStream(pcm).use {
+      it.skipNBytes(2 * first)
+      it.readNBytes(2 * count)
+    }
+  val audio = ByteBuffer.wrap(bytes.copyOf(2 * count)).order(ByteOrder.LITTLE_ENDIAN)
+  return FloatArray(count) { audio.getShort(2 * it) / 32768f }
+}
 
 fun overlap(
   directory: Path,

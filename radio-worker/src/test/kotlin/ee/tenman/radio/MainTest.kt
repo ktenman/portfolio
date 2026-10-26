@@ -1,5 +1,6 @@
 package ee.tenman.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeAnInstanceOf
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.seconds
 
-private const val TAGGER = "ced-tiny"
+private const val CED_TINY = "ced-tiny"
 
 private fun model(tmp: Path): String {
   val directory = Files.createDirectories(tmp.resolve("zipformer"))
@@ -34,13 +35,42 @@ private fun interrupted(
   val model = model(tmp)
   val stop = CountDownLatch(1)
   return replay(tmp, 40.0).use { station ->
-    val args = arrayOf("run", "--source", station.url, "--duration", "30", "--out", "$directory", "--model", model, "--tagger", TAGGER)
+    val args = arrayOf("run", "--source", station.url, "--duration", "30", "--out", "$directory", "--model", model, "--tagger", CED_TINY)
     val running = CompletableFuture.supplyAsync { runs(*args, ears = ears, stop = stop) }
-    waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
-    stop.countDown()
+    try {
+      waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
+    } finally {
+      stop.countDown()
+    }
     running.get(30, TimeUnit.SECONDS)
   }
 }
+
+private fun child(
+  tmp: Path,
+  source: String,
+  directory: Path,
+): Process =
+  ProcessBuilder(
+    Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+    "--enable-native-access=ALL-UNNAMED",
+    "-cp",
+    System.getProperty("radio.classpath"),
+    "ee.tenman.radio.StubMainKt",
+    "run",
+    "--source",
+    source,
+    "--duration",
+    "200",
+    "--out",
+    "$directory",
+    "--model",
+    model(tmp),
+    "--tagger",
+    CED_TINY,
+  ).redirectErrorStream(true)
+    .redirectOutput(tmp.resolve("child.log").toFile())
+    .start()
 
 class MainTest {
   @Test
@@ -48,7 +78,9 @@ class MainTest {
     @TempDir tmp: Path,
   ) {
     val directory = tmp.resolve("rec")
-    replay(tmp).use { runs("run", "--source", it.url, "--duration", "4", "--out", "$directory", "--model", model(tmp), "--tagger", TAGGER) }
+    replay(tmp).use { station ->
+      runs("run", "--source", station.url, "--duration", "4", "--out", "$directory", "--model", model(tmp), "--tagger", CED_TINY)
+    }
     expect(Pair(status(directory).state, transcript(directory).words.size)).toEqual(Pair(RecordingState.CAPTURED, 1))
   }
 
@@ -58,7 +90,7 @@ class MainTest {
   ) {
     val directory = tmp.resolve("rec")
     val source = "${tone(tmp.resolve("kesk.mp3"), 13.0)}"
-    runs("run", "--source", source, "--start", "2026-10-17T11:55", "--out", "$directory", "--model", model(tmp), "--tagger", TAGGER)
+    runs("run", "--source", source, "--start", "2026-10-17T11:55", "--out", "$directory", "--model", model(tmp), "--tagger", CED_TINY)
     val status = status(directory)
     expect(Triple(status.state, status.parts.size, status.startedAt)).toEqual(Triple(RecordingState.CAPTURED, 1, 1792227300.0))
   }
@@ -89,7 +121,7 @@ class MainTest {
         record(directory, CountDownLatch(1))
         val before = sha256(directory.resolve("raw.mp3"))
         write(directory.resolve("status.json"), status(directory).copy(endsAt = now() + 60))
-        runs("run", "--source", station.url, "--duration", "60", "--out", "$directory", "--model", model(tmp), "--tagger", TAGGER)
+        runs("run", "--source", station.url, "--duration", "60", "--out", "$directory", "--model", model(tmp), "--tagger", CED_TINY)
         before
       }
     val after =
@@ -125,9 +157,10 @@ class MainTest {
     @TempDir tmp: Path,
   ) {
     val directory = Files.createDirectories(tmp.resolve("rec"))
-    val json = """{"state": "captured_needs_review"}"""
+    val json =
+      """{"state": "captured_needs_review", "source": "$KUKU", "startedAt": 1792832100.0, "endsAt": 1792836300.0, "seconds": 4200.0, "parts": []}"""
     Files.writeString(directory.resolve("status.json"), json)
-    val code = runs("run", "--out", "$directory", "--duration", "3", "--model", model(tmp), "--tagger", TAGGER)
+    val code = runs("run", "--out", "$directory", "--duration", "3", "--model", model(tmp), "--tagger", CED_TINY)
     expect(Pair(code, Files.readString(directory.resolve("status.json")))).toEqual(Pair(2, json))
   }
 
@@ -137,7 +170,7 @@ class MainTest {
   ) {
     writeRecording(tmp, listOf(Written("raw.mp3", 0.0, noise(2.0), true)), RecordingState.CAPTURED)
     Files.writeString(tmp.resolve("transcript.json"), "{}")
-    expect(Pair(runs("sounds", "$tmp", "--tagger", TAGGER), Files.exists(tmp.resolve("sounds.json")))).toEqual(Pair(0, true))
+    expect(Pair(runs("sounds", "$tmp", "--tagger", CED_TINY), Files.exists(tmp.resolve("sounds.json")))).toEqual(Pair(0, true))
   }
 
   @Test
@@ -145,40 +178,77 @@ class MainTest {
     @TempDir tmp: Path,
   ) {
     val directory = tmp.resolve("rec")
-    val model = model(tmp)
-    replay(tmp, 240.0).use { station ->
-      val child =
-        ProcessBuilder(
-          Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-          "--enable-native-access=ALL-UNNAMED",
-          "-cp",
-          System.getProperty("radio.classpath"),
-          "ee.tenman.radio.StubMainKt",
-          "run",
-          "--source",
-          station.url,
-          "--duration",
-          "200",
-          "--out",
-          "$directory",
-          "--model",
-          model,
-          "--tagger",
-          TAGGER,
-        ).redirectErrorStream(true)
-          .redirectOutput(tmp.resolve("child.log").toFile())
-          .start()
-      try {
-        waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
-        child.destroy()
-        child.waitFor(30, TimeUnit.SECONDS)
-      } finally {
-        child.destroyForcibly()
+    val exited =
+      replay(tmp, 240.0).use { station ->
+        val child = child(tmp, station.url, directory)
+        try {
+          waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
+          child.destroy()
+          child.waitFor(30, TimeUnit.SECONDS)
+        } finally {
+          child.destroyForcibly()
+        }
       }
-    }
     val status = status(directory)
-    expect(Triple(status.state, status.parts.first().durationSeconds != null, recorders(directory.resolve("raw.mp3")).isEmpty()))
-      .toEqual(Triple(RecordingState.RECORDING, true, true))
+    val left = Triple(status.state, status.parts.first().durationSeconds != null, recorders(directory.resolve("raw.mp3")).isEmpty())
+    expect(Pair(exited, left)).toEqual(Pair(true, Triple(RecordingState.RECORDING, true, true)))
+  }
+
+  @Test
+  fun `refuses a directory that another worker process records`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("rec")
+    val refusal =
+      replay(tmp, 240.0).use { station ->
+        val child = child(tmp, station.url, directory)
+        try {
+          waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
+          runCatching { hold(directory).close() }.exceptionOrNull()
+        } finally {
+          child.destroy()
+          child.waitFor(30, TimeUnit.SECONDS)
+          child.destroyForcibly()
+        }
+      }
+    expect(refusal).toBeAnInstanceOf<RecordingRefusedException>()
+  }
+
+  @Test
+  fun `run names every programme it is given in the status`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("rec")
+    val source = "${tone(tmp.resolve("kesk.mp3"), 2.0)}"
+    val programmes = arrayOf("--programme", "Keskpäevatund", "--programme", "Uudised")
+    runs("run", "--source", source, *programmes, "--out", "$directory", "--model", model(tmp), "--tagger", CED_TINY)
+    expect(status(directory).programmes).toEqual(listOf("Keskpäevatund", "Uudised"))
+  }
+
+  @Test
+  fun `every usage error exits 2 without creating the output directory`(
+    @TempDir tmp: Path,
+  ) {
+    val out = "${tmp.resolve("rec")}"
+    val model = model(tmp)
+    val file = "${tone(tmp.resolve("kesk.mp3"), 2.0)}"
+    val run = listOf("run", "--out", out, "--model", model)
+    val errors =
+      listOf(
+        emptyList<String>(),
+        listOf("record", "--out", out),
+        run + listOf("--source", file, "--tagger", CED_TINY, "--duraton", "60"),
+        run + listOf("--source", file, "--tagger", CED_TINY, "pooleli"),
+        run + listOf("--source", file, "--tagger", CED_TINY, "--duration"),
+        run + listOf("--source", file, "--tagger", CED_TINY, "--duration", "kuus"),
+        listOf("run", "--source", file, "--model", model, "--tagger", CED_TINY),
+        listOf("run", "--out", out, "--model", "$tmp", "--source", file, "--tagger", CED_TINY),
+        run + listOf("--source", file, "--tagger", "$tmp"),
+        run + listOf("--source", "http://127.0.0.1:8770/stream.m3u8", "--tagger", CED_TINY),
+        listOf("station", "${tmp.resolve("puudub.mp3")}"),
+      )
+    val codes = errors.map { runs(*it.toTypedArray()) }
+    expect(Pair(codes, Files.exists(tmp.resolve("rec")))).toEqual(Pair(List(errors.size) { 2 }, false))
   }
 
   @Test
@@ -187,8 +257,9 @@ class MainTest {
   ) {
     val directory = tmp.resolve("rec")
     val slow = { StubEars(60.0, 2.seconds) }
+    val model = model(tmp)
     replay(tmp).use { station ->
-      runs("run", "--source", station.url, "--duration", "6", "--out", "$directory", "--model", model(tmp), "--tagger", TAGGER, ears = slow)
+      runs("run", "--source", station.url, "--duration", "6", "--out", "$directory", "--model", model, "--tagger", CED_TINY, ears = slow)
     }
     val status = status(directory)
     val captured =
@@ -203,9 +274,9 @@ class MainTest {
     val directory = tmp.resolve("rec")
     val rerun =
       replay(tmp).use { station ->
-        runCatching { capture(directory, station.url, 4.0, { error("the model is broken") }, Path.of(TAGGER), CountDownLatch(1)) }
+        runCatching { capture(directory, station.url, 4.0, { error("the model is broken") }, Path.of(CED_TINY), CountDownLatch(1)) }
         val after = status(directory).state
-        capture(directory, station.url, 4.0, { StubEars(60.0) }, Path.of(TAGGER), CountDownLatch(1))
+        capture(directory, station.url, 4.0, { StubEars(60.0) }, Path.of(CED_TINY), CountDownLatch(1))
         Pair(after, Files.exists(directory.resolve("transcript.json")))
       }
     expect(rerun).toEqual(Pair(RecordingState.CAPTURED, true))
@@ -225,10 +296,13 @@ class MainTest {
         write(recordings.resolve("plan.json"), listOf(Capture("${directory.fileName}", listOf("Kuku"), start, start + 30)))
         val running =
           CompletableFuture.supplyAsync {
-            runs("planned", "--recordings", "$recordings", "--source", station.url, "--model", model, "--tagger", TAGGER, stop = stop)
+            runs("planned", "--recordings", "$recordings", "--source", station.url, "--model", model, "--tagger", CED_TINY, stop = stop)
           }
-        waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
-        stop.countDown()
+        try {
+          waitFor { samples(directory.resolve("raw.pcm")) >= 2 * RATE }
+        } finally {
+          stop.countDown()
+        }
         Pair(running.get(30, TimeUnit.SECONDS), start)
       }
     val status = status(directory)

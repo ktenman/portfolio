@@ -1,8 +1,6 @@
 package ee.tenman.radio
 
 import tools.jackson.module.kotlin.readValue
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
@@ -18,7 +16,8 @@ fun transcribe(
   stop: CountDownLatch,
 ) {
   if (Files.exists(directory.resolve("transcript.json"))) return
-  val session = Session(directory, load(), alive, stop)
+  val journal = directory.resolve("transcript.jsonl")
+  val session = Session(directory, load(), journal, resume(journal), alive, stop)
   val parts = session.follow() ?: return
   listen(directory, parts, tagger)
   write(directory.resolve("transcript.json"), session.transcript())
@@ -35,11 +34,11 @@ private fun resume(journal: Path): MutableList<Chunk> {
 private class Session(
   private val directory: Path,
   private val ears: Ears,
+  private val journal: Path,
+  private val chunks: MutableList<Chunk>,
   private val alive: () -> Boolean,
   private val stop: CountDownLatch,
 ) {
-  private val journal = directory.resolve("transcript.jsonl")
-  private val chunks = resume(journal)
   private val stopped: Boolean
     get() = stop.count == 0L
   private var index = 0
@@ -108,14 +107,7 @@ private class Session(
     private fun block(): FloatArray? {
       val count = minOf(samples(pcm) - position, BLOCK.toLong()).toInt()
       if (stopped || count <= 0) return null
-      val bytes =
-        Files.newInputStream(pcm).use {
-          it.skipNBytes(2 * position)
-          it.readNBytes(2 * count)
-        }
-      val audio = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-      position += count
-      return FloatArray(count) { audio.getShort(2 * it) / 32768f }
+      return floats(pcm, position, count).also { position += count }
     }
 
     private fun feed(audio: FloatArray) {

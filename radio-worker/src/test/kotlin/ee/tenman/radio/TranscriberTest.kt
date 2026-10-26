@@ -166,6 +166,35 @@ class TranscriberTest {
   }
 
   @Test
+  fun `writes no final chunk when stopped before a part is heard to its end`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.mp3", 0.0, noise(30.0), true)), RecordingState.RECORDING)
+    val stop = CountDownLatch(1)
+    val stub = StubEars(5.0)
+    val stopping =
+      object : Ears by stub {
+        override fun open(): Ear {
+          val ear = stub.open()
+          return object : Ear by ear {
+            override fun hear(samples: FloatArray): List<Utterance> = ear.hear(samples).also { stop.countDown() }
+          }
+        }
+      }
+    transcribe(tmp, { stopping }, tagger, { true }, stop)
+    expect(Pair(chunks(tmp).map { it.final }, stub.heard)).toEqual(Pair(listOf(false, false), listOf(10.0)))
+  }
+
+  @Test
+  fun `resumes a part whose pcm is shorter than its last chunk`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.mp3", 0.0, noise(4.0), true)), RecordingState.CAPTURED)
+    append(tmp.resolve("transcript.jsonl"), Chunk("raw.mp3", 0.0, 6.0, false, emptyList()))
+    expect { transcribed(tmp) }.notToThrow()
+  }
+
+  @Test
   fun `reads only whole samples from a pcm caught mid-write`(
     @TempDir tmp: Path,
   ) {

@@ -47,6 +47,11 @@ class ZipformerTest {
   }
 
   @Test
+  fun `hears no words and no sentences in an endpoint without tokens`() {
+    expect(Pair(words(emptyArray(), FloatArray(0), 0.0), sentences(emptyList()))).toEqual(Pair(emptyList(), emptyList()))
+  }
+
+  @Test
   fun `times a sentence from its first word to its last`() {
     val found = sentences(listOf(Word(0.0, 0.5, " Tere."), Word(0.5, 1.0, " Kuidas"), Word(1.0, 1.5, " läheb?")))
     expect(Pair(found[1].start, found[1].end)).toEqual(Pair(0.5, 1.5))

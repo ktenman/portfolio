@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import tools.jackson.module.kotlin.readValue
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -43,6 +44,14 @@ class RecordingTest {
   }
 
   @Test
+  fun `reads a chunk whose words carry the probability the Python worker wrote`() {
+    val json =
+      """{"part": "raw.mp3", "from": 0.0, "to": 5.0, "final": false, "segments": [{"start": 0.5, "end": 1.0, "text": "Tere.", "words": [{"start": 0.5, "end": 1.0, "word": " Tere.", "probability": 0.9}]}]}"""
+    expect(mapper.readValue<Chunk>(json))
+      .toEqual(Chunk("raw.mp3", 0.0, 5.0, false, listOf(Segment(0.5, 1.0, "Tere.", listOf(Word(0.5, 1.0, " Tere."))))))
+  }
+
+  @Test
   fun `keeps every field of a status through a write and a read`(
     @TempDir tmp: Path,
   ) {
@@ -75,5 +84,20 @@ class RecordingTest {
     Files.write(tmp.resolve("raw-part-002.pcm"), ByteArray(2 * 10 * RATE))
     val parts = listOf(Part("raw.mp3", 1.4, 0.0), Part("raw-part-002.mp3", 5.4, 4.0))
     expect(listOf(overlap(tmp, parts, 0), overlap(tmp, parts, 1))).toEqual(listOf(0.0, 6.0))
+  }
+
+  @Test
+  fun `counts no samples in a pcm file that does not exist yet`(
+    @TempDir tmp: Path,
+  ) {
+    expect(samples(tmp.resolve("absent.pcm"))).toEqual(0L)
+  }
+
+  @Test
+  fun `reads the samples of a pcm file from a sample on, silent past its end`(
+    @TempDir tmp: Path,
+  ) {
+    val pcm = Files.write(tmp.resolve("raw.pcm"), byteArrayOf(0, 64, 0, -64))
+    expect(floats(pcm, 1, 2).toList()).toEqual(listOf(-0.5f, 0f))
   }
 }

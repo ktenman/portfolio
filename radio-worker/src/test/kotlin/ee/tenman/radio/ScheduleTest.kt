@@ -50,6 +50,14 @@ private fun follow(
   return Pair(code, calls)
 }
 
+private fun leave(
+  tmp: Path,
+  state: RecordingState,
+) {
+  val directory = Files.createDirectory(tmp.resolve(saturday.name))
+  write(directory.resolve("status.json"), Status(state, KUKU, 1792832100.0, 1792836300.0, 4200.0))
+}
+
 class ScheduleTest {
   @Test
   fun `records a capture into its directory until its end`(
@@ -140,6 +148,42 @@ class ScheduleTest {
     val week = Week(1792821600.0, 1793444700.0)
     val code = follow(tmp, week).first
     expect(Pair(code, week.now)).toEqual(Pair(0, 1792836300.0))
+  }
+
+  @Test
+  fun `stops while it waits for a capture to start`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan.json"), listOf(saturday))
+    expect(follow(tmp, Week(1792821600.0, 1792821660.0))).toEqual(Pair(130, emptyList()))
+  }
+
+  @Test
+  fun `stops while it waits for a capture to end`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan.json"), listOf(saturday))
+    val week = Week(1792834500.0, 1792834560.0)
+    expect(planned(tmp, { _, _, _, _, _ -> RecordingState.RECORDING }, week::clock, week::sleep)).toEqual(130)
+  }
+
+  @Test
+  fun `finishes a recording whose capture ended while the worker was stopped`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan.json"), listOf(saturday))
+    leave(tmp, RecordingState.RECORDING)
+    val calls = follow(tmp, Week(1792836360.0, 1793444700.0)).second
+    expect(calls.map { it.directory }).toEqual(listOf("2026-10-24-keskpaevatund"))
+  }
+
+  @Test
+  fun `does not revisit a recording that is already finished`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan.json"), listOf(saturday))
+    leave(tmp, RecordingState.CAPTURED)
+    expect(follow(tmp, Week(1792836360.0, 1792836420.0))).toEqual(Pair(130, emptyList()))
   }
 
   @Test

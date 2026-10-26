@@ -5,7 +5,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -95,6 +94,7 @@ internal fun capture(
     val transcribed = runCatching { transcribe(directory, load, tagger, recorder::isAlive, stop) }
     recorder.join()
     if (stop.count > 0L) transcribed.getOrThrow()
+    transcribed.onFailure { System.err.println("Transcribing $directory failed: $it") }
   }
   return read<Status>(directory.resolve("status.json")).state
 }
@@ -116,7 +116,7 @@ internal fun span(
 internal fun moment(value: String): Double {
   val time =
     runCatching { OffsetDateTime.parse(value).toInstant() }
-      .recoverCatching { LocalDateTime.parse(value).atZone(ZoneId.of("Europe/Tallinn")).toInstant() }
+      .recoverCatching { LocalDateTime.parse(value).atZone(TALLINN).toInstant() }
       .getOrElse { usage("--start takes an ISO time, not $value") }
   return time.toEpochMilli() / 1000.0
 }
@@ -185,11 +185,12 @@ private fun recordOnce(
   val out = Path.of(options.text("--out") ?: usage("--out is required"))
   val model = options.path("--model", MODEL)
   if (!Files.isRegularFile(model.resolve("encoder.int8.onnx"))) usage("$model holds no Zipformer encoder.int8.onnx")
+  val tagger = options.path("--tagger", TAGGER)
+  if (!Files.isRegularFile(tagger.resolve("model.int8.onnx"))) usage("$tagger holds no CED-tiny model.int8.onnx")
   val source = options.text("--source") ?: KUKU
   val threads = options.whole("--threads") ?: 1
   val started = options.text("--start")?.let(::moment)
   val seconds = span(source, options.number("--duration"))
-  val tagger = options.path("--tagger", TAGGER)
   val state = capture(out, source, seconds, { ears(model, threads) }, tagger, stop, options.values["--programme"], started)
   if (stop.count == 0L) {
     System.err.println("Stopped; run again with --out $out to resume")

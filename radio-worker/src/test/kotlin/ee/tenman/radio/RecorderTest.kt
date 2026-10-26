@@ -1,5 +1,6 @@
 package ee.tenman.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.cause
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
@@ -10,12 +11,15 @@ import ch.tutteli.atrium.api.verbs.expect
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import tools.jackson.core.JacksonException
+import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
+import kotlin.math.abs
 
 class RecorderTest {
   @Test
@@ -44,8 +48,7 @@ class RecorderTest {
   fun `stores the sha256 of each part`(
     @TempDir tmp: Path,
   ) {
-    val directory = recorded(tmp)
-    expect(status(directory).parts.first().sha256).toEqual(sha256(directory.resolve("raw.mp3")))
+    expect(status(adopted(tmp)).parts.first().sha256).toEqual("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
   }
 
   @Test
@@ -119,8 +122,9 @@ class RecorderTest {
       recorders(directory.resolve("raw.mp3")).forEach { it.destroyForcibly() }
       recorder.join(40_000)
     }
-    val second = status(directory).parts[1]
-    expect((second.offsetSeconds + firstSilence(directory.resolve("raw-part-002.pcm"), 0.5)) % 10).toEqualWithErrorTolerance(7.0, 0.1)
+    val (first, second) = status(directory).parts
+    val placed = (second.offsetSeconds + firstSilence(directory.resolve("raw-part-002.pcm"), 0.5)) % 10
+    expect(Pair(second.offsetSeconds < first.durationSeconds!!, abs(placed - 7.0) <= 0.1)).toEqual(Pair(true, true))
   }
 
   @Test
@@ -160,8 +164,26 @@ class RecorderTest {
   }
 
   @Test
+  fun `ends a late live recording at its start plus its seconds`(
+    @TempDir tmp: Path,
+  ) {
+    prepare(tmp.resolve("raadio"), KUKU, 30.0, started = 1792832400.0)
+    expect(status(tmp.resolve("raadio")).endsAt).toEqual(1792832430.0)
+  }
+
+  @Test
   fun `reaches back over the seconds the worker was away`() {
-    expect(listOf(null, 0.4, 19.0, 86400.0).map { reach(KUKU, it) }).toEqual(listOf(0, 0, 3, 600))
+    expect(listOf(0.4, 19.0, 86400.0).map { reach(KUKU, it) }).toEqual(listOf(0, 3, 600))
+  }
+
+  @Test
+  fun `counts the stream a stopped part left unread as time away`(
+    @TempDir tmp: Path,
+  ) {
+    Files.createFile(tmp.resolve("raw.mp3"))
+    val started = now() - 600
+    val status = Status(RecordingState.RECORDING, KUKU, started, started + 1200, 1200.0, listOf(Part("raw.mp3", 1.4, 0.0, 60.0)))
+    expect(away(tmp, status)).toEqualWithErrorTolerance(540.0, 1.0)
   }
 
   @Test
@@ -198,12 +220,18 @@ class RecorderTest {
   fun `adopts a part it never registered`(
     @TempDir tmp: Path,
   ) {
+    expect(status(adopted(tmp)).parts.map { it.file }).toEqual(listOf("raw.mp3"))
+  }
+
+  @Test
+  fun `marks a recording failed when recording it throws`(
+    @TempDir tmp: Path,
+  ) {
     val directory = tmp.resolve("raadio")
     prepare(directory, KUKU, 0.0)
     Files.createFile(directory.resolve("raw.mp3"))
-    Files.writeString(directory.resolve("raw.log"), "  Duration: N/A, start: 1.400000, bitrate: N/A\n")
-    record(directory, CountDownLatch(1))
-    expect(status(directory).parts.map { it.file }).toEqual(listOf("raw.mp3"))
+    val failed = runCatching { record(directory, CountDownLatch(1)) }.isFailure
+    expect(Pair(failed, status(directory).state)).toEqual(Pair(true, RecordingState.FAILED))
   }
 
   @Test
@@ -232,11 +260,22 @@ class RecorderTest {
   }
 
   @Test
-  fun `refuses a directory that is not its own`(
+  fun `refuses a directory that is not its own, naming why`(
     @TempDir tmp: Path,
   ) {
-    Files.writeString(tmp.resolve("status.json"), """{"state": "captured_needs_review"}""")
-    expect { prepare(tmp, KUKU, 3.0) }.toThrow<RecordingRefusedException>()
+    val json =
+      """{"state": "captured_needs_review", "source": "$KUKU", "startedAt": 1792832100.0, "endsAt": 1792836300.0, "seconds": 4200.0, "parts": []}"""
+    Files.writeString(tmp.resolve("status.json"), json)
+    expect { prepare(tmp, KUKU, 3.0) }.toThrow<RecordingRefusedException>().cause<JacksonException>()
+  }
+
+  @Test
+  fun `refuses a directory that holds a recording of another source`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    prepare(directory, KUKU, 0.0)
+    expect { prepare(directory, "http://127.0.0.1:8770/stream.m3u8", 0.0) }.toThrow<RecordingRefusedException>().messageToContain("not of")
   }
 
   @Test
@@ -244,7 +283,8 @@ class RecorderTest {
     @TempDir tmp: Path,
   ) {
     val directory = tmp.resolve("raadio")
-    prepare(directory, "http://127.0.0.1:9/stream.m3u8", 3.0)
+    val port = ServerSocket(0).use { it.localPort }
+    prepare(directory, "http://127.0.0.1:$port/stream.m3u8", 3.0)
     val recorder = thread { record(directory, CountDownLatch(1)) }
     recorder.join(10_000)
     val status = status(directory)
@@ -258,6 +298,15 @@ class RecorderTest {
         record(it, CountDownLatch(1))
       }
     }
+
+  private fun adopted(tmp: Path): Path {
+    val directory = tmp.resolve("raadio")
+    prepare(directory, KUKU, 0.0)
+    Files.createFile(directory.resolve("raw.mp3"))
+    Files.writeString(directory.resolve("raw.log"), "  Duration: N/A, start: 1.400000, bitrate: N/A\n")
+    record(directory, CountDownLatch(1))
+    return directory
+  }
 
   private fun offsets(
     tmp: Path,

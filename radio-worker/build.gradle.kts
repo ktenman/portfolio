@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 
 plugins {
@@ -53,6 +54,13 @@ tasks.test {
   filter.isFailOnNoMatchingTests = false
   inputs.dir("ced-tiny")
   jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-Dradio.classpath=${sourceSets.test.get().runtimeClasspath.asPath}") })
+  testLogging {
+    events("passed", "skipped", "failed")
+    showExceptions = true
+    showCauses = true
+    showStackTraces = true
+    exceptionFormat = TestExceptionFormat.FULL
+  }
 }
 
 configure<KtlintExtension> {

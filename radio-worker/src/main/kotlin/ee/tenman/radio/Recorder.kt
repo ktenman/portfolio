@@ -63,8 +63,10 @@ fun record(
   if (status.state != RecordingState.RECORDING) return
   val recorded =
     runCatching { capture(directory, complete(directory, adopt(directory, status)), stop) }
-      .onFailure { store(directory, read<Status>(directory.resolve(STATUS)).copy(state = RecordingState.FAILED)) }
-      .getOrThrow()
+      .onFailure { error ->
+        runCatching { store(directory, read<Status>(directory.resolve(STATUS)).copy(state = RecordingState.FAILED)) }
+          .onFailure(error::addSuppressed)
+      }.getOrThrow()
   if (stop.count == 0L) return
   val missing = lost(recorded.seconds, recorded.parts)
   store(directory, recorded.copy(state = verdict(recorded.parts, missing), lostSeconds = missing))
@@ -108,9 +110,9 @@ internal fun verdict(
 
 internal fun reach(
   source: String,
-  away: Double?,
+  away: Double,
 ): Int {
-  if (away == null || !live(source)) return 0
+  if (!live(source)) return 0
   return (away / SEGMENT).roundToInt().coerceIn(0, (LOOKBACK / SEGMENT).toInt())
 }
 
@@ -131,8 +133,8 @@ private fun claim(
   source: String,
 ) {
   val status =
-    runCatching { read<Status>(directory.resolve(STATUS)) }.getOrNull()
-      ?: throw RecordingRefusedException("$directory exists and holds no recording made by this worker")
+    runCatching { read<Status>(directory.resolve(STATUS)) }
+      .getOrElse { throw RecordingRefusedException("$directory exists and holds no recording made by this worker", it) }
   if (status.source != source) throw RecordingRefusedException("$directory holds a recording of ${status.source}, not of $source")
 }
 
@@ -164,12 +166,15 @@ private tailrec fun capture(
   return capture(directory, attempted, stop)
 }
 
-private fun away(
+internal fun away(
   directory: Path,
   status: Status,
 ): Double {
-  val newest = status.parts.lastOrNull() ?: return now() - status.startedAt
-  return now() - Files.getLastModifiedTime(directory.resolve(newest.file)).toMillis() / 1000.0
+  val clock = now()
+  val covered = status.parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
+  val behind = clock - status.startedAt - covered
+  val newest = status.parts.lastOrNull() ?: return behind
+  return max(behind, clock - Files.getLastModifiedTime(directory.resolve(newest.file)).toMillis() / 1000.0)
 }
 
 private fun attempt(

@@ -4,9 +4,6 @@ import com.k2fsa.sherpa.onnx.AudioTagging
 import com.k2fsa.sherpa.onnx.AudioTaggingConfig
 import com.k2fsa.sherpa.onnx.AudioTaggingModelConfig
 import java.lang.ProcessBuilder.Redirect
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -77,17 +74,7 @@ private fun scores(
   heard: Heard,
 ): List<SoundFrame> {
   val starts = Math.rint(heard.skip * RATE).toLong()..samples(heard.pcm) - WINDOW step STRIDE.toLong()
-  if (starts.isEmpty()) return emptyList()
-  return FileChannel.open(heard.pcm).use { channel -> starts.map { frame(tagging, window(channel, it), heard.origin, it) } }
-}
-
-private fun window(
-  channel: FileChannel,
-  first: Long,
-): FloatArray {
-  val bytes = ByteBuffer.allocate(2 * WINDOW).order(ByteOrder.LITTLE_ENDIAN)
-  channel.read(bytes, 2 * first)
-  return FloatArray(WINDOW) { bytes.getShort(2 * it) / 32768f }
+  return starts.map { frame(tagging, floats(heard.pcm, it, WINDOW), heard.origin, it) }
 }
 
 private fun frame(
@@ -97,9 +84,13 @@ private fun frame(
   first: Long,
 ): SoundFrame {
   val stream = tagging.createStream()
-  stream.acceptWaveform(audio, RATE)
-  val events = tagging.compute(stream, CLASSES).associate { it.index to it.prob.toDouble() }
-  stream.release()
+  val events =
+    try {
+      stream.acceptWaveform(audio, RATE)
+      tagging.compute(stream, CLASSES).associate { it.index to it.prob.toDouble() }
+    } finally {
+      stream.release()
+    }
   return SoundFrame(round3(origin + (first + WINDOW / 2.0) / RATE), round3(events.getValue(SPEECH)), round3(events.getValue(MUSIC)))
 }
 
