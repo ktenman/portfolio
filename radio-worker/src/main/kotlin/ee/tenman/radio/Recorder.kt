@@ -157,11 +157,11 @@ private tailrec fun capture(
   stop: CountDownLatch,
 ): Status {
   val remaining = round3(status.endsAt - now())
-  if (remaining <= 0 || stop.count == 0L) return status
   val reach = reach(status.source, away(directory, status))
+  if (stop.count == 0L || remaining + extra(reach) <= 0 || remaining <= 0 && lost(status.seconds, status.parts) == 0L) return status
   val attempted = attempt(directory, status, remaining, reach, stop)
   val part = attempted.parts.drop(status.parts.size).firstOrNull()
-  if (part != null && (part.durationSeconds ?: 0.0) >= remaining + extra(reach) - 1) return attempted
+  if (remaining <= 0 || part != null && (part.durationSeconds ?: 0.0) >= remaining + extra(reach) - 1) return attempted
   stop.await(2, TimeUnit.SECONDS)
   return capture(directory, attempted, stop)
 }
@@ -174,7 +174,7 @@ internal fun away(
   val covered = status.parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
   val behind = clock - status.startedAt - covered
   val newest = status.parts.lastOrNull() ?: return behind
-  return max(behind, clock - Files.getLastModifiedTime(directory.resolve(newest.file)).toMillis() / 1000.0)
+  return max(behind + BEHIND * SEGMENT, clock - Files.getLastModifiedTime(directory.resolve(newest.file)).toMillis() / 1000.0)
 }
 
 private fun attempt(

@@ -101,8 +101,8 @@ class RecorderTest {
     val before =
       replay(tmp).use { station ->
         prepare(directory, station.url, 4.0)
-        Files.copy(tone(tmp.resolve("t.mp3"), 3.0), directory.resolve("raw.mp3"))
-        silence(directory.resolve("raw.pcm"), 3.0)
+        Files.copy(tone(tmp.resolve("t.mp3"), 20.0), directory.resolve("raw.mp3"))
+        silence(directory.resolve("raw.pcm"), 20.0)
         write(directory.resolve("status.json"), status(directory).copy(parts = listOf(Part("raw.mp3", 1.4, 0.0))))
         sha256(directory.resolve("raw.mp3")).also { record(directory, CountDownLatch(1)) }
       }
@@ -150,6 +150,25 @@ class RecorderTest {
   }
 
   @Test
+  fun `starts a part after the window ended when a stop left audio missing`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    replay(tmp, 60.0).use { station ->
+      prepare(directory, station.url, 50.0)
+      val first = CountDownLatch(1)
+      val recorder = thread { record(directory, first) }
+      waitFor { caughtUp(directory, tmp.resolve("hls/stream.m3u8")) }
+      first.countDown()
+      recorder.join(30_000)
+      write(directory.resolve("status.json"), status(directory).copy(endsAt = now() - 3))
+      Files.setLastModifiedTime(directory.resolve("raw.mp3"), FileTime.from(Instant.now().minusSeconds(12)))
+      record(directory, CountDownLatch(1))
+    }
+    expect(status(directory).parts.map { it.file }).toEqual(listOf("raw.mp3", "raw-part-002.mp3"))
+  }
+
+  @Test
   fun `starts a late recording at its start`(
     @TempDir tmp: Path,
   ) {
@@ -183,7 +202,7 @@ class RecorderTest {
     Files.createFile(tmp.resolve("raw.mp3"))
     val started = now() - 600
     val status = Status(RecordingState.RECORDING, KUKU, started, started + 1200, 1200.0, listOf(Part("raw.mp3", 1.4, 0.0, 60.0)))
-    expect(away(tmp, status)).toEqualWithErrorTolerance(540.0, 1.0)
+    expect(away(tmp, status)).toEqualWithErrorTolerance(558.0, 1.0)
   }
 
   @Test
@@ -289,6 +308,20 @@ class RecorderTest {
     recorder.join(10_000)
     val status = status(directory)
     expect(Triple(recorder.isAlive, status.state, status.parts)).toEqual(Triple(false, RecordingState.FAILED, emptyList()))
+  }
+
+  @Test
+  fun `tries once for the lost tail of an ended recording whose source never answers`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    val port = ServerSocket(0).use { it.localPort }
+    prepare(directory, "http://127.0.0.1:$port/stream.m3u8", 55.0, started = now() - 60)
+    Files.createFile(directory.resolve("raw.mp3"))
+    write(directory.resolve("status.json"), status(directory).copy(parts = listOf(Part("raw.mp3", 1.4, 0.0, 10.0))))
+    val recorder = thread { record(directory, CountDownLatch(1)) }
+    recorder.join(20_000)
+    expect(Pair(recorder.isAlive, status(directory).state)).toEqual(Pair(false, RecordingState.PARTIAL))
   }
 
   private fun recorded(tmp: Path): Path =
