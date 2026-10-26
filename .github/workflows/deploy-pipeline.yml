@@ -153,6 +153,7 @@ jobs:
             for i in 1 2 3; do \
               docker compose pull && break || { [ \"\$i\" -lt 3 ] || exit 1; echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
             done && \
+            if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi && \
             echo 'Starting containers...' && \
             for i in 1 2 3; do \
               docker compose up -d && break; \

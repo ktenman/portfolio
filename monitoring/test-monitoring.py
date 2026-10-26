@@ -236,8 +236,8 @@ def check_configurations():
 def check_compose():
     compose = ROOT.parent / 'docker-compose.yml'
     configured = json.loads(run('docker', 'compose', '-f', str(compose),
-                                '--profile', 'monitoring', '--profile', 'radio', 'config',
-                                '--no-interpolate', '--format', 'json').stdout)
+                                '--profile', 'monitoring', '--profile', 'radio', '--profile', 'whisper',
+                                'config', '--no-interpolate', '--format', 'json').stdout)
     services = configured['services']
     published = sorted(name for name, service in services.items() if 'ports' in service)
     assert published == ['app'], f'only Caddy may publish host ports, found {published}'
@@ -248,6 +248,12 @@ def check_compose():
     worker = services['radio-worker']
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '90s' and list(worker['networks']) == ['radio']
+    assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
+    backup = services['radio-whisper']
+    assert backup['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
+    assert backup['restart'] == 'unless-stopped', 'a stopped Whisper backup must stay stopped when Docker restarts'
+    assert ('radio_model', '/model') in {(volume['source'], volume['target']) for volume in backup['volumes']}, backup['volumes']
+    assert '/model' not in {volume['target'] for volume in worker['volumes']}, worker['volumes']
     shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker')]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
@@ -296,6 +302,8 @@ def check_host_gates():
     for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
         assert step in deploy, f'deploy does not run {step}'
     assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
+    guard = "if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi"
+    assert deploy.index(guard) < deploy.index('docker compose up -d'), 'the deploy must stop the Whisper backup before it starts the radio worker'
     print('Heartbeat and deploy host gates passed')
 
 

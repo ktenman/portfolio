@@ -1,3 +1,3 @@
-.venv
-.pytest_cache
-**/__pycache__
+*
+!build/install/radio-worker
+!ced-tiny

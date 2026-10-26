@@ -74,7 +74,7 @@ SCHEDULING_ENABLED=false npm run dev:backend
 
 ### Radio archive
 
-The Raadio tab reads recordings from `radio-data/recordings`, which is gitignored. To download the transcription model and record Kuku for 10 minutes, or add an MP3 you already have, see „From a fresh clone“ in [radio-worker/AGENTS.md](radio-worker/AGENTS.md).
+The Raadio tab reads recordings from `radio-data/recordings`, which is gitignored. To record Kuku for 10 minutes, or add an MP3 you already have, see „From a fresh clone“ in [radio-worker/AGENTS.md](radio-worker/AGENTS.md).
 
 `npm run docker:down` stops the development infrastructure. `npm run test:cleanup` also terminates running `bootRun` and Vite processes.
 
@@ -181,7 +181,7 @@ Flyway runs on backend startup. Migrations include this portfolio's instruments 
 | `npm test -- --run`                                    | All frontend tests without watch mode.                                      |
 | `npm run test:coverage`                                | Frontend tests with coverage.                                               |
 | `npm run test:proxy`                                   | Cloudflare proxy Jest tests.                                                |
-| `npm run test:unit`                                    | Backend, frontend, proxy, and radio worker tests.                           |
+| `npm run test:unit`                                    | Backend, frontend, proxy, radio worker and Whisper worker tests.            |
 | `npm run test:e2e`                                     | Start local services, run Selenide tests, and clean up.                     |
 | `npm run test:all`                                     | Run `test:unit` followed by `test:e2e`.                                     |
 | `./gradlew pitest`                                     | Backend mutation testing.                                                   |

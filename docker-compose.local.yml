@@ -163,9 +163,9 @@ services:
     container_name: portfolio-radio-worker
     profiles: [radio]
     command: ["planned"]
+    restart: unless-stopped
     stop_grace_period: 90s
     volumes:
-      - radio_model:/model
       - radio_recordings:/recordings
 
   app:
@@ -196,5 +196,4 @@ volumes:
   caddy-data:
   caddy-config:
   seaweedfs-data:
-  radio_model:
   radio_recordings:
