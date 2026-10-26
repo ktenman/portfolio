@@ -188,11 +188,19 @@ fun chunks(directory: Path): List<Chunk> =
     .dropLast(1)
     .map { mapper.readValue<Chunk>(it) }
 
+fun head(path: Path): List<Pair<String, Any?>> =
+  mapper
+    .readValue<Map<String, Any?>>(Files.readString(path))
+    .entries
+    .take(2)
+    .map { it.key to it.value }
+
 class StubEars(
   private val every: Double,
   private val delay: Duration = Duration.ZERO,
 ) : Ears {
   override val name = "stub"
+  override val revision = "stub revision"
   private val lengths = CopyOnWriteArrayList<Double>()
   private val distinct = ConcurrentHashMap.newKeySet<Float>()
   val heard: List<Double>
