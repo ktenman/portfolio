@@ -248,6 +248,7 @@ def check_compose():
     worker = services['radio-worker']
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '90s' and list(worker['networks']) == ['radio']
+    assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
     shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker')]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])

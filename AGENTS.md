@@ -25,7 +25,8 @@ Detailed per-area rules live in their own files and are imported below, so they 
 - Backend (Kotlin, Spring, testing, architecture): @src/AGENTS.md
 - Frontend (Vue, TypeScript, Knip): @ui/AGENTS.md
 - Proxy (curl-impersonate, Cloudflare bypass): @cloudflare-bypass-proxy/AGENTS.md
-- Radio worker (Python, FFmpeg, Whisper): @radio-worker/AGENTS.md
+- Radio worker (Kotlin, FFmpeg, Zipformer): @radio-worker/AGENTS.md
+- Whisper worker (Python, FFmpeg, Whisper), the radio worker's backup: @radio-whisper/AGENTS.md
 
 Each subdirectory also keeps a thin `CLAUDE.md` containing `@AGENTS.md`, so the same rules load when work happens directly inside that subtree.
 
@@ -67,7 +68,8 @@ npm run test:all            # ALL tests: backend + frontend + E2E
 npm run test:unit           # Backend unit + frontend UI + proxy + radio worker tests
 npm run test:e2e            # Full E2E setup + tests (starts all services)
 npm run test:proxy          # Cloudflare-bypass-proxy tests only
-npm run test:radio          # Radio worker tests only (uv, pytest)
+npm run test:radio          # Radio worker tests only (Gradle)
+npm run test:whisper        # Whisper worker tests only (uv, pytest)
 
 # Docker
 npm run docker:up           # Start PostgreSQL & Redis
