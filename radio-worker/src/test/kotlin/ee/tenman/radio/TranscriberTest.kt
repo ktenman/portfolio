@@ -175,6 +175,15 @@ class TranscriberTest {
   }
 
   @Test
+  fun `finishes the transcript of an ended recording when stopped`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.mp3", 0.0, noise(10.0), true)), RecordingState.CAPTURED)
+    transcribe(tmp, { StubEars(60.0) }, tagger, { false }, CountDownLatch(0))
+    expect(Files.exists(tmp.resolve("transcript.json"))).toEqual(true)
+  }
+
+  @Test
   fun `writes no final chunk when stopped before a part is heard to its end`(
     @TempDir tmp: Path,
   ) {
