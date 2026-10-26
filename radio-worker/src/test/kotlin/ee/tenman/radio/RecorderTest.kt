@@ -198,6 +198,29 @@ class RecorderTest {
   }
 
   @Test
+  fun `records the whole length when the first part starts late`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    replay(tmp).use { station ->
+      prepare(directory, station.url, 12.0, started = now() - 2.0)
+      record(directory, CountDownLatch(1))
+    }
+    expect(status(directory).state).toEqual(RecordingState.CAPTURED)
+  }
+
+  @Test
+  fun `reads a file to its end however late the recording starts`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("keskpäevatund")
+    prepare(directory, "${tone(tmp.resolve("in.mp3"), 12.0)}", 12.0)
+    write(directory.resolve("status.json"), status(directory).copy(endsAt = now() + 9))
+    record(directory, CountDownLatch(1))
+    expect(status(directory).state).toEqual(RecordingState.CAPTURED)
+  }
+
+  @Test
   fun `ends a late live recording at its start plus its seconds`(
     @TempDir tmp: Path,
   ) {
