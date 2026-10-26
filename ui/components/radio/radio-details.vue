@@ -20,9 +20,13 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import {
+  type ModelVersion,
+  type RecordingSummary,
+  TranscriptState,
+} from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
-import { megabytes, textState } from '../../utils/radio'
+import { megabytes } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 import RadioIcon from './radio-icon.vue'
@@ -31,10 +35,22 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
 
-const facts = computed<[string, string][]>(() => {
-  const text: [string, string] = ['Transcript', textState(props.recording)]
+const model = (label: string, version: ModelVersion | null): [string, string, string?] => {
+  if (version) return [label, version.label, `${version.model} at ${version.revision}`]
+  return [
+    label,
+    props.recording.transcriptState === TranscriptState.RECORDING ? 'In progress' : '—',
+  ]
+}
+
+const facts = computed<[string, string, string?][]>(() => {
+  const models = [model('Speech', props.recording.speech), model('Sounds', props.recording.sounds)]
   const edit = props.recording.editList
-  if (!edit) return [text]
-  return [['Model', edit.outline.model ?? '—'], ['Hosts', edit.hosts.join(', ') || '—'], text]
+  if (!edit) return models
+  return [
+    ['Analysis', edit.outline.model ?? '—'],
+    ['Hosts', edit.hosts.join(', ') || '—'],
+    ...models,
+  ]
 })
 </script>

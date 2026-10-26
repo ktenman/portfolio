@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RadioDetails from './radio-details.vue'
 import { recording } from './radio-fixture'
-import type { RecordingSummary } from '../../models/generated/domain-models'
+import { type RecordingSummary, TranscriptState } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: { fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}` },
@@ -60,6 +60,56 @@ describe('RadioDetails', () => {
     expect((await opened(recording({ editList: null }))).text()).toContain(
       'The show has not been analyzed yet.'
     )
+  })
+
+  const rows = async (item: RecordingSummary = recording()) =>
+    (await opened(item))
+      .findAll('dl > div')
+      .map(row => [row.get('dt').text(), row.get('dd').text()])
+
+  it('should list the analysis, the hosts and the models behind the speech and sounds', async () => {
+    expect((await rows()).map(([label]) => label)).toEqual([
+      'Analysis',
+      'Hosts',
+      'Speech',
+      'Sounds',
+    ])
+  })
+
+  it('should name the speech model by its revision', async () => {
+    expect(await rows()).toContainEqual(['Speech', 'Zipformer · 2812262'])
+  })
+
+  it('should name the sounds model by its revision', async () => {
+    expect(await rows()).toContainEqual(['Sounds', 'CED-tiny · 2024-04-19'])
+  })
+
+  it('should give the full speech model and revision on hover', async () => {
+    const wrapper = await opened()
+    const speech = wrapper.findAll('dl > div').find(row => row.get('dt').text() === 'Speech')!
+    expect(speech.get('dd').attributes('title')).toBe(
+      'TalTechNLP/streaming-zipformer-large.et-en at 2812262bd4fd5d4327dc09ca0e6c19e8a32a03d6'
+    )
+  })
+
+  it('should show a dash for a model recorded before revisions were kept', async () => {
+    expect(await rows(recording({ speech: null }))).toContainEqual(['Speech', '—'])
+  })
+
+  it('should say the models are still at work while the show records', async () => {
+    const item = recording({
+      speech: null,
+      sounds: null,
+      transcriptState: TranscriptState.RECORDING,
+    })
+    expect(await rows(item)).toContainEqual(['Sounds', 'In progress'])
+  })
+
+  it('should list only the models of a show not analyzed yet', async () => {
+    expect((await rows(recording({ editList: null }))).map(([label]) => label)).toEqual([
+      'Speech',
+      'Sounds',
+    ])
   })
 
   it('should start folded', () => {

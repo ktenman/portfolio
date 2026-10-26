@@ -35,7 +35,7 @@ docker run --rm --network radio -v <absolute directory owned by uid 1000>:/recor
 - `src/main/kotlin/ee/tenman/radio/Sounds.kt` - Speech and music scores every 0.5 s from the bundled CED-tiny; the backend cuts the songs inside a show from them
 - `src/main/kotlin/ee/tenman/radio/Schedule.kt` - Follows the backend's `plan.json`, re-read every minute; it leaves `heartbeat.json` with the time it will next be seen, so the backend can tell a stopped recorder; it records one capture and exits, so every capture starts in a fresh process (#2219)
 - `src/main/kotlin/ee/tenman/radio/Main.kt` - The `station`, `run`, `planned` and `sounds` commands, and the shutdown hook that lets SIGTERM finish the part being recorded, for the next start to resume
-- `ced-tiny/` - CED-tiny int8 from `k2-fsa/sherpa-onnx-ced-tiny-audio-tagging-2024-04-19` (Apache 2.0) and its AudioSet labels
+- `ced-tiny/` - CED-tiny int8 from `k2-fsa/sherpa-onnx-ced-tiny-audio-tagging-2024-04-19` (Apache 2.0), its AudioSet labels and its `revision`
 
 ## From a fresh clone
 
@@ -66,6 +66,7 @@ The `radio-worker` service in `docker-compose.yml` runs `planned` with the cappe
 
 - Never write over a recording: FFmpeg runs with `-n`, and an existing directory is reused only when its `status.json` is this worker's recording of the same source
 - Place each part by the stream timestamp FFmpeg reports for its first packet, never by the clock
+- `transcript.json` and `sounds.json` open with `model` and `revision`, from the `revision` file in the model's directory, because the backend reads only those two fields; the Dockerfile writes Zipformer's from the commit it downloads
 - Tests use generated MP3 and PCM, a stub recognizer and the bundled CED-tiny; they never reach Kuku or Hugging Face
 - Tests are JUnit 5 with Atrium, named as full sentences in backticks: `` `goes off air after the replay ends` ``
 - Run from project root: `npm run test:radio`, which runs Gradle

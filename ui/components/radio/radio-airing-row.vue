@@ -1,6 +1,6 @@
 <template>
   <div
-    class="grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:grid-cols-[3.75rem_minmax(0,1fr)_3.5rem_9.5rem_7.5rem] md:px-4"
+    class="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:grid-cols-[3.75rem_minmax(0,1fr)_3.5rem_9.5rem_7.5rem] md:px-4"
     :class="{ 'text-ink-soft': airing.state === AiringState.MISSED }"
     data-testid="radio-airing"
   >
@@ -8,7 +8,15 @@
       {{ clock(airing.start, 0) }}
     </span>
     <div class="min-w-0">
-      <span class="block font-semibold">{{ airing.name }}</span>
+      <router-link
+        v-if="page"
+        :to="page"
+        class="block font-semibold after:absolute after:inset-0 after:rounded-container hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep"
+        :aria-label="`${airing.name} ${clock(airing.start, 0)}`"
+      >
+        {{ airing.name }}
+      </router-link>
+      <span v-else class="block font-semibold">{{ airing.name }}</span>
       <span v-if="note" class="block text-sm text-body-secondary">{{ note }}</span>
     </div>
     <span class="hidden text-ink-soft tabular-nums md:block">
@@ -30,7 +38,7 @@
           action.icon
             ? [PLAY, 'size-9']
             : [LINK, action.quiet ? 'bg-surface-sunken text-ink-soft' : 'bg-surface'],
-          'cursor-pointer disabled:cursor-default disabled:opacity-50',
+          'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"
         :disabled="!action.run"
         :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)}`"
@@ -87,6 +95,14 @@ const listen = (recording: AiringRecording | null | undefined) => {
     void router.push(`/radio/${summary.name}`)
   }
 }
+
+const page = computed(() => {
+  const airing = props.airing
+  const recording =
+    airing.state === AiringState.ARCHIVED ? airing.original?.recording : airing.recording
+  const summary = recordings.value?.find(r => r.name === recording?.name)
+  return summary && `/radio/${summary.name}`
+})
 
 const record = (value: boolean) => () =>
   radioService

@@ -147,6 +147,15 @@ class TranscriberTest {
   }
 
   @Test
+  fun `names the model and its revision ahead of the transcript`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.mp3", 0.0, noise(2.0), true)), RecordingState.CAPTURED)
+    transcribed(tmp)
+    expect(head(tmp.resolve("transcript.json"))).toEqual(listOf("model" to "stub", "revision" to "stub revision"))
+  }
+
+  @Test
   fun `writes the sounds before the transcript`(
     @TempDir tmp: Path,
   ) {

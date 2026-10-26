@@ -218,6 +218,37 @@ test('summary chart marks the high and low of total profit when total value is h
   )
 })
 
+test('a radio schedule row opens its recording wherever it is clicked', async ({ page }) => {
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const link = page.getByRole('link', { name: 'Keskpäevatund 12:00' })
+  await page
+    .getByTestId('radio-airing')
+    .filter({ has: link })
+    .first()
+    .click({ position: { x: 4, y: 4 } })
+  await expect(page).toHaveURL(/\/radio\/2026-10-17$/)
+})
+
+test('the play button of a radio schedule row stays above the link to its recording', async ({
+  page,
+}) => {
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const play = page.getByRole('button', { name: 'Listen: Keskpäevatund 12:00' }).first()
+  await play.scrollIntoViewIfNeeded()
+  const box = (await play.boundingBox())!
+  const hit = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.getAttribute('aria-label'),
+    { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  )
+  expect(hit).toBe('Listen: Keskpäevatund 12:00')
+})
+
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
   await stubBuildInfo(page)

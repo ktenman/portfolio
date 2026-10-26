@@ -60,6 +60,15 @@ class SoundsTest {
   }
 
   @Test
+  fun `listen names the tagger and its revision ahead of the frames`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.mp3", 0.0, ShortArray(2 * RATE), true)), RecordingState.CAPTURED)
+    listen(tmp, status(tmp).parts, tagger)
+    expect(head(tmp.resolve("sounds.json"))).toEqual(listOf("model" to "ced-tiny int8", "revision" to "2024-04-19"))
+  }
+
+  @Test
   fun `listen hears audio a part repeats from the one before once`(
     @TempDir tmp: Path,
   ) {

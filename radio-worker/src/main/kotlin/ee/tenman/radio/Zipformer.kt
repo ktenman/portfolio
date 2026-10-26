@@ -16,6 +16,7 @@ private val STOPS = setOf(".", "?", "!")
 
 interface Ears {
   val name: String
+  val revision: String
 
   fun open(): Ear
 }
@@ -36,6 +37,7 @@ class ZipformerEars(
   threads: Int,
 ) : Ears {
   override val name = "TalTechNLP/streaming-zipformer-large.et-en"
+  override val revision = revision(model)
   private val recognizer = OnlineRecognizer(config(model, threads))
 
   override fun open(): Ear = ZipformerEar(recognizer)

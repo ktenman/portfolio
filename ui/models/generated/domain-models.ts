@@ -250,6 +250,8 @@ export interface RecordingSummary {
     status: RecordingStatus;
     sizeBytes: number;
     transcribed: boolean;
+    speech: ModelVersion | null;
+    sounds: ModelVersion | null;
     editList: EditList | null;
     failure: EpisodeFailure | null;
     episodeBytes: number | null;
@@ -260,11 +262,11 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    span: Slot;
-    topics: TimelineEntry[];
-    transcriptState: TranscriptState;
     cutState: CutState;
+    topics: TimelineEntry[];
     drops: number;
+    span: Slot;
+    transcriptState: TranscriptState;
 }
 
 export interface TranscriptLine {
@@ -407,6 +409,12 @@ export interface RecordingStatus {
     programmes: string[];
     lostSeconds: number;
     slot: Slot | null;
+}
+
+export interface ModelVersion {
+    model: string;
+    revision: string;
+    label: string;
 }
 
 export interface EditList {
@@ -701,17 +709,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
-}
-
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
+}
+
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum RecorderState {

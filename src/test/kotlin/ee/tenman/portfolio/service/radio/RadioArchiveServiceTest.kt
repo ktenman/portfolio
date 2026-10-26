@@ -389,6 +389,45 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should name the speech model of a transcript by its short name and revision`() {
+    Files.writeString(
+      recording("2026-10-17").resolve(TRANSCRIPT_FILE),
+      """{"model":"TalTechNLP/streaming-zipformer-large.et-en","revision":"2812262bd4fd5d4327dc09ca0e6c19e8a32a03d6"}""",
+    )
+    expect(service.recordings().map { it.speech?.label }).toEqual(listOf("Zipformer · 2812262"))
+  }
+
+  @Test
+  fun `should name the sounds model of a recording by its short name and dated revision`() {
+    Files.writeString(recording("2026-10-17").resolve(SOUNDS_FILE), """{"model":"ced-tiny int8","revision":"2024-04-19","frames":[]}""")
+    expect(service.recordings().map { it.sounds?.label }).toEqual(listOf("CED-tiny · 2024-04-19"))
+  }
+
+  @Test
+  fun `should name no speech model for a transcript made without a revision`() {
+    Files.writeString(
+      recording("2026-10-17").resolve(TRANSCRIPT_FILE),
+      """{"model":"/model/ct2","options":{"language":"et"},"segments":[],"words":[]}""",
+    )
+    expect(service.recordings().single().speech).toEqual(null)
+  }
+
+  @Test
+  fun `should read the speech model from the head of a transcript alone`() {
+    Files.writeString(
+      recording("2026-10-17").resolve(TRANSCRIPT_FILE),
+      """{"model":"TalTechNLP/streaming-zipformer-large.et-en","revision":"2812262bd4fd5d4327dc09ca0e6c19e8a32a03d6","segments":[""",
+    )
+    expect(service.recordings().map { it.speech?.revision }).toEqual(listOf("2812262bd4fd5d4327dc09ca0e6c19e8a32a03d6"))
+  }
+
+  @Test
+  fun `should name a model it does not know by its id`() {
+    expect(ModelVersion("openai/whisper-large-v3-turbo", "41f01f3fe87f28c78e2fbf8b568835947dd65ed9").label)
+      .toEqual("openai/whisper-large-v3-turbo · 41f01f3")
+  }
+
+  @Test
   fun `should say the cuts of an edit list nobody has reviewed are suggested`() {
     edited(recording("2026-10-17"))
     expect(service.recordings().single().cutState).toEqual(CutState.SUGGESTED)
