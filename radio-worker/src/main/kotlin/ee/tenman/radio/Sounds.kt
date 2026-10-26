@@ -38,7 +38,7 @@ fun listen(
   tagger: Path,
 ) {
   val heard = parts.mapIndexed { index, part -> Heard(pcm(directory, part), part.offsetSeconds, overlap(directory, parts, index)) }
-  write(directory.resolve("sounds.json"), Sounds("ced-tiny int8", frames(heard, tagger)))
+  write(directory.resolve("sounds.json"), Sounds("ced-tiny int8", revision(tagger), frames(heard, tagger)))
 }
 
 fun hear(

@@ -108,6 +108,7 @@ data class Line(
 
 data class Transcript(
   val model: String,
+  val revision: String,
   val segments: List<Line>,
   val words: List<Word>,
 )
@@ -120,6 +121,7 @@ data class SoundFrame(
 
 data class Sounds(
   val model: String,
+  val revision: String,
   val frames: List<SoundFrame>,
 )
 
@@ -162,6 +164,8 @@ fun append(
 }
 
 fun round3(value: Double): Double = BigDecimal(value).setScale(3, RoundingMode.HALF_EVEN).toDouble()
+
+fun revision(model: Path): String = Files.readString(model.resolve("revision")).trim()
 
 fun now(): Double = System.currentTimeMillis() / 1000.0
 

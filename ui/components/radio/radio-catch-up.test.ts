@@ -249,6 +249,29 @@ describe('RadioCatchUp', () => {
     expect((await button('Listen: Keskpäevatund 12:00')).attributes('disabled')).toBeDefined()
   })
 
+  it('should open the recording of a recorded airing from its name', async () => {
+    const link = (await mount()).get('a[aria-label="Keskpäevatund 12:00"]')
+    expect(link.attributes('href')).toBe('/radio/2026-10-17')
+  })
+
+  it('should open the original recording of an archived repeat from its name', async () => {
+    const link = (await mount()).get('a[aria-label="Keskpäevatund 18:00"]')
+    expect(link.attributes('href')).toBe('/radio/2026-10-17')
+  })
+
+  it('should not link an airing without a recording', async () => {
+    expect((await row('Ilmaparandaja')).find('a').exists()).toBe(false)
+  })
+
+  it('should not link a repeat to an original it cannot be heard from', async () => {
+    expect((await row('00:00')).find('a').exists()).toBe(false)
+  })
+
+  it('should not link an airing whose recording is not listed', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([])
+    expect((await row('Recorded 11:55–13:05')).find('a').exists()).toBe(false)
+  })
+
   it('should say the schedule is not loaded for a day without airings', async () => {
     vi.mocked(radioService.day).mockResolvedValue(radioDay({ day: [], night: [] }))
     expect((await mount()).text()).toContain('The schedule for this day has not been loaded yet.')

@@ -57,7 +57,7 @@ private class Session(
 
   fun transcript(): Transcript {
     val segments = chunks.flatMap { it.segments }
-    return Transcript(ears.name, segments.map { Line(it.start, it.end, it.text) }, segments.flatMap { it.words })
+    return Transcript(ears.name, ears.revision, segments.map { Line(it.start, it.end, it.text) }, segments.flatMap { it.words })
   }
 
   private fun advance(

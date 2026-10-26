@@ -179,6 +179,8 @@ class RadioArchiveService(
       status = status,
       sizeBytes = sizeOf(directory, status),
       transcribed = Files.exists(directory.resolve(TRANSCRIPT_FILE)),
+      speech = readModel(directory.resolve(TRANSCRIPT_FILE)),
+      sounds = readModel(directory.resolve(SOUNDS_FILE)),
       editList = edit,
       failure = failure,
       episodeBytes = size(directory, EPISODE),
