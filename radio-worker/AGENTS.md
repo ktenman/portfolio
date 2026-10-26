@@ -34,7 +34,7 @@ docker run --rm --network radio -v <absolute directory owned by uid 1000>:/recor
 - `src/main/kotlin/ee/tenman/radio/Transcriber.kt` - Live transcript from each part's 16 kHz PCM, journalled in `transcript.jsonl` so a restart resumes it; it writes `sounds.json` before `transcript.json`
 - `src/main/kotlin/ee/tenman/radio/Sounds.kt` - Speech and music scores every 0.5 s from the bundled CED-tiny; the backend cuts the songs inside a show from them
 - `src/main/kotlin/ee/tenman/radio/Schedule.kt` - Follows the backend's `plan.json`, re-read every minute; it leaves `heartbeat.json` with the time it will next be seen, so the backend can tell a stopped recorder; it records one capture and exits, so every capture starts in a fresh process (#2219)
-- `src/main/kotlin/ee/tenman/radio/Main.kt` - The `station`, `run`, `planned` and `sounds` commands, and the shutdown hook that lets SIGTERM finish the part being recorded, for the next start to resume
+- `src/main/kotlin/ee/tenman/radio/Main.kt` - The `station`, `run`, `planned` and `sounds` commands, and the shutdown hook that lets SIGTERM finish the part being recorded, for the next start to resume, and the transcript of a recording that has ended
 - `ced-tiny/` - CED-tiny int8 from `k2-fsa/sherpa-onnx-ced-tiny-audio-tagging-2024-04-19` (Apache 2.0), its AudioSet labels and its `revision`
 
 ## From a fresh clone

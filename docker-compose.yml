@@ -198,7 +198,7 @@ services:
     profiles: [radio]
     command: ["planned"]
     restart: unless-stopped
-    stop_grace_period: 90s
+    stop_grace_period: 5m
     cpus: 1.5
     cpu_shares: 256
     mem_limit: 1.2g
