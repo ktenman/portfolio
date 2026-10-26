@@ -39,16 +39,17 @@ private class Session(
   private val alive: () -> Boolean,
   private val stop: CountDownLatch,
 ) {
+  private var over = false
   private val stopped: Boolean
-    get() = stop.count == 0L
+    get() = stop.count == 0L && !over
   private var index = 0
   private var hearing: Hearing? = null
 
   tailrec fun follow(): List<Part>? {
-    if (stopped) return null
     val living = alive()
     val status = read<Status>(directory.resolve("status.json"))
-    val over = status.state != RecordingState.RECORDING
+    over = status.state != RecordingState.RECORDING
+    if (stopped) return null
     check(over || living) { "The recorder stopped while ${directory.resolve("status.json")} still says recording" }
     if (index == status.parts.size && over) return status.parts
     if (!advance(status.parts, over)) stop.await(1, TimeUnit.SECONDS)

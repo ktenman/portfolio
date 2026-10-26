@@ -56,7 +56,7 @@ internal fun launch(
   Runtime.getRuntime().addShutdownHook(
     Thread {
       stop.countDown()
-      done.await(60, TimeUnit.SECONDS)
+      done.await(5, TimeUnit.MINUTES)
     },
   )
   return try {
