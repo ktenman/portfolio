@@ -148,7 +148,7 @@ class OpenRouterClient(
         maxTokens = DEFAULT_MAX_TOKENS,
         temperature = 0.0,
         responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
-        provider = OpenRouterRequest.ProviderPreferences(),
+        provider = OpenRouterRequest.ProviderPreferences(listOf(FLEX_TIER)),
       ),
     )
 
@@ -180,6 +180,7 @@ class OpenRouterClient(
     private const val DEFAULT_MAX_TOKENS = 8000
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
+    private const val FLEX_TIER = "google-ai-studio/flex"
   }
 
   private fun executeRequest(

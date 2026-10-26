@@ -34,6 +34,7 @@ data class OpenRouterRequest(
   )
 
   data class ProviderPreferences(
+    val order: List<String>,
     @JsonProperty("require_parameters")
     val requireParameters: Boolean = true,
   )

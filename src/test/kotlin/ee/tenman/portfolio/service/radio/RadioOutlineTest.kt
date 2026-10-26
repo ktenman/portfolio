@@ -78,6 +78,27 @@ class RadioOutlineTest {
   }
 
   @Test
+  fun `should agree on two reads that place every boundary on the same lines`() {
+    val reads =
+      listOf(
+        outline(5.0, 10.0, listOf(30.0 to 40.0), 90.0),
+        outline(5.4, 10.0, listOf(30.0 to 40.6), 90.0, hosts = listOf("Jüri Õun")),
+      )
+    expect(agree(reads, linesAt(5.0, 10.0, 30.0, 40.0, 90.0))).toEqual(true)
+  }
+
+  @Test
+  fun `should not agree on reads that end the show on different lines`() {
+    val reads = listOf(outline(5.0, 10.0, emptyList(), 90.0), outline(5.0, 10.0, emptyList(), 40.0))
+    expect(agree(reads, linesAt(5.0, 10.0, 40.0, 90.0))).toEqual(false)
+  }
+
+  @Test
+  fun `should not agree when a read failed`() {
+    expect(agree(listOf(outline(5.0, 10.0, emptyList(), 90.0), null), linesAt(5.0, 10.0, 90.0))).toEqual(false)
+  }
+
+  @Test
   fun `should reject a read whose answer starts or ends no line`() {
     expect(match(outline(5.0, 50.0, listOf(70.0 to 80.0), 90.0), linesAt(5.0, 47.5, 70.0, 80.0, 90.0))).toEqual(null)
   }

@@ -232,3 +232,13 @@ fun consensus(reads: List<OutlineRead>): Consensus {
     voters = voters.size,
   )
 }
+
+fun agree(
+  reads: List<OutlineRead?>,
+  lines: List<TranscriptLine>,
+): Boolean {
+  val placed = reads.map { read -> read?.let { match(it, lines) }?.let(::timing) }
+  return null !in placed && placed.distinct().size == 1
+}
+
+private fun timing(read: OutlineRead): Consensus = consensus(listOf(read)).copy(hosts = emptyList(), chapters = emptyList())
