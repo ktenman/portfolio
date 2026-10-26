@@ -188,12 +188,7 @@ fun chunks(directory: Path): List<Chunk> =
     .dropLast(1)
     .map { mapper.readValue<Chunk>(it) }
 
-fun head(path: Path): List<Pair<String, Any?>> =
-  mapper
-    .readValue<Map<String, Any?>>(Files.readString(path))
-    .entries
-    .take(2)
-    .map { it.key to it.value }
+fun head(path: Path): List<Pair<String, Any?>> = read<Map<String, Any?>>(path).toList().take(2)
 
 class StubEars(
   private val every: Double,
