@@ -191,13 +191,13 @@ services:
     environment:
       NODE_ENV: production
 
-  radio-worker:
+  radio-worker: &radio-worker
     logging: *logging
     container_name: radio-worker
     image: ktenman/radio-worker:latest
     profiles: [radio]
     command: ["planned"]
-    restart: always
+    restart: unless-stopped
     stop_grace_period: 90s
     cpus: 1.5
     cpu_shares: 256
@@ -206,6 +206,14 @@ services:
     oom_score_adj: 1000
     networks:
       - radio
+    volumes:
+      - radio_recordings:/recordings
+
+  radio-whisper:
+    <<: *radio-worker
+    container_name: radio-whisper
+    image: ktenman/radio-whisper:latest
+    profiles: [whisper]
     volumes:
       - radio_model:/model
       - radio_recordings:/recordings

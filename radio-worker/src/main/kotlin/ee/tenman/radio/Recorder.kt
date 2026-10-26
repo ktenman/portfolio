@@ -195,7 +195,7 @@ private fun attempt(
 ): Status {
   val stem = stems().first { Files.notExists(directory.resolve("$it.mp3")) }
   val ffmpeg =
-    ProcessBuilder(command(status.source, remaining, reach, directory.resolve(stem)))
+    ProcessBuilder(command(status.source, length(status, remaining, reach), reach, directory.resolve(stem)))
       .redirectOutput(Redirect.INHERIT)
       .redirectError(Redirect.appendTo(directory.resolve("$stem.log").toFile()))
       .start()
@@ -249,6 +249,12 @@ private fun probe(mp3: Path): String {
 private fun extra(reach: Int): Int = if (reach > 0) SEGMENT * (reach + 1) else 0
 
 private fun covered(parts: List<Part>): Double = parts.maxOfOrNull { it.offsetSeconds + (it.durationSeconds ?: 0.0) } ?: 0.0
+
+internal fun length(
+  status: Status,
+  remaining: Double,
+  reach: Int,
+): Double = if (!live(status.source) || status.parts.isEmpty() && reach == 0) status.seconds else remaining
 
 private fun live(source: String): Boolean = source.substringBefore('?').endsWith(".m3u8")
 

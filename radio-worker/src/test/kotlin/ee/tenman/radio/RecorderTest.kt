@@ -198,6 +198,29 @@ class RecorderTest {
   }
 
   @Test
+  fun `records the whole length when the first part starts late`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    replay(tmp).use { station ->
+      prepare(directory, station.url, 12.0, started = now() - 2.0)
+      record(directory, CountDownLatch(1))
+    }
+    expect(status(directory).state).toEqual(RecordingState.CAPTURED)
+  }
+
+  @Test
+  fun `reads a file to its end when the recording starts late`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("keskpäevatund")
+    prepare(directory, "${tone(tmp.resolve("in.mp3"), 12.0)}", 12.0)
+    write(directory.resolve("status.json"), status(directory).copy(endsAt = now() + 9))
+    record(directory, CountDownLatch(1))
+    expect(status(directory).state).toEqual(RecordingState.CAPTURED)
+  }
+
+  @Test
   fun `ends a late live recording at its start plus its seconds`(
     @TempDir tmp: Path,
   ) {
@@ -234,6 +257,24 @@ class RecorderTest {
   @Test
   fun `starts a new part at the live edge`() {
     expect(command(KUKU, 30.0, 0, Path.of("raw")).joinToString(" ")).toContain("-rw_timeout 15000000 -t 30.000 -i $KUKU")
+  }
+
+  @Test
+  fun `asks ffmpeg for only the time left in a resumed live part`() {
+    val status = Status(RecordingState.RECORDING, KUKU, 1792832400.0, 1792836000.0, 3600.0, listOf(Part("raw.mp3", 1.4, 0.0, 60.0)))
+    expect(length(status, 30.0, 4)).toEqual(30.0)
+  }
+
+  @Test
+  fun `asks ffmpeg for only the time left when a first live part reaches back`() {
+    val status = Status(RecordingState.RECORDING, KUKU, 1792832400.0, 1792836000.0, 3600.0)
+    expect(length(status, 1800.0, 300)).toEqual(1800.0)
+  }
+
+  @Test
+  fun `asks ffmpeg for the whole file again after a stop`() {
+    val status = Status(RecordingState.RECORDING, "keskpäevatund.mp3", 0.0, 720.0, 720.0, listOf(Part("raw.mp3", 0.0, 0.0, 300.0)))
+    expect(length(status, 690.0, 0)).toEqual(720.0)
   }
 
   @Test
