@@ -63,6 +63,8 @@ const RECORDINGS = [
     timeline: [{ start: 0, end: 3180, title: null, cut: false, label: null, summary: null }],
     sizeBytes: 101_800_000,
     transcribed: false,
+    speech: null,
+    sounds: null,
     transcriptState: TranscriptState.RECORDING,
     programmeCuts: [
       programme('Digitund', ProgrammeCutState.WAITING, {

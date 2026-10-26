@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
 import org.springframework.boot.context.properties.ConfigurationProperties
+import tools.jackson.core.JsonParser
+import tools.jackson.core.JsonToken
 import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -19,6 +21,8 @@ const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
 const val DELETED_FILE = "deleted.json"
 val NAME = Regex("[0-9a-z][0-9a-z-]*")
+private val COMMIT = Regex("[0-9a-f]{40}")
+private val MODELS = mapOf("TalTechNLP/streaming-zipformer-large.et-en" to "Zipformer", "ced-tiny int8" to "CED-tiny")
 
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
@@ -152,6 +156,26 @@ fun readStatus(directory: Path): RecordingStatus =
 fun readTranscript(directory: Path): Transcript =
   JsonMapperFactory.instance.readValue(Files.readString(directory.resolve(TRANSCRIPT_FILE)), Transcript::class.java)
 
+fun readModel(path: Path): ModelVersion? {
+  if (Files.notExists(path)) return null
+  val fields =
+    JsonMapperFactory.instance.createParser(path).use { parser ->
+      parser.nextToken()
+      leading(parser)
+    }
+  return ModelVersion(fields["model"] ?: return null, fields["revision"] ?: return null)
+}
+
+private tailrec fun leading(
+  parser: JsonParser,
+  found: Map<String, String> = emptyMap(),
+): Map<String, String> {
+  if (parser.nextToken() != JsonToken.PROPERTY_NAME) return found
+  val name = parser.currentName()
+  if (!parser.nextToken().isScalarValue) return found
+  return leading(parser, found + (name to parser.string))
+}
+
 inline fun <reified T> read(path: Path): T? =
   path.takeIf(Files::exists)?.let { JsonMapperFactory.instance.readValue<T>(Files.readString(it)) }
 
@@ -166,12 +190,22 @@ fun save(
 
 fun rounded(seconds: Double): Double = BigDecimal(seconds).setScale(2, RoundingMode.HALF_EVEN).toDouble()
 
+data class ModelVersion(
+  val model: String,
+  val revision: String,
+) {
+  val label: String
+    get() = "${MODELS[model] ?: model} · ${if (COMMIT.matches(revision)) revision.take(7) else revision}"
+}
+
 data class RecordingSummary(
   val name: String,
   val programme: String,
   val status: RecordingStatus,
   val sizeBytes: Long,
   val transcribed: Boolean,
+  val speech: ModelVersion?,
+  val sounds: ModelVersion?,
   val editList: EditList?,
   val failure: EpisodeFailure?,
   val episodeBytes: Long?,

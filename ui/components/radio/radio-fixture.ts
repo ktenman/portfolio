@@ -102,6 +102,12 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   span: spanned(overrides.status ?? captured()),
   sizeBytes: 134_400_000,
   transcribed: true,
+  speech: {
+    model: 'TalTechNLP/streaming-zipformer-large.et-en',
+    revision: '2812262bd4fd5d4327dc09ca0e6c19e8a32a03d6',
+    label: 'Zipformer · 2812262',
+  },
+  sounds: { model: 'ced-tiny int8', revision: '2024-04-19', label: 'CED-tiny · 2024-04-19' },
   editList: editList(),
   failure: null,
   render: null,
