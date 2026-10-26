@@ -22,6 +22,7 @@ minio = "9.0.3"
 pitest = "1.23.0"
 pitestPlugin = "1.19.0-rc.3"
 kotest = "6.2.6"
+sherpaOnnx = "1.13.8"
 
 [libraries]
 # Spring Boot
@@ -77,6 +78,11 @@ minio = { module = "io.minio:minio", version.ref = "minio" }
 
 # WireMock
 wiremock-spring-boot = { module = "org.wiremock.integrations:wiremock-spring-boot", version = "4.4.3" }
+
+sherpa-onnx-jvm = { module = "com.k2fsa:sherpa-onnx-jvm", version.ref = "sherpaOnnx" }
+sherpa-onnx-native-linux-x64 = { module = "com.k2fsa:sherpa-onnx-native-lib-linux-x64", version.ref = "sherpaOnnx" }
+sherpa-onnx-native-linux-aarch64 = { module = "com.k2fsa:sherpa-onnx-native-lib-linux-aarch64", version.ref = "sherpaOnnx" }
+sherpa-onnx-native-osx-aarch64 = { module = "com.k2fsa:sherpa-onnx-native-lib-osx-aarch64", version.ref = "sherpaOnnx" }
 
 # Testing
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }

@@ -113,12 +113,12 @@ jobs:
         with:
           fetch-depth: 1
       - uses: actions/setup-java@v6.1.0
-        if: matrix.type == 'backend' || matrix.type == 'e2e'
+        if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
         with:
           java-version: '25'
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        if: matrix.type == 'backend' || matrix.type == 'e2e'
+        if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
         with:
           gradle-home-cache-cleanup: true
       - uses: actions/setup-node@v7
@@ -129,24 +129,24 @@ jobs:
           cache-dependency-path: ${{ matrix.type == 'cloudflare' && 'cloudflare-bypass-proxy/package-lock.json' || 'package-lock.json' }}
       - name: Resolve FFmpeg packages
         id: ffmpeg
-        if: matrix.type == 'backend'
+        if: matrix.type == 'backend' || matrix.type == 'radio'
         run: |
           sudo apt-get update
           echo "key=ffmpeg-$(apt-get install -s --no-install-recommends ffmpeg | grep ^Inst | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6
-        if: matrix.type == 'backend'
+        if: matrix.type == 'backend' || matrix.type == 'radio'
         with:
           path: ~/ffmpeg-debs
           key: ${{ steps.ffmpeg.outputs.key }}
       - name: Install FFmpeg
-        if: matrix.type == 'backend'
+        if: matrix.type == 'backend' || matrix.type == 'radio'
         run: |
           mkdir -p ~/ffmpeg-debs/partial
           sudo apt-get install -y --no-install-recommends -o Dir::Cache::Archives="$HOME/ffmpeg-debs" ffmpeg
           sudo chown -R "$USER" ~/ffmpeg-debs
       - name: Run backend tests
         if: matrix.type == 'backend'
-        run: ./gradlew test --info -x bootJar --build-cache
+        run: ./gradlew :test --info -x bootJar --build-cache
       - name: Build JAR
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
@@ -166,6 +166,9 @@ jobs:
       - name: Run monitoring tests
         if: matrix.type == 'monitoring'
         run: python3 monitoring/test-monitoring.py
+      - name: Run radio worker tests
+        if: matrix.type == 'radio'
+        run: ./gradlew :radio-worker:test --build-cache
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         if: matrix.type == 'radio'
       - name: Build radio worker test image
@@ -209,7 +212,7 @@ jobs:
         with:
           command: |
             export E2E=true
-            ./gradlew test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
+            ./gradlew :test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
           attempt_limit: 3
           attempt_delay: 30000
       - uses: actions/upload-artifact@v7
