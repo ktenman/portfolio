@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
+   <configuration>
+      <verify-metadata>false</verify-metadata>
+      <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust group="^(?!com[.]k2fsa$).*$" regex="true"/>
+      </trusted-artifacts>
+   </configuration>
+   <components>
+      <component group="com.k2fsa" name="sherpa-onnx-jvm" version="1.13.8">
+         <artifact name="sherpa-onnx-jvm-1.13.8.jar">
+            <sha256 value="77b7b047fade4eadada96b568eb92615049aaf1dc317c7244e46c1ea38b9a63b" origin="GitHub release v1.13.8"/>
+         </artifact>
+      </component>
+      <component group="com.k2fsa" name="sherpa-onnx-native-lib-linux-x64" version="1.13.8">
+         <artifact name="sherpa-onnx-native-lib-linux-x64-1.13.8.jar">
+            <sha256 value="30c93b59381113f9c20aedbbf9fc1ad399158f6bc03dddc0f8934a6e28e069ba" origin="GitHub release v1.13.8"/>
+         </artifact>
+      </component>
+      <component group="com.k2fsa" name="sherpa-onnx-native-lib-linux-aarch64" version="1.13.8">
+         <artifact name="sherpa-onnx-native-lib-linux-aarch64-1.13.8.jar">
+            <sha256 value="5123d2e48ae1a7ce82ba89ce153906c651bf418a63db2f7dff82265e6d49c104" origin="GitHub release v1.13.8"/>
+         </artifact>
+      </component>
+      <component group="com.k2fsa" name="sherpa-onnx-native-lib-osx-aarch64" version="1.13.8">
+         <artifact name="sherpa-onnx-native-lib-osx-aarch64-1.13.8.jar">
+            <sha256 value="42e272180c8836127f024f3335d7afcdfb30fe0164b78330d5d449034e34ce34" origin="GitHub release v1.13.8"/>
+         </artifact>
+      </component>
+   </components>
+</verification-metadata>
