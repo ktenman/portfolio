@@ -139,14 +139,20 @@ class RadioCutServiceTest {
         outline(1.0, 5.0, listOf(30.0 to 40.0), 50.0, false),
         listOf(1.0, 5.0, 30.0, 40.0, 50.0).map(::line),
         emptyList(),
-      )
+      ) { _, _ -> null }
     expect(found[2].method to (abs(found[2].seconds - 38.1) <= 0.1)).toEqual("level dip" to true)
   }
 
   private fun paired(library: List<SavedJingle>): List<Boundary> {
     val (recorded, db) = recording(withJingles(noise(60.0), listOf(20.0, 45.0)))
     val lines = listOf(1.0, 5.0, 8.0, 20.0, 30.0, 45.0, 50.0).map(::line)
-    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false), lines, library)
+    return service.boundaries(
+      recorded,
+      db,
+      outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false),
+      lines,
+      library,
+    ) { _, _ -> null }
   }
 
   @Test
@@ -159,7 +165,7 @@ class RadioCutServiceTest {
   fun `should start a show without music just before the first word`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 50.0).map(::line)
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, false), lines, emptyList())
+    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, false), lines, emptyList()) { _, _ -> null }
     expect(found.first()).toEqual(Boundary("show starts", 4.7, "transcript only", true))
   }
 
@@ -167,7 +173,7 @@ class RadioCutServiceTest {
   fun `should start a show with music in the silence before the hosts`() {
     val (recorded, db) = recording(noise(60.0, listOf(3.0)))
     val lines = listOf(1.0, 5.0, 50.0).map(::line)
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, true), lines, emptyList())
+    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, true), lines, emptyList()) { _, _ -> null }
     expect((abs(found.first().seconds - 3.15) <= 0.011) to found.first().review).toEqual(true to false)
   }
 
@@ -175,7 +181,7 @@ class RadioCutServiceTest {
   fun `should refuse a break that ends before it starts`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 20.0, 30.0, 50.0).map(::line)
-    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines, emptyList()) }
+    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines, emptyList()) { _, _ -> null } }
       .toThrow<IllegalStateException>()
       .messageToContain("break 1 ends")
   }
@@ -192,7 +198,7 @@ class RadioCutServiceTest {
   private fun single(library: List<SavedJingle>): List<Boundary> {
     val (recorded, db) = recording(withJingles(noise(60.0), listOf(45.0)))
     val lines = listOf(1.0, 5.0, 30.0, 45.0, 50.0).map(::line)
-    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 45.0), 50.0, false), lines, library)
+    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 45.0), 50.0, false), lines, library) { _, _ -> null }
   }
 
   @Test
@@ -265,5 +271,52 @@ class RadioCutServiceTest {
   fun `should keep the time of a topic whose audio before it was lost`() {
     val db = levels().also { it.fill(Double.NaN, 800, 1000) }
     expect(cue(db, listOf(line(5.0), line(10.0)), 10.0)).toEqual(10.0)
+  }
+
+  private fun matched(recorded: Timeline) = repeats(recorded, "2026-10-26-1500-indrek-vaheoja", fingerprint(recorded), emptyList())
+
+  private fun cut(
+    samples: ShortArray,
+    repeated: (Timeline) -> (Double, Double) -> Double?,
+  ): List<Boundary> {
+    val (recorded, db) = recording(samples)
+    val lines = listOf(1.0, 5.0, 10.0, 30.0, 50.0).map(::line)
+    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(10.0 to 30.0), 50.0, false), lines, emptyList(), repeated(recorded))
+  }
+
+  @Test
+  fun `should start a break where a repeated sweeper starts after the last word starts`() {
+    val found = cut(noise(60.0).aired(0.512).aired(10.608)) { matched(it)::start }
+    expect(found[1].method to (abs(found[1].seconds - 10.608) <= 0.05)).toEqual("repeated audio" to true)
+  }
+
+  @Test
+  fun `should not move a break start when a voice as loud as the sweeper speaks over it`() {
+    val samples = noise(60.0).aired(0.512).aired(10.304)
+    val found = cut(samples.aired(10.0, mixed(samples.copyOfRange(10 * RATE, 12 * RATE), noise(2.0, seed = 3)))) { matched(it)::start }
+    expect(found[1]).toEqual(Boundary("break 1 starts", 11.2, "transcript only", true))
+  }
+
+  @Test
+  fun `should keep the review flag of the cut it moves`() {
+    val found = cut(noise(60.0, listOf(11.3))) { _ -> { from, to -> 10.6.takeIf { from < it && it < to } } }
+    expect(found[1]).toEqual(Boundary("break 1 starts", 10.6, "repeated audio", false))
+  }
+
+  @Test
+  fun `should end the show where a repeated outro starts`() {
+    val found = cut(noise(60.0)) { _ -> { from, to -> 50.4.takeIf { from < it && it < to } } }
+    expect(found.last()).toEqual(Boundary("show ends", 50.4, "repeated audio", true))
+  }
+
+  @Test
+  fun `should not move a break start into a last line without word times`() {
+    val (recorded, db) = recording(noise(60.0))
+    val lines = listOf(line(1.0), line(5.0), TranscriptLine(10.0, 11.0, "Ja siinkohal väike paus.", emptyList()), line(30.0), line(50.0))
+    val found =
+      service.boundaries(recorded, db, outline(1.0, 5.0, listOf(10.0 to 30.0), 50.0, false), lines, emptyList()) { from, to ->
+        10.5.takeIf { from < it && it < to }
+      }
+    expect(found[1].seconds).toEqual(11.2)
   }
 }
