@@ -1,5 +1,5 @@
 <template>
-  <radio-card title="Recorded time">
+  <radio-card title="Recorded time" class="max-md:hidden">
     <template #aside>
       <span class="text-sm text-ink-soft">
         {{ recordedSummary(radioDay) ?? 'Nothing recorded' }}
