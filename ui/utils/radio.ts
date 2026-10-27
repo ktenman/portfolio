@@ -10,6 +10,7 @@ import {
   DayOfWeek,
   type KeptSpan,
   ProgrammeCutState,
+  type RadioDay,
   RecorderState,
   type RecordingSummary,
   RecordingState,
@@ -91,6 +92,11 @@ export const length = (seconds: number): string => {
   if (hours) return `${hours} h ${mins} min`
   return whole % 60 ? `${mins} min ${whole % 60} s` : `${mins} min`
 }
+
+export const recordedSummary = ({ recorded, seconds }: RadioDay): string | null =>
+  recorded.length
+    ? `${recorded.length} ${recorded.length === 1 ? 'recording' : 'recordings'} · ${length(seconds)}`
+    : null
 
 export const minutes = (seconds: number): string => `${Math.max(1, Math.round(seconds / 60))} min`
 
