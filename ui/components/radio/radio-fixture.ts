@@ -326,6 +326,12 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
   ],
   from: at(0),
   until: at(24),
+  ticks: [
+    { at: at(6), midnight: false },
+    { at: at(12), midnight: false },
+    { at: at(18), midnight: false },
+    { at: at(24), midnight: true },
+  ],
   now: at(13, 20),
   recorded: [
     {

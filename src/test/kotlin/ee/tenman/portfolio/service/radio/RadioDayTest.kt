@@ -2,8 +2,16 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.repository.RadioAiringRepository
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class RadioDayTest {
   private fun recording(
@@ -12,6 +20,23 @@ class RadioDayTest {
   ) = AiringRecording("2026-10-17-1200-keskpaevatund", "Keskpäevatund", 0, 4200, from, to)
 
   private fun airing(state: AiringState) = DayAiring(1, "Keskpäevatund", null, 0, 3600, state, false, false, null, null)
+
+  private fun service(now: String) =
+    RadioDayService(
+      mockk<RadioAiringRepository> {
+        every { findStarting(any(), any()) } returns emptyList()
+        every { findAllByKukuIdIn(any()) } returns emptyList()
+      },
+      mockk<RadioProgrammeRepository> { every { findAllById(any()) } returns emptyList() },
+      mockk<RadioArchiveService> { every { recordings() } returns emptyList() },
+      mockk<RadioScheduleService> { every { planned(any()) } returns emptyList() },
+      Clock.fixed(Instant.parse(now), TALLINN),
+    )
+
+  private fun tick(
+    date: LocalDate,
+    hour: Int,
+  ) = date.atTime(hour, 0).atZone(TALLINN).toEpochSecond()
 
   @Test
   fun `should offer the calendar week from Monday to Sunday`() {
@@ -124,5 +149,33 @@ class RadioDayTest {
   fun `should leave out a capture that stopped before the stream reached its slot`() {
     val take = Take("2026-10-26-1000-kuue-samba-taga", "Kuue samba taga", 3610, 3615, false, Slot(3600, 5400))
     expect(spans(listOf(take), 0, 86400)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should tick six, noon, eighteen and midnight of a broadcast day`() {
+    val date = LocalDate.of(2026, 10, 17)
+    expect(ticks(date, TALLINN)).toEqual(
+      listOf(
+        DayTick(tick(date, 6), false),
+        DayTick(tick(date, 12), false),
+        DayTick(tick(date, 18), false),
+        DayTick(ZonedDateTime.of(2026, 10, 18, 0, 0, 0, 0, TALLINN).toEpochSecond(), true),
+      ),
+    )
+  }
+
+  @Test
+  fun `should open on the broadcast day still on air after midnight`() {
+    expect(service("2026-10-27T00:30:00Z").day(null).date).toEqual(LocalDate.of(2026, 10, 26))
+  }
+
+  @Test
+  fun `should run the broadcast day across the clock change for 25 hours`() {
+    val day = service("2026-10-24T12:00:00Z").day(LocalDate.of(2026, 10, 24))
+    expect(day.until - day.from).toEqual(90000)
+  }
+
+  companion object {
+    private val TALLINN = ZoneId.of("Europe/Tallinn")
   }
 }
