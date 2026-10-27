@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 class RadioDayService(
@@ -17,21 +18,23 @@ class RadioDayService(
   private val clock: Clock,
 ) {
   fun day(date: LocalDate?): RadioDay {
-    val today = LocalDate.now(clock)
+    val today = LocalDateTime.now(clock).minusSeconds(DAY_STARTS.toSecondOfDay().toLong()).toLocalDate()
     val shown = date ?: today
     val now = clock.instant().epochSecond
     val takes = radioArchiveService.recordings().map { it.take(now) }
-    val from = shown.atStartOfDay(clock.zone).toEpochSecond()
-    val until = shown.plusDays(1).atStartOfDay(clock.zone).toEpochSecond()
-    val airings = radioAiringRepository.findStarting(start(shown), start(shown.plusDays(1)))
-    val (day, night) = rows(airings, takes, now).partition { it.start < until }
-    val recorded = spans(takes, from, until)
+    val from = start(shown)
+    val until = start(shown.plusDays(1))
+    val midnight = shown.plusDays(1).atStartOfDay(clock.zone).toEpochSecond()
+    val airings = radioAiringRepository.findStarting(from, until)
+    val (day, night) = rows(airings, takes, now).partition { it.start < midnight }
+    val recorded = spans(takes, from.epochSecond, until.epochSecond)
     return RadioDay(
       date = shown,
       today = today,
       days = week(today),
-      from = from,
-      until = until,
+      from = from.epochSecond,
+      until = until.epochSecond,
+      ticks = ticks(shown, clock.zone),
       now = now,
       recorded = recorded,
       seconds = recorded.sumOf { it.end - it.start },

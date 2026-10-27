@@ -335,6 +335,7 @@ export interface RadioDay {
     days: DateAsString[];
     from: number;
     until: number;
+    ticks: DayTick[];
     now: number;
     recorded: RecordedSpan[];
     seconds: number;
@@ -518,7 +519,14 @@ export interface LastRecording {
     end: number;
 }
 
+export interface DayTick {
+    at: number;
+    midnight: boolean;
+}
+
 export interface RecordedSpan {
+    name: string;
+    programme: string;
     start: number;
     end: number;
     recording: boolean;
@@ -751,6 +759,7 @@ export enum BoundaryMethod {
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
     MANUAL = "MANUAL",
     SOUND = "SOUND",
+    REPEATED_AUDIO = "REPEATED_AUDIO",
 }
 
 export enum ProgrammeCutState {

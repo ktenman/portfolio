@@ -58,6 +58,7 @@ class RadioCutService {
     outline: Consensus,
     lines: List<TranscriptLine>,
     library: List<SavedJingle>,
+    repeated: (Double, Double) -> Double?,
   ): List<Boundary> {
     val line = lines.associateBy { it.start }
     val at = { time: Double -> checkNotNull(line[time]) { "No transcript line starts at $time s" } }
@@ -65,8 +66,8 @@ class RadioCutService {
     val shared by lazy { jingle(timeline, returns) }
     val ends = returns.mapIndexed { index, back -> recognise(timeline, back, library) ?: shared?.get(index) }
     val start = placed("show starts", start(db, outline, at))
-    val end = placed("show ends", leave(db, lastWord(at(outline.lastShowLineTime)), 15.0))
-    return ordered(listOf(start) + pauses(db, outline, at, returns, ends) + end)
+    val end = ended("show ends", db, at(outline.lastShowLineTime), 15.0, repeated)
+    return ordered(listOf(start) + pauses(db, outline, at, returns, ends, repeated) + end)
   }
 
   private fun placed(
@@ -74,16 +75,29 @@ class RadioCutService {
     cut: Pair<Double, String>,
   ): Boundary = Boundary(label, rounded(cut.first), cut.second, cut.second == TRANSCRIPT)
 
+  private fun ended(
+    label: String,
+    db: DoubleArray,
+    line: TranscriptLine,
+    limit: Double,
+    repeated: (Double, Double) -> Double?,
+  ): Boundary {
+    val cut = leave(db, lastWord(line), limit)
+    val start = repeated(line.words.lastOrNull()?.start ?: line.end, cut.first) ?: return placed(label, cut)
+    return Boundary(label, rounded(start), BoundaryMethod.REPEATED_AUDIO.prefix, cut.second == TRANSCRIPT)
+  }
+
   private fun pauses(
     db: DoubleArray,
     outline: Consensus,
     at: (Double) -> TranscriptLine,
     returns: List<Double>,
     ends: List<JingleMatch?>,
+    repeated: (Double, Double) -> Double?,
   ): List<Boundary> =
     outline.breaks.flatMapIndexed { index, pause ->
       listOf(
-        placed("break ${index + 1} starts", leave(db, lastWord(at(pause.lastShowLineTime)), 6.0)),
+        ended("break ${index + 1} starts", db, at(pause.lastShowLineTime), 6.0, repeated),
         back("break ${index + 1} ends", db, returns[index], ends[index]),
       )
     }

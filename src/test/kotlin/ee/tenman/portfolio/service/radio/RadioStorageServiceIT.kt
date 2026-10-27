@@ -102,6 +102,14 @@ class RadioStorageServiceIT {
   }
 
   @Test
+  fun `should delete the fingerprints with the offloaded audio`() {
+    val directory = recording("2026-09-01-1200-tarkade-klubi", startedAt = 1788253200.0)
+    writeFingerprints(directory, longArrayOf(42))
+    radioStorageService.store()
+    expect(Files.exists(directory.resolve(FINGERPRINTS))).toEqual(false)
+  }
+
+  @Test
   fun `should keep the local audio of a recent recording`() {
     val directory = recording("2026-10-05-1200-tarkade-klubi")
     radioStorageService.store()

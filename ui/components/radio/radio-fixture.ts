@@ -324,10 +324,24 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
     '2026-10-17',
     '2026-10-18',
   ],
-  from: at(0),
-  until: at(24),
+  from: at(5),
+  until: at(29),
+  ticks: [
+    { at: at(6), midnight: false },
+    { at: at(12), midnight: false },
+    { at: at(18), midnight: false },
+    { at: at(24), midnight: true },
+  ],
   now: at(13, 20),
-  recorded: [{ start: STARTED, end: STARTED + 4200, recording: false }],
+  recorded: [
+    {
+      name: '2026-10-17',
+      programme: 'Keskpäevatund',
+      start: STARTED,
+      end: STARTED + 4200,
+      recording: false,
+    },
+  ],
   seconds: 4200,
   day: [
     {

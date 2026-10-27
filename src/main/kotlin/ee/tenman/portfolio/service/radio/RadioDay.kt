@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.radio
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
 val DAY_STARTS: LocalTime = LocalTime.of(5, 0)
@@ -17,6 +18,7 @@ data class RadioDay(
   val days: List<LocalDate>,
   val from: Long,
   val until: Long,
+  val ticks: List<DayTick>,
   val now: Long,
   val recorded: List<RecordedSpan>,
   val seconds: Long,
@@ -24,7 +26,14 @@ data class RadioDay(
   val night: List<DayBlock>,
 )
 
+data class DayTick(
+  val at: Long,
+  val midnight: Boolean,
+)
+
 data class RecordedSpan(
+  val name: String,
+  val programme: String,
   val start: Long,
   val end: Long,
   val recording: Boolean,
@@ -73,12 +82,13 @@ data class Take(
   val start: Long,
   val end: Long,
   val recording: Boolean,
+  val slot: Slot?,
 )
 
 fun RecordingSummary.take(now: Long): Take {
   val recording = status.state == RecordingState.RECORDING
   val end = (status.startedAt + status.seconds).toLong()
-  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording)
+  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording, status.slot)
 }
 
 fun covered(
@@ -131,9 +141,27 @@ fun spans(
   until: Long,
 ): List<RecordedSpan> =
   takes
-    .filter { it.end > from && it.start < until }
-    .map { RecordedSpan(maxOf(it.start, from), minOf(it.end, until), it.recording) }
+    .map { it.drawn(from, until) }
+    .filter { it.end > it.start }
     .sortedBy { it.start }
+
+private fun Take.drawn(
+  from: Long,
+  until: Long,
+) = RecordedSpan(
+  name,
+  programme,
+  maxOf(start - LAG.seconds, slot?.start ?: from, from),
+  minOf(end - LAG.seconds, slot?.end ?: until, until),
+  recording,
+)
+
+fun ticks(
+  date: LocalDate,
+  zone: ZoneId,
+): List<DayTick> =
+  listOf(6, 12, 18).map { DayTick(date.atTime(it, 0).atZone(zone).toEpochSecond(), false) } +
+    DayTick(date.plusDays(1).atStartOfDay(zone).toEpochSecond(), true)
 
 fun week(today: LocalDate): List<LocalDate> {
   val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
