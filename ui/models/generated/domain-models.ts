@@ -335,6 +335,7 @@ export interface RadioDay {
     days: DateAsString[];
     from: number;
     until: number;
+    ticks: DayTick[];
     now: number;
     recorded: RecordedSpan[];
     seconds: number;
@@ -518,7 +519,14 @@ export interface LastRecording {
     end: number;
 }
 
+export interface DayTick {
+    at: number;
+    midnight: boolean;
+}
+
 export interface RecordedSpan {
+    name: string;
+    programme: string;
     start: number;
     end: number;
     recording: boolean;

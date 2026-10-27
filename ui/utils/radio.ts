@@ -10,6 +10,7 @@ import {
   DayOfWeek,
   type KeptSpan,
   ProgrammeCutState,
+  type RadioDay,
   RecorderState,
   type RecordingSummary,
   RecordingState,
@@ -55,8 +56,7 @@ export const airTime = (slot: AirSlot): string =>
 export const LINK =
   'inline-flex items-center gap-1.5 rounded-container border border-control-border px-3 py-1.5 text-sm font-medium whitespace-nowrap shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
-export const ROW_LINK =
-  'font-semibold after:absolute after:inset-0 after:rounded-container focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brass-deep'
+export const ROW_LINK = 'font-semibold after:absolute after:inset-0 after:rounded-container'
 
 export const PLAY =
   'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
@@ -91,6 +91,11 @@ export const length = (seconds: number): string => {
   if (hours) return `${hours} h ${mins} min`
   return whole % 60 ? `${mins} min ${whole % 60} s` : `${mins} min`
 }
+
+export const recordedSummary = ({ recorded, seconds }: RadioDay): string | null =>
+  recorded.length
+    ? `${recorded.length} ${recorded.length === 1 ? 'recording' : 'recordings'} · ${length(seconds)}`
+    : null
 
 export const minutes = (seconds: number): string => `${Math.max(1, Math.round(seconds / 60))} min`
 
