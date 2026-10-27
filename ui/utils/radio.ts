@@ -30,6 +30,7 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.TRANSCRIPT_ONLY]: 'text only',
   [BoundaryMethod.MANUAL]: 'manual',
   [BoundaryMethod.SOUND]: 'sound analysis',
+  [BoundaryMethod.REPEATED_AUDIO]: 'repeated audio',
 }
 
 const DAYS = Object.values(DayOfWeek)

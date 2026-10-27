@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
@@ -33,7 +34,7 @@ class RadioEpisodeServiceTest {
 
   private val progress = RadioProgressService(Clock.systemUTC(), updates)
 
-  private val service =
+  private val service by lazy {
     RadioEpisodeService(
       outlineService,
       RadioCutService(),
@@ -41,9 +42,10 @@ class RadioEpisodeServiceTest {
       progress,
       airings(),
       programmes(),
-      RadioProperties(),
+      RadioProperties(recordings = directory.resolve("arhiiv")),
       Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC),
     )
+  }
 
   private fun outline(
     before: Double,
@@ -63,8 +65,13 @@ class RadioEpisodeServiceTest {
     Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
   }
 
+  private fun noisy(
+    stem: String,
+    seconds: Int,
+  ): ShortArray = encoded(directory, stem, noise(seconds.toDouble(), (7 until seconds step 10).map { it.toDouble() }, gap = 0.4))
+
   private fun show(state: String = "captured") {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), state)
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noisy("raw", 60))), state)
     transcribed(1.0, 5.0, 50.0)
   }
 
@@ -98,6 +105,14 @@ class RadioEpisodeServiceTest {
     val found = edit()
     expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
       .toEqual(Triple(OutlineSummary("google/gemini-4-argon", 3, 3, 3), 4.7, true))
+  }
+
+  @Test
+  fun `should keep the fingerprints of a recording it cuts`() {
+    show()
+    every { outlineService.reads(any(), any(), any(), any(), any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
+    service.make(directory)
+    expect(readFingerprints(directory)).notToEqualNull()
   }
 
   @Test
@@ -180,8 +195,8 @@ class RadioEpisodeServiceTest {
   fun `should measure chapters and duration without the gap no part covers`() {
     val parts =
       listOf(
-        FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30)),
-        FixturePart("raw-part-002.mp3", 40.0, taped(directory, "raw-part-002", 20)),
+        FixturePart("raw.mp3", 0.0, noisy("raw", 30)),
+        FixturePart("raw-part-002.mp3", 40.0, noisy("raw-part-002", 20)),
       )
     writeRecording(directory, parts, "partial")
     transcribed(1.0, 5.0, 50.0)
@@ -196,7 +211,7 @@ class RadioEpisodeServiceTest {
 
   @Test
   fun `should skip a recording whose transcript is not finished`() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))), "captured")
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noisy("raw", 60))), "captured")
     service.make(directory)
     verify(exactly = 0) { outlineService.reads(any(), any(), any(), any(), any()) }
   }
@@ -227,6 +242,29 @@ class RadioEpisodeServiceTest {
     expect(Files.exists(directory.resolve("episode.tmp.m4a"))).toEqual(false)
   }
 
+  @Test
+  fun `should cut a recording when an earlier recording's audio cannot be decoded`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    val earlier = Files.createDirectories(directory.resolve("arhiiv").resolve("2026-10-26-1200-kuku"))
+    listOf("status.json", "raw.pcm").forEach { Files.copy(directory.resolve(it), earlier.resolve(it)) }
+    Files.writeString(earlier.resolve("raw.mp3"), "katkine")
+    writeFingerprints(earlier, fingerprint(timeline(directory)).filter { it.toInt() >= 3000 }.toLongArray())
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode.m4a"))).toEqual(true)
+  }
+
+  @Test
+  fun `should cut a recording when an earlier recording's status cannot be read`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    val earlier = Files.createDirectories(directory.resolve("arhiiv").resolve("2026-10-26-1200-kuku"))
+    Files.writeString(earlier.resolve("status.json"), "{ katkine")
+    writeFingerprints(earlier, longArrayOf(42))
+    service.make(directory)
+    expect(Files.exists(directory.resolve("episode.m4a"))).toEqual(true)
+  }
+
   private fun rendered(): EditList {
     show()
     saved(outline(1.0, 5.0, 50.0))
@@ -241,7 +279,7 @@ class RadioEpisodeServiceTest {
 
   @Test
   fun `should start an outline topic on the recording clock in the silence before its first word`() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noisy("raw", 60))))
     transcribed(1.0, 8.0, 50.0)
     saved(outline(1.0, 8.0, 50.0))
     service.make(directory)
@@ -288,7 +326,7 @@ class RadioEpisodeServiceTest {
   }
 
   private fun shared() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 120))))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noisy("raw", 120))))
     save(directory.resolve("status.json"), readStatus(directory).copy(seconds = 120.0, programmes = listOf(PROGRAMME, "Tarkade klubi")))
     transcribed(1.0, 5.0, 50.0, 65.0, 70.0, 110.0)
     saved(outline(1.0, 5.0, 50.0))
@@ -359,7 +397,7 @@ class RadioEpisodeServiceTest {
       progress,
       airings(airing),
       programmes(klubi),
-      RadioProperties(),
+      RadioProperties(recordings = directory.resolve("arhiiv")),
       clock,
     ).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }

@@ -73,6 +73,7 @@ class RadioStorageService(
     val saved = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
     (audio + pcm(directory)).forEach(Files::delete)
+    Files.deleteIfExists(directory.resolve(FINGERPRINTS))
   }
 
   private fun upload(

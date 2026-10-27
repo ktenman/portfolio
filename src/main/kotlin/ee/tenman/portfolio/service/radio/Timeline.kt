@@ -59,8 +59,9 @@ class Timeline(
   fun read(
     first: Long,
     count: Int,
+    gap: Double = 0.0,
   ): DoubleArray {
-    val out = DoubleArray(max(count, 0))
+    val out = DoubleArray(max(count, 0)) { gap }
     spans.forEachIndexed { index, span ->
       val shift = sample(span.offset)
       for (k in max(first, sample(span.start)) until min(first + count, sample(span.end))) {

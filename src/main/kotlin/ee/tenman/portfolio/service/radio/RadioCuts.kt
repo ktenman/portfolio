@@ -17,6 +17,7 @@ enum class BoundaryMethod(
   TRANSCRIPT_ONLY(TRANSCRIPT),
   MANUAL("manual"),
   SOUND("sound analysis"),
+  REPEATED_AUDIO("repeated audio"),
   ;
 
   companion object {

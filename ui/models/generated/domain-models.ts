@@ -759,6 +759,7 @@ export enum BoundaryMethod {
     TRANSCRIPT_ONLY = "TRANSCRIPT_ONLY",
     MANUAL = "MANUAL",
     SOUND = "SOUND",
+    REPEATED_AUDIO = "REPEATED_AUDIO",
 }
 
 export enum ProgrammeCutState {

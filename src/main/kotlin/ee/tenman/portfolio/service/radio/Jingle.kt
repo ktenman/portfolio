@@ -146,13 +146,11 @@ private fun best(
 private fun window(
   timeline: Timeline,
   back: Double,
-): Window {
-  val samples = timeline.samples(back - WINDOW, back)
-  val size = Integer.highestOneBit(samples.size + RATE) shl 1
-  return Window(samples, spectrum(samples, size))
-}
+): Window = window(timeline.samples(back - WINDOW, back))
 
-private fun pearson(
+fun window(samples: DoubleArray): Window = Window(samples, spectrum(samples, Integer.highestOneBit(samples.size + RATE) shl 1))
+
+fun pearson(
   a: DoubleArray,
   b: DoubleArray,
 ): Double {

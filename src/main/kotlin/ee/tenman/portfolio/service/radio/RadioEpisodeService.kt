@@ -87,8 +87,33 @@ class RadioEpisodeService(
     val lines = lines(readTranscript(directory))
     val db = loudness(timeline).also { passed(directory, CutStep.SILENCE) }
     val slots = slots(status)
-    return todo.map { find(directory, status, show(status, it, slots[it]), lines, timeline, db) }
+    val repeats = repeats(timeline, directory.fileName.toString(), prints(directory, timeline), others(directory))
+    return todo.map { find(directory, status, show(status, it, slots[it]), lines, timeline, db, repeats) }
   }
+
+  private fun prints(
+    directory: Path,
+    timeline: Timeline,
+  ): LongArray = readFingerprints(directory) ?: fingerprint(timeline).also { writeFingerprints(directory, it) }
+
+  private fun others(directory: Path): List<Fingerprinted> =
+    directories(radioProperties.recordings)
+      .filter { it.fileName != directory.fileName }
+      .mapNotNull { other ->
+        runCatching { readFingerprints(other)?.let { Fingerprinted(other, readStatus(other).parts, it) } }
+          .onFailure { log.warn("Cannot read the fingerprints of $other", it) }
+          .getOrNull()
+      }
+
+  private fun repeated(
+    directory: Path,
+    repeats: Repeats,
+    from: Double,
+    to: Double,
+  ): Double? =
+    runCatching { repeats.start(from, to) }
+      .onFailure { log.warn("Cannot match repeated audio in $directory between $from and $to s", it) }
+      .getOrNull()
 
   private fun edited(
     previous: EditList?,
@@ -123,13 +148,17 @@ class RadioEpisodeService(
     lines: List<TranscriptLine>,
     timeline: Timeline,
     db: DoubleArray,
+    repeats: Repeats,
   ): Finding {
     val saved = directory.resolve(outline(status, show.name))
     val (reads, model) = reads(saved, show, lines) { describe(status, show, lines, events(db)) }
     val matched = reads.filterNotNull().mapNotNull { match(it, lines) }
     check(matched.isNotEmpty()) { "No outline read in $saved matches the transcript" }
     val agreed = consensus(matched)
-    val placed = radioCutService.boundaries(timeline, db, agreed, lines, library(radioProperties.jingles))
+    val placed =
+      radioCutService.boundaries(timeline, db, agreed, lines, library(radioProperties.jingles)) { from, to ->
+        repeated(directory, repeats, from, to)
+      }
     passed(directory, CutStep.BOUNDARIES)
     val cued = agreed.copy(chapters = agreed.chapters.map { it.copy(time = cue(db, lines, it.time)) })
     return Finding(cued, placed.map { it.copy(programme = show.name) }, OutlineSummary(model, reads.size, matched.size, agreed.voters))

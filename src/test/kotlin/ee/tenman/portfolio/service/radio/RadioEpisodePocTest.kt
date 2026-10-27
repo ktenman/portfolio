@@ -63,9 +63,9 @@ class RadioEpisodePocTest {
     val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
     val agreed = consensus(reads.filterNotNull().mapNotNull { match(it, lines) })
     val service = RadioCutService()
-    val machine = service.boundaries(timeline, db, agreed, lines, emptyList())
+    val machine = service.boundaries(timeline, db, agreed, lines, emptyList()) { _, _ -> null }
     val saved = listOf(SavedJingle(name, template(timeline, checkNotNull(machine[end].jingle).start)))
-    return service.boundaries(timeline, db, agreed.copy(breaks = breaks(agreed.breaks)), lines, saved)
+    return service.boundaries(timeline, db, agreed.copy(breaks = breaks(agreed.breaks)), lines, saved) { _, _ -> null }
   }
 
   @Test

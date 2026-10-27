@@ -13,6 +13,9 @@ import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.math.PI
+import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.random.Random
 
 data class FixturePart(
@@ -24,12 +27,53 @@ data class FixturePart(
 fun noise(
   seconds: Double,
   silences: List<Double> = emptyList(),
+  seed: Int = 7,
+  gap: Double = 0.3,
 ): ShortArray {
-  val random = Random(7)
+  val random = Random(seed)
   val samples = ShortArray((seconds * RATE).toInt()) { random.nextInt(-8000, 8000).toShort() }
-  silences.forEach { start -> samples.fill(0, (start * RATE).toInt(), ((start + 0.3) * RATE).toInt()) }
+  silences.forEach { start -> samples.fill(0, (start * RATE).toInt(), ((start + gap) * RATE).toInt()) }
   return samples
 }
+
+fun melody(): ShortArray {
+  val bed = noise(4.0, seed = 13)
+  return ShortArray(bed.size) { k ->
+    val t = (k % 4000) / 16000.0
+    val tone = (0..2).sumOf { v -> sin(2 * PI * (300.0 + ((k / 4000 * 3 + v) * 1013) % 3700) * t) }
+    (7500 * tone * exp(-t / 0.1) + 0.45 * bed[k]).toInt().toShort()
+  }
+}
+
+fun mixed(
+  a: ShortArray,
+  b: ShortArray,
+): ShortArray = ShortArray(a.size) { (a[it] + b[it]).coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort() }
+
+fun ShortArray.aired(
+  at: Double,
+  audio: ShortArray = melody(),
+): ShortArray = also { audio.copyInto(it, sample(at).toInt()) }
+
+fun encoded(
+  directory: Path,
+  stem: String,
+  samples: ShortArray,
+): ShortArray {
+  val raw = directory.resolve("$stem.raw")
+  val mp3 = directory.resolve("$stem.mp3")
+  Files.write(raw, bytes(samples))
+  ffmpeg("-f", "s16le", "-ar", "$RATE", "-ac", "1", "-i", "$raw", "-ar", "48000", "-ac", "2", "-c:a", "libmp3lame", "-b:a", "256k", "$mp3")
+  Files.delete(raw)
+  return decoded(mp3)
+}
+
+private fun bytes(samples: ShortArray): ByteArray =
+  ByteBuffer
+    .allocate(samples.size * 2)
+    .order(ByteOrder.LITTLE_ENDIAN)
+    .apply { asShortBuffer().put(samples) }
+    .array()
 
 fun heard(
   from: Double,
@@ -52,11 +96,7 @@ fun writeRecording(
   parts: List<FixturePart>,
   state: String = "captured",
 ) {
-  parts.forEach { part ->
-    val bytes = ByteBuffer.allocate(part.samples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
-    part.samples.forEach { bytes.putShort(it) }
-    Files.write(directory.resolve(part.file.substringBeforeLast(".") + ".pcm"), bytes.array())
-  }
+  parts.forEach { part -> Files.write(directory.resolve(part.file.substringBeforeLast(".") + ".pcm"), bytes(part.samples)) }
   val listed = parts.map { mapOf("file" to it.file, "offsetSeconds" to it.offset, "sha256" to "0".repeat(64)) }
   val status = mapOf("state" to state, "startedAt" to 0.0, "seconds" to 0.0, "parts" to listed)
   Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
