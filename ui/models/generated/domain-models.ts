@@ -519,6 +519,8 @@ export interface LastRecording {
 }
 
 export interface RecordedSpan {
+    name: string;
+    programme: string;
     start: number;
     end: number;
     recording: boolean;

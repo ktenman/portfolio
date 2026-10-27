@@ -7,7 +7,13 @@ const bar = (overrides = {}) => mount(RadioDayBar, { props: { radioDay: radioDay
 
 const DAY = radioDay()
 const FINISHED = DAY.recorded[0]
-const RUNNING = { start: DAY.now - 600, end: DAY.now, recording: true }
+const RUNNING = {
+  name: '2026-10-17-1310-huvitaja',
+  programme: 'Huvitaja',
+  start: DAY.now - 600,
+  end: DAY.now,
+  recording: true,
+}
 
 const legend = (overrides = {}) =>
   bar(overrides)

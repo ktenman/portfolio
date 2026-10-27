@@ -232,7 +232,13 @@ export const stubRadio: RouteStub = async page => {
       date && date !== today.date
         ? radioDay({ date, from: today.from + 86_400, until: today.until + 86_400 })
         : today
-    const running = { start: day.now - 600, end: day.now, recording: true }
+    const running = {
+      name: '2026-10-17-1310-huvitaja',
+      programme: 'Huvitaja',
+      start: day.now - 600,
+      end: day.now,
+      recording: true,
+    }
     route.fulfill({ json: { ...day, recorded: [...day.recorded, running] } })
   })
   await page.route(/\/api\/radio\/[^/]+\/cuts(\?|$)/, route => route.fulfill({ json: [] }))

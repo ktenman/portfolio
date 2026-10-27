@@ -728,4 +728,16 @@ class RadioArchiveServiceTest {
       .end,
         ).toEqual(1792235100)
   }
+
+  @Test
+  fun `should keep the slot of a capture in its take`() {
+    recording("2026-10-18-1200-keskpaevatund", slot = Slot(1792230930, 1792235070))
+    expect(
+      service
+      .recordings()
+      .single()
+      .take(1792231500)
+      .slot,
+        ).toEqual(Slot(1792230930, 1792235070))
+  }
 }
