@@ -116,9 +116,9 @@ describe('RadioRecordings', () => {
     )
   })
 
-  it('should draw the row focus ring inside the row', async () => {
+  it('should keep the brass focus outline every link takes on the recording link', async () => {
     const link = (await mount()).find('a[href="/radio/2026-10-17"]')
-    expect(link.classes()).toContain('focus-visible:after:-outline-offset-2')
+    expect(link.classes()).not.toContain('focus-visible:outline-none')
   })
 
   it('should stay on the list when the trash is clicked', async () => {

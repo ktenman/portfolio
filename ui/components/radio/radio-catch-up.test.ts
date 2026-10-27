@@ -283,4 +283,30 @@ describe('RadioCatchUp', () => {
     )
     expect((await row('14:00')).text()).toContain('1 h')
   })
+
+  it('should leave the Recorded time card to screens wider than a phone', async () => {
+    const card = (await mount())
+      .findAll('section')
+      .find(section => section.find('h3').text() === 'Recorded time')!
+    expect(card.classes()).toContain('max-md:hidden')
+  })
+
+  it('should count the recordings of the day under the Schedule heading on a phone', async () => {
+    const summary = (await mount()).get('[data-testid="radio-schedule-summary"]')
+    expect([summary.text(), summary.classes('md:hidden')]).toEqual([
+      '· 1 recording · 1 h 10 min',
+      true,
+    ])
+  })
+
+  it('should give only the date under the Schedule heading on a day with nothing recorded', async () => {
+    vi.mocked(radioService.day).mockResolvedValue(radioDay({ recorded: [], seconds: 0 }))
+    expect((await mount()).find('[data-testid="radio-schedule-summary"]').exists()).toBe(false)
+  })
+
+  it('should give the play button a fingertip size on a phone', async () => {
+    expect((await button('Listen: Keskpäevatund 12:00')).classes()).toEqual(
+      expect.arrayContaining(['size-11', 'md:size-9'])
+    )
+  })
 })

@@ -36,7 +36,7 @@
         type="button"
         :class="[
           action.icon
-            ? [PLAY, 'size-9']
+            ? [PLAY, 'size-11 md:size-9']
             : [LINK, action.quiet ? 'bg-surface-sunken text-ink-soft' : 'bg-surface'],
           'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"

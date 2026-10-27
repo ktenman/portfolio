@@ -2,7 +2,12 @@
   <section>
     <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
       <h3 class="mb-0 text-heading">Schedule</h3>
-      <span class="text-sm text-ink-soft">{{ fullDay(day.from) }}</span>
+      <span class="text-sm text-ink-soft">
+        {{ fullDay(day.from) }}
+        <span v-if="summary" class="md:hidden" data-testid="radio-schedule-summary">
+          · {{ summary }}
+        </span>
+      </span>
     </div>
     <p v-if="!day.day.length && !day.night.length" class="text-ink-soft">
       The schedule for this day has not been loaded yet.
@@ -45,13 +50,15 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import type { RadioDay } from '../../models/generated/domain-models'
-import { fullDay, missedRun, nightOf } from '../../utils/radio'
+import { fullDay, missedRun, nightOf, recordedSummary } from '../../utils/radio'
 import RadioAiringRow from './radio-airing-row.vue'
 import RadioIcon from './radio-icon.vue'
 
 const props = defineProps<{ day: RadioDay }>()
 
 const open = ref(new Set<number>())
+
+const summary = computed(() => recordedSummary(props.day))
 
 const sections = computed(() => [
   { key: 'day', divider: null, blocks: props.day.day },

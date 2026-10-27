@@ -2,8 +2,16 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.repository.RadioAiringRepository
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class RadioDayTest {
   private fun recording(
@@ -12,6 +20,23 @@ class RadioDayTest {
   ) = AiringRecording("2026-10-17-1200-keskpaevatund", "Keskpäevatund", 0, 4200, from, to)
 
   private fun airing(state: AiringState) = DayAiring(1, "Keskpäevatund", null, 0, 3600, state, false, false, null, null)
+
+  private fun service(now: String) =
+    RadioDayService(
+      mockk<RadioAiringRepository> {
+        every { findStarting(any(), any()) } returns emptyList()
+        every { findAllByKukuIdIn(any()) } returns emptyList()
+      },
+      mockk<RadioProgrammeRepository> { every { findAllById(any()) } returns emptyList() },
+      mockk<RadioArchiveService> { every { recordings() } returns emptyList() },
+      mockk<RadioScheduleService> { every { planned(any()) } returns emptyList() },
+      Clock.fixed(Instant.parse(now), TALLINN),
+    )
+
+  private fun tick(
+    date: LocalDate,
+    hour: Int,
+  ) = date.atTime(hour, 0).atZone(TALLINN).toEpochSecond()
 
   @Test
   fun `should offer the calendar week from Monday to Sunday`() {
@@ -25,13 +50,13 @@ class RadioDayTest {
 
   @Test
   fun `should cover an airing by the recording that holds most of it`() {
-    val takes = listOf(Take("a", "Ilmaparandaja", 0, 200, false), Take("b", "Keskpäevatund", 3400, 4000, false))
+    val takes = listOf(Take("a", "Ilmaparandaja", 0, 200, false, null), Take("b", "Keskpäevatund", 3400, 4000, false, null))
     expect(covered(100, 3700, takes)).toEqual(AiringRecording("b", "Keskpäevatund", 3400, 4000, 3400, 3700))
   }
 
   @Test
   fun `should not count a recording that touches an airing for under a minute`() {
-    expect(covered(1000, 4600, listOf(Take("a", "Keskpäevatund", 0, 1030, false)))).toEqual(null)
+    expect(covered(1000, 4600, listOf(Take("a", "Keskpäevatund", 0, 1030, false, null)))).toEqual(null)
   }
 
   @Test
@@ -99,13 +124,58 @@ class RadioDayTest {
   @Test
   fun `should clip recordings to the day`() {
     val takes =
-      listOf(Take("b", "Õhtutund", 900, 1100, false), Take("a", "Keskpäevatund", 50, 150, false), Take("c", "Öötund", 1200, 1300, false))
-    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan(100, 150, false), RecordedSpan(900, 1000, false)))
+      listOf(
+        Take("b", "Õhtutund", 920, 1120, false, null),
+        Take("a", "Keskpäevatund", 70, 170, false, null),
+        Take("c", "Öötund", 1220, 1320, false, null),
+      )
+    expect(spans(takes, 100, 1000))
+      .toEqual(listOf(RecordedSpan("a", "Keskpäevatund", 100, 150, false), RecordedSpan("b", "Õhtutund", 900, 1000, false)))
   }
 
   @Test
   fun `should mark the span of a take still being recorded`() {
-    val takes = listOf(Take("a", "Kuku", 50, 150, false), Take("b", "Kuku", 900, 1100, true))
-    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan(100, 150, false), RecordedSpan(900, 1000, true)))
+    val takes = listOf(Take("a", "Kuku", 70, 170, false, null), Take("b", "Kuku", 920, 1120, true, null))
+    expect(spans(takes, 100, 1000)).toEqual(listOf(RecordedSpan("a", "Kuku", 100, 150, false), RecordedSpan("b", "Kuku", 900, 1000, true)))
+  }
+
+  @Test
+  fun `should draw a capture over the air time of its slot`() {
+    val take = Take("2026-10-26-1000-kuue-samba-taga", "Kuue samba taga", 3610, 5430, false, Slot(3600, 5400))
+    expect(spans(listOf(take), 0, 86400)).toEqual(listOf(RecordedSpan(take.name, "Kuue samba taga", 3600, 5400, false)))
+  }
+
+  @Test
+  fun `should leave out a capture that stopped before the stream reached its slot`() {
+    val take = Take("2026-10-26-1000-kuue-samba-taga", "Kuue samba taga", 3610, 3615, false, Slot(3600, 5400))
+    expect(spans(listOf(take), 0, 86400)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should tick six, noon, eighteen and midnight of a broadcast day`() {
+    val date = LocalDate.of(2026, 10, 17)
+    expect(ticks(date, TALLINN)).toEqual(
+      listOf(
+        DayTick(tick(date, 6), false),
+        DayTick(tick(date, 12), false),
+        DayTick(tick(date, 18), false),
+        DayTick(ZonedDateTime.of(2026, 10, 18, 0, 0, 0, 0, TALLINN).toEpochSecond(), true),
+      ),
+    )
+  }
+
+  @Test
+  fun `should open on the broadcast day still on air after midnight`() {
+    expect(service("2026-10-27T00:30:00Z").day(null).date).toEqual(LocalDate.of(2026, 10, 26))
+  }
+
+  @Test
+  fun `should run the broadcast day across the clock change for 25 hours`() {
+    val day = service("2026-10-24T12:00:00Z").day(LocalDate.of(2026, 10, 24))
+    expect(day.until - day.from).toEqual(90000)
+  }
+
+  companion object {
+    private val TALLINN = ZoneId.of("Europe/Tallinn")
   }
 }
