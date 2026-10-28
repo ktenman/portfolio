@@ -190,6 +190,17 @@ class LightyearPriceService(
     }.getOrNull()
   }
 
+  fun fetchLogoUrls(symbols: List<String>): Map<String, String> {
+    val uuids = symbols.mapNotNull { symbol -> resolveUuid(symbol)?.let { symbol to it } }.toMap()
+    if (uuids.isEmpty()) return emptyMap()
+    val logos =
+      fetchInstrumentBatchWithRetry(uuids.values.distinct(), 1, 1)
+        .orEmpty()
+        .mapNotNull { instrument -> instrument.logo?.let { instrument.id to it } }
+        .toMap()
+    return uuids.mapNotNull { (symbol, uuid) -> logos[uuid]?.let { symbol to it } }.toMap()
+  }
+
   fun resolveUuid(symbol: String): String? =
     properties.findUuidBySymbol(symbol)
       ?: uuidCacheService.getCachedUuid(symbol)
