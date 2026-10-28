@@ -21,7 +21,10 @@ const QUERIES: Record<LiveUpdate, InvalidateQueryFilters[]> = {
     { queryKey: ['portfolio-summary', 'range-change'] },
     { queryKey: ['instruments'] },
   ],
-  [LiveUpdate.RADIO]: [{ queryKey: ['radio'], exact: true }],
+  [LiveUpdate.RADIO]: [
+    { queryKey: ['radio'], exact: true },
+    { queryKey: ['radio-search'], refetchType: 'none' },
+  ],
 }
 
 export function useLiveUpdates() {
@@ -33,10 +36,16 @@ export function useLiveUpdates() {
       ? liveUpdatesService.streamUrl
       : undefined
   )
-  const { eventSource, error, open } = useEventSource(url)
+  const { eventSource, error, open, status } = useEventSource(url)
   const { start: retry } = useTimeoutFn(open, RETRY_DELAY, { immediate: false })
   const { start: arm } = useTimeoutFn(open, SILENCE_TIMEOUT)
   watch(eventSource, () => arm())
+  let opened = false
+  watch(status, state => {
+    if (state !== 'OPEN') return
+    if (opened) queryClient.invalidateQueries({ queryKey: ['radio-search'] })
+    opened = true
+  })
   watch(error, () => {
     if (eventSource.value?.readyState === EventSource.CLOSED) retry()
   })

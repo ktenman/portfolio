@@ -3,12 +3,16 @@ import { ref } from 'vue'
 import { useRadioDecisions } from './use-radio-decisions'
 import { recording } from '../components/radio/radio-fixture'
 
-const { review, error } = vi.hoisted(() => ({ review: vi.fn(), error: vi.fn() }))
+const { review, error, invalidateQueries } = vi.hoisted(() => ({
+  review: vi.fn(),
+  error: vi.fn(),
+  invalidateQueries: vi.fn(() => Promise.resolve()),
+}))
 
 vi.mock('../services/api', () => ({ radioService: { review } }))
 vi.mock('./use-toast', () => ({ useToast: () => ({ error }) }))
 vi.mock('@tanstack/vue-query', () => ({
-  useQueryClient: () => ({ invalidateQueries: () => Promise.resolve() }),
+  useQueryClient: () => ({ invalidateQueries }),
 }))
 
 describe('useRadioDecisions', () => {
@@ -18,6 +22,7 @@ describe('useRadioDecisions', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     review.mockReset().mockResolvedValue(undefined)
+    invalidateQueries.mockClear()
     shown.value = recording()
     decisions = useRadioDecisions(() => shown.value)
   })
@@ -56,6 +61,12 @@ describe('useRadioDecisions', () => {
     decisions.choose(2, false)
     await decisions.flush()
     expect(review.mock.calls).toEqual([['2026-10-17', { removed: [0, 1, 3] }]])
+  })
+
+  it('should mark the search results stale once a decision is saved', async () => {
+    decisions.choose(2, false)
+    await decisions.flush()
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['radio-search'] })
   })
 
   it('should say a decision waits until it is saved', async () => {

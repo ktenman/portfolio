@@ -3,6 +3,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { radioService } from '../../services/api'
 import { useRadioPlayer } from '../../composables/use-radio-player'
+import RadioCutCard from './radio-cut-card.vue'
 import RadioResult from './radio-result.vue'
 import RadioText from './radio-text.vue'
 import { recording, sections, song, transcript } from './radio-fixture'
@@ -14,6 +15,7 @@ vi.mock('../../services/api', () => ({
     savePosition: () => Promise.resolve(),
     transcript: vi.fn(),
     cuts: () => Promise.resolve([]),
+    dropCut: () => Promise.resolve(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
   },
 }))
@@ -40,8 +42,10 @@ describe('RadioText', () => {
 
   afterEach(() => player.detach())
 
-  const render = async (target: RecordingSummary = recording()) => {
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const render = async (
+    target: RecordingSummary = recording(),
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  ) => {
     const wrapper = mount(RadioText, {
       props: { recording: target },
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
@@ -188,6 +192,15 @@ describe('RadioText', () => {
   it('should leave out the cut summary on the cleaned version', async () => {
     player.load(recording(), 'episode')
     expect((await render()).findComponent(RadioResult).exists()).toBe(false)
+  })
+
+  it('should mark the search results stale once a cut is deleted', async () => {
+    const client = new QueryClient()
+    client.setQueryData(['radio-search', 'valimised'], { pages: [], pageParams: [] })
+    const wrapper = await render(recording(), client)
+    wrapper.findComponent(RadioCutCard).vm.$emit('drop')
+    await flushPromises()
+    expect(client.getQueryState(['radio-search', 'valimised'])?.isInvalidated).toBe(true)
   })
 
   it('should keep the cut summary on the raw recording', async () => {

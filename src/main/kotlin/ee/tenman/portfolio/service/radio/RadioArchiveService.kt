@@ -27,17 +27,16 @@ class RadioArchiveService(
 
   fun transcript(name: String): List<TranscriptLine>? {
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
-    val edit = read<EditList>(directory.resolve(EDIT_LIST))
-    val music = edit?.music.orEmpty() + edit?.songs.orEmpty()
-    return mark(music(lines(readTranscript(directory)), music), cutsOf(directory))
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE))
+    return mark(music(lines(readTranscript(directory)), edit), cutsOf(directory))
   }
 
   fun sections(name: String): List<TranscriptSection>? {
     val lines = transcript(name) ?: return null
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
     val status = readStatus(directory)
-    val edit = read<EditList>(directory.resolve(EDIT_LIST))
-    val decided = decided(directory, edit)
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE))
+    val decided = edit.decided(radioReviewService.pending(directory))
     val cuts = cuts(decided, status.seconds)
     return sections(timelineOf(cuts, decided, status), cuts, audibleOf(directory, status, edit), lines, status.title())
   }
@@ -71,7 +70,7 @@ class RadioArchiveService(
     review: CutReview,
   ): Boolean {
     val directory = directory(name, STATUS_FILE) ?: return false
-    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: return false
     val total = readStatus(directory).seconds
     return radioReviewService.review(directory, keep(cuts(edit, total), review.removed, total))
   }
@@ -81,9 +80,9 @@ class RadioArchiveService(
     index: Int,
     review: JingleReview,
   ): Boolean {
-    val directory = directory(name, EDIT_LIST) ?: return false
+    val directory = directory(name, EDIT_LIST_FILE) ?: return false
     val status = readStatus(directory)
-    val match = cuts(read(directory.resolve(EDIT_LIST)), status.seconds).getOrNull(index)?.match ?: return false
+    val match = cuts(read(directory.resolve(EDIT_LIST_FILE)), status.seconds).getOrNull(index)?.match ?: return false
     val path = stored(directory, index, match)
     when {
       !review.saved -> Files.deleteIfExists(path)
@@ -96,8 +95,8 @@ class RadioArchiveService(
     name: String,
     cut: ManualCut,
   ): Boolean {
-    val directory = directory(name, EDIT_LIST) ?: return false
-    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
+    val directory = directory(name, EDIT_LIST_FILE) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: return false
     val status = readStatus(directory)
     val db = loudness(Timeline(directory, status.parts))
     val snapped = ManualCut(rounded(snap(db, cut.start)), rounded(snap(db, cut.end)))
@@ -107,7 +106,7 @@ class RadioArchiveService(
     require(cuts(edit, status.seconds).none { snapped.start < it.end && it.start < snapped.end }) {
       "Manual cut $snapped overlaps a cut of $name"
     }
-    save(directory.resolve(EDIT_LIST), edit.copy(manual = edit.manual + snapped))
+    save(directory.resolve(EDIT_LIST_FILE), edit.copy(manual = edit.manual + snapped))
     return true
   }
 
@@ -115,11 +114,11 @@ class RadioArchiveService(
     name: String,
     index: Int,
   ): Boolean {
-    val directory = directory(name, EDIT_LIST) ?: return false
-    val edit = read<EditList>(directory.resolve(EDIT_LIST)) ?: return false
+    val directory = directory(name, EDIT_LIST_FILE) ?: return false
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: return false
     val cut = cuts(edit, readStatus(directory).seconds).getOrNull(index)?.takeIf { it.kind == CutKind.MANUAL } ?: return false
     require(!cut.removed) { "Manual cut $index of $name is in the episode; keep it before dropping it" }
-    save(directory.resolve(EDIT_LIST), edit.copy(manual = edit.manual.filterNot { it.start == cut.start && it.end == cut.end }))
+    save(directory.resolve(EDIT_LIST_FILE), edit.copy(manual = edit.manual.filterNot { it.start == cut.start && it.end == cut.end }))
     return true
   }
 
@@ -169,8 +168,8 @@ class RadioArchiveService(
 
   private fun summary(directory: Path): RecordingSummary {
     val status = readStatus(directory)
-    val edit = read<EditList>(directory.resolve(EDIT_LIST))
-    val decided = decided(directory, edit)
+    val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE))
+    val decided = edit.decided(radioReviewService.pending(directory))
     val cuts = cutsOf(directory, decided, status.seconds)
     val failure = read<EpisodeFailure>(directory.resolve(FAILED))
     return RecordingSummary(
@@ -200,11 +199,6 @@ class RadioArchiveService(
     status: RecordingStatus,
   ): Long = status.parts.sumOf { size(directory, it.file) ?: 0 }
 
-  private fun decided(
-    directory: Path,
-    edit: EditList?,
-  ): EditList? = radioReviewService.pending(directory)?.let { edit?.copy(keep = it) } ?: edit
-
   private fun formatOf(
     directory: Path,
     status: RecordingStatus,
@@ -230,7 +224,7 @@ class RadioArchiveService(
     return audible(coverage(directory, status.parts), keep.map { it.start to it.end }).map { KeptSpan(it.first, it.second) }
   }
 
-  private fun cutsOf(directory: Path): List<Cut> = cuts(read(directory.resolve(EDIT_LIST)), readStatus(directory).seconds)
+  private fun cutsOf(directory: Path): List<Cut> = cuts(read(directory.resolve(EDIT_LIST_FILE)), readStatus(directory).seconds)
 
   private fun cutsOf(
     directory: Path,
@@ -255,7 +249,6 @@ class RadioArchiveService(
 
   companion object {
     private const val EPISODE = "episode.m4a"
-    private const val EDIT_LIST = "edit-list.json"
     private const val FAILED = "episode-failed.json"
   }
 }

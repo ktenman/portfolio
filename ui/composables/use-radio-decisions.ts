@@ -45,7 +45,10 @@ export const useRadioDecisions = (recording: MaybeRefOrGetter<RecordingSummary>)
     if (!decided) return
     await radioService
       .review(decided.name, { removed: decided.removed })
-      .then(() => queryClient.invalidateQueries({ queryKey: ['radio'], exact: true }))
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['radio-search'] })
+        return queryClient.invalidateQueries({ queryKey: ['radio'], exact: true })
+      })
       .catch(() => toast.error('Could not save the cuts'))
       .finally(() => {
         if (unsaved.value === decided) unsaved.value = null

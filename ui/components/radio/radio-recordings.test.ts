@@ -205,6 +205,15 @@ describe('RadioRecordings', () => {
     expect(calls).toEqual([2, 2])
   })
 
+  it('should mark the search results stale after a delete', async () => {
+    const wrapper = await mount()
+    wrapper.queryClient.setQueryDefaults(['radio-search'], { gcTime: Infinity })
+    wrapper.queryClient.setQueryData(['radio-search', 'valimis'], {})
+    await wrapper.find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.queryClient.getQueryState(['radio-search', 'valimis'])?.isInvalidated).toBe(true)
+  })
+
   it('should say so when a recording cannot be deleted', async () => {
     vi.mocked(radioService.deleteRecording).mockRejectedValue(new Error('409'))
     await remove()

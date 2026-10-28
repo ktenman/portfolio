@@ -214,6 +214,13 @@ describe('api services', () => {
       '/radio/2026-10-17/position',
       { seconds: 2296.5 },
     ],
+    [
+      'radio.search',
+      () => radioService.search('valimised', '2026-10-17'),
+      'get',
+      '/radio/search',
+      { params: { q: 'valimised', after: '2026-10-17' } },
+    ],
   ])('%s calls the right endpoint', async (_name, call, method, url, payload) => {
     await call()
 

@@ -224,6 +224,26 @@ describe('useRadioPlayer', () => {
     expect([player.version.value, player.recordingSeconds.value]).toEqual(['raw', 2296.5])
   })
 
+  it('should stay quiet when the browser refuses to play', async () => {
+    vi.mocked(audio.play).mockRejectedValue(
+      new DOMException('Playback was blocked', 'NotAllowedError')
+    )
+    const { toasts } = await import('./use-toast')
+    player.load(recording())
+    await player.toggle()
+    expect(toasts.value).toEqual([])
+  })
+
+  it('should tell the listener when the audio cannot be played', async () => {
+    vi.mocked(audio.play).mockRejectedValue(
+      new DOMException('The file is missing', 'NotSupportedError')
+    )
+    const { toasts } = await import('./use-toast')
+    player.load(recording())
+    await player.toggle()
+    expect(toasts.value.map(toast => toast.message)).toEqual(['Could not play the audio'])
+  })
+
   it('should keep playing after switching version while playing', () => {
     player.load(recording())
     audio.dispatchEvent(new Event('play'))

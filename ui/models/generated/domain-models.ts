@@ -262,11 +262,11 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    cutState: CutState;
-    topics: TimelineEntry[];
     drops: number;
     span: Slot;
+    topics: TimelineEntry[];
     transcriptState: TranscriptState;
+    cutState: CutState;
 }
 
 export interface TranscriptLine {
@@ -349,6 +349,18 @@ export interface AiringChoice {
 
 export interface RadioPositionDto {
     seconds: number;
+}
+
+export interface RadioSearch {
+    topics: TopicHit[];
+    moreTopics: number;
+    groups: LineGroup[];
+    lines: number;
+    recordings: number;
+    partial: boolean;
+    suggestions: Suggestion[];
+    next: string | null;
+    searchable: boolean;
 }
 
 export interface CutChoice {
@@ -537,6 +549,28 @@ export interface DayBlock {
     airings: DayAiring[];
 }
 
+export interface TopicHit {
+    name: string;
+    programme: string;
+    startedAt: number;
+    start: number;
+    title: TextPart[];
+    summary: TextPart[];
+}
+
+export interface LineGroup {
+    name: string;
+    programme: string;
+    startedAt: number;
+    lines: LineHit[];
+    more: number;
+}
+
+export interface Suggestion {
+    word: string;
+    close: string[];
+}
+
 export interface LargestPositionDto extends Serializable {
     name: string;
     percentage: number;
@@ -603,6 +637,17 @@ export interface DayAiring {
     repeat: boolean;
     original: OriginalAiring | null;
     recording: AiringRecording | null;
+}
+
+export interface TextPart {
+    text: string;
+    mark: boolean;
+}
+
+export interface LineHit {
+    start: number;
+    kept: boolean;
+    text: TextPart[];
 }
 
 export interface JingleMatch {
@@ -717,17 +762,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
+}
+
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
-}
-
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum RecorderState {

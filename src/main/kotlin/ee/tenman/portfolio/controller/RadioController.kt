@@ -16,6 +16,8 @@ import ee.tenman.portfolio.service.radio.RadioPositionDto
 import ee.tenman.portfolio.service.radio.RadioPositionService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
+import ee.tenman.portfolio.service.radio.RadioSearch
+import ee.tenman.portfolio.service.radio.RadioSearchService
 import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptSection
@@ -52,6 +54,7 @@ class RadioController(
   private val radioLiveService: RadioLiveService,
   private val radioDayService: RadioDayService,
   private val radioPositionService: RadioPositionService,
+  private val radioSearchService: RadioSearchService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
@@ -72,6 +75,12 @@ class RadioController(
   fun getSchedule(
     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
   ): RadioDay = radioDayService.day(date)
+
+  @GetMapping("/search")
+  fun getSearch(
+    @RequestParam q: String,
+    @RequestParam(required = false) after: String?,
+  ): RadioSearch = radioSearchService.search(q, after)
 
   @PutMapping("/airings/{id}")
   fun putAiring(

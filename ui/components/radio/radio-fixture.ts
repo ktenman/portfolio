@@ -10,9 +10,11 @@ import {
   type DayAiring,
   type EditList,
   type RadioDay,
+  type RadioSearch,
   type RecordingStatus,
   type RecordingSummary,
   RecordingState,
+  type TextPart,
   type TranscriptLine,
   type TranscriptSection,
   TranscriptState,
@@ -397,3 +399,48 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
   ],
   ...overrides,
 })
+
+const said = (...parts: string[]): TextPart[] =>
+  parts.map((text, index) => ({ text, mark: index % 2 === 1 }))
+
+export const radioSearch = (overrides: Partial<RadioSearch> = {}): RadioSearch => ({
+  topics: [
+    {
+      name: '2026-10-17',
+      programme: 'Keskpäevatund',
+      startedAt: STARTED,
+      start: 2700,
+      title: said('Kes ', 'valimistel', ' võidab?'),
+      summary: said('Saatejuhid arutavad ', 'valimiste', ' järel.'),
+    },
+  ],
+  moreTopics: 0,
+  groups: [
+    {
+      name: '2026-10-17',
+      programme: 'Keskpäevatund',
+      startedAt: STARTED,
+      lines: [
+        { start: 2150, kept: false, text: said('Uudistes: ', 'valimistest', ' veel.') },
+        { start: 2300, kept: true, text: said('Kevadel tulevad ', 'valimised', '.') },
+      ],
+      more: 0,
+    },
+  ],
+  lines: 2,
+  recordings: 1,
+  partial: false,
+  suggestions: [],
+  next: null,
+  searchable: true,
+  ...overrides,
+})
+
+export const nothingFound = (close: string[] = []): RadioSearch =>
+  radioSearch({
+    topics: [],
+    groups: [],
+    lines: 0,
+    recordings: 0,
+    suggestions: close.length ? [{ word: 'valimis', close }] : [],
+  })

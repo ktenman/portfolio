@@ -57,7 +57,7 @@ class RadioEpisodeService(
   fun todo(directory: Path): List<String> {
     if (!ready(directory)) return emptyList()
     val status = readStatus(directory)
-    val todo = status.programmes - read<EditList>(directory.resolve(EDIT_LIST)).found()
+    val todo = status.programmes - read<EditList>(directory.resolve(EDIT_LIST_FILE)).found()
     if (todo.isEmpty() || Files.isWritable(directory)) return todo
     log.warn("Cannot write the radio episode into $directory")
     return emptyList()
@@ -70,11 +70,11 @@ class RadioEpisodeService(
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts).also { passed(directory, CutStep.DECODE) }
     val heard = Heard(readSounds(directory), readTranscript(directory).words)
-    val edit = edited(read(directory.resolve(EDIT_LIST)), findings(directory, status, timeline, todo), status, timeline, heard)
+    val edit = edited(read(directory.resolve(EDIT_LIST_FILE)), findings(directory, status, timeline, todo), status, timeline, heard)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
     radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found(), clock.zone), temporary)
-    save(directory.resolve(EDIT_LIST), edit)
+    save(directory.resolve(EDIT_LIST_FILE), edit)
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }
 
@@ -246,7 +246,6 @@ class RadioEpisodeService(
     private const val TEMPORARY = "episode.tmp.m4a"
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"
-    private const val EDIT_LIST = "edit-list.json"
     private val READY = setOf(RecordingState.CAPTURED, RecordingState.PARTIAL)
   }
 }
