@@ -2,6 +2,7 @@ package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -21,6 +22,8 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun findByProviderName(providerName: ProviderName): List<Instrument>
 
   fun findByProviderNameIn(providerNames: List<ProviderName>): List<Instrument>
+
+  fun findByLogoSourceIsNull(): List<Instrument>
 
   @Modifying(clearAutomatically = true)
   @Query("UPDATE Instrument i SET i.currentPrice = :price WHERE i.id = :id")
@@ -55,5 +58,12 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun updateXirrAnnualReturn(
     id: Long,
     xirr: BigDecimal?,
+  )
+
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE Instrument i SET i.logoSource = :logoSource WHERE i.id = :id")
+  fun updateLogoSource(
+    id: Long,
+    logoSource: LogoSource,
   )
 }
