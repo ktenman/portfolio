@@ -10,10 +10,17 @@ class NvstlyLogoService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun fetchLogo(ticker: String): ByteArray? {
-    if (ticker.isBlank()) return null
-    val url = buildLogoUrl(ticker)
-    log.debug("Fetching logo from nvstly/icons for ticker: $ticker")
+  fun fetchLogo(ticker: String): ByteArray? = fetch(TICKER_ICONS, ticker)
+
+  fun fetchCryptoLogo(symbol: String): ByteArray? = fetch(CRYPTO_ICONS, symbol)
+
+  private fun fetch(
+    folder: String,
+    symbol: String,
+  ): ByteArray? {
+    if (symbol.isBlank()) return null
+    val url = "$BASE_URL/$folder/${symbol.uppercase()}.png"
+    log.debug("Fetching logo from nvstly/icons $folder for: $symbol")
     return runCatching {
       restClient
         .get()
@@ -21,15 +28,15 @@ class NvstlyLogoService(
         .retrieve()
         .body(ByteArray::class.java)
     }.onSuccess {
-      log.info("Successfully fetched logo from nvstly/icons for ticker: $ticker")
+      log.info("Successfully fetched logo from nvstly/icons $folder for: $symbol")
     }.onFailure {
-      log.debug("Logo not found in nvstly/icons for ticker: $ticker")
+      log.debug("Logo not found in nvstly/icons $folder for: $symbol")
     }.getOrNull()
   }
 
-  private fun buildLogoUrl(ticker: String): String = "$BASE_URL/${ticker.uppercase()}.png"
-
   companion object {
-    private const val BASE_URL = "https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons"
+    private const val BASE_URL = "https://raw.githubusercontent.com/nvstly/icons/main"
+    private const val TICKER_ICONS = "ticker_icons"
+    private const val CRYPTO_ICONS = "crypto_icons"
   }
 }

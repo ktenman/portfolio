@@ -6,6 +6,7 @@ import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INSTRUMENT_CACHE
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.InstrumentSnapshot
@@ -94,6 +95,16 @@ class InstrumentService(
     providerExternalId: String,
   ) {
     instrumentRepository.updateProviderExternalId(symbol, providerExternalId)
+  }
+
+  @Transactional
+  fun updateLogoSource(
+    instrumentId: Long,
+    symbol: String,
+    logoSource: LogoSource,
+  ) {
+    instrumentRepository.updateLogoSource(instrumentId, logoSource)
+    cacheInvalidationService.evictInstrumentCaches(instrumentId, symbol)
   }
 
   @Transactional

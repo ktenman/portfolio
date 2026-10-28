@@ -29,6 +29,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.6,
     xirrAnnualReturn: 0.1521,
     firstTransactionDate: '2019-04-02',
+    logoUuid: null,
   },
   {
     id: 102,
@@ -52,6 +53,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.35,
     xirrAnnualReturn: 0.1904,
     firstTransactionDate: '2023-01-17',
+    logoUuid: null,
   },
   {
     id: 103,
@@ -75,6 +77,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.15,
     xirrAnnualReturn: 0.2488,
     firstTransactionDate: '2022-06-30',
+    logoUuid: null,
   },
   {
     id: 104,
@@ -98,6 +101,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.55,
     xirrAnnualReturn: 0.1288,
     firstTransactionDate: '2024-02-05',
+    logoUuid: null,
   },
   {
     id: 105,
@@ -121,6 +125,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: null,
     xirrAnnualReturn: 0.0824,
     firstTransactionDate: '2024-09-11',
+    logoUuid: null,
   },
   {
     id: 106,
@@ -144,6 +149,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.07,
     xirrAnnualReturn: 0.1042,
     firstTransactionDate: '2025-01-08',
+    logoUuid: null,
   },
   {
     id: 107,
@@ -167,6 +173,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.35,
     xirrAnnualReturn: null,
     firstTransactionDate: '2025-03-24',
+    logoUuid: null,
   },
   {
     id: 108,
@@ -190,6 +197,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.35,
     xirrAnnualReturn: 0.2019,
     firstTransactionDate: '2021-11-19',
+    logoUuid: null,
   },
   {
     id: 109,
@@ -213,6 +221,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.2,
     xirrAnnualReturn: 0.1197,
     firstTransactionDate: '2025-05-06',
+    logoUuid: null,
   },
   {
     id: 110,
@@ -236,6 +245,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.12,
     xirrAnnualReturn: 0.0588,
     firstTransactionDate: '2023-08-21',
+    logoUuid: null,
   },
   {
     id: 111,
@@ -259,6 +269,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0,
     xirrAnnualReturn: 0.3902,
     firstTransactionDate: '2020-12-03',
+    logoUuid: null,
   },
   {
     id: 112,
@@ -282,6 +293,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.3,
     xirrAnnualReturn: 0.0661,
     firstTransactionDate: '2025-07-15',
+    logoUuid: null,
   },
   {
     id: 113,
@@ -305,6 +317,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: 0.35,
     xirrAnnualReturn: 0.1433,
     firstTransactionDate: '2025-10-02',
+    logoUuid: null,
   },
   {
     id: 114,
@@ -328,6 +341,7 @@ const INSTRUMENTS: InstrumentDto[] = [
     ter: null,
     xirrAnnualReturn: -0.0059,
     firstTransactionDate: '2024-11-28',
+    logoUuid: null,
   },
 ]
 

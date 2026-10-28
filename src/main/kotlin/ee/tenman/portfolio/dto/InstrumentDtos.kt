@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.UUID
 
 @Schema(description = "Financial instrument data transfer object")
 data class InstrumentDto(
@@ -39,6 +40,7 @@ data class InstrumentDto(
   val ter: BigDecimal? = null,
   val xirrAnnualReturn: BigDecimal? = null,
   val firstTransactionDate: LocalDate? = null,
+  val logoUuid: UUID? = null,
 ) {
   fun toEntity() =
     Instrument(
@@ -76,6 +78,7 @@ data class InstrumentDto(
         priceChangePercent = null,
         ter = instrument.ter,
         xirrAnnualReturn = instrument.xirrAnnualReturn,
+        logoUuid = instrument.logoUuid(),
       )
 
     fun fromSnapshot(snapshot: InstrumentSnapshot) =
@@ -101,7 +104,10 @@ data class InstrumentDto(
         ter = snapshot.instrument.ter,
         xirrAnnualReturn = snapshot.instrument.xirrAnnualReturn,
         firstTransactionDate = snapshot.firstTransactionDate,
+        logoUuid = snapshot.instrument.logoUuid(),
       )
+
+    private fun Instrument.logoUuid(): UUID? = uuid.takeIf { logoSource != null }
   }
 }
 

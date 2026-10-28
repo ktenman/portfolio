@@ -72,6 +72,7 @@ describe('etf-breakdown', () => {
     ter: null,
     xirrAnnualReturn: null,
     firstTransactionDate: null,
+    logoUuid: null,
   }
 
   beforeEach(() => {
