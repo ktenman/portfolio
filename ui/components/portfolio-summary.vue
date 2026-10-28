@@ -80,7 +80,14 @@
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
 
-      <summary-interval-switch :selected="interval" :announcement="announcement" @select="choose" />
+      <segmented-switch
+        class="mb-3"
+        label="Interval"
+        :options="INTERVAL_OPTIONS"
+        :selected="interval"
+        :announcement="announcement"
+        @select="choose"
+      />
 
       <template v-if="view === 'monthly'">
         <monthly-profit-calendar
@@ -133,7 +140,11 @@ import { useChartRange } from '../composables/use-time-range'
 import { useAuthState } from '../composables/use-auth-state'
 import { formatDateToString } from '../composables/use-quick-dates'
 import { useNumberTransition } from '../composables/use-number-transition'
-import { useStoredInterval, useSummaryInterval } from '../composables/use-summary-interval'
+import {
+  type SummaryInterval,
+  useStoredInterval,
+  useSummaryInterval,
+} from '../composables/use-summary-interval'
 import { useFlashOnChange } from '../composables/use-flash-on-change'
 import PortfolioActions from './portfolio/portfolio-actions.vue'
 import ChartRangeFilter from './portfolio/chart-range-filter.vue'
@@ -143,7 +154,7 @@ import DailyProfitCalendar from './portfolio/daily-profit-calendar.vue'
 import DailySummaryTable from './portfolio/daily-summary-table.vue'
 import MonthlyProfitCalendar from './portfolio/monthly-profit-calendar.vue'
 import MonthlySummaryTable from './portfolio/monthly-summary-table.vue'
-import SummaryIntervalSwitch from './portfolio/summary-interval-switch.vue'
+import SegmentedSwitch from './shared/segmented-switch.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import LoadingSpinner from './shared/loading-spinner.vue'
 import LoadingVeil from './shared/loading-veil.vue'
@@ -155,6 +166,11 @@ import { buildMonthlyProfit } from '../services/monthly-profit'
 import { STORAGE_KEYS } from '../constants'
 import { REFETCH_INTERVALS } from '../constants/api'
 import { formatCurrencyWithSymbol, formatDate, splitCents } from '../utils/formatters'
+
+const INTERVAL_OPTIONS: { value: SummaryInterval; label: string }[] = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'monthly', label: 'Monthly' },
+]
 
 const PortfolioChart = defineAsyncComponent({
   loader: () => import('./portfolio/portfolio-chart.vue'),

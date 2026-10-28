@@ -1,13 +1,28 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
-import SummaryIntervalSwitch from './summary-interval-switch.vue'
+import SegmentedSwitch from './segmented-switch.vue'
 
 enableAutoUnmount(afterEach)
 
-const mountSwitch = (announcement = '') =>
-  mount(SummaryIntervalSwitch, { props: { selected: 'daily', announcement } })
+const INTERVALS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'monthly', label: 'Monthly' },
+]
 
-describe('SummaryIntervalSwitch', () => {
+const VIEWS = [
+  { value: 'table', label: 'Table', icon: 'M3 5h18M3 12h18M3 19h18' },
+  { value: 'heatmap', label: 'Heatmap', icon: 'M3 3h8v8H3zM13 3h8v18h-8zM3 13h8v8H3z' },
+]
+
+const mountSwitch = (announcement = '') =>
+  mount(SegmentedSwitch, {
+    props: { label: 'Interval', options: INTERVALS, selected: 'daily', announcement },
+  })
+
+const iconSwitch = () =>
+  mount(SegmentedSwitch, { props: { label: 'View', options: VIEWS, selected: 'table' } })
+
+describe('SegmentedSwitch', () => {
   it('groups the segments under Interval with pressed states', () => {
     const group = mountSwitch().find('[role="group"]')
 
@@ -44,4 +59,14 @@ describe('SummaryIntervalSwitch', () => {
       [false, true],
       [false, true],
     ]))
+
+  it('keeps the text as the accessible name of an icon option', () =>
+    expect(
+      iconSwitch()
+        .findAll('button')
+        .map(button => button.text())
+    ).toEqual(['Table', 'Heatmap']))
+
+  it('renders no status region without an announcement', () =>
+    expect(iconSwitch().find('[role="status"]').exists()).toBe(false))
 })

@@ -15,7 +15,7 @@
     </div>
     <span v-if="missing" class="legend-missing">
       <daily-profit-cell variant="missing" class="legend-key" />
-      <span class="legend-text">No daily summary</span>
+      <span class="legend-text">{{ missingLabel }}</span>
     </span>
     <slot />
   </div>
@@ -26,9 +26,10 @@ import { computed } from 'vue'
 import { CHANGE_STEPS } from '../../services/daily-profit-calendar'
 import DailyProfitCell from './daily-profit-cell.vue'
 
-const props = withDefaults(defineProps<{ missing: boolean; steps?: number[] }>(), {
-  steps: () => CHANGE_STEPS,
-})
+const props = withDefaults(
+  defineProps<{ missing: boolean; steps?: number[]; missingLabel?: string }>(),
+  { steps: () => CHANGE_STEPS, missingLabel: 'No daily summary' }
+)
 
 const SWATCHES = [
   'rounded-l-control bg-loss',
@@ -70,7 +71,7 @@ const TICKS = computed(() => {
 
 .legend-scale {
   display: grid;
-  grid-template-columns: auto repeat(9, max(2.5em, 3.75ch)) auto;
+  grid-template-columns: auto repeat(9, minmax(2em, max(2.5em, 3.75ch))) auto;
   align-items: center;
   row-gap: 3px;
 }

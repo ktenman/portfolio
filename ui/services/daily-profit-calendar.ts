@@ -24,6 +24,18 @@ const LOSS_STEPS = ['flat', 'loss-1', 'loss-2', 'loss-3', 'loss-4'] as const
 
 export type ChangeStep = (typeof GAIN_STEPS)[number] | (typeof LOSS_STEPS)[number]
 
+export const STEP_CLASSES: Record<ChangeStep, string> = {
+  'loss-4': 'bg-loss text-surface',
+  'loss-3': 'bg-loss-step-3 text-ink',
+  'loss-2': 'bg-loss-step-2 text-ink',
+  'loss-1': 'bg-loss-step-1 text-ink',
+  flat: 'bg-change-flat text-ink',
+  'gain-1': 'bg-gain-step-1 text-ink',
+  'gain-2': 'bg-gain-step-2 text-ink',
+  'gain-3': 'bg-gain-step-3 text-ink',
+  'gain-4': 'bg-gain text-surface',
+}
+
 interface DayTexts {
   date: string
   name: string

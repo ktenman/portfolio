@@ -78,7 +78,7 @@
 
 <script lang="ts" setup>
 import { ref, useId } from 'vue'
-import type { ChangeStep } from '../../services/daily-profit-calendar'
+import { STEP_CLASSES } from '../../services/daily-profit-calendar'
 import {
   formatMonthCell,
   moveMonth,
@@ -106,17 +106,6 @@ const KEY_STEPS = new Map([
   ['ArrowUp', 12],
   ['ArrowDown', -12],
 ])
-const STEP_CLASSES: Record<ChangeStep, string> = {
-  'loss-4': 'bg-loss text-surface',
-  'loss-3': 'bg-loss-step-3 text-ink',
-  'loss-2': 'bg-loss-step-2 text-ink',
-  'loss-1': 'bg-loss-step-1 text-ink',
-  flat: 'bg-change-flat text-ink',
-  'gain-1': 'bg-gain-step-1 text-ink',
-  'gain-2': 'bg-gain-step-2 text-ink',
-  'gain-3': 'bg-gain-step-3 text-ink',
-  'gain-4': 'bg-gain text-surface',
-}
 
 const grid = ref<HTMLElement | null>(null)
 const selectedId = useId()
