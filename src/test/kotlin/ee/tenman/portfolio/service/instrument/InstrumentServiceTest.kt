@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.InstrumentSnapshot
@@ -12,8 +13,11 @@ import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.CacheInvalidationService
 import ee.tenman.portfolio.service.transaction.TransactionProfitService
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -243,5 +247,17 @@ class InstrumentServiceTest {
 
     verify(exactly = 0) { cacheInvalidationService.evictAllRelatedCaches(any(), any()) }
     verify { cacheInvalidationService.evictInstrumentCaches(999L, null) }
+  }
+
+  @Test
+  fun `records the logo source and evicts the cached instrument`() {
+    every { instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR) } just runs
+
+    instrumentService.updateLogoSource(7L, "VWCE:GER:EUR", LogoSource.LIGHTYEAR)
+
+    verifyOrder {
+      instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR)
+      cacheInvalidationService.evictInstrumentCaches(7L, "VWCE:GER:EUR")
+    }
   }
 }

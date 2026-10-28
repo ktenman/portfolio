@@ -27,6 +27,7 @@ export interface InstrumentDto {
     ter: number | null;
     xirrAnnualReturn: number | null;
     firstTransactionDate: DateAsString | null;
+    logoUuid: string | null;
 }
 
 /**

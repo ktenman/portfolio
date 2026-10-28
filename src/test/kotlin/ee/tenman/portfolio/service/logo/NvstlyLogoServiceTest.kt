@@ -69,4 +69,18 @@ class NvstlyLogoServiceTest {
       requestHeadersUriSpec.uri("https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons/AAPL.png")
     }
   }
+
+  @Test
+  fun `fetches a crypto icon from the crypto icons folder`() {
+    every { restClient.get() } returns requestHeadersUriSpec
+    every { requestHeadersUriSpec.uri(any<String>()) } returns requestHeadersUriSpec
+    every { requestHeadersUriSpec.retrieve() } returns responseSpec
+    every { responseSpec.body(ByteArray::class.java) } returns byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+
+    service.fetchCryptoLogo("btc")
+
+    verify {
+      requestHeadersUriSpec.uri("https://raw.githubusercontent.com/nvstly/icons/main/crypto_icons/BTC.png")
+    }
+  }
 }
