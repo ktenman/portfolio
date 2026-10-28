@@ -98,6 +98,17 @@ class InstrumentLogoCollectionJobTest {
   }
 
   @Test
+  fun `asks Lightyear only for the logos of ETFs it prices`() {
+    given(etf(), trading212Etf())
+    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns emptyMap()
+    every { logoFallbackService.fetchLogo(any(), null, null) } returns null
+
+    job.collectMissingLogos()
+
+    verify(exactly = 1) { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) }
+  }
+
+  @Test
   fun `skips cash instruments`() {
     given(instrument(4L, "EUR", "Euro", "CASH", ProviderName.MANUAL))
 
@@ -151,6 +162,18 @@ class InstrumentLogoCollectionJobTest {
   }
 
   @Test
+  fun `collects the logo of a Trading212 ETF when the Lightyear batch fails`() {
+    given(etf(), trading212Etf())
+    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns null
+    every { logoFallbackService.fetchLogo("Amundi Euro Stoxx Banks", null, null) } returns
+      LogoFetchResult(imageData = IMAGE, source = LogoSource.LLM_SELECTED)
+
+    job.collectMissingLogos()
+
+    verify(exactly = 1) { instrumentService.updateLogoSource(5L, "BNKE:PAR:EUR", LogoSource.LLM_SELECTED) }
+  }
+
+  @Test
   fun `leaves ETFs for the next run when the Lightyear lookup throws`() {
     given(etf())
     every { lightyearPriceService.fetchLogoUrls(any()) } throws RuntimeException("Proxy unavailable")
@@ -169,6 +192,8 @@ class InstrumentLogoCollectionJobTest {
   private fun etf() = instrument(1L, "VWCE:GER:EUR", "Vanguard FTSE All-World", "ETF", ProviderName.LIGHTYEAR)
 
   private fun bitcoin() = instrument(2L, "BTCEUR", "BTC/EUR", "Cryptocurrency", ProviderName.BINANCE)
+
+  private fun trading212Etf() = instrument(5L, "BNKE:PAR:EUR", "Amundi Euro Stoxx Banks", "ETF", ProviderName.TRADING212)
 
   private fun instrument(
     id: Long,
