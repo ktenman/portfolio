@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import PortfolioSummary from './portfolio-summary.vue'
-import SummaryIntervalSwitch from './portfolio/summary-interval-switch.vue'
+import SegmentedSwitch from './shared/segmented-switch.vue'
 import SkeletonLoader from './shared/skeleton-loader.vue'
 import { portfolioSummaryService, transactionsService } from '../services/api'
 import { toasts } from '../composables/use-toast'
@@ -72,7 +72,7 @@ const settle = async () => {
   for (let tick = 0; tick < 10; tick++) await new Promise(resolve => setTimeout(resolve, 0))
 }
 
-const intervalSwitch = (wrapper: Wrapper) => wrapper.findComponent(SummaryIntervalSwitch)
+const intervalSwitch = (wrapper: Wrapper) => wrapper.findComponent(SegmentedSwitch)
 
 const chip = (wrapper: Wrapper, label: string) =>
   intervalSwitch(wrapper)
