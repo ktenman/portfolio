@@ -23,22 +23,22 @@
         <span role="alert">Couldn’t refresh the results</span>
         <app-button ghost size="sm" @click="refetch({ cancelRefetch: false })">Retry</app-button>
       </div>
-      <div v-if="notes.length || found.suggestions.length" class="grid gap-1 text-ink-soft">
-        <p v-for="note in notes" :key="note" class="mb-0">{{ note }}</p>
-        <p v-for="tip in found.suggestions" :key="tip.word" class="mb-0">
-          {{ `Nobody said “${tip.word}”. Close words that were said:` }}
-          <span v-for="(word, index) in tip.close" :key="word">
-            {{ index ? ',' : '' }}
-            <router-link
-              :to="{ query: { ...route.query, q: word } }"
-              class="font-medium text-brass-deep underline-offset-2 hover:underline"
-              data-testid="radio-search-close"
-            >
-              {{ word }}
-            </router-link>
-          </span>
-        </p>
-      </div>
+      <p v-if="found.partial" class="mb-0 text-ink-soft">
+        No line has every word, so these have most of them.
+      </p>
+      <p v-if="found.suggestions.length" class="mb-0 text-ink-soft">
+        Close words that were said:
+        <span v-for="(word, index) in found.suggestions" :key="word">
+          {{ index ? ',' : '' }}
+          <router-link
+            :to="{ query: { ...route.query, q: word } }"
+            class="font-medium text-brass-deep underline-offset-2 hover:underline"
+            data-testid="radio-search-close"
+          >
+            {{ word }}
+          </router-link>
+        </span>
+      </p>
       <radio-card v-if="found.topics.length" title="Topics">
         <ol>
           <li
@@ -170,17 +170,10 @@ const groups = computed(() => {
 const status = computed(() => {
   if (!found.value || isPlaceholderData.value)
     return isError.value ? 'Couldn’t search the recordings' : 'Searching…'
-  const { lines, recordings } = found.value
-  return lines ? `${count(lines, 'line')} in ${count(recordings, 'recording')}` : 'No lines'
-})
-
-const notes = computed(() => {
-  if (!found.value) return []
-  const { searchable, partial, lines, suggestions } = found.value
-  if (!searchable) return ['These words are too short or too common to search.']
-  return [
-    partial ? 'No line has every word, so these have most of them.' : '',
-    lines || suggestions.length ? '' : 'Nobody said it in these recordings.',
-  ].filter(Boolean)
+  const { searchable, lines, recordings } = found.value
+  if (!searchable) return 'These words are too short or too common to search'
+  return lines
+    ? `${count(lines, 'line')} in ${count(recordings, 'recording')}`
+    : `Nobody said “${props.query}”`
 })
 </script>

@@ -66,7 +66,7 @@ describe('useRadioDecisions', () => {
   it('should mark the search results stale once a decision is saved', async () => {
     decisions.choose(2, false)
     await decisions.flush()
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['radio-search'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['radio', 'search'] })
   })
 
   it('should say a decision waits until it is saved', async () => {

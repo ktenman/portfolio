@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { radioService } from '../../services/api'
+import { deferred } from '../../tests/test-utils'
 import RadioSearch from './radio-search.vue'
 import { nothingFound, radioSearch } from './radio-fixture'
 
@@ -16,22 +17,17 @@ enableAutoUnmount(afterEach)
 
 let reachEnd = () => {}
 
-const observeEnd = () =>
+const observe = (inView = false) =>
   vi.stubGlobal(
     'IntersectionObserver',
     vi.fn(function (notify: (entries: { isIntersecting: boolean }[]) => void) {
       return {
-        observe: () => (reachEnd = () => notify([{ isIntersecting: true }])),
+        observe: () => {
+          reachEnd = () => notify([{ isIntersecting: true }])
+          if (inView) reachEnd()
+        },
         disconnect: vi.fn(),
       }
-    })
-  )
-
-const observeInView = () =>
-  vi.stubGlobal(
-    'IntersectionObserver',
-    vi.fn(function (notify: (entries: { isIntersecting: boolean }[]) => void) {
-      return { observe: () => notify([{ isIntersecting: true }]), disconnect: vi.fn() }
     })
   )
 
@@ -57,11 +53,24 @@ const open = async (client = new QueryClient()) => {
   return { router, wrapper }
 }
 
+const staleClient = async () => {
+  const client = new QueryClient()
+  client.setQueryData(['radio', 'search', 'valimis'], {
+    pages: [radioSearch({ next: '2026-10-17' })],
+    pageParams: [null],
+  })
+  await client.invalidateQueries({ queryKey: ['radio', 'search'], refetchType: 'none' })
+  return client
+}
+
 const lines = async () => (await open()).wrapper.findAll('[data-testid="radio-search-line"]')
+
+const hrefs = (wrapper: VueWrapper) =>
+  wrapper.findAll('[data-testid="radio-search-line"] a').map(a => a.attributes('href'))
 
 describe('RadioSearch', () => {
   beforeEach(() => {
-    observeEnd()
+    observe()
     vi.mocked(radioService.search).mockReset().mockResolvedValue(radioSearch())
   })
 
@@ -131,31 +140,26 @@ describe('RadioSearch', () => {
     ])
   })
 
-  it('should name the word nobody said before the close words', async () => {
+  it('should introduce the close words as words that were said', async () => {
     vi.mocked(radioService.search).mockResolvedValue(nothingFound(['valised', 'valitsus']))
-    const tip = (await open()).wrapper.get('[data-testid="radio-search-close"]').element
-      .parentElement!
-    expect(tip.parentElement!.textContent!.replace(/\s+/g, ' ').trim()).toBe(
-      'Nobody said “valimis”. Close words that were said: valised, valitsus'
+    const tip = (await open()).wrapper
+      .get('[data-testid="radio-search-close"]')
+      .element.closest('p')!
+    expect(tip.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+      'Close words that were said: valised, valitsus'
     )
   })
 
-  it('should leave the close words to say that nobody said the word', async () => {
-    vi.mocked(radioService.search).mockResolvedValue(nothingFound(['valised']))
-    expect((await open()).wrapper.text()).not.toContain('Nobody said it in these recordings.')
-  })
-
-  it('should say when nobody said it', async () => {
+  it('should say nobody said the words when no line has them', async () => {
     vi.mocked(radioService.search).mockResolvedValue(nothingFound())
-    expect((await open()).wrapper.text()).toContain('Nobody said it in these recordings.')
+    expect((await open()).wrapper.get('[role="status"]').text()).toBe('Nobody said “valimis”')
   })
 
   it('should say the words are too short or too common to search instead of that nobody said them', async () => {
     vi.mocked(radioService.search).mockResolvedValue({ ...nothingFound(), searchable: false })
-    const notes = (await open()).wrapper.findAll('p:not([role="status"])')
-    expect(notes.map(note => note.text())).toEqual([
-      'These words are too short or too common to search.',
-    ])
+    expect((await open()).wrapper.get('[role="status"]').text()).toBe(
+      'These words are too short or too common to search'
+    )
   })
 
   it('should load more lines when the end of the list comes into view', async () => {
@@ -165,9 +169,7 @@ describe('RadioSearch', () => {
     const { wrapper } = await open()
     reachEnd()
     await flushPromises()
-    expect(
-      wrapper.findAll('[data-testid="radio-search-line"] a').map(a => a.attributes('href'))
-    ).toEqual([
+    expect(hrefs(wrapper)).toEqual([
       '/radio/2026-10-17?t=2150&raw=1',
       '/radio/2026-10-17?t=2300',
       '/radio/2026-10-10?t=2150&raw=1',
@@ -182,22 +184,17 @@ describe('RadioSearch', () => {
     const { wrapper } = await open()
     reachEnd()
     await flushPromises()
-    expect(
-      wrapper.findAll('[data-testid="radio-search-line"] a').map(a => a.attributes('href'))
-    ).toEqual(['/radio/2026-10-17?t=2150&raw=1', '/radio/2026-10-17?t=2300'])
+    expect(hrefs(wrapper)).toEqual(['/radio/2026-10-17?t=2150&raw=1', '/radio/2026-10-17?t=2300'])
   })
 
   it('should keep loading while the end of the list stays in view after a page of recordings already shown', async () => {
-    observeInView()
+    observe(true)
     vi.mocked(radioService.search)
       .mockResolvedValueOnce(radioSearch({ next: '2026-10-17' }))
       .mockResolvedValueOnce(radioSearch({ next: '2026-10-17' }))
       .mockResolvedValueOnce(secondPage())
     const { wrapper } = await open()
-    expect([
-      vi.mocked(radioService.search).mock.calls.length,
-      wrapper.findAll('[data-testid="radio-search-line"] a').map(a => a.attributes('href')),
-    ]).toEqual([
+    expect([vi.mocked(radioService.search).mock.calls.length, hrefs(wrapper)]).toEqual([
       3,
       [
         '/radio/2026-10-17?t=2150&raw=1',
@@ -209,21 +206,13 @@ describe('RadioSearch', () => {
   })
 
   it('should load more lines when the end of the list came into view while the results refreshed', async () => {
-    observeInView()
-    let refresh = () => {}
+    observe(true)
+    const refresh = deferred<ReturnType<typeof radioSearch>>()
     vi.mocked(radioService.search)
-      .mockReturnValueOnce(
-        new Promise(resolve => (refresh = () => resolve(radioSearch({ next: '2026-10-17' }))))
-      )
+      .mockReturnValueOnce(refresh.promise)
       .mockResolvedValueOnce(secondPage())
-    const client = new QueryClient()
-    client.setQueryData(['radio-search', 'valimis'], {
-      pages: [radioSearch({ next: '2026-10-17' })],
-      pageParams: [null],
-    })
-    await client.invalidateQueries({ queryKey: ['radio-search'], refetchType: 'none' })
-    await open(client)
-    refresh()
+    await open(await staleClient())
+    refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
       ['valimis', null],
@@ -235,7 +224,7 @@ describe('RadioSearch', () => {
     const client = new QueryClient()
     const { wrapper } = await open(client)
     vi.mocked(radioService.search).mockRejectedValue(new Error('Search failed'))
-    await client.invalidateQueries({ queryKey: ['radio-search'] })
+    await client.invalidateQueries({ queryKey: ['radio', 'search'] })
     await flushPromises()
     expect([
       wrapper.get('[role="alert"]').text(),
@@ -244,33 +233,25 @@ describe('RadioSearch', () => {
   })
 
   it('should stop loading more lines when the results could not be refreshed', async () => {
-    observeInView()
+    observe(true)
     vi.mocked(radioService.search).mockRejectedValue(new Error('Search failed'))
-    const client = new QueryClient()
-    client.setQueryData(['radio-search', 'valimis'], {
-      pages: [radioSearch({ next: '2026-10-17' })],
-      pageParams: [null],
-    })
-    await client.invalidateQueries({ queryKey: ['radio-search'], refetchType: 'none' })
-    await open(client)
+    await open(await staleClient())
     expect(vi.mocked(radioService.search).mock.calls).toEqual([['valimis', null]])
   })
 
   it('should refresh every page of a search with its own words when the words change meanwhile', async () => {
-    let refresh = () => {}
+    const refresh = deferred<ReturnType<typeof radioSearch>>()
     vi.mocked(radioService.search)
       .mockResolvedValueOnce(radioSearch({ next: '2026-10-17' }))
       .mockResolvedValueOnce(secondPage())
-      .mockReturnValueOnce(
-        new Promise(resolve => (refresh = () => resolve(radioSearch({ next: '2026-10-17' }))))
-      )
+      .mockReturnValueOnce(refresh.promise)
     const client = new QueryClient()
     const { wrapper } = await open(client)
     reachEnd()
     await flushPromises()
-    void client.invalidateQueries({ queryKey: ['radio-search'] })
+    void client.invalidateQueries({ queryKey: ['radio', 'search'] })
     await wrapper.setProps({ query: 'eelarve' })
-    refresh()
+    refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
       ['valimis', null],
@@ -304,7 +285,7 @@ describe('RadioSearch', () => {
       .mockResolvedValueOnce(secondPage())
     const client = new QueryClient()
     const first = await open(client)
-    await client.invalidateQueries({ queryKey: ['radio-search'], refetchType: 'none' })
+    await client.invalidateQueries({ queryKey: ['radio', 'search'], refetchType: 'none' })
     reachEnd()
     await flushPromises()
     first.wrapper.unmount()
@@ -326,11 +307,9 @@ describe('RadioSearch', () => {
         groups: [{ ...radioSearch().groups[0], lines: [{ ...cut, kept: true }, kept] }],
       })
     )
-    await client.invalidateQueries({ queryKey: ['radio-search'] })
+    await client.invalidateQueries({ queryKey: ['radio', 'search'] })
     await flushPromises()
-    expect(
-      wrapper.findAll('[data-testid="radio-search-line"] a').map(a => a.attributes('href'))
-    ).toEqual(['/radio/2026-10-17?t=2150', '/radio/2026-10-17?t=2300'])
+    expect(hrefs(wrapper)).toEqual(['/radio/2026-10-17?t=2150', '/radio/2026-10-17?t=2300'])
   })
 
   it('should try again to load more lines after a failure', async () => {
@@ -355,7 +334,7 @@ describe('RadioSearch', () => {
     const { wrapper } = await open(client)
     reachEnd()
     await flushPromises()
-    void client.invalidateQueries({ queryKey: ['radio-search'] })
+    void client.invalidateQueries({ queryKey: ['radio', 'search'] })
     await flushPromises()
     expect(wrapper.findAll('[role="alert"]')).toHaveLength(0)
   })

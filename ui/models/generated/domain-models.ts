@@ -358,7 +358,7 @@ export interface RadioSearch {
     lines: number;
     recordings: number;
     partial: boolean;
-    suggestions: Suggestion[];
+    suggestions: string[];
     next: string | null;
     searchable: boolean;
 }
@@ -564,11 +564,6 @@ export interface LineGroup {
     startedAt: number;
     lines: LineHit[];
     more: number;
-}
-
-export interface Suggestion {
-    word: string;
-    close: string[];
 }
 
 export interface LargestPositionDto extends Serializable {

@@ -61,20 +61,21 @@ class RadioSearchServiceTest {
     expect(said("eelarve")).toEqual(listOf("2026-10-17-1200-keskpaevatund Eelarve on paigas"))
   }
 
+  private fun kept(query: String): Boolean =
+    service
+      .search(query, null)
+      .groups
+      .single()
+      .lines
+      .single()
+      .kept
+
   @Test
   fun `should mark a line cut once the edit list cuts it`() {
     val directory = recording("2026-10-17-1200-keskpaevatund", 150.0 to "Valimised reklaamis")
     said("valimised")
     edited(directory, listOf(KeptSpan(0.0, 100.0)))
-    expect(
-      service
-      .search("valimised", null)
-      .groups
-      .single()
-      .lines
-      .single()
-      .kept,
-        ).toEqual(false)
+    expect(kept("valimised")).toEqual(false)
   }
 
   @Test
@@ -82,15 +83,7 @@ class RadioSearchServiceTest {
     val directory = recording("2026-10-17-1200-keskpaevatund", 150.0 to "Valimised reklaamis")
     edited(directory, listOf(KeptSpan(0.0, 4200.0)))
     save(directory.resolve(REVIEW_FILE), listOf(KeptSpan(0.0, 100.0)))
-    expect(
-      service
-      .search("valimised", null)
-      .groups
-      .single()
-      .lines
-      .single()
-      .kept,
-        ).toEqual(false)
+    expect(kept("valimised")).toEqual(false)
   }
 
   @Test

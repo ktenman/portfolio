@@ -104,16 +104,16 @@ describe('useLiveUpdates', () => {
     await push(LiveUpdate.RADIO)
     expect(invalidate.mock.calls).toEqual([
       [{ queryKey: ['radio'], exact: true }],
-      [{ queryKey: ['radio-search'], refetchType: 'none' }],
+      [{ queryKey: ['radio', 'search'], refetchType: 'none' }],
     ])
   })
 
   it('marks the radio search results stale when radio progress changes', async () => {
     const { queryClient } = mountUpdates()
-    queryClient.setQueryDefaults(['radio-search'], { gcTime: Infinity })
-    queryClient.setQueryData(['radio-search', 'valimis'], {})
+    queryClient.setQueryDefaults(['radio', 'search'], { gcTime: Infinity })
+    queryClient.setQueryData(['radio', 'search', 'valimis'], {})
     await push(LiveUpdate.RADIO)
-    expect(queryClient.getQueryState(['radio-search', 'valimis'])?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(['radio', 'search', 'valimis'])?.isInvalidated).toBe(true)
   })
 
   it('refreshes the radio searches when the stream reopens after the tab was hidden', async () => {
@@ -122,7 +122,7 @@ describe('useLiveUpdates', () => {
     await setVisibility('hidden')
     await setVisibility('visible')
     await connect()
-    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio-search'] }]])
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio', 'search'] }]])
   })
 
   it('refreshes the radio searches when the browser reconnects the same stream', async () => {
@@ -131,7 +131,7 @@ describe('useLiveUpdates', () => {
     stream().onerror?.(new Event('error'))
     await flushPromises()
     await connect()
-    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio-search'] }]])
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio', 'search'] }]])
   })
 
   it('does not refresh the radio searches when the stream first opens', async () => {

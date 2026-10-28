@@ -1,14 +1,14 @@
 package ee.tenman.portfolio.service.radio
 
 data class RadioSearch(
-  val topics: List<TopicHit>,
-  val moreTopics: Int,
-  val groups: List<LineGroup>,
-  val lines: Int,
-  val recordings: Int,
-  val partial: Boolean,
-  val suggestions: List<Suggestion>,
-  val next: String?,
+  val topics: List<TopicHit> = emptyList(),
+  val moreTopics: Int = 0,
+  val groups: List<LineGroup> = emptyList(),
+  val lines: Int = 0,
+  val recordings: Int = 0,
+  val partial: Boolean = false,
+  val suggestions: List<String> = emptyList(),
+  val next: String? = null,
   val searchable: Boolean,
 )
 
@@ -38,11 +38,6 @@ data class LineHit(
 data class TextPart(
   val text: String,
   val mark: Boolean,
-)
-
-data class Suggestion(
-  val word: String,
-  val close: List<String>,
 )
 
 class IndexedRecording(

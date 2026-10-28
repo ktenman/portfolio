@@ -442,5 +442,5 @@ export const nothingFound = (close: string[] = []): RadioSearch =>
     groups: [],
     lines: 0,
     recordings: 0,
-    suggestions: close.length ? [{ word: 'valimis', close }] : [],
+    suggestions: close,
   })

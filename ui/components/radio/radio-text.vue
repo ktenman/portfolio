@@ -106,10 +106,7 @@ const drop = (index: number) =>
   decisions
     .flush()
     .then(() => radioService.dropCut(props.recording.name, index))
-    .then(() => {
-      queryClient.invalidateQueries({ queryKey: ['radio-search'] })
-      return queryClient.invalidateQueries({ queryKey: ['radio'] })
-    })
+    .then(() => queryClient.invalidateQueries({ queryKey: ['radio'] }))
     .catch(() => toast.error('Could not delete the cut'))
 const player = useRadioPlayer()
 

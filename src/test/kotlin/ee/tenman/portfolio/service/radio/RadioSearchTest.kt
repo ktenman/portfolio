@@ -78,7 +78,7 @@ class RadioSearchTest {
   @Test
   fun `should suggest close words when nobody said the word`() {
     val found = search(listOf(recording("2026-10-17", 12.0 to "Valised need on", 20.0 to "Valised jälle")), "valimised", null)
-    expect(found.suggestions).toEqual(listOf(Suggestion("valimised", listOf("valised"))))
+    expect(found.suggestions).toEqual(listOf("valised"))
   }
 
   @Test
@@ -109,7 +109,7 @@ class RadioSearchTest {
   @Test
   fun `should not search a query of stop words`() {
     val found = search(listOf(recording("2026-10-17", 12.0 to "Kes oli seal?")), "kes oli", null)
-    expect(found).toEqual(RadioSearch(emptyList(), 0, emptyList(), 0, 0, false, emptyList(), null, false))
+    expect(found).toEqual(RadioSearch(searchable = false))
   }
 
   @Test
@@ -202,6 +202,13 @@ class RadioSearchTest {
     val first = search(daily(1..11), "valimised", null)
     val second = search(daily(1..12), "valimised", first.next)
     expect((first.groups + second.groups).map { it.name }).toEqual((11 downTo 1).map { "2026-10-%02d".format(it) })
+  }
+
+  @Test
+  fun `should list the topics on the first page only`() {
+    val topical = editList(topics = listOf(EpisodeChapter(0.0, "Valimised")))
+    val days = (1..11).map { recording("2026-10-%02d".format(it), 12.0 to "Valimised", edit = topical) }
+    expect(search(days, "valimised", search(days, "valimised", null).next).topics).toEqual(emptyList())
   }
 
   @Test

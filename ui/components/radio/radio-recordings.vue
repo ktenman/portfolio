@@ -150,7 +150,7 @@ const remove = async (item: RecordingSummary) => {
     .deleteRecording(item.name)
     .then(() =>
       Promise.all(
-        ['radio', 'radio-programmes', 'radio-station', 'radio-search'].map(key =>
+        ['radio', 'radio-programmes', 'radio-station'].map(key =>
           queryClient.invalidateQueries({ queryKey: [key] })
         )
       )

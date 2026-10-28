@@ -23,7 +23,7 @@ const QUERIES: Record<LiveUpdate, InvalidateQueryFilters[]> = {
   ],
   [LiveUpdate.RADIO]: [
     { queryKey: ['radio'], exact: true },
-    { queryKey: ['radio-search'], refetchType: 'none' },
+    { queryKey: ['radio', 'search'], refetchType: 'none' },
   ],
 }
 
@@ -43,7 +43,7 @@ export function useLiveUpdates() {
   let opened = false
   watch(status, state => {
     if (state !== 'OPEN') return
-    if (opened) queryClient.invalidateQueries({ queryKey: ['radio-search'] })
+    if (opened) queryClient.invalidateQueries({ queryKey: ['radio', 'search'] })
     opened = true
   })
   watch(error, () => {

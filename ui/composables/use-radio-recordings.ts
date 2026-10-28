@@ -48,10 +48,10 @@ export const useRadioDay = (date: MaybeRefOrGetter<string | null>) => {
 export const useRadioSearch = (query: MaybeRefOrGetter<string>) => {
   const { isAuthenticated } = useAuthState()
   const queryClient = useQueryClient()
-  const queryKey = computed(() => ['radio-search', toValue(query)] as const)
+  const queryKey = computed(() => ['radio', 'search', toValue(query)] as const)
   const result = useInfiniteQuery({
     queryKey,
-    queryFn: ({ queryKey: [, q], pageParam }) => radioService.search(q, pageParam),
+    queryFn: ({ queryKey: [, , q], pageParam }) => radioService.search(q, pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: last => last.next,
     enabled: isAuthenticated,

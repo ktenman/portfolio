@@ -87,7 +87,7 @@ fun search(
 ): RadioSearch {
   val words = WORD.findAll(Normalizer.normalize(query, Normalizer.Form.NFC)).map { it.value }.toList()
   val terms = terms(words)
-  if (terms.isEmpty()) return RadioSearch(emptyList(), 0, emptyList(), 0, 0, false, emptyList(), null, false)
+  if (terms.isEmpty()) return RadioSearch(searchable = false)
   val typed = words.map { it.lowercase() }.filter { fold(it) in terms }.toSet()
   val hits = recordings.flatMap { hits(it, terms, typed) }
   val complete = hits.any { it.matched == terms.size }
@@ -99,15 +99,15 @@ fun search(
       .sortedWith(compareBy(ORDER, ::place))
   val rest = following(groups, after)
   val shown = rest.take(PAGE)
-  val topics = topics(recordings, terms)
+  val topics = if (after == null) topics(recordings, terms) else emptyList()
   return RadioSearch(
-    topics = topics.take(TOPICS),
+    topics = topics.take(TOPICS).map { (_, recording, entry) -> topic(recording, entry, terms) },
     moreTopics = (topics.size - TOPICS).coerceAtLeast(0),
     groups = shown.map { (recording, found) -> group(recording, found, terms) },
     lines = visible.size,
     recordings = groups.size,
     partial = !complete && visible.isNotEmpty(),
-    suggestions = if (visible.isEmpty() && terms.size <= 2) suggestions(recordings, terms, words) else emptyList(),
+    suggestions = if (visible.isEmpty() && terms.size <= 2) suggestions(recordings, terms) else emptyList(),
     next = if (rest.size > PAGE) place(shown.last()).toString() else null,
     searchable = true,
   )
@@ -205,47 +205,50 @@ private fun group(
 private fun topics(
   recordings: List<IndexedRecording>,
   terms: List<String>,
-): List<TopicHit> =
+): List<Triple<Int, IndexedRecording, IndexedTopic>> =
   recordings
     .flatMap { recording ->
       recording.topics.mapNotNull { topic ->
         val ranks = terms.map { term -> topic.words.maxOfOrNull { tier(term, it) } ?: 0 }
         if (ranks.any { it == 0 }) return@mapNotNull null
-        ranks.sum() to
-          TopicHit(
-            recording.name,
-            recording.programme,
-            recording.startedAt,
-            topic.start,
-            marked(topic.title, terms),
-            snippet(topic.summary.orEmpty(), terms, SUMMARY_ROOM),
-          )
+        Triple(ranks.sum(), recording, topic)
       }
     }.sortedWith(
-      compareByDescending<Pair<Int, TopicHit>> { it.first }
+      compareByDescending<Triple<Int, IndexedRecording, IndexedTopic>> { it.first }
         .thenByDescending { it.second.startedAt }
-        .thenBy { it.second.start },
-    ).map { it.second }
+        .thenBy { it.third.start },
+    )
+
+private fun topic(
+  recording: IndexedRecording,
+  topic: IndexedTopic,
+  terms: List<String>,
+): TopicHit =
+  TopicHit(
+    recording.name,
+    recording.programme,
+    recording.startedAt,
+    topic.start,
+    marked(topic.title, terms),
+    snippet(topic.summary.orEmpty(), terms, SUMMARY_ROOM),
+  )
 
 private fun suggestions(
   recordings: List<IndexedRecording>,
   terms: List<String>,
-  words: List<String>,
-): List<Suggestion> {
+): List<String> {
   val vocabulary = recordings.flatMap { it.words }.groupBy { it.folded }
   return terms
-    .map { term ->
+    .flatMap { term ->
       val wanted = grams(term)
-      val close =
-        vocabulary
-          .filterKeys { it.length >= PREFIX && it !in STOP }
-          .map { (folded, words) -> Close(words.first().word, words.sumOf { it.lines.size }, similarity(wanted, grams(folded))) }
-          .filter { it.score >= CLOSE }
-          .sortedWith(compareByDescending(Close::score).thenByDescending(Close::lines))
-          .take(SUGGESTED)
-          .map { it.word }
-      Suggestion(words.first { fold(it) == term }, close)
-    }.filter { it.close.isNotEmpty() }
+      vocabulary
+        .filterKeys { it.length >= PREFIX && it !in STOP }
+        .map { (folded, words) -> Close(words.first().word, words.sumOf { it.lines.size }, similarity(wanted, grams(folded))) }
+        .filter { it.score >= CLOSE }
+        .sortedWith(compareByDescending(Close::score).thenByDescending(Close::lines))
+        .take(SUGGESTED)
+        .map { it.word }
+    }.distinct()
 }
 
 private fun grams(word: String): Set<String> = " $word ".windowed(3).toSet()

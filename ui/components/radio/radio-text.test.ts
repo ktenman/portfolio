@@ -196,11 +196,11 @@ describe('RadioText', () => {
 
   it('should mark the search results stale once a cut is deleted', async () => {
     const client = new QueryClient()
-    client.setQueryData(['radio-search', 'valimised'], { pages: [], pageParams: [] })
+    client.setQueryData(['radio', 'search', 'valimised'], { pages: [], pageParams: [] })
     const wrapper = await render(recording(), client)
     wrapper.findComponent(RadioCutCard).vm.$emit('drop')
     await flushPromises()
-    expect(client.getQueryState(['radio-search', 'valimised'])?.isInvalidated).toBe(true)
+    expect(client.getQueryState(['radio', 'search', 'valimised'])?.isInvalidated).toBe(true)
   })
 
   it('should keep the cut summary on the raw recording', async () => {
