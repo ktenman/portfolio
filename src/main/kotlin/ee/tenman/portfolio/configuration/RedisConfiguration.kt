@@ -45,10 +45,10 @@ class RedisConfiguration {
 
   companion object {
     private const val SCAN_BATCH = 1000
-    const val INSTRUMENT_CACHE = "instrument-cache-v3"
+    const val INSTRUMENT_CACHE = "instrument-cache-v4"
     const val SUMMARY_CACHE = "summary-cache-v4"
     const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"
-    const val TRANSACTION_CACHE = "transaction-cache-v4"
+    const val TRANSACTION_CACHE = "transaction-cache-v5"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_LOGOS_CACHE: String = "etf-logos-v4"
     const val LEGACY_ETF_LOGOS_CACHE: String = "etf-logos-v3"

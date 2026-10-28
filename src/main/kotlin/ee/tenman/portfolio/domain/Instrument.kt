@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import java.math.BigDecimal
+import java.util.UUID
 
 @Entity
 @Table(name = "instrument")
@@ -32,6 +33,11 @@ class Instrument(
   @Enumerated(EnumType.STRING)
   @Column(name = "fund_currency", nullable = true)
   var fundCurrency: Currency? = null,
+  @Column(nullable = false, updatable = false, unique = true)
+  var uuid: UUID = UUID.randomUUID(),
+  @Enumerated(EnumType.STRING)
+  @Column(name = "logo_source", length = 20)
+  var logoSource: LogoSource? = null,
 ) : BaseEntity() {
   fun isCash(): Boolean = category == InstrumentCategory.CASH.name
 
