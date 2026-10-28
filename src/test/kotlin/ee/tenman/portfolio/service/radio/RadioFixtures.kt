@@ -108,6 +108,26 @@ fun programmes(vararg found: RadioProgramme): RadioProgrammeRepository = mockk {
 
 fun timeline(directory: Path): Timeline = Timeline(directory, readStatus(directory).parts)
 
+fun editList(
+  keep: List<KeptSpan> = listOf(KeptSpan(0.0, 4200.0)),
+  boundaries: List<Boundary> = emptyList(),
+  topics: List<EpisodeChapter> = emptyList(),
+  hosts: List<String> = emptyList(),
+  music: List<KeptSpan> = emptyList(),
+) = EditList(
+  keep = keep,
+  durationSeconds = 4200.0,
+  parts = listOf(RecordingPart("raw.mp3", 0.0)),
+  boundaries = boundaries,
+  hosts = hosts,
+  outline = OutlineSummary(null, 1, 1, 1),
+  chapters = emptyList(),
+  reviewed = false,
+  renderedAt = "2026-10-17T10:20:00Z",
+  topics = topics,
+  music = music,
+)
+
 fun ffmpeg(vararg arguments: String): ByteArray {
   val process = ProcessBuilder(listOf("ffmpeg", "-v", "error", "-y") + arguments).redirectError(ProcessBuilder.Redirect.DISCARD).start()
   val output = process.inputStream.use { it.readBytes() }

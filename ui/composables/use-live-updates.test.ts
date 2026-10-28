@@ -23,6 +23,11 @@ const push = async (topic: LiveUpdate) => {
   await flushPromises()
 }
 
+const connect = async () => {
+  stream().onopen?.(new Event('open'))
+  await flushPromises()
+}
+
 const fail = async () => {
   stream().readyState = FakeEventSource.CLOSED
   stream().onerror?.(new Event('error'))
@@ -35,8 +40,8 @@ const setVisibility = async (state: DocumentVisibilityState) => {
   await flushPromises()
 }
 
-const render = () => {
-  const wrapper = renderWithProviders(
+const mountUpdates = () =>
+  renderWithProviders(
     defineComponent({
       setup() {
         useLiveUpdates()
@@ -44,8 +49,8 @@ const render = () => {
       },
     })
   )
-  return vi.spyOn(wrapper.queryClient, 'invalidateQueries')
-}
+
+const render = () => vi.spyOn(mountUpdates().queryClient, 'invalidateQueries')
 
 describe('useLiveUpdates', () => {
   beforeEach(() => {
@@ -97,7 +102,45 @@ describe('useLiveUpdates', () => {
   it('refreshes the recordings list when radio progress changes', async () => {
     const invalidate = render()
     await push(LiveUpdate.RADIO)
-    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio'], exact: true }]])
+    expect(invalidate.mock.calls).toEqual([
+      [{ queryKey: ['radio'], exact: true }],
+      [{ queryKey: ['radio', 'search'], refetchType: 'none' }],
+    ])
+  })
+
+  it('marks the radio search results stale when radio progress changes', async () => {
+    const { queryClient } = mountUpdates()
+    queryClient.setQueryDefaults(['radio', 'search'], { gcTime: Infinity })
+    queryClient.setQueryData(['radio', 'search', 'valimis'], {})
+    await push(LiveUpdate.RADIO)
+    expect(queryClient.getQueryState(['radio', 'search', 'valimis'])?.isInvalidated).toBe(true)
+  })
+
+  it('refreshes the radio searches when the stream reopens after the tab was hidden', async () => {
+    const invalidate = render()
+    await connect()
+    await setVisibility('hidden')
+    await setVisibility('visible')
+    await connect()
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio', 'search'] }]])
+  })
+
+  it('refreshes the radio searches when the browser reconnects the same stream', async () => {
+    const invalidate = render()
+    await connect()
+    stream().onerror?.(new Event('error'))
+    await flushPromises()
+    await connect()
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio', 'search'] }]])
+  })
+
+  it('does not refresh the radio searches when the stream first opens', async () => {
+    authenticated.value = false
+    const invalidate = render()
+    authenticated.value = true
+    await flushPromises()
+    await connect()
+    expect(invalidate).not.toHaveBeenCalled()
   })
 
   it('refreshes again when the same update arrives twice', async () => {

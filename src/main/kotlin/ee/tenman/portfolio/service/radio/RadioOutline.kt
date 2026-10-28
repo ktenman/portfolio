@@ -104,6 +104,11 @@ fun lines(transcript: Transcript): List<TranscriptLine> {
 
 fun music(
   lines: List<TranscriptLine>,
+  edit: EditList?,
+): List<TranscriptLine> = music(lines, edit?.music.orEmpty() + edit?.songs.orEmpty())
+
+fun music(
+  lines: List<TranscriptLine>,
   spans: List<KeptSpan>,
 ): List<TranscriptLine> =
   lines

@@ -1,6 +1,6 @@
 import { computed, type MaybeRefOrGetter, ref, toValue, watch, type WatchSource } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
-import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { RecordingSummary } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { poll } from '../utils/radio'
@@ -43,6 +43,32 @@ export const useRadioDay = (date: MaybeRefOrGetter<string | null>) => {
     enabled: isAuthenticated,
     refetchInterval: 60_000,
   })
+}
+
+export const useRadioSearch = (query: MaybeRefOrGetter<string>) => {
+  const { isAuthenticated } = useAuthState()
+  const queryClient = useQueryClient()
+  const queryKey = computed(() => ['radio', 'search', toValue(query)] as const)
+  const result = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ queryKey: [, , q], pageParam }) => radioService.search(q, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: last => last.next,
+    enabled: isAuthenticated,
+    placeholderData: keepPreviousData,
+    staleTime: Infinity,
+    retry: false,
+    shallow: true,
+  })
+  const loadMore = () => {
+    if (!result.hasNextPage.value) return
+    const key = queryKey.value
+    const stale = result.isStale.value && !result.isFetching.value
+    result.fetchNextPage({ cancelRefetch: false }).then(() => {
+      if (stale) queryClient.invalidateQueries({ queryKey: key, exact: true, refetchType: 'none' })
+    })
+  }
+  return { ...result, loadMore }
 }
 
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {

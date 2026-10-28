@@ -1,5 +1,5 @@
 <template>
-  <div class="search-input-wrapper">
+  <div class="search-input-wrapper" :class="{ active }">
     <svg class="search-icon" viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="7" cy="7" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5" />
       <path d="M10.6 10.6 14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -28,7 +28,7 @@
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue'
 
-defineProps<{ placeholder: string; label: string; maxlength?: number }>()
+defineProps<{ placeholder: string; label: string; maxlength?: number; active?: boolean }>()
 const query = defineModel<string>({ required: true })
 const input = useTemplateRef<HTMLInputElement>('input')
 
@@ -57,7 +57,8 @@ const clear = () => {
   transition: color var(--transition-fast);
 }
 
-.search-input-wrapper:focus-within .search-icon {
+.search-input-wrapper:focus-within .search-icon,
+.active .search-icon {
   color: var(--color-brass);
 }
 
@@ -70,6 +71,10 @@ const clear = () => {
   color: var(--color-ink);
   background: var(--color-surface-subtle);
   transition: background-color var(--transition-fast);
+}
+
+.active .search-input {
+  border-color: var(--color-brass);
 }
 
 .search-input:focus {

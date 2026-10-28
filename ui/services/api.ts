@@ -24,6 +24,7 @@ import {
   type RadioDay,
   type RadioPositionDto,
   type RadioProgrammeDto,
+  type RadioSearch,
   type RadioStation,
   type RecordingSummary,
   type TranscriptSection,
@@ -247,6 +248,8 @@ export const radioService = {
     httpClient.get<RadioDay>(`${API_ENDPOINTS.RADIO}/schedule`, { params: { date } }),
   record: (id: number, choice: AiringChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/airings/${id}`, choice),
+  search: (q: string, after: string | null) =>
+    httpClient.get<RadioSearch>(`${API_ENDPOINTS.RADIO}/search`, { params: { q, after } }),
 }
 
 export const liveUpdatesService = {

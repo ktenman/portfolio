@@ -18,6 +18,8 @@ import java.time.ZoneId
 const val STATUS_FILE = "status.json"
 const val TRANSCRIPT_FILE = "transcript.json"
 const val DELETED_FILE = "deleted.json"
+const val EDIT_LIST_FILE = "edit-list.json"
+const val REVIEW_FILE = "review.json"
 val NAME = Regex("[0-9a-z][0-9a-z-]*")
 private val COMMIT = Regex("[0-9a-f]{40}")
 private val MODELS = mapOf("TalTechNLP/streaming-zipformer-large.et-en" to "Zipformer", "ced-tiny int8" to "CED-tiny")
@@ -270,6 +272,8 @@ data class ProgrammeCuts(
 data class CutChoice(
   val programme: String,
 )
+
+fun EditList?.decided(pending: List<KeptSpan>?): EditList? = pending?.let { this?.copy(keep = it) } ?: this
 
 fun EditList?.found(): Set<String> =
   this
