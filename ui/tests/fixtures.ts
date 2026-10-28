@@ -197,6 +197,7 @@ export class FakeEventSource extends EventTarget {
   static readonly CLOSED = 2
   static instances: FakeEventSource[] = []
   readyState = 0
+  onopen: ((event: Event) => void) | null = null
   onerror: ((event: Event) => void) | null = null
 
   constructor(readonly url: string) {

@@ -8,6 +8,7 @@ export type Version = 'raw' | 'episode'
 
 const LEAD = 5
 const SAVE_EVERY = 10
+const QUIET = ['NotAllowedError', 'AbortError']
 
 const element = shallowRef<HTMLAudioElement | null>(null)
 const recording = shallowRef<RecordingSummary | null>(null)
@@ -59,7 +60,7 @@ const source = (index: number) => {
 }
 
 const resume = () => {
-  if (playing.value) element.value?.play()
+  if (playing.value) play()
 }
 
 const seek = (to: number) => {
@@ -155,7 +156,10 @@ const load = (target: RecordingSummary, wanted: Version = 'raw') => {
   open()
 }
 
-const play = () => element.value?.play()
+const play = () =>
+  element.value?.play().catch((error: Error) => {
+    if (!QUIET.includes(error.name)) toast.error('Could not play the audio')
+  })
 
 const pause = () => element.value?.pause()
 

@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, mount } from '@vue/test-utils'
-import { ref } from 'vue'
-import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { nextTick, ref } from 'vue'
+import { createMemoryHistory, createRouter, createWebHistory, type Router } from 'vue-router'
 import RadioEpisode from './radio-episode.vue'
 import { recording } from './radio-fixture'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 
-const { shown } = vi.hoisted(() => ({ shown: { value: null as RecordingSummary | null } }))
+const { shown } = await vi.hoisted(async () => {
+  const { shallowRef } = await import('vue')
+  return { shown: shallowRef<RecordingSummary | null>(null) }
+})
 
 vi.mock('../../composables/use-radio-recordings', () => ({
-  useRadioRecording: () => ({ recording: ref(shown.value), isLoading: ref(false) }),
+  useRadioRecording: () => ({ recording: shown, isLoading: ref(false) }),
 }))
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -33,14 +36,8 @@ describe('RadioEpisode', () => {
 
   afterEach(() => player.detach())
 
-  const open = async (item: RecordingSummary) => {
-    shown.value = item
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/radio/:name', component: RadioEpisode }],
-    })
-    await router.push(`/radio/${item.name}`)
-    const wrapper = mount(
+  const mountEpisode = (router: Router) =>
+    mount(
       { template: '<router-view />' },
       {
         global: {
@@ -49,7 +46,15 @@ describe('RadioEpisode', () => {
         },
       }
     )
-    return { router, wrapper }
+
+  const open = async (item: RecordingSummary, search = '') => {
+    shown.value = item
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/radio/:name', component: RadioEpisode }],
+    })
+    await router.push(`/radio/${item.name}${search}`)
+    return { router, wrapper: mountEpisode(router) }
   }
 
   it('should open a recording on its cut version', async () => {
@@ -67,29 +72,67 @@ describe('RadioEpisode', () => {
     expect(wrapper.find('nav[aria-label="Show views"]').exists()).toBe(false)
   })
 
-  it('should go back to the day in Catch-up it was opened from', async () => {
+  const back = async (from: string) => {
     shown.value = recording()
     const router = createRouter({
       history: createWebHistory(),
       routes: [
+        { path: '/radio', name: 'Radio', component: { template: '<p />' } },
         { path: '/radio/catch-up', name: 'RadioCatchUp', component: { template: '<p />' } },
         { path: '/radio/:name', component: RadioEpisode },
       ],
     })
-    await router.push('/radio/catch-up?day=2026-10-14')
+    await router.push(from)
     await router.push(`/radio/${recording().name}`)
-    const link = mount(
-      { template: '<router-view />' },
-      {
-        global: {
-          plugins: [router],
-          stubs: { RadioPlayer: { template: '<section><slot /></section>' }, RadioText: true },
-        },
-      }
-    ).get('a')
-    expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([
+    const link = mountEpisode(router).get('a')
+    return [link.attributes('aria-label'), link.attributes('href')]
+  }
+
+  it('should play a kept line from the search at its place in the cut version', async () => {
+    await open(recording(), '?t=2300')
+    expect([player.version.value, player.seconds.value]).toEqual(['episode', 1403.5])
+  })
+
+  it('should play a line cut from the episode on the raw recording', async () => {
+    await open(recording(), '?t=2150')
+    expect([player.version.value, player.seconds.value]).toEqual(['raw', 2150])
+  })
+
+  it('should play a searched line on the raw recording when the link asks for it', async () => {
+    await open(recording(), '?t=2300&raw=1')
+    expect([player.version.value, player.seconds.value]).toEqual(['raw', 2300])
+  })
+
+  it('should drop the searched line from the address once it plays', async () => {
+    const { router } = await open(recording(), '?t=2150&raw=1')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/radio/2026-10-17')
+  })
+
+  it('should play a searched line on the raw recording when there is no cut version', async () => {
+    await open(recording({ episodeBytes: null }), '?t=2300')
+    expect([player.version.value, player.seconds.value]).toEqual(['raw', 2300])
+  })
+
+  it('should stay where the listener moved when the recording refreshes', async () => {
+    await open(recording(), '?t=2300')
+    player.seek(100)
+    shown.value = recording()
+    await nextTick()
+    expect(player.seconds.value).toBe(100)
+  })
+
+  it('should go back to the day in Catch-up it was opened from', async () => {
+    expect(await back('/radio/catch-up?day=2026-10-14')).toEqual([
       'Back to Catch-up',
       '/radio/catch-up?day=2026-10-14',
+    ])
+  })
+
+  it('should go back to the search results it was opened from', async () => {
+    expect(await back('/radio?q=valimised')).toEqual([
+      'Back to search results',
+      '/radio?q=valimised',
     ])
   })
 

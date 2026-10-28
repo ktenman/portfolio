@@ -251,6 +251,7 @@ configure<cz.habarta.typescript.generator.gradle.TypeScriptGeneratorExtension> {
       "ee.tenman.portfolio.service.radio.RadioDay",
       "ee.tenman.portfolio.service.radio.AiringChoice",
       "ee.tenman.portfolio.service.radio.RadioPositionDto",
+      "ee.tenman.portfolio.service.radio.RadioSearch",
     "ee.tenman.portfolio.service.radio.CutChoice",
     ),
   )

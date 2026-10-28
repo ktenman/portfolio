@@ -38,11 +38,11 @@ class RadioReviewService(
     directory: Path,
     keep: List<KeptSpan>,
   ): Boolean {
-    if (Files.notExists(directory.resolve(EDIT_LIST))) return false
+    if (Files.notExists(directory.resolve(EDIT_LIST_FILE))) return false
     val status = readStatus(directory)
     val spans = spans(Timeline(directory, status.parts), keep).map { KeptSpan(it.first, it.second) }
     val name = directory.fileName.toString()
-    save(directory.resolve(REVIEW), spans)
+    save(directory.resolve(REVIEW_FILE), spans)
     failures.remove(name)
     running[name] = RenderProgress(0, ceil(RENDER_PACE * status.seconds / 60).toInt())
     val generation = generations.incrementAndGet()
@@ -53,7 +53,7 @@ class RadioReviewService(
     return true
   }
 
-  fun pending(directory: Path): List<KeptSpan>? = read(directory.resolve(REVIEW))
+  fun pending(directory: Path): List<KeptSpan>? = read(directory.resolve(REVIEW_FILE))
 
   fun progress(name: String): RenderProgress? = running[name]
 
@@ -94,7 +94,7 @@ class RadioReviewService(
     generation: Long,
     edit: EditList,
   ) {
-    val current = read<EditList>(directory.resolve(EDIT_LIST)) ?: edit
+    val current = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: edit
     val saved =
       current.copy(
         keep = edit.keep,
@@ -103,7 +103,7 @@ class RadioReviewService(
         reviewed = edit.reviewed,
         renderedAt = edit.renderedAt,
       )
-    save(directory.resolve(EDIT_LIST), saved)
+    save(directory.resolve(EDIT_LIST_FILE), saved)
     settled(directory, generation)
   }
 
@@ -127,7 +127,7 @@ class RadioReviewService(
   ) {
     val name = directory.fileName.toString()
     if (latest[name] != generation) return
-    if (pending(directory) == read<EditList>(directory.resolve(EDIT_LIST))?.keep) Files.deleteIfExists(directory.resolve(REVIEW))
+    if (pending(directory) == read<EditList>(directory.resolve(EDIT_LIST_FILE))?.keep) Files.deleteIfExists(directory.resolve(REVIEW_FILE))
     running.remove(name)
     liveUpdateService.publish(LiveUpdate.RADIO)
   }
@@ -137,7 +137,7 @@ class RadioReviewService(
     keep: List<KeptSpan>,
     progress: (Double) -> Unit,
   ): EditList {
-    val edit = checkNotNull(read<EditList>(directory.resolve(EDIT_LIST))) { "Recording $directory has no edit list to review" }
+    val edit = checkNotNull(read<EditList>(directory.resolve(EDIT_LIST_FILE))) { "Recording $directory has no edit list to review" }
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val spans = keep.map { it.start to it.end }
@@ -184,8 +184,6 @@ class RadioReviewService(
   companion object {
     private const val EPISODE = "episode.m4a"
     private const val REVIEWED = "episode.review.m4a"
-    private const val REVIEW = "review.json"
-    private const val EDIT_LIST = "edit-list.json"
     private const val MOST = 99
     private const val STEP = 10
   }

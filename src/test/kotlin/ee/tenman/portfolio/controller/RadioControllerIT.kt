@@ -106,6 +106,17 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should find where a word was said`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/search").param("q", "tere"))
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.groups[0].lines[0].text[0].text").value("Tere"))
+      .andExpect(jsonPath("$.groups[0].lines[0].text[0].mark").value(true))
+  }
+
+  @Test
   fun `should save a byte range of the episode under the programme and its day`() {
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/episode.m4a").header(RANGE, "bytes=0-3"))
