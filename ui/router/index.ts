@@ -13,7 +13,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../components/transactions/transactions-view.vue'),
   },
   {
-    path: '/instruments',
+    path: '/instruments/:view(heatmap)?',
     name: 'Instruments',
     component: () => import('../components/instruments/instruments-view.vue'),
   },

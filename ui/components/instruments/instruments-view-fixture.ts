@@ -2,6 +2,7 @@ import { vi, beforeEach } from 'vitest'
 import { h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import InstrumentsView from './instruments-view.vue'
 import type { InstrumentsResponse } from '../../models/generated/domain-models'
 import { ProviderName } from '../../models/generated/domain-models'
@@ -38,6 +39,18 @@ const InstrumentTableStub = {
     return () =>
       h('div', {
         id: 'stub-table',
+        'data-instruments': JSON.stringify(props.instruments || []),
+      })
+  },
+}
+
+const InstrumentHeatmapStub = {
+  name: 'InstrumentHeatmap',
+  props: ['instruments'],
+  setup(props: any) {
+    return () =>
+      h('div', {
+        id: 'stub-heatmap',
         'data-instruments': JSON.stringify(props.instruments || []),
       })
   },
@@ -122,7 +135,12 @@ export const setupInstrumentsViewMocks = () => {
   })
 }
 
-export const mountAndSettle = async () => {
+export const mountAndSettle = async (path = '/instruments') => {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/instruments/:view(heatmap)?', component: { render: () => null } }],
+  })
+  await router.push(path)
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -132,10 +150,11 @@ export const mountAndSettle = async () => {
 
   const wrapper = mount(InstrumentsView, {
     global: {
-      plugins: [[VueQueryPlugin, { queryClient }]],
+      plugins: [[VueQueryPlugin, { queryClient }], router],
       stubs: {
         CrudLayout: CrudLayoutStub,
         InstrumentTable: InstrumentTableStub,
+        InstrumentHeatmap: InstrumentHeatmapStub,
         InstrumentModal: InstrumentModalStub,
       },
     },
@@ -144,5 +163,5 @@ export const mountAndSettle = async () => {
   vi.spyOn(queryClient, 'invalidateQueries')
   await flushPromises()
 
-  return { wrapper, queryClient }
+  return { wrapper, queryClient, router }
 }

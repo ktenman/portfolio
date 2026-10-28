@@ -16,6 +16,12 @@
 
     <template #toolbar>
       <div class="controls-row">
+        <segmented-switch
+          label="View"
+          :options="VIEW_OPTIONS"
+          :selected="view"
+          @select="view = $event"
+        />
         <div class="period-selector-container">
           <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
           <select
@@ -29,7 +35,7 @@
             </option>
           </select>
         </div>
-        <div class="toggle-container">
+        <div v-if="view === 'table'" class="toggle-container">
           <span class="toggle-label">Active only</span>
           <label class="toggle-switch">
             <input
@@ -56,7 +62,18 @@
     </template>
 
     <template #content>
+      <instrument-heatmap
+        v-if="view === 'heatmap'"
+        :instruments="openPositions"
+        :portfolio-xirr="portfolioXirr"
+        :range-change="rangeChange"
+        :period="selectedPeriod"
+        :is-loading="isLoading"
+        :is-error="isError"
+        :error-message="error?.message"
+      />
       <instrument-table
+        v-else
         :instruments="items || []"
         :portfolio-xirr="portfolioXirr"
         :is-loading="isLoading"
@@ -86,6 +103,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { TIME_RANGES, usePriceChangePeriod } from '../../composables/use-time-range'
@@ -95,6 +113,8 @@ import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
+import SegmentedSwitch from '../shared/segmented-switch.vue'
+import InstrumentHeatmap from './instrument-heatmap.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
@@ -103,7 +123,22 @@ import { instrumentsService, portfolioSummaryService } from '../../services/api'
 import { InstrumentDto } from '../../models/generated/domain-models'
 import { STORAGE_KEYS } from '../../constants'
 
+type InstrumentsView = 'table' | 'heatmap'
+
+const VIEW_OPTIONS: { value: InstrumentsView; label: string; icon: string }[] = [
+  { value: 'table', label: 'Table', icon: 'M4 6h16M4 12h16M4 18h16' },
+  { value: 'heatmap', label: 'Heatmap', icon: 'M3 4h9v16H3zM15 4h6v7h-6zM15 13h6v7h-6z' },
+]
+
 const selectedItem = ref<InstrumentDto | null>(null)
+const route = useRoute()
+const router = useRouter()
+const view = computed<InstrumentsView>({
+  get: () => (route.params.view === 'heatmap' ? 'heatmap' : 'table'),
+  set: value => {
+    router.push(value === 'heatmap' ? '/instruments/heatmap' : '/instruments')
+  },
+})
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.INSTRUMENTS_FILTERS_OPEN, true)
 const isInstrumentModalOpen = ref(false)
@@ -185,6 +220,10 @@ const {
 
 const portfolioXirr = computed(() => rawItems.value?.portfolioXirr ?? null)
 
+const openPositions = computed(
+  () => rawItems.value?.instruments.filter(instrument => (instrument.currentValue || 0) > 0) ?? []
+)
+
 const saveMutation = useMutation({
   mutationFn: (data: Partial<InstrumentDto>) => {
     if (selectedItem.value?.id) {
@@ -226,6 +265,7 @@ const handleTitleClick = async () => {
 <style scoped>
 .controls-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
 }
