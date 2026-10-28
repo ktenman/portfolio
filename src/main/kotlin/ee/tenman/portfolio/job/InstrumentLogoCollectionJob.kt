@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
-private const val DEFAULT_INITIAL_DELAY = "3600000"
+private const val DEFAULT_INITIAL_DELAY = "60000"
 private const val DEFAULT_FIXED_DELAY = "14400000"
 private const val BINANCE_QUOTE_SUFFIX = "EUR"
 
@@ -40,10 +40,10 @@ class InstrumentLogoCollectionJob(
   fun collectMissingLogos() {
     val instruments = instrumentRepository.findByLogoSourceIsNull().filterNot { it.isCash() }
     log.info("Found ${instruments.size} instruments without logos")
-    val logoUrls = lightyearLogoUrls(instruments.filter { it.isEtf() })
+    val logoUrls = lightyearLogoUrls(instruments.filter { it.isLightyearEtf() })
     if (logoUrls == null) log.warn("Leaving ETF logos for the next run because the Lightyear lookup failed")
     instruments
-      .filter { logoUrls != null || !it.isEtf() }
+      .filter { logoUrls != null || !it.isLightyearEtf() }
       .forEach { instrument ->
         runCatching { collect(instrument, logoUrls?.get(instrument.symbol)) }
           .onFailure { log.warn("Failed to collect the logo of ${instrument.symbol}: ${it.message}") }
@@ -55,7 +55,7 @@ class InstrumentLogoCollectionJob(
       .onFailure { log.warn("Lightyear logo lookup failed for ${etfs.size} instruments: ${it.message}") }
       .getOrNull()
 
-  private fun Instrument.isEtf(): Boolean = category == InstrumentCategory.ETF.name
+  private fun Instrument.isLightyearEtf(): Boolean = category == InstrumentCategory.ETF.name && providerName == ProviderName.LIGHTYEAR
 
   private fun collect(
     instrument: Instrument,
