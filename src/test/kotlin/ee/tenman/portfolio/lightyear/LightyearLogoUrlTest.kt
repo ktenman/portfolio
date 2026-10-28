@@ -48,13 +48,13 @@ class LightyearLogoUrlTest : LightyearPriceServiceTestBase() {
   }
 
   @Test
-  fun `returns no logos when Lightyear rejects the batch`() {
+  fun `reports the lookup as failed when Lightyear rejects the batch`() {
     stubConfiguredUuids()
     every { lightyearPriceClient.getInstrumentBatch(any()) } throws badRequest()
 
     val logos = service.fetchLogoUrls(listOf("VWCE:GER:EUR", "SXR8:GER:EUR"))
 
-    expect(logos).toEqual(emptyMap())
+    expect(logos).toEqual(null)
   }
 
   @Test

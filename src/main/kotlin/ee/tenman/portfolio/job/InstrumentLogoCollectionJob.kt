@@ -40,19 +40,22 @@ class InstrumentLogoCollectionJob(
   fun collectMissingLogos() {
     val instruments = instrumentRepository.findByLogoSourceIsNull().filterNot { it.isCash() }
     log.info("Found ${instruments.size} instruments without logos")
-    val logoUrls = lightyearLogoUrls(instruments)
-    instruments.forEach { instrument ->
-      runCatching { collect(instrument, logoUrls[instrument.symbol]) }
-        .onFailure { log.warn("Failed to collect the logo of ${instrument.symbol}: ${it.message}") }
-    }
+    val logoUrls = lightyearLogoUrls(instruments.filter { it.isEtf() })
+    if (logoUrls == null) log.warn("Leaving ETF logos for the next run because the Lightyear lookup failed")
+    instruments
+      .filter { logoUrls != null || !it.isEtf() }
+      .forEach { instrument ->
+        runCatching { collect(instrument, logoUrls?.get(instrument.symbol)) }
+          .onFailure { log.warn("Failed to collect the logo of ${instrument.symbol}: ${it.message}") }
+      }
   }
 
-  private fun lightyearLogoUrls(instruments: List<Instrument>): Map<String, String> {
-    val symbols = instruments.filter { it.category == InstrumentCategory.ETF.name }.map { it.symbol }
-    return runCatching { lightyearPriceService.fetchLogoUrls(symbols) }
-      .onFailure { log.warn("Lightyear logo lookup failed for ${symbols.size} instruments: ${it.message}") }
-      .getOrElse { emptyMap() }
-  }
+  private fun lightyearLogoUrls(etfs: List<Instrument>): Map<String, String>? =
+    runCatching { lightyearPriceService.fetchLogoUrls(etfs.map { it.symbol }) }
+      .onFailure { log.warn("Lightyear logo lookup failed for ${etfs.size} instruments: ${it.message}") }
+      .getOrNull()
+
+  private fun Instrument.isEtf(): Boolean = category == InstrumentCategory.ETF.name
 
   private fun collect(
     instrument: Instrument,

@@ -133,12 +133,31 @@ class InstrumentLogoCollectionJobTest {
   fun `keeps collecting when the Lightyear lookup fails`() {
     given(etf(), bitcoin())
     every { lightyearPriceService.fetchLogoUrls(any()) } throws RuntimeException("Proxy unavailable")
-    every { logoFallbackService.fetchLogo("Vanguard FTSE All-World", null, null) } returns null
     every { nvstlyLogoService.fetchCryptoLogo("BTC") } returns IMAGE
 
     job.collectMissingLogos()
 
     verify(exactly = 1) { instrumentService.updateLogoSource(2L, "BTCEUR", LogoSource.NVSTLY_ICONS) }
+  }
+
+  @Test
+  fun `leaves ETFs for the next run when the Lightyear batch fails`() {
+    given(etf())
+    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns null
+
+    job.collectMissingLogos()
+
+    verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
+  }
+
+  @Test
+  fun `leaves ETFs for the next run when the Lightyear lookup throws`() {
+    given(etf())
+    every { lightyearPriceService.fetchLogoUrls(any()) } throws RuntimeException("Proxy unavailable")
+
+    job.collectMissingLogos()
+
+    verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
   }
 
   private fun given(vararg instruments: Instrument) {
