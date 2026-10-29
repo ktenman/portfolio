@@ -34,9 +34,23 @@ describe('RadioDayBar', () => {
     expect(bar().findComponent(RouterLinkStub).props('to')).toBe('/radio/2026-10-17')
   })
 
+  it('should size the link of a recording to the time it recorded', () => {
+    const link = bar({ recorded: [{ ...FINISHED, end: FINISHED.start + 3600 }] }).find(
+      '[data-testid="radio-day-link"]'
+    )
+    expect(link.attributes('style')).toContain(`width: ${(1 / 24) * 100}%`)
+  })
+
   it('should label a recorded span with its start and show', () => {
     const text = bar().find('[data-testid="radio-day-link"]').text()
     expect([text.includes('11:55'), text.includes('Keskpäevatund')]).toEqual([true, true])
+  })
+
+  it('should underline the name of a recording while it has keyboard focus', () => {
+    const name = bar()
+      .findAll('[data-testid="radio-day-link"] span')
+      .find(span => span.text() === 'Keskpäevatund')!
+    expect(name.classes('group-focus-visible:underline')).toBe(true)
   })
 
   it('should name the show and its times to a screen reader', () => {
@@ -47,6 +61,29 @@ describe('RadioDayBar', () => {
   it('should tell a screen reader that a show is being recorded now', () => {
     const links = bar({ recorded: [FINISHED, RUNNING] }).findAll('[data-testid="radio-day-link"]')
     expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now')
+  })
+
+  it('should title a planned airing with its times', () => {
+    const plan = bar().find('[data-testid="radio-day-planned"]')
+    expect(plan.attributes('title')).toBe('Tarkade klubi · 03:00–04:00 · planned')
+  })
+
+  it('should outline a planned airing without filling it', () => {
+    const block = bar().find('[data-testid="radio-day-planned-span"]')
+    expect([block.classes('border'), block.classes('bg-ink')]).toEqual([true, false])
+  })
+
+  it('should leave a planned airing to the schedule for a screen reader', () => {
+    const plan = bar().find('[data-testid="radio-day-planned"]')
+    expect(plan.attributes('aria-hidden')).toBe('true')
+  })
+
+  it('should not link a planned airing', () => {
+    const day = bar({ recorded: [] })
+    expect([
+      day.findAll('[data-testid="radio-day-planned"]').length,
+      day.findAllComponents(RouterLinkStub).length,
+    ]).toEqual([1, 0])
   })
 
   it('should count the recordings and their time', () => {

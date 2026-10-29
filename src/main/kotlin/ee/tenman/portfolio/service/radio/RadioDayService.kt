@@ -26,7 +26,8 @@ class RadioDayService(
     val until = start(shown.plusDays(1))
     val midnight = shown.plusDays(1).atStartOfDay(clock.zone).toEpochSecond()
     val airings = radioAiringRepository.findStarting(from, until)
-    val (day, night) = rows(airings, takes, now).partition { it.start < midnight }
+    val rows = rows(airings, takes, now)
+    val (day, night) = rows.partition { it.start < midnight }
     val recorded = spans(takes, from.epochSecond, until.epochSecond)
     return RadioDay(
       date = shown,
@@ -38,6 +39,7 @@ class RadioDayService(
       now = now,
       recorded = recorded,
       seconds = recorded.sumOf { it.end - it.start },
+      planned = planned(rows, until.epochSecond),
       day = blocks(day),
       night = blocks(night),
     )
