@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PROMETHEUS = 'prom/prometheus:v3.13.3'
 ALERTMANAGER = 'prom/alertmanager:v0.34.1'
+CADDY = 'caddy:2.10-alpine'
 
 
 def run(*arguments, check=True):
@@ -244,6 +245,9 @@ def check_compose():
     for name in ('prometheus', 'alertmanager'):
         assert services[name]['profiles'] == ['monitoring']
         assert services[name]['healthcheck'], f'{name} has no healthcheck'
+        command = services[name]['command']
+        assert f'--web.external-url=https://fov.ee/{name}/' in command and '--web.route-prefix=/' in command, \
+            f'{name} must link under its Caddy path and keep its own routes, healthcheck included, at /'
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
     worker = services['radio-worker']
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
@@ -270,6 +274,51 @@ def check_compose():
     assert not unrotated, f'container logs are not rotated for {unrotated}'
     assert 'evaluation_interval: 15s' in (ROOT / 'prometheus.yml').read_text()
     print('Optional Compose profile, internal ports, and healthchecks passed')
+
+
+def check_caddy_routes():
+    stubs = (':80 {\n\trespond "frontend {uri}"\n}\n'
+             ':8083 {\n\t@guest not header Cookie user=1\n\tredir @guest /login?redirect={header.X-Forwarded-Uri}\n\trespond 200\n}\n'
+             ':9090 {\n\trespond "prometheus {uri}"\n}\n'
+             ':9093 {\n\trespond "alertmanager {uri}"\n}\n')
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        directory.chmod(0o755)
+        (directory / 'stubs').write_text(stubs)
+        (directory / 'Caddyfile').write_text('{\n\tlocal_certs\n\tskip_install_trust\n}\n'
+                                             + (ROOT.parent / 'Caddyfile').read_text())
+        network = 'monitoring-caddy-' + uuid.uuid4().hex[:12]
+        run('docker', 'network', 'create', network)
+        containers = []
+        try:
+            for aliases, config in ((('frontend', 'auth', 'prometheus', 'alertmanager'), 'stubs'), ((), 'Caddyfile')):
+                flags = [flag for alias in aliases for flag in ('--network-alias', alias)]
+                containers.append(run('docker', 'run', '-d', '--network', network, *flags, '-v', f'{directory}:/test:ro',
+                                      CADDY, 'caddy', 'run', '--config', f'/test/{config}', '--adapter', 'caddyfile')
+                                  .stdout.strip())
+            caddy = containers[-1]
+
+            def fetch(path, cookie='user=0'):
+                return run('docker', 'exec', caddy, 'curl', '-s', '--cacert', '/data/caddy/pki/authorities/local/root.crt',
+                           '--resolve', 'fov.ee:443:127.0.0.1', '-H', f'Cookie: {cookie}',
+                           '-w', '|%{http_code}|%{redirect_url}', f'https://fov.ee{path}', check=False).stdout
+
+            try:
+                wait_for(lambda: fetch('/') == '|302|https://fov.ee/login?redirect=/', timeout=30)
+            except AssertionError as failure:
+                raise AssertionError(run('docker', 'logs', caddy, check=False).stderr) from failure
+            assert fetch('/prometheus/query') == '|302|https://fov.ee/login?redirect=/prometheus/query', \
+                'the login must run before the prefix is stripped, or it returns to the app instead of Prometheus'
+            assert fetch('/prometheus/assets/index.js', 'user=1') == 'prometheus /assets/index.js|200|', \
+                'the monitoring routes must stay above the calculator routes, which send every *.js to the frontend'
+            assert fetch('/alertmanager/api/v2/silences', 'user=1') == 'alertmanager /api/v2/silences|200|'
+            assert fetch('/alertmanager') == '|302|https://fov.ee/alertmanager/'
+            assert fetch('/', 'user=1') == 'frontend /|200|'
+        finally:
+            for container in containers:
+                run('docker', 'rm', '-f', container, check=False)
+            run('docker', 'network', 'rm', network, check=False)
+    print('Caddy serves Prometheus and Alertmanager behind the app login')
 
 
 def check_host_gates():
@@ -525,6 +574,7 @@ def check_delivery():
 if __name__ == '__main__':
     check_configurations()
     check_compose()
+    check_caddy_routes()
     check_host_gates()
     check_production_permissions()
     check_metric_coverage()
