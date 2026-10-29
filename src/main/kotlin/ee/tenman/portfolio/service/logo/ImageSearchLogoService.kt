@@ -30,7 +30,7 @@ class ImageSearchLogoService(
     if (companyName.isBlank()) return emptyList()
     log.debug("Searching Bing for company logo candidates: $companyName")
     val baseUrl = cloudflareBypassProxyProperties.url
-    val request = ImageSearchRequest(query = "$companyName logo", maxResults = maxResults, squareOnly = true)
+    val request = ImageSearchRequest(query = companyName, maxResults = maxResults, squareOnly = true)
     val response =
       runCatching {
         restClient

@@ -10,8 +10,6 @@ class NvstlyLogoService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun fetchLogo(ticker: String): ByteArray? = fetch(TICKER_ICONS, ticker)
-
   fun fetchCryptoLogo(symbol: String): ByteArray? = fetch(CRYPTO_ICONS, symbol)
 
   private fun fetch(
@@ -36,7 +34,6 @@ class NvstlyLogoService(
 
   companion object {
     private const val BASE_URL = "https://raw.githubusercontent.com/nvstly/icons/main"
-    private const val TICKER_ICONS = "ticker_icons"
     private const val CRYPTO_ICONS = "crypto_icons"
   }
 }

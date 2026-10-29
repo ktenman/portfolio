@@ -38,7 +38,7 @@ class LogoReplacementService(
       log.warn("No holding or instrument found for UUID: $holdingUuid")
       return emptyList()
     }
-    val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, properties.maxSearchResults)
+    val candidates = candidates(logoOwnerService.ticker(holdingUuid), searchQuery)
     if (candidates.isEmpty()) {
       log.debug("No candidates found for: $searchQuery")
       return emptyList()
@@ -54,6 +54,18 @@ class LogoReplacementService(
     logoCandidateCacheService.cacheValidatedCandidates(holdingUuid, validCandidates, imageData)
     log.info("Found ${validatedCandidates.size} valid candidates for: $searchQuery")
     return toDtos(validatedCandidates)
+  }
+
+  private fun candidates(
+    ticker: String?,
+    searchQuery: String,
+  ): List<LogoCandidate> =
+    (tickerCandidates(ticker) + imageSearchLogoService.searchLogoCandidates(searchQuery, properties.maxSearchResults))
+      .mapIndexed { index, candidate -> candidate.copy(index = index) }
+
+  private fun tickerCandidates(ticker: String?): List<LogoCandidate> {
+    if (ticker.isNullOrBlank()) return emptyList()
+    return TickerLogo.entries.map { LogoCandidate(imageUrl = it.url(ticker), thumbnailUrl = it.url(ticker), title = ticker, index = 0) }
   }
 
   private fun cachedToDtos(cachedData: CachedLogoData): List<LogoCandidateDto> =
