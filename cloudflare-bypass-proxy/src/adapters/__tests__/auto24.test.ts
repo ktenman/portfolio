@@ -1,5 +1,25 @@
+import { Request, Response } from 'express'
 import * as cheerio from 'cheerio'
-import { extractVehicleName } from '../auto24'
+import { auto24Adapter, extractVehicleName } from '../auto24'
+
+const mockExecFile = jest.fn()
+
+jest.mock('child_process', () => ({
+  execFile: (...args: unknown[]) => mockExecFile(...args),
+}))
+
+jest.mock('util', () => ({
+  ...jest.requireActual('util'),
+  promisify:
+    (fn: (...args: unknown[]) => void) =>
+    (...args: unknown[]) =>
+      new Promise((resolve, reject) => {
+        fn(...args, (error: Error | null, result: unknown) => {
+          if (error) reject(error)
+          else resolve(result)
+        })
+      }),
+}))
 
 describe('Auto24 vehicle name extraction', () => {
   it('should return make and model without the label when price was found', () => {
@@ -16,5 +36,25 @@ describe('Auto24 vehicle name extraction', () => {
       '<div class="vehicl_price_request"><div class="errorMessage">Vale kontrollkood.</div></div>'
 
     expect(extractVehicleName(cheerio.load(html))).toBeNull()
+  })
+})
+
+describe('Auto24 price route', () => {
+  it('should leave the User-Agent to the impersonated browser', async () => {
+    jest.spyOn(console, 'log').mockImplementation()
+    jest.spyOn(console, 'error').mockImplementation()
+    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) =>
+      callback(null, { stdout: '<html></html>', stderr: '' })
+    )
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() }
+
+    await auto24Adapter.handler(
+      { query: { regNumber: '123ÄBC' } } as unknown as Request,
+      res as unknown as Response
+    )
+
+    expect(mockExecFile.mock.calls.flatMap(call => call[1])).not.toContainEqual(
+      expect.stringMatching(/^user-agent:/i)
+    )
   })
 })

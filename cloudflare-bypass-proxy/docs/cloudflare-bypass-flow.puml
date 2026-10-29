@@ -16,14 +16,14 @@ title Cloudflare Bypass Proxy - Request Flow\n
 
 actor "Portfolio\nBackend\n(Spring Boot)" as Backend
 participant "Cloudflare Bypass\nProxy\n(Node.js + Express)" as Proxy
-participant "curl-impersonate\n(curl_ff117)" as Curl
+participant "curl-impersonate\n(curl_chrome152)" as Curl
 participant "Cloudflare\nProtection" as Cloudflare
 participant "Protected Website\n(Trading212/WisdomTree/\nLightyear)" as Website
 
 note over Backend, Website
   **Purpose:** Bypass Cloudflare bot detection by mimicking legitimate browser TLS fingerprints
   **Problem:** Direct HTTP requests from backend are detected as bots and blocked
-  **Solution:** Use curl-impersonate with Firefox 117 TLS fingerprint to appear as real browser
+  **Solution:** Use curl-impersonate with Chrome 152 TLS fingerprint to appear as real browser
 end note
 
 == Successful Request Flow with Proxy ==
@@ -39,19 +39,19 @@ note right of Proxy
   - Lightyear: /lightyear/* (JSON/HTML)
 end note
 
-Proxy -> Curl: execFile('/usr/local/bin/curl_ff117', [args])
+Proxy -> Curl: execFile('/usr/local/bin/curl_chrome152', [args])
 activate Curl
 
 note right of Curl
-  **curl-impersonate-ff117**
+  **curl_chrome152**
   Creates TLS fingerprint matching:
-  - Firefox 117 browser
+  - Chrome 152 browser
   - Realistic cipher suites
   - Browser-like TLS extensions
   - HTTP/2 connection
 end note
 
-Curl -> Cloudflare: HTTPS Request with Firefox 117 TLS fingerprint
+Curl -> Cloudflare: HTTPS Request with Chrome 152 TLS fingerprint
 activate Cloudflare
 
 note right of Cloudflare
@@ -119,7 +119,7 @@ end note
 note over Proxy
   **Configuration**
   PORT: 3000 (default)
-  CURL_BINARY: /usr/local/bin/curl_ff117
+  CURL_BINARY: /usr/local/bin/curl_chrome152
   Timeout: 10 seconds
   Max Buffer: 1MB
 
@@ -132,8 +132,8 @@ end note
 note over Curl
   **TLS Fingerprinting**
   curl-impersonate clones browser TLS stacks:
-  - Firefox: curl_ff117 (Firefox 117)
-  - Chrome: curl_chrome116 (Chrome 116)
+  - Firefox: curl_firefox155 (Firefox 155)
+  - Chrome: curl_chrome152 (Chrome 152)
 
   **Why it works:**
   Cloudflare detects bots by analyzing:

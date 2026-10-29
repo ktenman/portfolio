@@ -3,7 +3,7 @@ import { promisify } from 'util'
 import { CurlOptions, CurlResult } from '../types'
 
 const execFileAsync = promisify(execFile)
-const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
+const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_chrome152'
 
 export class CurlExecutionError extends Error {
   constructor(readonly timedOut: boolean) {

@@ -8,8 +8,6 @@ import { handleLightyearRequest, LightyearResponseError } from '../utils/lightye
 
 const LIGHTYEAR_PUBLIC_API_URL = 'https://lightyear.com/site-api/public'
 const LIGHTYEAR_BATCH_URL = 'https://api.lightyear.com/v1/instrument/batch'
-const CHROME_USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 async function fetchHandler(req: Request, res: Response): Promise<void> {
   const rawPath = validateParam(req, res, 'path', 'query')
@@ -25,7 +23,6 @@ async function fetchHandler(req: Request, res: Response): Promise<void> {
       timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
-        'user-agent': CHROME_USER_AGENT,
         referer: 'https://lightyear.com/',
         accept: '*/*',
         'accept-language': 'en-US,en;q=0.9',
@@ -56,7 +53,6 @@ async function batchHandler(req: Request, res: Response): Promise<void> {
         'Accept-Language': 'en',
         Origin: 'https://lightyear.com',
         Referer: 'https://lightyear.com/',
-        'User-Agent': CHROME_USER_AGENT,
       },
       body: JSON.stringify(instrumentIds),
       timeout: 10000,
@@ -129,7 +125,6 @@ async function lookupUuidHandler(req: Request, res: Response): Promise<void> {
       timeout: 10000,
       maxBuffer: 1024 * 1024,
       headers: {
-        'User-Agent': CHROME_USER_AGENT,
         Accept: '*/*',
         'Accept-Language': 'en',
         Referer: 'https://lightyear.com/',

@@ -1,4 +1,9 @@
-FROM lwthiker/curl-impersonate:latest AS curl-source
+FROM node:24-slim AS curl-source
+
+ADD --checksum=sha256:0d8551cc1620be3c40c6f42d0b46c7077e0fe2a1a28a69d659e49e4f412cd0a0 \
+    https://github.com/lexiforest/curl-impersonate/releases/download/v2.3.1/curl-impersonate-v2.3.1.x86_64-linux-gnu.tar.gz \
+    /tmp/curl-impersonate.tar.gz
+RUN tar -xzf /tmp/curl-impersonate.tar.gz --no-same-owner -C /usr/local/bin curl-impersonate curl_chrome152
 
 FROM node:24-slim AS builder
 
@@ -14,10 +19,11 @@ RUN npm run build
 
 FROM node:24-slim
 
-COPY --from=curl-source /usr/local/bin/curl_ff117 /usr/local/bin/curl_ff117
-COPY --from=curl-source /usr/local/bin/curl-impersonate-ff /usr/local/bin/curl-impersonate-ff
-COPY --from=curl-source /usr/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
-RUN chmod +x /usr/local/bin/curl_ff117 /usr/local/bin/curl-impersonate-ff
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=curl-source /usr/local/bin/curl-impersonate /usr/local/bin/curl_chrome152 /usr/local/bin/
 
 WORKDIR /app
 
@@ -33,6 +39,6 @@ COPY model.onnx ./model.onnx
 EXPOSE 3000
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-  CMD curl_ff117 -sf http://localhost:3000/health || exit 1
+  CMD curl_chrome152 -sf http://localhost:3000/health || exit 1
 
 CMD ["node", "dist/server.js"]

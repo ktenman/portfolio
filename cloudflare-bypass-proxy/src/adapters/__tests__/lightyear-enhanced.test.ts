@@ -122,6 +122,17 @@ describe('Lightyear lookup and batch routes', () => {
     )
   })
 
+  it.each([
+    ['lookup', () => request(app).get('/lightyear/lookup').query({ symbol: 'VUAA:GER:EUR' })],
+    ['batch', () => request(app).post('/lightyear/batch').send(['instrument-id'])],
+  ])('should leave the User-Agent of a %s to the impersonated browser', async (_, send) => {
+    respond('[]')
+
+    await send()
+
+    expect(mockExecFile.mock.calls[0][1]).not.toContainEqual(expect.stringMatching(/^user-agent:/i))
+  })
+
   it('should reject an empty batch before contacting Lightyear', async () => {
     const response = await request(app).post('/lightyear/batch').send([])
 

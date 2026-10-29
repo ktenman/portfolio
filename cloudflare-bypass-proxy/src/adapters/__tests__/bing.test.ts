@@ -1,13 +1,23 @@
 import { Request, Response } from 'express'
 import { bingAdapter } from '../bing'
 
+const mockExecFile = jest.fn()
+
 jest.mock('child_process', () => ({
-  execFile: jest.fn(),
+  execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
 jest.mock('util', () => ({
   ...jest.requireActual('util'),
-  promisify: jest.fn(() => jest.fn()),
+  promisify:
+    (fn: (...args: unknown[]) => void) =>
+    (...args: unknown[]) =>
+      new Promise((resolve, reject) => {
+        fn(...args, (error: Error | null, result: unknown) => {
+          if (error) reject(error)
+          else resolve(result)
+        })
+      }),
 }))
 
 describe('Bing Adapter', () => {
@@ -54,6 +64,18 @@ describe('Bing Adapter', () => {
       results: [],
       error: 'Query is required',
     })
+  })
+
+  it('should leave the User-Agent to the impersonated browser', async () => {
+    jest.spyOn(console, 'log').mockImplementation()
+    mockExecFile.mockImplementation((_cmd, _args, _opts, callback) =>
+      callback(null, { stdout: '', stderr: '' })
+    )
+    mockReq.body = { query: 'Ühispank' }
+
+    await bingAdapter.handler(mockReq as Request, mockRes as Response)
+
+    expect(mockExecFile.mock.calls[0][1]).not.toContainEqual(expect.stringMatching(/^user-agent:/i))
   })
 
   it('should have correct adapter configuration', () => {

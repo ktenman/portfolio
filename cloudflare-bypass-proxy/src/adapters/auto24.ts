@@ -13,7 +13,7 @@ import * as path from 'path'
 import * as os from 'os'
 
 const execFileAsync = promisify(execFile)
-const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
+const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_chrome152'
 const AUTO24_BASE_URL = 'https://www.auto24.ee'
 const AUTO24_PRICE_PAGE = `${AUTO24_BASE_URL}/ostuabi/?t=soiduki-turuhinna-paring`
 const MAX_RETRIES = 10
@@ -252,8 +252,6 @@ async function handler(req: Request, res: Response): Promise<void> {
   let lastError: string | null = null
 
   const defaultHeaders = {
-    'user-agent':
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
     accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'accept-language': 'et-EE,et;q=0.9,en;q=0.8',
   }
