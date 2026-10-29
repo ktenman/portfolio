@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -45,10 +44,10 @@ class RadioDayTest {
   private fun aired(
     id: Long,
     show: RadioProgramme,
-    start: LocalTime,
+    hour: Int,
     original: Long? = null,
   ): RadioAiring {
-    val at = THURSDAY.atTime(start).atZone(TALLINN).toInstant()
+    val at = Instant.ofEpochSecond(tick(THURSDAY, hour))
     return RadioAiring(id, show.id, show.name, at, at.plusSeconds(3600), original)
   }
 
@@ -174,10 +173,10 @@ class RadioDayTest {
   fun `should plan only the coming originals of programmes recorded every time`() {
     val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
     val õun = RadioProgramme(501, "Kukkuv Õun", "kukkuv-oun").apply { id = 2 }
-    val noon = aired(2, sihik, LocalTime.NOON)
-    val past = aired(1, sihik, LocalTime.of(6, 0))
-    val unticked = aired(3, õun, LocalTime.of(15, 0))
-    val repeat = aired(4, sihik, LocalTime.of(22, 0), 2)
+    val noon = aired(2, sihik, 12)
+    val past = aired(1, sihik, 6)
+    val unticked = aired(3, õun, 15)
+    val repeat = aired(4, sihik, 22, 2)
     val day = service("2026-10-29T08:00:00Z", listOf(past, noon, unticked, repeat), sihik, õun).day(THURSDAY)
     expect(day.planned).toEqual(listOf(PlannedSpan("Sihik", noon.startsAt.epochSecond, noon.endsAt.epochSecond)))
   }

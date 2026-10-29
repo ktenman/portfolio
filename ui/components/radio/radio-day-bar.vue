@@ -5,14 +5,14 @@
         {{ recordedSummary(radioDay) ?? 'Nothing recorded' }}
       </span>
     </template>
-    <div class="relative pt-10">
+    <div class="@container relative pt-10">
       <router-link
         v-for="span in radioDay.recorded"
         :key="span.start"
         :to="`/radio/${span.name}`"
         class="group absolute inset-y-0 z-10 rounded-control hover:bg-ink/5"
         data-testid="radio-day-link"
-        :style="{ left: at(span.start), width: share(span.end - span.start) }"
+        :style="place(span)"
         :title="`${span.programme} · ${times(span)}`"
         :aria-label="`${span.programme}, ${times(span)}`"
       >
@@ -32,7 +32,7 @@
         :key="span.start"
         class="absolute inset-y-0 z-10"
         data-testid="radio-day-planned"
-        :style="{ left: at(span.start), width: share(span.end - span.start) }"
+        :style="place(span)"
         :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"
       >
         <span class="@container block px-1 pt-px text-ink-soft" :style="{ width: room(span) }">
@@ -64,14 +64,14 @@
           class="absolute top-2.5 h-2 min-w-0.5"
           :class="span.recording ? `rounded-l-control ${LIVE}` : 'rounded-control bg-ink'"
           data-testid="radio-day-span"
-          :style="{ left: at(span.start), width: share(span.end - span.start) }"
+          :style="place(span)"
         />
         <div
           v-for="span in radioDay.planned"
           :key="span.start"
           class="absolute top-2.5 h-2 min-w-0.5 rounded-control border border-ink-soft"
           data-testid="radio-day-planned-span"
-          :style="{ left: at(span.start), width: share(span.end - span.start) }"
+          :style="place(span)"
         />
         <div
           v-if="current"
@@ -115,23 +115,27 @@ const LIVE =
   'bg-[repeating-linear-gradient(135deg,var(--color-notice)_0_3px,var(--color-notice-wash)_3px_6px)]'
 const CROWDED = 5400
 
+type Span = Pick<PlannedSpan, 'start' | 'end'>
+
 const props = defineProps<{ radioDay: RadioDay }>()
 
 const fraction = (seconds: number) =>
   (seconds - props.radioDay.from) / (props.radioDay.until - props.radioDay.from)
 
-const share = (seconds: number) =>
-  `${(seconds / (props.radioDay.until - props.radioDay.from)) * 100}%`
+const share = (seconds: number, unit = '%') =>
+  `${(seconds / (props.radioDay.until - props.radioDay.from)) * 100}${unit}`
 
 const at = (seconds: number) => `${fraction(seconds) * 100}%`
+
+const place = ({ start, end }: Span) => ({ left: at(start), width: share(end - start) })
 
 const starts = computed(() =>
   [...props.radioDay.recorded, ...props.radioDay.planned].map(span => span.start)
 )
 
-const room = ({ start, end }: PlannedSpan) => {
+const room = ({ start, end }: Span) => {
   const next = Math.min(...starts.value.filter(other => other > start), props.radioDay.until)
-  return `min(${((next - start) / (end - start)) * 100}%, max(100%, 9rem))`
+  return `min(${share(next - start, 'cqw')}, max(${share(end - start, 'cqw')}, 9rem))`
 }
 
 const times = (span: RecordedSpan) =>
