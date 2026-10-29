@@ -149,6 +149,7 @@ class OpenRouterClientIT {
         .withRequestBody(matchingJsonPath("$.plugins[0].engine", equalTo("native")))
         .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("google-vertex")))
         .withRequestBody(matchingJsonPath("$.provider.allow_fallbacks", equalTo("false")))
+        .withRequestBody(matchingJsonPath("$.max_tokens", equalTo("32000")))
         .willReturn(okJson(createSuccessResponse("[]"))),
     )
     expect(openRouterClient.search(AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")).toEqual("[]")

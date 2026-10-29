@@ -3,6 +3,7 @@ package ee.tenman.portfolio.openrouter
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
+import feign.Request
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -42,6 +43,16 @@ class OpenRouterClientTest {
     val result = client.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
 
     expect(result).toEqual("{\"currency\":\"USD\"}")
+  }
+
+  @Test
+  fun `waits ten minutes for a web search answer`() {
+    val options = slot<Request.Options>()
+    every { feignClient.chatCompletion(any(), any(), capture(options)) } returns okResponse("[]")
+
+    client.search(AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")
+
+    expect(options.captured.readTimeoutMillis()).toEqual(600000)
   }
 
   @Test

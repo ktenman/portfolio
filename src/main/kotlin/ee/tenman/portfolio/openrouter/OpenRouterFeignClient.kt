@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.openrouter
 
+import feign.Request
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -14,5 +15,12 @@ interface OpenRouterFeignClient {
   fun chatCompletion(
     @RequestHeader("Authorization") authorization: String,
     @RequestBody request: OpenRouterRequest,
+  ): OpenRouterResponse
+
+  @PostMapping("/chat/completions")
+  fun chatCompletion(
+    @RequestHeader("Authorization") authorization: String,
+    @RequestBody request: OpenRouterRequest,
+    options: Request.Options,
   ): OpenRouterResponse
 }

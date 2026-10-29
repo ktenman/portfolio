@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.openrouter
 
 import ee.tenman.portfolio.domain.AiModel
+import feign.Request
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.time.Duration
 
 @Component
 class OpenRouterClient(
@@ -161,16 +163,18 @@ class OpenRouterClient(
       OpenRouterRequest(
         model = model.modelId,
         messages = listOf(OpenRouterRequest.Message("user", prompt)),
-        maxTokens = DEFAULT_MAX_TOKENS,
+        maxTokens = SEARCH_MAX_TOKENS,
         temperature = 0.0,
         provider = OpenRouterRequest.ProviderPreferences(listOf(VERTEX), allowFallbacks = false),
         plugins = listOf(OpenRouterRequest.Plugin(id = "web", engine = "native")),
       ),
+      SEARCH_OPTIONS,
     )
 
   private fun send(
     model: AiModel,
     request: OpenRouterRequest,
+    options: Request.Options? = null,
   ): String? {
     if (openRouterProperties.apiKey.isBlank()) {
       log.warn("OpenRouter API key is not configured")
@@ -182,7 +186,14 @@ class OpenRouterClient(
     }
     return runCatching {
       log.info("Calling OpenRouter with model: ${request.model}")
-      val content = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request).extractContent()
+      val authorization = "Bearer ${openRouterProperties.apiKey}"
+      val response =
+        if (options == null) {
+          openRouterFeignClient.chatCompletion(authorization, request)
+        } else {
+          openRouterFeignClient.chatCompletion(authorization, request, options)
+        }
+      val content = response.extractContent()
       log.debug("OpenRouter response: '$content'")
       circuitBreaker.recordSuccess()
       content
@@ -194,6 +205,8 @@ class OpenRouterClient(
 
   companion object {
     private const val DEFAULT_MAX_TOKENS = 8000
+    private const val SEARCH_MAX_TOKENS = 32000
+    private val SEARCH_OPTIONS = Request.Options(Duration.ofSeconds(10), Duration.ofMinutes(10), true)
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
     private const val FLEX_TIER = "google-ai-studio/flex"
