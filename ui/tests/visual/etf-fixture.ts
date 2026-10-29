@@ -5,6 +5,7 @@ import {
   type InstrumentDto,
 } from '../../models/generated/domain-models'
 import { API_ENDPOINTS } from '../../constants/api'
+import { type LogoCandidateDto } from '../../services/api'
 import { TULEVA_SYMBOL } from '../../services/fund-allocation'
 import { apiRoute, type RouteStub } from './stub'
 
@@ -226,6 +227,22 @@ export const stubEtfBreakdown: RouteStub = async page => {
   )
   await stubLogos(page)
   await page.route('**/api/logos/*/candidates', route => route.fulfill({ json: [] }))
+}
+
+const LOGO_CANDIDATES: LogoCandidateDto[] = ['#0072b2', '#e69f00', '#009e73', '#cc79a7'].map(
+  (color, index) => ({
+    thumbnailUrl: '',
+    title: `NVIDIA logo ${index + 1}`,
+    index,
+    imageDataUrl: `data:image/svg+xml,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="${color}"/></svg>`
+    )}`,
+  })
+)
+
+export const stubEtfBreakdownWithLogoCandidates: RouteStub = async page => {
+  await stubEtfBreakdown(page)
+  await page.route('**/api/logos/*/candidates', route => route.fulfill({ json: LOGO_CANDIDATES }))
 }
 
 const TULEVA_REPORTS: FundReportDto[] = [

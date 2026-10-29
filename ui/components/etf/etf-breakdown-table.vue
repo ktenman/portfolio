@@ -40,7 +40,7 @@
           <div class="ticker-cell">
             <div
               v-if="item.holdingUuid"
-              class="logo-container"
+              class="logo-container group relative"
               @click.stop="openLogoModal(item)"
               :title="'Click to replace logo'"
             >
@@ -52,6 +52,7 @@
                 decoding="async"
                 @error="handleImageError"
               />
+              <logo-edit-hint />
             </div>
             <div
               v-else
@@ -148,6 +149,7 @@ import LoadingSpinner from '../shared/loading-spinner.vue'
 import SpinnerRing from '../shared/spinner-ring.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import LogoReplacementModal from './logo-replacement-modal.vue'
+import LogoEditHint from '../shared/logo-edit-hint.vue'
 import { logoService } from '../../services/api'
 import { formatPlatformName } from '../../utils/platform-utils'
 import { formatScientific } from '../../utils/formatters'

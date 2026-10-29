@@ -11,7 +11,7 @@
         <button
           v-if="instrument"
           type="button"
-          class="flex shrink-0 cursor-pointer rounded-full"
+          class="group relative flex shrink-0 cursor-pointer rounded-full"
           title="Click to replace logo"
           @click="emit('replaceLogo', instrument)"
         >
@@ -21,6 +21,7 @@
             :symbol="tickerOf(instrument.symbol)"
             :size="40"
           />
+          <logo-edit-hint />
         </button>
         <div class="min-w-0">
           <p class="m-0 truncate text-ink">
@@ -59,6 +60,7 @@ import { formatCurrencyWithSymbol, formatPercentageFromDecimal } from '../../uti
 import { calculatePortfolioWeight } from '../../utils/instrument-formatters'
 import { formatPlatformName } from '../../utils/platform-utils'
 import InstrumentLogo from './instrument-logo.vue'
+import LogoEditHint from '../shared/logo-edit-hint.vue'
 
 type Figure = { label: string; value: string }
 

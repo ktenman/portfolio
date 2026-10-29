@@ -7,7 +7,11 @@ import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
-import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
+import {
+  stubEtfBreakdown,
+  stubEtfBreakdownWithLogoCandidates,
+  stubEtfBreakdownWithTuleva,
+} from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import {
   stubRadio,
@@ -128,6 +132,13 @@ const MODALS: {
     title: /^Replace Logo: /,
     open: page => page.locator('.company-logo.clickable').filter({ visible: true }).first().click(),
     stub: stubEtfBreakdown,
+  },
+  {
+    name: 'logo-replacement-candidates',
+    route: '/etf-breakdown',
+    title: /^Replace Logo: /,
+    open: page => page.locator('.company-logo.clickable').filter({ visible: true }).first().click(),
+    stub: stubEtfBreakdownWithLogoCandidates,
   },
   {
     name: 'config-export',
@@ -546,6 +557,16 @@ test.describe('desktop states', () => {
     await settleAndFreeze(page)
     await page.hover('.legend-item:has-text("Semiconductors & Semiconductor Equipment")')
     await expect(page).toHaveScreenshot('etf-breakdown-industry-hover.png', { fullPage: true })
+  })
+
+  test('hovering a holding logo shows it can be replaced', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+    await stubEtfBreakdown(page)
+    await openRoute(page, '/etf-breakdown')
+    await settleAndFreeze(page)
+    const cell = page.locator('.ticker-cell').filter({ visible: true }).first()
+    await cell.locator('.logo-container').hover()
+    await expect(cell).toHaveScreenshot('etf-breakdown-logo-hover.png')
   })
 
   test('selecting both benchmarks overlays three lines', async ({ page }) => {
