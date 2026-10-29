@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.logo
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -89,20 +90,56 @@ class LogoReplacementServiceTest {
 
       service.getCandidates(instrument.uuid)
 
-      verify { imageSearchLogoService.searchLogoCandidates("Aviva logo", 50) }
+      verify { imageSearchLogoService.searchLogoCandidates("Aviva", 50) }
     }
 
     @Test
-    fun `should return empty list when no search results`() {
+    fun `should return empty list when neither the ticker logos nor the search find an image`() {
       val uuid = UUID.randomUUID()
       val holding = createHolding(uuid, "Apple Inc", "AAPL")
       every { logoCandidateCacheService.getCachedData(uuid) } returns null
       every { etfHoldingRepository.findByUuid(uuid) } returns holding
-      every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo", 50) } returns emptyList()
+      every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc", 50) } returns emptyList()
+      every { imageDownloadService.downloadOrNull(any()) } returns null
 
       val result = service.getCandidates(uuid)
 
       expect(result).toHaveSize(0)
+    }
+
+    @Test
+    fun `should offer the Parqet and nvstly logos of the ticker before the search results`() {
+      val uuid = UUID.randomUUID()
+      stubTickerAndSearchCandidates(uuid)
+
+      val result = service.getCandidates(uuid)
+
+      expect(result.map { it.thumbnailUrl }).toContainExactly(
+        "https://assets.parqet.com/logos/symbol/NVDA?format=png&size=512",
+        "https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons/NVDA.png",
+        "https://bing.example/kronleuchter.jpg",
+      )
+    }
+
+    @Test
+    fun `should number the candidates in the order they are offered`() {
+      val uuid = UUID.randomUUID()
+      stubTickerAndSearchCandidates(uuid)
+
+      val result = service.getCandidates(uuid)
+
+      expect(result.map { it.index }).toContainExactly(0, 1, 2)
+    }
+
+    private fun stubTickerAndSearchCandidates(uuid: UUID) {
+      val bing = LogoCandidate("https://bing.example/kronleuchter.jpg", "https://bing.example/kronleuchter.jpg", "Kronleuchter", 0)
+      every { logoCandidateCacheService.getCachedData(uuid) } returns null
+      every { etfHoldingRepository.findByUuid(uuid) } returns createHolding(uuid, "NVIDIA", "NVDA")
+      every { imageSearchLogoService.searchLogoCandidates("NVDA NVIDIA", 50) } returns listOf(bing)
+      every { imageDownloadService.downloadOrNull(any()) } returns "image".toByteArray()
+      every { logoValidationService.isValidLogo(any()) } returns true
+      every { logoValidationService.detectMediaType(any()) } returns "image/png"
+      every { logoCandidateCacheService.cacheValidatedCandidates(uuid, any(), any()) } returns CachedLogoData(emptyList(), emptyMap())
     }
   }
 
@@ -211,7 +248,7 @@ class LogoReplacementServiceTest {
     @Test
     fun `should return empty list when no search results`() {
       every { logoCandidateCacheService.getCachedDataByName("Apple Inc") } returns null
-      every { imageSearchLogoService.searchLogoCandidates("Apple Inc logo", 50) } returns emptyList()
+      every { imageSearchLogoService.searchLogoCandidates("Apple Inc", 50) } returns emptyList()
 
       val result = service.searchByName("Apple Inc")
 
@@ -223,7 +260,7 @@ class LogoReplacementServiceTest {
       val imageData = "test-image".toByteArray()
       val candidate = LogoCandidate(thumbnailUrl = "thumb.png", imageUrl = "img.png", title = "Apple", index = 0)
       every { logoCandidateCacheService.getCachedDataByName("Microsoft") } returns null
-      every { imageSearchLogoService.searchLogoCandidates("Microsoft logo", 50) } returns listOf(candidate)
+      every { imageSearchLogoService.searchLogoCandidates("Microsoft", 50) } returns listOf(candidate)
       every { imageDownloadService.downloadOrNull("img.png") } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"

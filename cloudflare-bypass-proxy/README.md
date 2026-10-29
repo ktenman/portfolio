@@ -15,10 +15,10 @@ curl https://trading212.com/prices/...
 
 ## The Solution
 
-This proxy uses **`curl-impersonate`** to clone Firefox 117's TLS stack, bypassing Cloudflare:
+This proxy uses **`curl-impersonate`** to clone Chrome 152's TLS stack, bypassing Cloudflare:
 
 ```
-Portfolio Backend → Proxy → curl-impersonate (Firefox 117 TLS) → ✅ Cloudflare → Website
+Portfolio Backend → Proxy → curl-impersonate (Chrome 152 TLS) → ✅ Cloudflare → Website
 ```
 
 📊 **See detailed flow:** [`docs/cloudflare-bypass-flow.puml`](docs/cloudflare-bypass-flow.puml)
@@ -90,10 +90,10 @@ curl http://localhost:3000/metrics
 
 ## Configuration
 
-| Variable      | Default                     | Description                  |
-| ------------- | --------------------------- | ---------------------------- |
-| `PORT`        | `3000`                      | Server port                  |
-| `CURL_BINARY` | `/usr/local/bin/curl_ff117` | curl-impersonate binary path |
+| Variable      | Default                         | Description                  |
+| ------------- | ------------------------------- | ---------------------------- |
+| `PORT`        | `3000`                          | Server port                  |
+| `CURL_BINARY` | `/usr/local/bin/curl_chrome152` | curl-impersonate binary path |
 
 ## Local Development
 
@@ -107,14 +107,14 @@ CURL_BINARY=/usr/bin/curl node server.js
 ## Architecture
 
 ```
-Backend (Kotlin/Feign) → HTTP → Cloudflare Bypass Proxy → curl-impersonate-ff117 → Protected Service
+Backend (Kotlin/Feign) → HTTP → Cloudflare Bypass Proxy → curl_chrome152 → Protected Service
 ```
 
 ### Core Components
 
 1. **Express Server** - HTTP API with request routing and middleware
 2. **Adapter Pattern** - Pluggable service integrations for different platforms
-3. **curl-impersonate** - Binary that clones Firefox 117 browser TLS stack
+3. **curl-impersonate** - Binary that clones Chrome 152 browser TLS stack
 4. **Request Context** - Tracks requests with unique IDs and service names
 5. **Metrics & Logging** - Error rates, response times, request tracking
 
@@ -128,15 +128,15 @@ Backend (Kotlin/Feign) → HTTP → Cloudflare Bypass Proxy → curl-impersonate
 TLS Handshake → Generic cipher suites → Cloudflare detects as bot ❌
 ```
 
-**curl-impersonate-ff117:**
+**curl_chrome152:**
 
 ```
-TLS Handshake → Exact Firefox 117 cipher suites/extensions → Cloudflare sees Firefox ✅
+TLS Handshake → Exact Chrome 152 cipher suites/extensions → Cloudflare sees Chrome ✅
 ```
 
 **What gets cloned:**
 
-- TLS cipher suite order (exact match to Firefox 117)
+- TLS cipher suite order (exact match to Chrome 152)
 - TLS extensions (SNI, ALPN, Supported Groups, etc.)
 - HTTP/2 settings and frame ordering
 - Connection preface and window updates

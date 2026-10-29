@@ -4,12 +4,16 @@ import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.radio.RadioMetricsService
+import ee.tenman.portfolio.service.split.SplitMetricsService
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalManagementPort
 import org.springframework.boot.test.web.server.LocalServerPort
+import java.math.BigDecimal
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.http.HttpClient
@@ -33,6 +37,10 @@ class MonitoringEndpointIT {
 
   @Resource private lateinit var radio: RadioMetricsService
 
+  @Resource private lateinit var split: SplitMetricsService
+
+  @Resource private lateinit var instrumentRepository: InstrumentRepository
+
   @Test
   fun `should expose complete collection metrics on the management listener`() {
     metrics.refresh()
@@ -53,6 +61,17 @@ class MonitoringEndpointIT {
     expect(get(managementPort, "/actuator/prometheus").body()).toContain(
       "portfolio_radio_plan_timestamp_seconds",
       "portfolio_radio_schedule_failed",
+    )
+  }
+
+  @Test
+  fun `should expose the split warning metrics on the management listener`() {
+    instrumentRepository.save(Instrument("BNKE:PAR:EUR", "Amundi Euro Stoxx Banks UCITS ETF Acc", "ETF", "EUR", BigDecimal("4.44")))
+    split.refresh()
+    expect(get(managementPort, "/actuator/prometheus").body()).toContain(
+      "portfolio_instrument_price{",
+      "instrument=\"BNKE:PAR:EUR\"",
+      "portfolio_split_check_failed",
     )
   }
 

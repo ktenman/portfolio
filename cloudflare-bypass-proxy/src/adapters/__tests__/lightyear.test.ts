@@ -94,6 +94,14 @@ describe('Lightyear fetch route', () => {
     expect(logSpy.mock.calls.flat().join(' ')).toMatch(/completed/i)
   })
 
+  it('should leave the User-Agent to the impersonated browser', async () => {
+    respond('{"price":"42.50"}')
+
+    await request(app).get('/lightyear/fetch').query({ path: '/v1/market-data/id/price' })
+
+    expect(mockExecFile.mock.calls[0][1]).not.toContainEqual(expect.stringMatching(/^user-agent:/i))
+  })
+
   it.each([
     [404, 'text/html; charset=utf-8', '<!DOCTYPE html><html>sensitive-upstream-token</html>'],
     [401, 'application/json', '{"error":"sensitive-upstream-token"}'],

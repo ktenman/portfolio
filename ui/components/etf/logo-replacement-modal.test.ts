@@ -95,3 +95,11 @@ describe('LogoReplacementModal upload', () => {
     )
   })
 })
+
+describe('LogoReplacementModal search', () => {
+  it('searches again when the search found no candidates', async () => {
+    const wrapper = await openModal()
+    await wrapper.get('[data-search-again]').trigger('click')
+    expect(logoService.getCandidates).toHaveBeenCalledTimes(2)
+  })
+})
