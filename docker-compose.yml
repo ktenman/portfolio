@@ -254,6 +254,8 @@ services:
     user: "0:0"
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
+      - --web.external-url=https://fov.ee/alertmanager/
+      - --web.route-prefix=/
       - --storage.path=/alertmanager
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
@@ -278,6 +280,8 @@ services:
     profiles: [monitoring]
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+      - --web.external-url=https://fov.ee/prometheus/
+      - --web.route-prefix=/
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=15d
       - --storage.tsdb.retention.size=2GB
