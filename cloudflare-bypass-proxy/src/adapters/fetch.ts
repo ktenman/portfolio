@@ -9,7 +9,7 @@ import * as path from 'path'
 import * as os from 'os'
 
 const execFileAsync = promisify(execFile)
-const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_ff117'
+const CURL = process.env.CURL_BINARY || '/usr/local/bin/curl_chrome152'
 const ALLOWED_DOMAINS = (process.env.FETCH_ALLOWED_DOMAINS || 'auto24.ee')
   .split(',')
   .map(d => d.trim().toLowerCase())
