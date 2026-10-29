@@ -340,6 +340,7 @@ export interface RadioDay {
     now: number;
     recorded: RecordedSpan[];
     seconds: number;
+    planned: PlannedSpan[];
     day: DayBlock[];
     night: DayBlock[];
 }
@@ -543,6 +544,12 @@ export interface RecordedSpan {
     start: number;
     end: number;
     recording: boolean;
+}
+
+export interface PlannedSpan {
+    programme: string;
+    start: number;
+    end: number;
 }
 
 export interface DayBlock {

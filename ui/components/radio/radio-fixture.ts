@@ -345,6 +345,7 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
     },
   ],
   seconds: 4200,
+  planned: [{ programme: 'Tarkade klubi', start: at(27), end: at(28) }],
   day: [
     {
       missed: true,

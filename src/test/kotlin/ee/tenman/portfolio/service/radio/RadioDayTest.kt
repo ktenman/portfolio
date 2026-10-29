@@ -2,14 +2,16 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.repository.RadioAiringRepository
-import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -21,17 +23,34 @@ class RadioDayTest {
 
   private fun airing(state: AiringState) = DayAiring(1, "Keskpäevatund", null, 0, 3600, state, false, false, null, null)
 
-  private fun service(now: String) =
-    RadioDayService(
+  private fun service(
+    now: String,
+    airings: List<RadioAiring> = emptyList(),
+    vararg shows: RadioProgramme,
+  ): RadioDayService {
+    val clock = Clock.fixed(Instant.parse(now), TALLINN)
+    val names = programmes(*shows)
+    return RadioDayService(
       mockk<RadioAiringRepository> {
-        every { findStarting(any(), any()) } returns emptyList()
+        every { findStarting(any(), any()) } returns airings
         every { findAllByKukuIdIn(any()) } returns emptyList()
       },
-      mockk<RadioProgrammeRepository> { every { findAllById(any()) } returns emptyList() },
+      names,
       mockk<RadioArchiveService> { every { recordings() } returns emptyList() },
-      mockk<RadioScheduleService> { every { planned(any()) } returns emptyList() },
-      Clock.fixed(Instant.parse(now), TALLINN),
+      RadioScheduleService(names, mockk(), mockk(), RadioProperties(), clock),
+      clock,
     )
+  }
+
+  private fun aired(
+    id: Long,
+    show: RadioProgramme,
+    start: LocalTime,
+    original: Long? = null,
+  ): RadioAiring {
+    val at = THURSDAY.atTime(start).atZone(TALLINN).toInstant()
+    return RadioAiring(id, show.id, show.name, at, at.plusSeconds(3600), original)
+  }
 
   private fun tick(
     date: LocalDate,
@@ -152,6 +171,23 @@ class RadioDayTest {
   }
 
   @Test
+  fun `should plan only the coming originals of programmes recorded every time`() {
+    val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
+    val õun = RadioProgramme(501, "Kukkuv Õun", "kukkuv-oun").apply { id = 2 }
+    val noon = aired(2, sihik, LocalTime.NOON)
+    val past = aired(1, sihik, LocalTime.of(6, 0))
+    val unticked = aired(3, õun, LocalTime.of(15, 0))
+    val repeat = aired(4, sihik, LocalTime.of(22, 0), 2)
+    val day = service("2026-10-29T08:00:00Z", listOf(past, noon, unticked, repeat), sihik, õun).day(THURSDAY)
+    expect(day.planned).toEqual(listOf(PlannedSpan("Sihik", noon.startsAt.epochSecond, noon.endsAt.epochSecond)))
+  }
+
+  @Test
+  fun `should clip a planned airing to the end of the broadcast day`() {
+    expect(planned(listOf(airing(AiringState.PLANNED)), 1800)).toEqual(listOf(PlannedSpan("Keskpäevatund", 0, 1800)))
+  }
+
+  @Test
   fun `should tick six, noon, eighteen and midnight of a broadcast day`() {
     val date = LocalDate.of(2026, 10, 17)
     expect(ticks(date, TALLINN)).toEqual(
@@ -177,5 +213,6 @@ class RadioDayTest {
 
   companion object {
     private val TALLINN = ZoneId.of("Europe/Tallinn")
+    private val THURSDAY = LocalDate.of(2026, 10, 29)
   }
 }

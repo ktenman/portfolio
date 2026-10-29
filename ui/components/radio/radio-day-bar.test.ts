@@ -18,6 +18,11 @@ const RUNNING = {
   end: DAY.now,
   recording: true,
 }
+const PLANNED = {
+  programme: 'Ilmaparandaja',
+  start: DAY.from + 9 * 3600,
+  end: DAY.from + 10 * 3600,
+}
 
 const hours = (overrides = {}) =>
   bar(overrides)
@@ -54,6 +59,28 @@ describe('RadioDayBar', () => {
   it('should tell a screen reader that a show is being recorded now', () => {
     const links = bar({ recorded: [FINISHED, RUNNING] }).findAll('[data-testid="radio-day-link"]')
     expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now')
+  })
+
+  it('should title a planned airing with its times', () => {
+    const titles = bar({ planned: [PLANNED] })
+      .findAll('[data-testid="radio-day-planned"]')
+      .map(plan => plan.attributes('title'))
+    expect(titles).toEqual(['Ilmaparandaja · 14:00–15:00 · planned'])
+  })
+
+  it('should outline a planned airing without filling it', () => {
+    const blocks = bar({ planned: [PLANNED] }).findAll('[data-testid="radio-day-planned-span"]')
+    expect(blocks.map(block => [block.classes('border'), block.classes('bg-ink')])).toEqual([
+      [true, false],
+    ])
+  })
+
+  it('should not link a planned airing', () => {
+    const day = bar({ recorded: [], planned: [PLANNED] })
+    expect([
+      day.findAll('[data-testid="radio-day-planned"]').length,
+      day.findAllComponents(RouterLinkStub).length,
+    ]).toEqual([1, 0])
   })
 
   it('should count the recordings and their time', () => {

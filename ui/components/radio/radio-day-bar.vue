@@ -7,7 +7,7 @@
     </template>
     <div class="relative pt-10">
       <router-link
-        v-for="(span, index) in radioDay.recorded"
+        v-for="span in radioDay.recorded"
         :key="span.start"
         :to="`/radio/${span.name}`"
         class="group absolute inset-y-0 z-10 rounded-control hover:bg-ink/5"
@@ -16,7 +16,7 @@
         :title="`${span.programme} · ${times(span)}`"
         :aria-label="`${span.programme}, ${times(span)}`"
       >
-        <span class="@container block px-1 pt-px" :style="{ width: room(span, index) }">
+        <span class="@container block px-1 pt-px" :style="{ width: room(span) }">
           <span class="block truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden">
             {{ clock(span.start, 0) }}
           </span>
@@ -27,6 +27,23 @@
           </span>
         </span>
       </router-link>
+      <div
+        v-for="span in radioDay.planned"
+        :key="span.start"
+        class="absolute inset-y-0 z-10"
+        data-testid="radio-day-planned"
+        :style="{ left: at(span.start), width: share(span.end - span.start) }"
+        :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"
+      >
+        <span class="@container block px-1 pt-px text-ink-soft" :style="{ width: room(span) }">
+          <span class="block truncate text-label tabular-nums @max-[2rem]:hidden">
+            {{ clock(span.start, 0) }}
+          </span>
+          <span class="block truncate text-sm font-medium @max-[3.5rem]:hidden">
+            {{ span.programme }}
+          </span>
+        </span>
+      </div>
       <div class="relative h-7" aria-hidden="true">
         <div class="absolute inset-x-0 top-2.5 h-2 rounded-control bg-hairline" />
         <div
@@ -47,6 +64,13 @@
           class="absolute top-2.5 h-2 min-w-0.5"
           :class="span.recording ? `rounded-l-control ${LIVE}` : 'rounded-control bg-ink'"
           data-testid="radio-day-span"
+          :style="{ left: at(span.start), width: share(span.end - span.start) }"
+        />
+        <div
+          v-for="span in radioDay.planned"
+          :key="span.start"
+          class="absolute top-2.5 h-2 min-w-0.5 rounded-control border border-ink-soft"
+          data-testid="radio-day-planned-span"
           :style="{ left: at(span.start), width: share(span.end - span.start) }"
         />
         <div
@@ -83,7 +107,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { RadioDay, RecordedSpan } from '../../models/generated/domain-models'
+import type { PlannedSpan, RadioDay, RecordedSpan } from '../../models/generated/domain-models'
 import { clock, range, recordedSummary } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 
@@ -101,9 +125,13 @@ const share = (seconds: number) =>
 
 const at = (seconds: number) => `${fraction(seconds) * 100}%`
 
-const room = (span: RecordedSpan, index: number) => {
-  const next = props.radioDay.recorded[index + 1]?.start ?? props.radioDay.until
-  return `min(${((next - span.start) / (span.end - span.start)) * 100}%, max(100%, 9rem))`
+const starts = computed(() =>
+  [...props.radioDay.recorded, ...props.radioDay.planned].map(span => span.start)
+)
+
+const room = ({ start, end }: PlannedSpan) => {
+  const next = Math.min(...starts.value.filter(other => other > start), props.radioDay.until)
+  return `min(${((next - start) / (end - start)) * 100}%, max(100%, 9rem))`
 }
 
 const times = (span: RecordedSpan) =>
