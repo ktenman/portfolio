@@ -3,13 +3,14 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioProgrammes from './radio-programmes.vue'
+import { station } from './radio-fixture'
 import { DayOfWeek } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
     programmes: vi.fn(),
     choose: vi.fn(),
-    station: vi.fn().mockResolvedValue(null),
+    station: vi.fn(),
   },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -28,7 +29,7 @@ const mount = async () => {
 describe('RadioProgrammes', () => {
   beforeEach(() => {
     vi.mocked(radioService.choose).mockReset()
-    vi.mocked(radioService.station).mockClear()
+    vi.mocked(radioService.station).mockReset().mockResolvedValue(station())
     vi.mocked(radioService.programmes).mockResolvedValue([
       {
         id: 175,
@@ -69,13 +70,23 @@ describe('RadioProgrammes', () => {
     expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true })
   })
 
-  it('should look up the next capture again once a show is ticked', async () => {
+  it('should name a show as the next capture once it is ticked', async () => {
+    const noon = Date.UTC(2026, 9, 24, 9, 0, 0) / 1000
+    const capture = {
+      name: '2026-10-24-1200-keskpaevatund',
+      programmes: ['Keskpäevatund'],
+      start: noon - 30,
+      end: noon + 3630,
+      slot: { start: noon, end: noon + 3600 },
+    }
+    vi.mocked(radioService.station)
+      .mockResolvedValueOnce(station())
+      .mockResolvedValue(station({ capture }))
     vi.mocked(radioService.choose).mockResolvedValue()
-    await (await mount())
-      .find('input[aria-label="Record every time: Keskpäevatund"]')
-      .setValue(true)
+    const wrapper = await mount()
+    await wrapper.find('input[aria-label="Record every time: Keskpäevatund"]').setValue(true)
     await flushPromises()
-    expect(radioService.station).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('Keskpäevatund, Sat 24.10 12:00')
   })
 
   it('should untick the box when the choice cannot be saved', async () => {
