@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import java.math.BigDecimal
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -38,10 +39,14 @@ class Instrument(
   @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
+  @Column(name = "logo_updated_at")
+  var logoUpdatedAt: Instant? = null,
 ) : BaseEntity() {
   fun isCash(): Boolean = category == InstrumentCategory.CASH.name
 
   fun isSynthetic(): Boolean = providerName == ProviderName.SYNTHETIC
 
   fun cashPriceOrNull(): BigDecimal? = if (isCash()) BigDecimal.ONE else null
+
+  fun issuer(): String = if (category == InstrumentCategory.ETF.name) name.substringBefore(' ') else name
 }

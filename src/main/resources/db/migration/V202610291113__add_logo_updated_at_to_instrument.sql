@@ -1,0 +1,1 @@
+ALTER TABLE instrument ADD COLUMN logo_updated_at TIMESTAMP WITH TIME ZONE;

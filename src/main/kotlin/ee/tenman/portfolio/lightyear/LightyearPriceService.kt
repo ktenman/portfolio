@@ -3,6 +3,8 @@ package ee.tenman.portfolio.lightyear
 import ee.tenman.portfolio.common.orNull
 import ee.tenman.portfolio.configuration.LightyearScrapingProperties
 import ee.tenman.portfolio.domain.Currency
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.SectorSource
 import ee.tenman.portfolio.dto.HoldingData
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -206,7 +208,10 @@ class LightyearPriceService(
       ?: findUuidFromDatabase(symbol)?.also { uuidCacheService.cacheUuid(symbol, it) }
       ?: lookupUuidFromWeb(symbol)
 
-  private fun findUuidFromDatabase(symbol: String): String? = instrumentRepository.findBySymbol(symbol).orNull()?.providerExternalId
+  private fun findUuidFromDatabase(symbol: String): String? = findLightyearInstrument(symbol)?.providerExternalId
+
+  private fun findLightyearInstrument(symbol: String): Instrument? =
+    instrumentRepository.findBySymbol(symbol).orNull()?.takeIf { it.providerName == ProviderName.LIGHTYEAR }
 
   fun lookupUuidFromWeb(symbol: String): String? {
     val lookupSymbol = convertToLightyearSymbol(symbol)
@@ -226,6 +231,7 @@ class LightyearPriceService(
     symbol: String,
     uuid: String,
   ) {
+    if (findLightyearInstrument(symbol) == null) return
     runCatching {
       instrumentService.updateProviderExternalId(symbol, uuid)
       log.info("Saved UUID $uuid for symbol $symbol to database")
