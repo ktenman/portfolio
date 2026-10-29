@@ -29,6 +29,7 @@ class RadioDayService(
     val rows = rows(airings, takes, now)
     val (day, night) = rows.partition { it.start < midnight }
     val recorded = spans(takes, from.epochSecond, until.epochSecond)
+    val plan = planned(rows, until.epochSecond)
     return RadioDay(
       date = shown,
       today = today,
@@ -39,7 +40,8 @@ class RadioDayService(
       now = now,
       recorded = recorded,
       seconds = recorded.sumOf { it.end - it.start },
-      planned = planned(rows, until.epochSecond),
+      planned = plan,
+      plannedSeconds = plan.sumOf { it.end - it.start },
       day = blocks(day),
       night = blocks(night),
     )
