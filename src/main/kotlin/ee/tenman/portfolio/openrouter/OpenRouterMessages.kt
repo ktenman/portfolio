@@ -15,6 +15,7 @@ data class OpenRouterRequest(
   @JsonProperty("response_format")
   val responseFormat: ResponseFormat? = null,
   val provider: ProviderPreferences? = null,
+  val plugins: List<Plugin>? = null,
 ) {
   data class Message(
     val role: String,
@@ -37,6 +38,13 @@ data class OpenRouterRequest(
     val order: List<String>,
     @JsonProperty("require_parameters")
     val requireParameters: Boolean = true,
+    @JsonProperty("allow_fallbacks")
+    val allowFallbacks: Boolean = true,
+  )
+
+  data class Plugin(
+    val id: String,
+    val engine: String,
   )
 }
 

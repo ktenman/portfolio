@@ -169,6 +169,7 @@ scheduling:
     radio-episode-delay: ${RADIO_EPISODE_DELAY:15000}
     radio-schedule-cron: ${RADIO_SCHEDULE_CRON:0 30 3 * * *}
     radio-storage-cron: ${RADIO_STORAGE_CRON:0 45 * * * *}
+    split-check-cron: ${SPLIT_CHECK_CRON:0 0 6 1,15 * *}
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}

@@ -140,6 +140,22 @@ class OpenRouterClientIT {
   }
 
   @Test
+  fun `should search the web natively through Vertex without falling back to another provider`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("google/gemini-4-argon")))
+        .withRequestBody(matchingJsonPath("$.messages[0].content", equalTo("Kas BNKE jaguneb?")))
+        .withRequestBody(matchingJsonPath("$.plugins[0].id", equalTo("web")))
+        .withRequestBody(matchingJsonPath("$.plugins[0].engine", equalTo("native")))
+        .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("google-vertex")))
+        .withRequestBody(matchingJsonPath("$.provider.allow_fallbacks", equalTo("false")))
+        .withRequestBody(matchingJsonPath("$.max_tokens", equalTo("32000")))
+        .willReturn(okJson(createSuccessResponse("[]"))),
+    )
+    expect(openRouterClient.search(AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")).toEqual("[]")
+  }
+
+  @Test
   fun `should return null when completion answers with an error body`() {
     stubOpenRouterSuccess("{\"error\":{\"message\":\"upstream\"}}")
     val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade.", mapOf("type" to "object"))

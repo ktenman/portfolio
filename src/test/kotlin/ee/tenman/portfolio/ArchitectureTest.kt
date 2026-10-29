@@ -399,17 +399,8 @@ class ArchitectureTest {
     noClasses()
       .that()
       .areInterfaces()
-      .and()
-      .haveSimpleNameStartingWith("I")
-      .and()
-      .doNotHaveSimpleName("IntegrationTest")
-      .and()
-      .doNotHaveSimpleName("InstrumentRepository")
-      .and()
-      .doNotHaveSimpleName("InstrumentMinutePriceRepository")
       .should()
-      .haveSimpleNameStartingWith("I")
-      .allowEmptyShould(true)
+      .haveNameMatching(".*[.$]I[A-Z][^.$]*")
       .because("Kotlin and modern Java don't use Hungarian notation")
 
   @ArchTest
