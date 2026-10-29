@@ -34,6 +34,13 @@ describe('RadioDayBar', () => {
     expect(bar().findComponent(RouterLinkStub).props('to')).toBe('/radio/2026-10-17')
   })
 
+  it('should size the link of a recording to the time it recorded', () => {
+    const link = bar({ recorded: [{ ...FINISHED, end: FINISHED.start + 3600 }] }).find(
+      '[data-testid="radio-day-link"]'
+    )
+    expect(link.attributes('style')).toContain(`width: ${(1 / 24) * 100}%`)
+  })
+
   it('should label a recorded span with its start and show', () => {
     const text = bar().find('[data-testid="radio-day-link"]').text()
     expect([text.includes('11:55'), text.includes('Keskpäevatund')]).toEqual([true, true])

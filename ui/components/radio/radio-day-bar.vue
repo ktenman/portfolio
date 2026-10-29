@@ -10,17 +10,21 @@
         v-for="(span, index) in radioDay.recorded"
         :key="span.start"
         :to="`/radio/${span.name}`"
-        class="group @container absolute inset-y-0 z-10 rounded-control px-1 pt-px hover:bg-ink/5"
+        class="group absolute inset-y-0 z-10 rounded-control hover:bg-ink/5"
         data-testid="radio-day-link"
-        :style="{ left: at(span.start), width: width(span, index) }"
+        :style="{ left: at(span.start), width: share(span.end - span.start) }"
         :title="`${span.programme} · ${times(span)}`"
         :aria-label="`${span.programme}, ${times(span)}`"
       >
-        <span class="block truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden">
-          {{ clock(span.start, 0) }}
-        </span>
-        <span class="block truncate text-sm font-medium group-hover:underline @max-[3.5rem]:hidden">
-          {{ span.programme }}
+        <span class="@container block px-1 pt-px" :style="{ width: room(span, index) }">
+          <span class="block truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden">
+            {{ clock(span.start, 0) }}
+          </span>
+          <span
+            class="block truncate text-sm font-medium group-hover:underline @max-[3.5rem]:hidden"
+          >
+            {{ span.programme }}
+          </span>
         </span>
       </router-link>
       <div class="relative h-7" aria-hidden="true">
@@ -97,9 +101,9 @@ const share = (seconds: number) =>
 
 const at = (seconds: number) => `${fraction(seconds) * 100}%`
 
-const width = (span: RecordedSpan, index: number) => {
+const room = (span: RecordedSpan, index: number) => {
   const next = props.radioDay.recorded[index + 1]?.start ?? props.radioDay.until
-  return `min(${share(next - span.start)}, max(${share(span.end - span.start)}, 9rem))`
+  return `min(${((next - span.start) / (span.end - span.start)) * 100}%, max(100%, 9rem))`
 }
 
 const times = (span: RecordedSpan) =>
