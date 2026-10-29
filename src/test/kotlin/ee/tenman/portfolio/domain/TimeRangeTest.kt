@@ -161,7 +161,20 @@ class TimeRangeTest {
   }
 
   @ParameterizedTest
-  @CsvSource("4D, 2026-08-10", "5D, 2026-08-09", "6D, 2026-08-08", "2M, 2026-06-14", "4M, 2026-04-14", "5M, 2026-03-14", "6Y, 2020-08-14")
+  @CsvSource(
+    "4D, 2026-08-10",
+    "5D, 2026-08-09",
+    "6D, 2026-08-08",
+    "2W, 2026-07-31",
+    "3W, 2026-07-24",
+    "4W, 2026-07-17",
+    "5W, 2026-07-10",
+    "6W, 2026-07-03",
+    "2M, 2026-06-14",
+    "4M, 2026-04-14",
+    "5M, 2026-03-14",
+    "6Y, 2020-08-14",
+  )
   fun `should start the new ranges at their offset before today`(
     code: String,
     expected: LocalDate,
@@ -175,6 +188,12 @@ class TimeRangeTest {
     expect(TimeRange.from(code).code).toEqual(code)
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = ["2W", "3W", "4W", "5W", "6W"])
+  fun `should read daily data for the week ranges past the intraday limit`(code: String) {
+    expect(TimeRange.from(code).intradayDays(today)).toEqual(null)
+  }
+
   @Test
   fun `should declare the ranges in chip order`() {
     expect(TimeRange.entries.map { it.code })
@@ -186,6 +205,11 @@ class TimeRangeTest {
         "5D",
         "6D",
         "1W",
+        "2W",
+        "3W",
+        "4W",
+        "5W",
+        "6W",
         "1M",
         "2M",
         "3M",

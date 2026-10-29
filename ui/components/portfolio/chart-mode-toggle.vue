@@ -1,22 +1,21 @@
 <template>
-  <div class="platform-buttons">
-    <button
-      class="platform-btn"
-      :class="{ active: selected.length === 0 }"
-      type="button"
-      @click="emit('select', null)"
-    >
-      €
-    </button>
+  <div class="flex items-center gap-1.5" role="group" aria-labelledby="compare-label">
+    <span id="compare-label" class="me-1 text-label font-medium text-ink">Compare</span>
     <button
       v-for="benchmark in BENCHMARKS"
       :key="benchmark.key"
       class="platform-btn"
       :class="{ active: selected.includes(benchmark.key) }"
+      :aria-pressed="selected.includes(benchmark.key)"
       type="button"
       @click="emit('select', benchmark.key)"
     >
-      % vs {{ benchmark.label }}
+      <span
+        class="size-2 shrink-0 rounded-full"
+        :style="{ backgroundColor: benchmark.color }"
+        aria-hidden="true"
+      ></span>
+      {{ benchmark.label }}
     </button>
   </div>
 </template>
@@ -26,5 +25,5 @@ import { BENCHMARKS, type BenchmarkKey } from '../../composables/use-portfolio-c
 
 defineProps<{ selected: BenchmarkKey[] }>()
 
-const emit = defineEmits<{ select: [key: BenchmarkKey | null] }>()
+const emit = defineEmits<{ select: [key: BenchmarkKey] }>()
 </script>

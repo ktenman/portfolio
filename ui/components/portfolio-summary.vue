@@ -61,6 +61,7 @@
             :key="`${rangeChange.range}:${rangeChange.platforms}`"
             :amount="rangeChange.changeAmount"
             :percent="rangeChange.changePercent"
+            :range="rangeChange.range"
           />
           <span v-if="staleAsOf" class="headline-asof">as of {{ staleAsOf }}</span>
         </div>
@@ -75,7 +76,10 @@
         Could not load the {{ selectedRange }} chart range: {{ rangeError }}
       </AlertMessage>
 
-      <div class="mt-3 mb-6 flex flex-wrap items-center gap-3 md:mb-10">
+      <div
+        class="mt-3 mb-6 flex flex-wrap items-center justify-between gap-3 md:mb-10 md:w-[80.8%]"
+        data-testid="chart-controls"
+      >
         <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
@@ -249,11 +253,7 @@ const { performanceChartData } = usePerformanceChart(performanceSummaries, activ
 
 const activeChartData = computed(() => performanceChartData.value ?? processedChartData.value)
 
-const selectBenchmark = (key: BenchmarkKey | null) => {
-  if (key === null) {
-    selectedBenchmarks.value = []
-    return
-  }
+const selectBenchmark = (key: BenchmarkKey) => {
   selectedBenchmarks.value = selectedBenchmarks.value.includes(key)
     ? selectedBenchmarks.value.filter(selected => selected !== key)
     : [...selectedBenchmarks.value, key]
