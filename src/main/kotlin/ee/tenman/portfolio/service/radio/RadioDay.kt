@@ -23,6 +23,7 @@ data class RadioDay(
   val recorded: List<RecordedSpan>,
   val seconds: Long,
   val planned: List<PlannedSpan>,
+  val plannedSeconds: Long,
   val day: List<DayBlock>,
   val night: List<DayBlock>,
 )

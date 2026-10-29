@@ -1,8 +1,8 @@
 <template>
   <radio-card title="Recorded time" class="max-md:hidden">
     <template #aside>
-      <span class="text-sm text-ink-soft">
-        {{ recordedSummary(radioDay) ?? 'Nothing recorded' }}
+      <span class="text-sm text-ink-soft" data-testid="radio-day-summary">
+        {{ recordedSummary(radioDay) ?? plannedSummary(radioDay) }}
       </span>
     </template>
     <div class="@container relative pt-10">
@@ -121,7 +121,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { PlannedSpan, RadioDay, RecordedSpan } from '../../models/generated/domain-models'
-import { clock, range, recordedSummary } from '../../utils/radio'
+import { clock, plannedSummary, range, recordedSummary } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 
 const LIVE =

@@ -343,6 +343,7 @@ export interface RadioDay {
     recorded: RecordedSpan[];
     seconds: number;
     planned: PlannedSpan[];
+    plannedSeconds: number;
     day: DayBlock[];
     night: DayBlock[];
 }
