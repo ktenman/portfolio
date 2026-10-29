@@ -249,6 +249,45 @@ test('the play button of a radio schedule row stays above the link to its record
   expect(hit).toBe('Listen: Keskpäevatund 12:00')
 })
 
+async function linkAt(page: Page, x: number, y: number): Promise<string | null> {
+  return page.evaluate(
+    point =>
+      document.elementFromPoint(point.x, point.y)?.closest('a')?.getAttribute('aria-label') ?? null,
+    { x, y }
+  )
+}
+
+test('the radio day bar leaves the room after a recording name unlinked', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const link = page.getByTestId('radio-day-link').filter({ hasText: 'Huvitaja' })
+  await link.scrollIntoViewIfNeeded()
+  const room = (await link.locator('span').first().boundingBox())!
+  expect(await linkAt(page, room.x + room.width - 2, room.y + room.height / 2)).toBe(null)
+})
+
+test('the radio day bar links a recording name that runs past its block', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const link = page.getByTestId('radio-day-link').filter({ hasText: 'Huvitaja' })
+  await link.scrollIntoViewIfNeeded()
+  const block = (await link.boundingBox())!
+  const name = (await link.getByText('Huvitaja').boundingBox())!
+  expect(await linkAt(page, block.x + block.width + 10, name.y + name.height / 2)).toBe(
+    'Huvitaja, 13:10–, recording now'
+  )
+})
+
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
   await stubBuildInfo(page)

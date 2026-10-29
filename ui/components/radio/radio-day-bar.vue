@@ -16,12 +16,17 @@
         :title="`${span.programme} · ${times(span)}`"
         :aria-label="`${span.programme}, ${times(span)}`"
       >
-        <span class="@container block px-1 pt-px" :style="{ width: room(span) }">
-          <span class="block truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden">
+        <span
+          class="@container pointer-events-none block px-1 pt-px"
+          :style="{ width: room(span) }"
+        >
+          <span
+            class="pointer-events-auto block w-fit max-w-full truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden"
+          >
             {{ clock(span.start, 0) }}
           </span>
           <span
-            class="block truncate text-sm font-medium group-hover:underline @max-[3.5rem]:hidden"
+            class="pointer-events-auto block w-fit max-w-full truncate text-sm font-medium group-hover:underline @max-[3.5rem]:hidden"
           >
             {{ span.programme }}
           </span>
@@ -35,11 +40,18 @@
         :style="place(span)"
         :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"
       >
-        <span class="@container block px-1 pt-px text-ink-soft" :style="{ width: room(span) }">
-          <span class="block truncate text-label tabular-nums @max-[2rem]:hidden">
+        <span
+          class="@container pointer-events-none block px-1 pt-px text-ink-soft"
+          :style="{ width: room(span) }"
+        >
+          <span
+            class="pointer-events-auto block w-fit max-w-full truncate text-label tabular-nums @max-[2rem]:hidden"
+          >
             {{ clock(span.start, 0) }}
           </span>
-          <span class="block truncate text-sm font-medium @max-[3.5rem]:hidden">
+          <span
+            class="pointer-events-auto block w-fit max-w-full truncate text-sm font-medium @max-[3.5rem]:hidden"
+          >
             {{ span.programme }}
           </span>
         </span>
