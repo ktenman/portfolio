@@ -21,13 +21,11 @@ vi.mock('../../composables/use-toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }))
 
-const viewButton = (wrapper: VueWrapper, label: string) =>
-  wrapper
-    .findAll('[role="group"][aria-label="View"] button')
-    .find(button => button.text() === label)!
+const viewTab = (wrapper: VueWrapper, label: string) =>
+  wrapper.findAll('nav[aria-label="Instrument views"] a').find(link => link.text() === label)!
 
 const showHeatmap = async (wrapper: VueWrapper) => {
-  await viewButton(wrapper, 'Heatmap').trigger('click')
+  await viewTab(wrapper, 'Heatmap').trigger('click')
   await flushPromises()
 }
 
@@ -55,8 +53,8 @@ describe('InstrumentsView views', () => {
 
     expect([
       wrapper.find('#stub-heatmap').exists(),
-      viewButton(wrapper, 'Heatmap').attributes('aria-pressed'),
-    ]).toEqual([true, 'true'])
+      viewTab(wrapper, 'Heatmap').attributes('aria-current'),
+    ]).toEqual([true, 'page'])
   })
 
   it('puts the heatmap in the address', async () => {
@@ -70,7 +68,7 @@ describe('InstrumentsView views', () => {
   it('puts the table back in the address', async () => {
     const { wrapper, router } = await mountAndSettle('/instruments/heatmap')
 
-    await viewButton(wrapper, 'Table').trigger('click')
+    await viewTab(wrapper, 'Table').trigger('click')
     await flushPromises()
 
     expect([router.currentRoute.value.fullPath, wrapper.find('#stub-table').exists()]).toEqual([
