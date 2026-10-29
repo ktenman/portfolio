@@ -136,10 +136,10 @@ describe('RadioEpisode', () => {
     ])
   })
 
-  it('should go back to the shows when opened on its own', async () => {
+  it('should go back to the recordings when opened on its own', async () => {
     const link = (await open(recording())).wrapper.get('a')
     expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([
-      'Back to Shows',
+      'Back to Recordings',
       '/radio',
     ])
   })

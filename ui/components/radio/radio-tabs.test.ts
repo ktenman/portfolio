@@ -21,6 +21,7 @@ const open = async (path: string) => {
     history: createMemoryHistory(),
     routes: [
       { path: '/radio', component: page },
+      { path: '/radio/shows', component: page },
       { path: '/radio/catch-up', component: page },
       { path: '/radio/:name', component: page },
     ],
@@ -76,6 +77,15 @@ describe('RadioTabs', () => {
     await wrapper.get('button[aria-label="Clear search"]').trigger('click')
     await vi.advanceTimersByTimeAsync(300)
     expect(wrapper.text()).toContain('Recordings table')
+  })
+
+  it.each([
+    ['/radio', 'Recordings'],
+    ['/radio/shows', 'Shows'],
+    ['/radio/catch-up', 'Catch-up'],
+  ])('should mark the tab of %s as the current page', async (path, label) => {
+    const { wrapper } = await open(path)
+    expect(wrapper.get('nav a.active[aria-current="page"]').text()).toBe(label)
   })
 
   it('should highlight no view tab while the results replace it', async () => {
