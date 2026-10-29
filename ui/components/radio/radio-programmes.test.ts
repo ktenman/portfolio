@@ -5,7 +5,13 @@ import { renderWithProviders } from '../../tests/test-utils'
 import RadioProgrammes from './radio-programmes.vue'
 import { DayOfWeek } from '../../models/generated/domain-models'
 
-vi.mock('../../services/api', () => ({ radioService: { programmes: vi.fn(), choose: vi.fn() } }))
+vi.mock('../../services/api', () => ({
+  radioService: {
+    programmes: vi.fn(),
+    choose: vi.fn(),
+    station: vi.fn().mockResolvedValue(null),
+  },
+}))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -22,6 +28,7 @@ const mount = async () => {
 describe('RadioProgrammes', () => {
   beforeEach(() => {
     vi.mocked(radioService.choose).mockReset()
+    vi.mocked(radioService.station).mockClear()
     vi.mocked(radioService.programmes).mockResolvedValue([
       {
         id: 175,
@@ -60,6 +67,15 @@ describe('RadioProgrammes', () => {
       .find('input[aria-label="Record every time: Keskpäevatund"]')
       .setValue(true)
     expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true })
+  })
+
+  it('should look up the next capture again once a show is ticked', async () => {
+    vi.mocked(radioService.choose).mockResolvedValue()
+    await (await mount())
+      .find('input[aria-label="Record every time: Keskpäevatund"]')
+      .setValue(true)
+    await flushPromises()
+    expect(radioService.station).toHaveBeenCalledTimes(2)
   })
 
   it('should untick the box when the choice cannot be saved', async () => {

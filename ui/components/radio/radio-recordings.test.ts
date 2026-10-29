@@ -200,24 +200,16 @@ describe('RadioRecordings', () => {
     expect(radioService.station).toHaveBeenCalledTimes(2)
   })
 
-  it('should mark the recordings of each show stale after a delete', async () => {
+  it.each([
+    ['the recordings of each show', ['radio-programmes']],
+    ['the search results', ['radio', 'search', 'valimis']],
+  ])('should mark %s stale after a delete', async (_, key) => {
     const wrapper = await mount()
-    wrapper.queryClient.setQueryDefaults(['radio-programmes'], { gcTime: Infinity })
-    wrapper.queryClient.setQueryData(['radio-programmes'], [])
+    wrapper.queryClient.setQueryDefaults(key, { gcTime: Infinity })
+    wrapper.queryClient.setQueryData(key, {})
     await wrapper.find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]').trigger('click')
     await flushPromises()
-    expect(wrapper.queryClient.getQueryState(['radio-programmes'])?.isInvalidated).toBe(true)
-  })
-
-  it('should mark the search results stale after a delete', async () => {
-    const wrapper = await mount()
-    wrapper.queryClient.setQueryDefaults(['radio', 'search'], { gcTime: Infinity })
-    wrapper.queryClient.setQueryData(['radio', 'search', 'valimis'], {})
-    await wrapper.find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]').trigger('click')
-    await flushPromises()
-    expect(wrapper.queryClient.getQueryState(['radio', 'search', 'valimis'])?.isInvalidated).toBe(
-      true
-    )
+    expect(wrapper.queryClient.getQueryState(key)?.isInvalidated).toBe(true)
   })
 
   it('should say so when a recording cannot be deleted', async () => {

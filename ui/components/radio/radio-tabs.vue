@@ -1,5 +1,5 @@
 <template>
-  <h2 class="mb-2">Radio</h2>
+  <h2>Radio</h2>
   <nav class="mb-4 flex gap-7 border-b border-hairline-strong" aria-label="Radio views">
     <router-link
       v-for="view in VIEWS"

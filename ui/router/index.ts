@@ -49,7 +49,7 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: 'shows',
         name: 'RadioShows',
-        component: () => import('../components/radio/radio-shows.vue'),
+        component: () => import('../components/radio/radio-programmes.vue'),
       },
       {
         path: 'catch-up',
