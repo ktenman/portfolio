@@ -407,6 +407,8 @@ class ArchitectureTest {
       .doNotHaveSimpleName("InstrumentRepository")
       .and()
       .doNotHaveSimpleName("InstrumentMinutePriceRepository")
+      .and()
+      .doNotHaveSimpleName("InstrumentSplitRepository")
       .should()
       .haveSimpleNameStartingWith("I")
       .allowEmptyShould(true)

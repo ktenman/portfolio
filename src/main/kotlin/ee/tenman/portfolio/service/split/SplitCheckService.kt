@@ -1,0 +1,95 @@
+package ee.tenman.portfolio.service.split
+
+import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.InstrumentSplit
+import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.openrouter.OpenRouterClient
+import ee.tenman.portfolio.repository.InstrumentSplitRepository
+import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
+import org.slf4j.LoggerFactory
+import org.springframework.stereotype.Service
+import java.math.BigDecimal
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Clock
+import java.time.Duration
+import java.time.LocalDate
+
+@Service
+class SplitCheckService(
+  private val portfolioTransactionRepository: PortfolioTransactionRepository,
+  private val holdingsCalculationService: HoldingsCalculationService,
+  private val instrumentSplitRepository: InstrumentSplitRepository,
+  private val openRouterClient: OpenRouterClient,
+  private val clock: Clock,
+) {
+  private val log = LoggerFactory.getLogger(javaClass)
+  private val prompt = checkNotNull(javaClass.classLoader.getResource(PROMPT)) { "Missing resource $PROMPT" }.readText().trimEnd()
+  private val http =
+    HttpClient
+    .newBuilder()
+    .connectTimeout(TIMEOUT)
+    .followRedirects(HttpClient.Redirect.NORMAL)
+    .build()
+
+  fun check() {
+    val today = LocalDate.now(clock)
+    val held = held().associateBy { it.symbol }
+    val answer =
+      checkNotNull(openRouterClient.search(AiModel.GEMINI_4_ARGON, question(held.values, today))) { "OpenRouter gave no split answer" }
+    val fresh =
+      parseSplits(answer, held.keys, today).filterNot {
+        instrumentSplitRepository.existsByInstrumentIdAndEffectiveDate(held.getValue(it.symbol).id, it.effectiveDate)
+      }
+    fresh.forEach { store(held.getValue(it.symbol), it) }
+    log.info("Split check asked about ${held.size} instruments and stored ${fresh.size} new splits")
+  }
+
+  private fun held(): List<Instrument> =
+    portfolioTransactionRepository
+      .findAllWithInstruments()
+      .groupBy { it.instrument.id }
+      .values
+      .filter { holdingsCalculationService.calculateNetQuantity(it) > BigDecimal.ZERO }
+      .map { it.first().instrument }
+      .filterNot { it.providerName == ProviderName.BINANCE || it.isCash() }
+      .sortedBy { it.symbol }
+
+  private fun question(
+    instruments: Collection<Instrument>,
+    today: LocalDate,
+  ): String =
+    prompt
+      .replace("{today}", today.toString())
+      .replace("{instruments}", instruments.joinToString("\n") { "${it.symbol} | ${it.name}" })
+
+  private fun store(
+    instrument: Instrument,
+    split: AnnouncedSplit,
+  ) {
+    val source = follow(split.sourceUrl)
+    instrumentSplitRepository.save(InstrumentSplit(instrument, split.ratio, split.effectiveDate, source, split.publishedDate))
+    log.info("Stored the ${split.ratio} split of ${instrument.symbol} taking effect on ${split.effectiveDate}, announced at $source")
+  }
+
+  private fun follow(address: String): String =
+    runCatching {
+      val request =
+        HttpRequest
+        .newBuilder(URI.create(address))
+        .timeout(TIMEOUT)
+        .GET()
+        .build()
+      http.send(request, HttpResponse.BodyHandlers.discarding()).uri().toString()
+    }.onFailure { log.warn("Keeping $address as the split source because following it failed: ${it.message}") }
+      .getOrDefault(address)
+
+  companion object {
+    private const val PROMPT = "split/check-prompt.txt"
+    private val TIMEOUT = Duration.ofSeconds(15)
+  }
+}

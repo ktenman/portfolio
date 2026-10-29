@@ -357,3 +357,69 @@ tests:
               severity: warning
             exp_annotations:
               summary: 'Kuku recording plan is over two days old, so nothing new is planned'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_split_announced{instrument="BNKE:PAR:EUR",ratio="1:80",effective="2026-10-27",source="https://www.investegate.co.uk/announcement/9804833"}'
+        values: '1+0x20 stale _x10 1+0x20 stale'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: SplitAnnounced
+        exp_alerts:
+          - exp_labels:
+              instrument: BNKE:PAR:EUR
+              ratio: '1:80'
+              effective: '2026-10-27'
+              source: https://www.investegate.co.uk/announcement/9804833
+              severity: warning
+            exp_annotations:
+              summary: 'BNKE:PAR:EUR splits 1:80 on 2026-10-27, announced at https://www.investegate.co.uk/announcement/9804833; record it with the recording-etf-splits skill'
+      - eval_time: 7m
+        alertname: SplitAnnounced
+        exp_alerts:
+          - exp_labels:
+              instrument: BNKE:PAR:EUR
+              ratio: '1:80'
+              effective: '2026-10-27'
+              source: https://www.investegate.co.uk/announcement/9804833
+              severity: warning
+            exp_annotations:
+              summary: 'BNKE:PAR:EUR splits 1:80 on 2026-10-27, announced at https://www.investegate.co.uk/announcement/9804833; record it with the recording-etf-splits skill'
+      - eval_time: 25h
+        alertname: SplitAnnounced
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_instrument_price{instrument="BNKE:PAR:EUR"}'
+        values: '355.07+0x120 4.44+0x400'
+      - series: 'portfolio_instrument_price{instrument="VUAA:GER:EUR"}'
+        values: '100+0x120 105+0x400'
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SplitSuspected
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: SplitSuspected
+        exp_alerts:
+          - exp_labels:
+              instrument: BNKE:PAR:EUR
+              severity: warning
+            exp_annotations:
+              summary: 'BNKE:PAR:EUR price moved 80.0-fold within an hour, so it may have split; record it with the recording-etf-splits skill'
+      - eval_time: 95m
+        alertname: SplitSuspected
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: SplitAnnounced
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_split_check_failed'
+        values: '1+0x20'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: SplitCheckFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Split check failed, so announced splits go unnoticed until its next run succeeds'

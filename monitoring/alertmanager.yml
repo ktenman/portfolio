@@ -19,6 +19,11 @@ route:
         - alertname=~"Radio.+"
       group_by: [environment, alertname, capture]
       repeat_interval: 168h
+    - receiver: split
+      matchers:
+        - alertname=~"Split.+"
+      group_by: [environment, alertname, instrument]
+      repeat_interval: 2160h
 receivers:
   - name: telegram
     telegram_configs:
@@ -28,6 +33,13 @@ receivers:
         parse_mode: ''
         message: '{{ range .Alerts }}{{ .Labels.environment }} {{ .Labels.severity }} {{ .Status }} {{ .Labels.alertname }} {{ .Labels.provider }} {{ .Labels.operation }}: {{ .Annotations.summary }}{{ if .Annotations.last_persistence }} Last persisted: {{ .Annotations.last_persistence }}.{{ end }}{{ if .Annotations.last_success }} Last full success: {{ .Annotations.last_success }}.{{ end }}{{ if .Annotations.recent_failure }} Recent failure: {{ .Annotations.recent_failure }}.{{ end }} Details: https://github.com/ktenman/portfolio/issues/1936{{ end }}'
   - name: radio
+    telegram_configs:
+      - bot_token_file: /run/monitoring-secrets/bot_token
+        chat_id_file: /run/monitoring-secrets/chat_id
+        send_resolved: false
+        parse_mode: ''
+        message: '{{ range .Alerts }}{{ .Labels.environment }} {{ .Labels.alertname }}: {{ .Annotations.summary }}{{ end }}'
+  - name: split
     telegram_configs:
       - bot_token_file: /run/monitoring-secrets/bot_token
         chat_id_file: /run/monitoring-secrets/chat_id

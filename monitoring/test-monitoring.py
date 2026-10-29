@@ -421,6 +421,26 @@ def check_radio_delivery(base):
     assert len(sent()) == 1, f'A missed capture reached Telegram more than once: {sent()}'
 
 
+def check_split_delivery(base):
+    def announced(ends_after):
+        incident = alert('SplitAnnounced', ends_after)
+        incident['labels'].update(severity='warning', instrument='BNKE:PAR:EUR', ratio='1:80', effective='2026-10-27')
+        incident['annotations'] = {'summary': 'BNKE:PAR:EUR splits 1:80 on 2026-10-27; record it with the recording-etf-splits skill'}
+        return incident
+
+    def sent():
+        return [json.loads(event[2])['text'] for event in events('/sendMessage') if 'SplitAnnounced' in event[2]]
+
+    request(base + '/api/v2/alerts', [announced(30)])
+    wait_for(lambda: len(sent()) == 1)
+    assert sent() == ['production SplitAnnounced: BNKE:PAR:EUR splits 1:80 on 2026-10-27; record it with the recording-etf-splits skill']
+    request(base + '/api/v2/alerts', [announced(30)])
+    time.sleep(3)
+    request(base + '/api/v2/alerts', [announced(-1)])
+    time.sleep(2)
+    assert len(sent()) == 1, f'An announced split reached Telegram more than once: {sent()}'
+
+
 def check_delivery():
     Receiver.events = []
     server = ThreadingHTTPServer(('0.0.0.0', 0), Receiver)
@@ -501,6 +521,7 @@ def check_delivery():
             assert not notifications('CollectionInventoryUnavailable', 'firing')
             assert not notifications('CollectionMetricsIncomplete', 'firing')
             check_radio_delivery(base)
+            check_split_delivery(base)
             stop_alertmanager(container)
             (directory / 'alertmanager.yml').write_text(production_config)
             container, base = start_alertmanager(directory, network)

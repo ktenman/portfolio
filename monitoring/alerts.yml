@@ -160,3 +160,25 @@ groups:
           severity: warning
         annotations:
           summary: 'Kuku schedule import failed, so the recording plan is not renewed'
+  - name: portfolio-split
+    interval: 15s
+    rules:
+      - alert: SplitAnnounced
+        expr: portfolio_split_announced > 0
+        keep_firing_for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.instrument }} splits {{ $labels.ratio }} on {{ $labels.effective }}, announced at {{ $labels.source }}; record it with the recording-etf-splits skill'
+      - alert: SplitSuspected
+        expr: max_over_time(portfolio_instrument_price[1h]) / min_over_time(portfolio_instrument_price[1h]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ $labels.instrument }} price moved {{ printf "%.1f" $value }}-fold within an hour, so it may have split; record it with the recording-etf-splits skill'
+      - alert: SplitCheckFailed
+        expr: portfolio_split_check_failed == 1
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Split check failed, so announced splits go unnoticed until its next run succeeds'
