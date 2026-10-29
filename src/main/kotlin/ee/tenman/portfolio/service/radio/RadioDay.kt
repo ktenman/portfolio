@@ -152,14 +152,6 @@ fun spans(
     .filter { it.end > it.start }
     .sortedBy { it.start }
 
-fun planned(
-  airings: List<DayAiring>,
-  until: Long,
-): List<PlannedSpan> =
-  airings
-    .filter { it.state == AiringState.PLANNED }
-    .map { PlannedSpan(it.name, it.start, minOf(it.end, until)) }
-
 private fun Take.drawn(
   from: Long,
   until: Long,
@@ -170,6 +162,14 @@ private fun Take.drawn(
   minOf(end - LAG.seconds, slot?.end ?: until, until),
   recording,
 )
+
+fun planned(
+  airings: List<DayAiring>,
+  until: Long,
+): List<PlannedSpan> =
+  airings
+    .filter { it.state == AiringState.PLANNED }
+    .map { PlannedSpan(it.name, it.start, minOf(it.end, until)) }
 
 fun ticks(
   date: LocalDate,
