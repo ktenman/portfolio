@@ -21,12 +21,12 @@
           :style="{ width: room(span) }"
         >
           <span
-            class="pointer-events-auto block w-fit max-w-full truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden"
+            class="pointer-events-auto block max-w-fit truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden"
           >
             {{ clock(span.start, 0) }}
           </span>
           <span
-            class="pointer-events-auto block w-fit max-w-full truncate text-sm font-medium group-hover:underline @max-[3.5rem]:hidden"
+            class="pointer-events-auto block max-w-fit truncate text-sm font-medium group-hover:underline group-focus-visible:underline @max-[3.5rem]:hidden"
           >
             {{ span.programme }}
           </span>
@@ -46,12 +46,12 @@
           :style="{ width: room(span) }"
         >
           <span
-            class="pointer-events-auto block w-fit max-w-full truncate text-label tabular-nums @max-[2rem]:hidden"
+            class="pointer-events-auto block max-w-fit truncate text-label tabular-nums @max-[2rem]:hidden"
           >
             {{ clock(span.start, 0) }}
           </span>
           <span
-            class="pointer-events-auto block w-fit max-w-full truncate text-sm font-medium @max-[3.5rem]:hidden"
+            class="pointer-events-auto block max-w-fit truncate text-sm font-medium @max-[3.5rem]:hidden"
           >
             {{ span.programme }}
           </span>

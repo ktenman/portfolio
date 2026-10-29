@@ -46,6 +46,13 @@ describe('RadioDayBar', () => {
     expect([text.includes('11:55'), text.includes('Keskpäevatund')]).toEqual([true, true])
   })
 
+  it('should underline the name of a recording while it has keyboard focus', () => {
+    const name = bar()
+      .findAll('[data-testid="radio-day-link"] span')
+      .find(span => span.text() === 'Keskpäevatund')!
+    expect(name.classes('group-focus-visible:underline')).toBe(true)
+  })
+
   it('should name the show and its times to a screen reader', () => {
     const link = bar().find('[data-testid="radio-day-link"]')
     expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05')
