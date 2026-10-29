@@ -275,6 +275,27 @@ export const stubRadioPlannedSoon: RouteStub = async page => {
   )
 }
 
+export const stubRadioPlannedOnly: RouteStub = async page => {
+  await stubRadio(page)
+  const day = radioDay()
+  const planned = [
+    { programme: 'Sihik', start: day.from + 7 * 3600, end: day.from + 8 * 3600 },
+    { programme: 'Indrek Vaheoja', start: day.from + 10 * 3600, end: day.from + 13 * 3600 },
+  ]
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
+    route.fulfill({
+      json: {
+        ...day,
+        now: day.from + 4 * 3600,
+        recorded: [],
+        seconds: 0,
+        planned,
+        plannedSeconds: 14400,
+      },
+    })
+  )
+}
+
 export const stubRadioLongText: RouteStub = async page => {
   await stubRadio(page)
   const lines = Array.from({ length: 90 }, (_, i) => ({

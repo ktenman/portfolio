@@ -9,7 +9,12 @@ import { stubDiversification, stubDiversificationWithLongFundName } from './dive
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
-import { stubRadio, stubRadioLongText, stubRadioPlannedSoon } from './radio-fixture'
+import {
+  stubRadio,
+  stubRadioLongText,
+  stubRadioPlannedOnly,
+  stubRadioPlannedSoon,
+} from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 import { stubWindows } from './windows-fixture'
@@ -300,6 +305,20 @@ test('the radio day bar stops a recording name at the next planned airing', asyn
   const room = (await page.getByTestId('radio-day-link').locator('span').first().boundingBox())!
   const plan = (await page.getByTestId('radio-day-planned').boundingBox())!
   expect(room.x + room.width).toBeLessThanOrEqual(plan.x + SUBPIXEL_PX)
+})
+
+test('the radio day bar sums the time planned on a day with nothing recorded', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioPlannedOnly(page)
+  await openRoute(page, '/radio/catch-up')
+  await freeze(page)
+  await expect(
+    page.getByTestId('radio-day-summary').locator('xpath=ancestor::section[1]')
+  ).toHaveScreenshot('radio-day-planned.png')
 })
 
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {

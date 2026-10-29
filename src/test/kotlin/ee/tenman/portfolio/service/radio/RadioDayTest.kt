@@ -182,6 +182,20 @@ class RadioDayTest {
   }
 
   @Test
+  fun `should sum the time of the airings planned for the day`() {
+    val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
+    val day = service("2026-10-29T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY)
+    expect(day.plannedSeconds).toEqual(7200)
+  }
+
+  @Test
+  fun `should plan no time on a day that has passed`() {
+    val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
+    val day = service("2026-10-30T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY)
+    expect(day.plannedSeconds).toEqual(0)
+  }
+
+  @Test
   fun `should clip a planned airing to the end of the broadcast day`() {
     expect(planned(listOf(airing(AiringState.PLANNED)), 1800)).toEqual(listOf(PlannedSpan("Keskpäevatund", 0, 1800)))
   }

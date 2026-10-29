@@ -90,8 +90,18 @@ describe('RadioDayBar', () => {
     expect(bar().text()).toContain('1 recording · 1 h 10 min')
   })
 
-  it('should say nothing was recorded on an empty day', () => {
-    expect(bar({ recorded: [], seconds: 0 }).text()).toContain('Nothing recorded')
+  it('should count the planned airings and their time on a day with nothing recorded', () => {
+    const planned = [
+      { programme: 'Sihik', start: DAY.from + 7 * 3600, end: DAY.from + 8 * 3600 },
+      { programme: 'Indrek Vaheoja', start: DAY.from + 10 * 3600, end: DAY.from + 13 * 3600 },
+    ]
+    const day = bar({ recorded: [], seconds: 0, planned, plannedSeconds: 14400 })
+    expect(day.find('[data-testid="radio-day-summary"]').text()).toBe('2 planned · 4 h 0 min')
+  })
+
+  it('should leave the corner empty on a day with nothing recorded or planned', () => {
+    const day = bar({ recorded: [], seconds: 0, planned: [], plannedSeconds: 0 })
+    expect(day.find('[data-testid="radio-day-summary"]').text()).toBe('')
   })
 
   it('should show the current time on today', () => {
