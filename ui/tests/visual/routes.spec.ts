@@ -24,6 +24,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/calculator', name: 'calculator', stub: stubCalculator },
   { path: '/monitoring', name: 'monitoring', stub: stubMonitoring },
   { path: '/radio', name: 'radio', stub: stubRadioOnAir },
+  { path: '/radio/shows', name: 'radio-shows', stub: stubRadioOnAir },
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },
   { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
   { path: '/radio/2026-10-24', name: 'radio-find-cuts', stub: stubRadioStill },
