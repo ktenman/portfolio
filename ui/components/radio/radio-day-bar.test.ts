@@ -66,6 +66,11 @@ describe('RadioDayBar', () => {
     expect([block.classes('border'), block.classes('bg-ink')]).toEqual([true, false])
   })
 
+  it('should leave a planned airing to the schedule for a screen reader', () => {
+    const plan = bar().find('[data-testid="radio-day-planned"]')
+    expect(plan.attributes('aria-hidden')).toBe('true')
+  })
+
   it('should not link a planned airing', () => {
     const day = bar({ recorded: [] })
     expect([

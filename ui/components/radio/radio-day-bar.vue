@@ -36,6 +36,7 @@
         v-for="span in radioDay.planned"
         :key="span.start"
         class="absolute inset-y-0 z-10"
+        aria-hidden="true"
         data-testid="radio-day-planned"
         :style="place(span)"
         :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"

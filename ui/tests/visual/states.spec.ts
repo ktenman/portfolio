@@ -9,7 +9,7 @@ import { stubDiversification, stubDiversificationWithLongFundName } from './dive
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
-import { stubRadio, stubRadioLongText } from './radio-fixture'
+import { stubRadio, stubRadioLongText, stubRadioPlannedSoon } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 import { stubWindows } from './windows-fixture'
@@ -286,6 +286,19 @@ test('the radio day bar links a recording name that runs past its block', async 
   expect(await linkAt(page, block.x + block.width + 10, name.y + name.height / 2)).toBe(
     'Huvitaja, 13:10–, recording now'
   )
+})
+
+test('the radio day bar stops a recording name at the next planned airing', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioPlannedSoon(page)
+  await openRoute(page, '/radio/catch-up')
+  const room = (await page.getByTestId('radio-day-link').locator('span').first().boundingBox())!
+  const plan = (await page.getByTestId('radio-day-planned').boundingBox())!
+  expect(room.x + room.width).toBeLessThanOrEqual(plan.x + SUBPIXEL_PX)
 })
 
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
