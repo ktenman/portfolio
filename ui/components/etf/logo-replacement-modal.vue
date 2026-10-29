@@ -44,6 +44,18 @@
       <div v-if="!holdingUuid" class="me-auto text-[0.875em] text-body-secondary">
         Logo preview only - no holding record to save to
       </div>
+      <template v-else>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          class="hidden"
+          @change="uploadChosenFile"
+        />
+        <AppButton class="me-auto" ghost :disabled="isReplacing" @click="fileInput?.click()">
+          Upload image
+        </AppButton>
+      </template>
       <AppButton variant="secondary" @click="close" :disabled="isReplacing">
         {{ holdingUuid ? 'Cancel' : 'Close' }}
       </AppButton>
@@ -67,6 +79,7 @@ import LoadingSpinner from '../shared/loading-spinner.vue'
 import AppButton from '../shared/app-button.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import { logoService, type LogoCandidateDto } from '../../services/api'
+import { ApiError } from '../../models/api-error'
 
 interface Props {
   modelValue: boolean
@@ -87,6 +100,7 @@ const isLoading = ref(true)
 const isReplacing = ref(false)
 const error = ref<string | null>(null)
 const hasFetched = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 watch(
   () => props.modelValue,
@@ -140,6 +154,27 @@ const confirmReplacement = async () => {
     }
   } catch {
     error.value = 'Failed to replace logo'
+  } finally {
+    isReplacing.value = false
+  }
+}
+
+const uploadChosenFile = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || !props.holdingUuid) return
+  isReplacing.value = true
+  try {
+    const result = await logoService.uploadLogo(props.holdingUuid, file)
+    if (result.success) {
+      emit('replaced', props.holdingUuid)
+      close()
+    } else {
+      error.value = result.message || 'Failed to upload logo'
+    }
+  } catch (failure) {
+    error.value = failure instanceof ApiError ? failure.message : 'Failed to upload logo'
   } finally {
     isReplacing.value = false
   }

@@ -203,6 +203,12 @@ export const logoService = {
   replaceLogo: (request: LogoReplacementRequest) =>
     httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request),
 
+  uploadLogo: (uuid: string, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/${uuid}`, form)
+  },
+
   getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
 }
 

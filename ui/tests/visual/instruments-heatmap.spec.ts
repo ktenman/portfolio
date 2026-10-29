@@ -36,6 +36,16 @@ test('heatmap with a box selected', async ({ page }, testInfo) => {
   await capture(page, 'instruments-heatmap-selected.png')
 })
 
+test('readout logo shows on hover that it can be replaced', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await page.getByRole('button', { name: /^TSTINF,/ }).click()
+  await freeze(page)
+  await page.getByTitle('Click to replace logo').hover()
+  await expect(page.locator('[data-readout]')).toHaveScreenshot(
+    'instruments-heatmap-logo-hover.png'
+  )
+})
+
 test('heatmap fits every width without horizontal scroll', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   for (const width of WIDTHS) {

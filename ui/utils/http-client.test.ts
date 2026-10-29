@@ -81,6 +81,18 @@ describe('httpClient', () => {
       expect(requestedInit().headers).toEqual({ 'Content-Type': 'application/json' })
     })
 
+    it('should send form data unchanged', async () => {
+      const form = new FormData()
+      form.append('file', new File(['õ'], 'logo.png', { type: 'image/png' }))
+      await httpClient.post('/logos/550e8400-e29b-41d4-a716-446655440000', form)
+      expect(requestedInit().body).toBe(form)
+    })
+
+    it('should leave the content type of form data to the browser', async () => {
+      await httpClient.post('/logos/550e8400-e29b-41d4-a716-446655440000', new FormData())
+      expect(requestedInit().headers).toBeUndefined()
+    })
+
     it('should send no body when no payload is given', async () => {
       await httpClient.post('/instruments/refresh-prices')
       expect(requestedInit().body).toBeUndefined()

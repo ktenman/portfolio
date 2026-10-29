@@ -248,6 +248,24 @@ describe('api services', () => {
     )
   })
 
+  it('uploads a logo to its owner uuid', async () => {
+    await logoService.uploadLogo('550e8400-e29b-41d4-a716-446655440000', new File(['õ'], 'a.png'))
+
+    expect(httpClient.post).toHaveBeenCalledWith(
+      '/logos/550e8400-e29b-41d4-a716-446655440000',
+      expect.any(FormData)
+    )
+  })
+
+  it('sends the uploaded logo in the file field', async () => {
+    const file = new File(['õ'], 'tuleva.png', { type: 'image/png' })
+
+    await logoService.uploadLogo('550e8400-e29b-41d4-a716-446655440000', file)
+
+    const form = vi.mocked(httpClient.post).mock.lastCall?.[1] as FormData
+    expect((form.get('file') as File).name).toBe('tuleva.png')
+  })
+
   it('propagates request errors to the caller', async () => {
     const failure = new Error('Network error')
     vi.mocked(httpClient.get).mockRejectedValueOnce(failure)

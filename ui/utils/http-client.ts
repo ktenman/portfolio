@@ -23,6 +23,12 @@ const buildUrl = (url: string, params?: Record<string, unknown>): string => {
   return query ? `${BASE_URL}${url}?${query}` : `${BASE_URL}${url}`
 }
 
+const encodeBody = (body: unknown): RequestInit => {
+  if (body === undefined) return {}
+  if (body instanceof FormData) return { body }
+  return { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+}
+
 const parseBody = async (response: Response): Promise<unknown> => {
   const text = await response.text()
   return text ? JSON.parse(text) : undefined
@@ -50,9 +56,7 @@ const request = async <T>(
   const response = await fetch(buildUrl(url, config?.params), {
     method,
     signal: AbortSignal.timeout(config?.timeout ?? DEFAULT_TIMEOUT),
-    ...(body === undefined
-      ? {}
-      : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+    ...encodeBody(body),
   }).catch((error: Error) => fail(500, error.message, url))
 
   if (!response.ok) {
