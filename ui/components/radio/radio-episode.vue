@@ -38,7 +38,7 @@ const origin = from?.query.q
   ? { to: from.fullPath, label: 'search results' }
   : from?.name === 'RadioCatchUp'
     ? { to: from.fullPath, label: 'Catch-up' }
-    : { to: '/radio', label: 'Shows' }
+    : { to: '/radio', label: 'Recordings' }
 const at = Number.parseFloat(String(route.query.t))
 const raw = 'raw' in route.query
 const { recording, isLoading } = useRadioRecording(name)
