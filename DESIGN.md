@@ -632,9 +632,10 @@ backdrop is the native `<dialog>` element's own.
 
 **The active nav is a 2px brass rule**, not a filled pill. `.nav-indicator` is `0.125rem` tall, full width,
 brass, and animates in with `transform: scaleX(0 → 1)` over 300ms; hover previews the same indicator. The
-active link additionally goes brass and bold. The Radio page's view tabs (`radio-tabs.vue`) are routes too, so
-they take this 2px brass rule rather than a filter chip: it sits on a `--color-hairline-strong` baseline, hover
-previews it in hairline-strong, and the active tab's text goes `--color-ink` and semibold rather than brass.
+active link additionally goes brass and bold. The Radio page's view tabs (`radio-tabs.vue`) and the Instruments
+page's Table and Heatmap tabs are routes too, so they take this 2px brass rule rather than a filter chip: it sits
+on a `--color-hairline-strong` baseline, hover previews it in hairline-strong, and the active tab's text goes
+`--color-ink` and semibold rather than brass.
 
 **Focus is always a brass outline**: `outline: 2px solid var(--color-brass)`, `outline-offset: 2px`, on every
 link, button, input, select, and textarea. Never a glow, and never suppressed on anything tabbable. The one
