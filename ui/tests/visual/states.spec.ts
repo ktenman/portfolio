@@ -41,6 +41,8 @@ const EMPTY_TRANSACTIONS: TransactionsWithSummaryDto = {
 const OPEN_MODAL = 'dialog.modal[open]'
 const OPEN_REPORT = '.report-popover:popover-open'
 const QUICK_DATES_TOGGLE = '[data-testid="quickDatesToggle"]'
+const PICKER_MARGIN_PX = 8
+const MIN_TOUCH_PX = 44
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
   const content = page.locator(`${OPEN_MODAL} .modal-content`)
@@ -71,6 +73,15 @@ async function openQuickDates(page: Page): Promise<void> {
   await stubTransactions(page)
   await openRoute(page, '/transactions')
   await expect(page.locator(QUICK_DATES_TOGGLE)).toBeVisible()
+}
+
+async function openSummaryOn(page: Page, range: string): Promise<void> {
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: STORAGE_KEYS.SUMMARY_CHART_RANGE,
+    value: range,
+  })
+  await stubPortfolioSummary(page)
+  await openRoute(page, '/')
 }
 
 async function openTulevaReport(page: Page): Promise<void> {
@@ -221,6 +232,42 @@ test('summary chart marks the high and low of total profit when total value is h
   await expect(page.getByTestId('summary-chart')).toHaveScreenshot(
     'summary-range-extremes-profit.png'
   )
+})
+
+test('an off-shortlist period shows on the ninth cell of the period row', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await openSummaryOn(page, '6Y')
+  await freeze(page)
+  await expect(page.getByTestId('chart-controls')).toHaveScreenshot(
+    'summary-period-off-shortlist.png'
+  )
+})
+
+test('the More popover opens below the period row', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await openSummaryOn(page, '6Y')
+  await page.getByRole('button', { name: '6Y', exact: true }).click()
+  await settleAndFreeze(page)
+  await page.evaluate(() => window.scrollTo(0, 0))
+  const row = (await page.getByTestId('chart-controls').boundingBox())!
+  const picker = (await page.locator('#period-picker').boundingBox())!
+  const top = row.y - PICKER_MARGIN_PX
+  await expect(page).toHaveScreenshot('summary-period-picker.png', {
+    fullPage: true,
+    clip: {
+      x: 0,
+      y: top,
+      width: page.viewportSize()!.width,
+      height: Math.max(row.y + row.height, picker.y + picker.height) + PICKER_MARGIN_PX - top,
+    },
+    mask: [page.locator('canvas')],
+  })
 })
 
 test('a radio schedule row opens its recording wherever it is clicked', async ({ page }) => {
@@ -447,7 +494,7 @@ test.describe('desktop states', () => {
   test('selecting the sp500 mode shows the benchmark comparison', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
-    await page.click('.platform-btn:text-is("% vs S&P 500")')
+    await page.getByRole('button', { name: 'S&P 500', exact: true }).click()
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('summary-performance-mode.png')
   })
@@ -505,8 +552,8 @@ test.describe('desktop states', () => {
   test('selecting both benchmarks overlays three lines', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
-    await page.click('.platform-btn:text-is("% vs S&P 500")')
-    await page.click('.platform-btn:text-is("% vs VWCE")')
+    await page.getByRole('button', { name: 'S&P 500', exact: true }).click()
+    await page.getByRole('button', { name: 'VWCE', exact: true }).click()
     await settleAndFreeze(page)
     await expect(page).toHaveScreenshot('summary-benchmark-both.png')
   })
@@ -639,6 +686,44 @@ test.describe('mobile states', () => {
     await page.waitForTimeout(WHEEL_SETTLE_MS)
 
     expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  })
+
+  test('the period row keeps its nine cells on one line on a small phone', async ({ page }) => {
+    await page.setViewportSize(SMALL_PHONE)
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    const layout = await page.getByRole('group', { name: 'Chart period' }).evaluate(group => {
+      const cells = Array.from(group.children)
+      return {
+        cells: cells.length,
+        lines: new Set(cells.map(cell => cell.getBoundingClientRect().top)).size,
+        clipped: cells.filter(cell => cell.scrollWidth > cell.clientWidth).length,
+        overflows: group.getBoundingClientRect().right > document.documentElement.clientWidth,
+      }
+    })
+    expect(layout).toEqual({ cells: 9, lines: 1, clipped: 0, overflows: false })
+  })
+
+  test('the period and compare controls are at least 44 px tall on a phone', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    await page.getByRole('button', { name: 'More', exact: true }).click()
+    const targets = [
+      ...(await page.getByRole('group', { name: 'Chart period' }).getByRole('button').all()),
+      ...(await page.locator('#period-picker').getByRole('button').all()),
+      ...(await page.getByRole('group', { name: 'Compare' }).getByRole('button').all()),
+    ]
+    const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
+    expect([targets.length, Math.min(...heights) >= MIN_TOUCH_PX]).toEqual([21, true])
+  })
+
+  test('the More popover spans the period row on a phone', async ({ page }) => {
+    await stubPortfolioSummary(page)
+    await openRoute(page, '/')
+    await page.getByRole('button', { name: 'More', exact: true }).click()
+    const row = (await page.getByRole('group', { name: 'Chart period' }).boundingBox())!
+    const picker = (await page.locator('#period-picker').boundingBox())!
+    expect([picker.x, picker.width]).toEqual([row.x, row.width])
   })
 
   test('state long fund name wraps inside its allocation card', async ({ page }) => {

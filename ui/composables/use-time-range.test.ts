@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { TIME_RANGES, useChartRange, usePriceChangePeriod } from './use-time-range'
+import {
+  describeRange,
+  joinRange,
+  splitRange,
+  TIME_RANGES,
+  useChartRange,
+  usePriceChangePeriod,
+} from './use-time-range'
 import { TimeRange } from '../models/generated/domain-models'
 
 describe('useTimeRange', () => {
@@ -126,5 +133,41 @@ describe('useTimeRange', () => {
     selectedRange.value = TimeRange.THREE_YEARS
 
     expect(selectedPeriod.value).toBe(TimeRange.ONE_DAY)
+  })
+
+  it('should split a range into its unit and length', () => {
+    expect(splitRange(TimeRange.SIX_YEARS)).toEqual({ unit: 'Y', length: 6 })
+  })
+
+  it('should split nothing out of the year to date range', () => {
+    expect(splitRange(TimeRange.YTD)).toBeNull()
+  })
+
+  it('should split nothing out of the max range', () => {
+    expect(splitRange(TimeRange.MAX)).toBeNull()
+  })
+
+  it('should join a unit and a length into a range', () => {
+    expect(joinRange('W', 4)).toBe(TimeRange.FOUR_WEEKS)
+  })
+
+  it('should describe a range of several years', () => {
+    expect(describeRange(TimeRange.SIX_YEARS)).toBe('in the past 6 years')
+  })
+
+  it('should describe a range of one week in the singular', () => {
+    expect(describeRange(TimeRange.ONE_WEEK)).toBe('in the past week')
+  })
+
+  it('should describe a range of several days', () => {
+    expect(describeRange(TimeRange.THREE_DAYS)).toBe('in the past 3 days')
+  })
+
+  it('should describe the year to date range from the first of January', () => {
+    expect(describeRange(TimeRange.YTD)).toBe('since 1 January')
+  })
+
+  it('should describe the max range from the first buy', () => {
+    expect(describeRange(TimeRange.MAX)).toBe('since the first buy')
   })
 })
