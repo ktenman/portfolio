@@ -28,6 +28,8 @@ export interface InstrumentDto {
     xirrAnnualReturn: number | null;
     firstTransactionDate: DateAsString | null;
     logoUuid: string | null;
+    uuid: string | null;
+    logoVersion: number | null;
 }
 
 /**

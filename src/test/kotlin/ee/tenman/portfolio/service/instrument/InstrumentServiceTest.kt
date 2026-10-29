@@ -21,6 +21,9 @@ import io.mockk.verifyOrder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 
 class InstrumentServiceTest {
@@ -50,6 +53,7 @@ class InstrumentServiceTest {
         transactionProfitService,
         instrumentSnapshotService,
         cacheInvalidationService,
+        Clock.fixed(NOW, ZoneOffset.UTC),
       )
   }
 
@@ -250,14 +254,18 @@ class InstrumentServiceTest {
   }
 
   @Test
-  fun `records the logo source and evicts the cached instrument`() {
-    every { instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR) } just runs
+  fun `records the logo source with the time it changed and evicts the cached instrument`() {
+    every { instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR, NOW) } just runs
 
     instrumentService.updateLogoSource(7L, "VWCE:GER:EUR", LogoSource.LIGHTYEAR)
 
     verifyOrder {
-      instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR)
+      instrumentRepository.updateLogoSource(7L, LogoSource.LIGHTYEAR, NOW)
       cacheInvalidationService.evictInstrumentCaches(7L, "VWCE:GER:EUR")
     }
+  }
+
+  companion object {
+    private val NOW = Instant.parse("2026-10-29T09:15:00Z")
   }
 }

@@ -26,6 +26,7 @@
           v-if="box.content.logo"
           class="mb-1"
           :logo-uuid="box.instrument.logoUuid"
+          :version="box.instrument.logoVersion"
           :symbol="box.ticker"
           :size="box.content.logo"
         />

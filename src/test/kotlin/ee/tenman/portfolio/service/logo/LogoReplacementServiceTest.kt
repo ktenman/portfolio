@@ -5,14 +5,18 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.LogoReplacementProperties
 import ee.tenman.portfolio.domain.EtfHolding
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.repository.EtfHoldingRepository
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
 import ee.tenman.portfolio.service.infrastructure.MinioService
+import ee.tenman.portfolio.service.instrument.InstrumentService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -26,6 +30,8 @@ class LogoReplacementServiceTest {
   private val imageProcessingService = mockk<ImageProcessingService>()
   private val minioService = mockk<MinioService>(relaxed = true)
   private val logoCandidateCacheService = mockk<LogoCandidateCacheService>()
+  private val instrumentRepository = mockk<InstrumentRepository>()
+  private val instrumentService = mockk<InstrumentService>(relaxed = true)
   private val properties = LogoReplacementProperties()
   private lateinit var service: LogoReplacementService
 
@@ -33,12 +39,11 @@ class LogoReplacementServiceTest {
   fun setup() {
     service =
       LogoReplacementService(
-        etfHoldingRepository,
+        LogoOwnerService(etfHoldingRepository, instrumentRepository, instrumentService, minioService),
         imageSearchLogoService,
         imageDownloadService,
         logoValidationService,
         imageProcessingService,
-        minioService,
         logoCandidateCacheService,
         properties,
       )
@@ -63,14 +68,28 @@ class LogoReplacementServiceTest {
     }
 
     @Test
-    fun `should return empty list when holding not found`() {
+    fun `should return empty list when neither a holding nor an instrument has the uuid`() {
       val uuid = UUID.randomUUID()
       every { logoCandidateCacheService.getCachedData(uuid) } returns null
       every { etfHoldingRepository.findByUuid(uuid) } returns null
+      every { instrumentRepository.findByUuid(uuid) } returns null
 
       val result = service.getCandidates(uuid)
 
       expect(result).toHaveSize(0)
+    }
+
+    @Test
+    fun `should search the logo of the issuer of an instrument`() {
+      val instrument = createInstrument("GB00B0ZDNB53:GBP", "Aviva BlackRock Aquila US Equity Index Tracker 6 Pension Fund")
+      every { logoCandidateCacheService.getCachedData(instrument.uuid) } returns null
+      every { etfHoldingRepository.findByUuid(instrument.uuid) } returns null
+      every { instrumentRepository.findByUuid(instrument.uuid) } returns instrument
+      every { imageSearchLogoService.searchLogoCandidates(any(), 50) } returns emptyList()
+
+      service.getCandidates(instrument.uuid)
+
+      verify { imageSearchLogoService.searchLogoCandidates("Aviva logo", 50) }
     }
 
     @Test
@@ -134,7 +153,28 @@ class LogoReplacementServiceTest {
     }
 
     @Test
-    fun `should return false without uploading logo when holding not found`() {
+    fun `should store the chosen logo of an instrument as a manual logo`() {
+      val instrument = createInstrument("BNKE:PAR:EUR", "Amundi Euro Stoxx Banks")
+      val imageData = "test-image".toByteArray()
+      val processedImage = "processed".toByteArray()
+      val cachedCandidate = LogoCandidate(thumbnailUrl = "thumb.png", imageUrl = "img.png", title = "Amundi", index = 0)
+      val cachedData = CachedLogoData(candidates = listOf(cachedCandidate), images = mapOf(0 to imageData))
+      every { logoCandidateCacheService.getCachedData(instrument.uuid) } returns cachedData
+      every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
+      every { etfHoldingRepository.findByUuid(instrument.uuid) } returns null
+      every { instrumentRepository.findByUuid(instrument.uuid) } returns instrument
+      every { logoCandidateCacheService.clearCache(instrument.uuid) } returns Unit
+
+      service.replaceLogo(instrument.uuid, 0)
+
+      verifyOrder {
+        minioService.uploadLogo(instrument.uuid, processedImage)
+        instrumentService.updateLogoSource(5L, "BNKE:PAR:EUR", LogoSource.MANUAL)
+      }
+    }
+
+    @Test
+    fun `should return false without uploading logo when neither a holding nor an instrument has the uuid`() {
       val uuid = UUID.randomUUID()
       val imageData = "test-image".toByteArray()
       val processedImage = "processed".toByteArray()
@@ -143,6 +183,7 @@ class LogoReplacementServiceTest {
       every { logoCandidateCacheService.getCachedData(uuid) } returns cachedData
       every { imageProcessingService.resizeToMaxDimension(imageData) } returns processedImage
       every { etfHoldingRepository.findByUuid(uuid) } returns null
+      every { instrumentRepository.findByUuid(uuid) } returns null
 
       val result = service.replaceLogo(uuid, 0)
 
@@ -197,6 +238,11 @@ class LogoReplacementServiceTest {
       verify { logoCandidateCacheService.cacheByName("Microsoft", listOf(candidate), mapOf(0 to imageData)) }
     }
   }
+
+  private fun createInstrument(
+    symbol: String,
+    name: String,
+  ): Instrument = Instrument(symbol = symbol, name = name, category = "ETF", baseCurrency = "EUR").apply { id = 5L }
 
   private fun createHolding(
     uuid: UUID,

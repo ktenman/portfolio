@@ -26,6 +26,7 @@ import ee.tenman.portfolio.blackrock.BlackRockFund
 import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.lightyear.LightyearHistoricalPricesService
 import ee.tenman.portfolio.lightyear.LightyearPriceService
 import ee.tenman.portfolio.repository.InstrumentRepository
@@ -190,7 +191,14 @@ class RetryIT {
 
   private fun saveLightyearInstrument() {
     instrumentRepository.save(
-      Instrument("VXUS:XNAS:USD", "Vanguard Total International Stock", "ETF", "USD", providerExternalId = LIGHTYEAR_UUID),
+      Instrument(
+        "VXUS:XNAS:USD",
+        "Vanguard Total International Stock",
+        "ETF",
+        "USD",
+        providerName = ProviderName.LIGHTYEAR,
+        providerExternalId = LIGHTYEAR_UUID,
+      ),
     )
   }
 

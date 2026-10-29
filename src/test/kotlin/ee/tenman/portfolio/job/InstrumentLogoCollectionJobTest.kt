@@ -41,7 +41,7 @@ class InstrumentLogoCollectionJobTest {
     val etf = etf()
     given(etf)
     every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns mapOf("VWCE:GER:EUR" to LOGO_URL)
-    every { logoFallbackService.fetchLogo("Vanguard FTSE All-World", null, LOGO_URL) } returns
+    every { logoFallbackService.fetchLogo("Vanguard", null, LOGO_URL) } returns
       LogoFetchResult(imageData = IMAGE, source = LogoSource.LIGHTYEAR)
 
     job.collectMissingLogos()
@@ -76,14 +76,24 @@ class InstrumentLogoCollectionJobTest {
   }
 
   @Test
-  fun `falls back to the image search without a ticker when Lightyear has no logo`() {
-    given(etf())
-    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns emptyMap()
-    every { logoFallbackService.fetchLogo("Vanguard FTSE All-World", null, null) } returns null
+  fun `searches the logo of the issuer without a ticker when Lightyear has no logo for a fund`() {
+    given(avivaFund())
+    every { lightyearPriceService.fetchLogoUrls(listOf("GB00B0ZDNB53:GBP")) } returns emptyMap()
+    every { logoFallbackService.fetchLogo("Aviva", null, null) } returns null
 
     job.collectMissingLogos()
 
-    verify(exactly = 1) { logoFallbackService.fetchLogo("Vanguard FTSE All-World", null, null) }
+    verify(exactly = 1) { logoFallbackService.fetchLogo("Aviva", null, null) }
+  }
+
+  @Test
+  fun `searches the logo of a stock by its full name`() {
+    given(instrument(3L, "ÖSTPOST:VIE:EUR", "Österreichische Post", "STOCK", ProviderName.FT))
+    every { logoFallbackService.fetchLogo("Österreichische Post", null, null) } returns null
+
+    job.collectMissingLogos()
+
+    verify(exactly = 1) { logoFallbackService.fetchLogo("Österreichische Post", null, null) }
   }
 
   @Test
@@ -98,14 +108,14 @@ class InstrumentLogoCollectionJobTest {
   }
 
   @Test
-  fun `asks Lightyear only for the logos of ETFs it prices`() {
+  fun `asks Lightyear for the logos of ETFs from every provider`() {
     given(etf(), trading212Etf())
-    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns emptyMap()
+    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR", "BNKE:PAR:EUR")) } returns emptyMap()
     every { logoFallbackService.fetchLogo(any(), null, null) } returns null
 
     job.collectMissingLogos()
 
-    verify(exactly = 1) { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) }
+    verify(exactly = 1) { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR", "BNKE:PAR:EUR")) }
   }
 
   @Test
@@ -132,7 +142,7 @@ class InstrumentLogoCollectionJobTest {
   fun `keeps collecting the other instruments after one fails`() {
     given(etf(), bitcoin())
     every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns emptyMap()
-    every { logoFallbackService.fetchLogo("Vanguard FTSE All-World", null, null) } throws RuntimeException("Search failed")
+    every { logoFallbackService.fetchLogo("Vanguard", null, null) } throws RuntimeException("Search failed")
     every { nvstlyLogoService.fetchCryptoLogo("BTC") } returns IMAGE
 
     job.collectMissingLogos()
@@ -162,15 +172,13 @@ class InstrumentLogoCollectionJobTest {
   }
 
   @Test
-  fun `collects the logo of a Trading212 ETF when the Lightyear batch fails`() {
+  fun `leaves a Trading212 ETF for the next run when the Lightyear batch fails`() {
     given(etf(), trading212Etf())
-    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR")) } returns null
-    every { logoFallbackService.fetchLogo("Amundi Euro Stoxx Banks", null, null) } returns
-      LogoFetchResult(imageData = IMAGE, source = LogoSource.LLM_SELECTED)
+    every { lightyearPriceService.fetchLogoUrls(listOf("VWCE:GER:EUR", "BNKE:PAR:EUR")) } returns null
 
     job.collectMissingLogos()
 
-    verify(exactly = 1) { instrumentService.updateLogoSource(5L, "BNKE:PAR:EUR", LogoSource.LLM_SELECTED) }
+    verify(exactly = 0) { logoFallbackService.fetchLogo(any(), any(), any()) }
   }
 
   @Test
@@ -194,6 +202,9 @@ class InstrumentLogoCollectionJobTest {
   private fun bitcoin() = instrument(2L, "BTCEUR", "BTC/EUR", "Cryptocurrency", ProviderName.BINANCE)
 
   private fun trading212Etf() = instrument(5L, "BNKE:PAR:EUR", "Amundi Euro Stoxx Banks", "ETF", ProviderName.TRADING212)
+
+  private fun avivaFund() =
+    instrument(6L, "GB00B0ZDNB53:GBP", "Aviva BlackRock Aquila US Equity Index Tracker 6 Pension Fund", "ETF", ProviderName.FT)
 
   private fun instrument(
     id: Long,

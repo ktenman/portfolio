@@ -7,6 +7,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -48,7 +49,6 @@ class LightyearUuidResolutionTest : LightyearPriceServiceTestBase() {
 
     expect(result).toEqual("web-uuid-123")
     verify { lightyearPriceClient.lookupUuid("NEWETF:XETRA") }
-    verify { instrumentService.updateProviderExternalId("NEWETF:GER:EUR", "web-uuid-123") }
     verify { uuidCacheService.cacheUuid("NEWETF:GER:EUR", "web-uuid-123") }
   }
 
@@ -106,6 +106,7 @@ class LightyearUuidResolutionTest : LightyearPriceServiceTestBase() {
   fun `should resolve UUID from database instead of web lookup when not in config`() {
     val instrument = mockk<Instrument>()
     every { instrument.providerExternalId } returns "db-uuid-456"
+    every { instrument.providerName } returns ProviderName.LIGHTYEAR
     every { properties.findUuidBySymbol("DBETF:GER:EUR") } returns null
     every { instrumentRepository.findBySymbol("DBETF:GER:EUR") } returns Optional.of(instrument)
 
@@ -120,6 +121,7 @@ class LightyearUuidResolutionTest : LightyearPriceServiceTestBase() {
   fun `should fall back to web lookup when database has no external id`() {
     val instrument = mockk<Instrument>()
     every { instrument.providerExternalId } returns null
+    every { instrument.providerName } returns ProviderName.LIGHTYEAR
     stubWebLookup("NOID:GER:EUR", "NOID:XETRA", "new-uuid")
     every { instrumentRepository.findBySymbol("NOID:GER:EUR") } returns Optional.of(instrument)
 
@@ -128,6 +130,25 @@ class LightyearUuidResolutionTest : LightyearPriceServiceTestBase() {
     expect(result).toEqual("new-uuid")
     verify { lightyearPriceClient.lookupUuid("NOID:XETRA") }
     verify { instrumentService.updateProviderExternalId("NOID:GER:EUR", "new-uuid") }
+  }
+
+  @Test
+  fun `should keep the external id another provider gave the instrument`() {
+    val etf =
+      Instrument(
+        symbol = "BNKE:PAR:EUR",
+        name = "Amundi Euro Stoxx Banks",
+        category = "ETF",
+        baseCurrency = "EUR",
+        providerName = ProviderName.TRADING212,
+        providerExternalId = "BNKEp_EQ",
+      )
+    stubWebLookup("BNKE:PAR:EUR", "BNKE:PAR", "uuid-bnke")
+    every { instrumentRepository.findBySymbol("BNKE:PAR:EUR") } returns Optional.of(etf)
+
+    service.resolveUuid("BNKE:PAR:EUR")
+
+    verify(exactly = 0) { instrumentService.updateProviderExternalId(any(), any()) }
   }
 
   @Test

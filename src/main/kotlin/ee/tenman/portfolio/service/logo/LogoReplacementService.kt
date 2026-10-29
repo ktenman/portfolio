@@ -1,12 +1,9 @@
 package ee.tenman.portfolio.service.logo
 
 import ee.tenman.portfolio.configuration.LogoReplacementProperties
-import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.dto.LogoCandidateDto
-import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.service.infrastructure.ImageProcessingService
-import ee.tenman.portfolio.service.infrastructure.MinioService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -19,12 +16,11 @@ import java.util.UUID
 
 @Service
 class LogoReplacementService(
-  private val etfHoldingRepository: EtfHoldingRepository,
+  private val logoOwnerService: LogoOwnerService,
   private val imageSearchLogoService: ImageSearchLogoService,
   private val imageDownloadService: ImageDownloadService,
   private val logoValidationService: LogoValidationService,
   private val imageProcessingService: ImageProcessingService,
-  private val minioService: MinioService,
   private val logoCandidateCacheService: LogoCandidateCacheService,
   private val properties: LogoReplacementProperties,
 ) {
@@ -37,27 +33,26 @@ class LogoReplacementService(
       log.debug("Returning cached candidates for holding UUID: $holdingUuid")
       return cachedToDtos(cachedData)
     }
-    val holding = etfHoldingRepository.findByUuid(holdingUuid)
-    if (holding == null) {
-      log.warn("Holding not found for UUID: $holdingUuid")
+    val searchQuery = logoOwnerService.searchQuery(holdingUuid)
+    if (searchQuery == null) {
+      log.warn("No holding or instrument found for UUID: $holdingUuid")
       return emptyList()
     }
-    val searchQuery = LogoSearchQueryBuilder.buildQuery(holding.name, holding.ticker)
     val candidates = imageSearchLogoService.searchLogoCandidates(searchQuery, properties.maxSearchResults)
     if (candidates.isEmpty()) {
-      log.debug("No candidates found for holding: ${holding.name}")
+      log.debug("No candidates found for: $searchQuery")
       return emptyList()
     }
     val allValidated = validateCandidates(candidates)
     if (allValidated.isEmpty()) {
-      log.warn("No valid candidates found for holding: ${holding.name}")
+      log.warn("No valid candidates found for: $searchQuery")
       return emptyList()
     }
     val validatedCandidates = allValidated.take(properties.maxDisplayCandidates)
     val validCandidates = validatedCandidates.map { it.first }
     val imageData = validatedCandidates.associate { it.first.index to it.second }
     logoCandidateCacheService.cacheValidatedCandidates(holdingUuid, validCandidates, imageData)
-    log.info("Found ${validatedCandidates.size} valid candidates for holding: ${holding.name}")
+    log.info("Found ${validatedCandidates.size} valid candidates for: $searchQuery")
     return toDtos(validatedCandidates)
   }
 
@@ -121,7 +116,7 @@ class LogoReplacementService(
       } else {
         downloadAndProcessImage(candidate) ?: return false
       }
-    return saveLogoAndUpdateHolding(holdingUuid, processedImage)
+    return saveLogo(holdingUuid, processedImage)
   }
 
   private fun findCandidate(
@@ -156,20 +151,12 @@ class LogoReplacementService(
 
   private fun downloadImage(url: String): ByteArray? = imageDownloadService.downloadOrNull(url)
 
-  private fun saveLogoAndUpdateHolding(
-    holdingUuid: UUID,
+  private fun saveLogo(
+    uuid: UUID,
     processedImage: ByteArray,
   ): Boolean {
-    val holding = etfHoldingRepository.findByUuid(holdingUuid)
-    if (holding == null) {
-      log.warn("Holding not found for UUID: $holdingUuid")
-      return false
-    }
-    minioService.uploadLogo(holdingUuid, processedImage)
-    holding.logoSource = LogoSource.MANUAL
-    etfHoldingRepository.save(holding)
-    logoCandidateCacheService.clearCache(holdingUuid)
-    log.info("Successfully replaced logo for holding: ${holding.name}")
+    if (!logoOwnerService.saveManualLogo(uuid, processedImage)) return false
+    logoCandidateCacheService.clearCache(uuid)
     return true
   }
 

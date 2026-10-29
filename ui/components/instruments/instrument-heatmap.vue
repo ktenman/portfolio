@@ -8,6 +8,7 @@
             :instrument="shown"
             :total="totalValue"
             :totals="totals"
+            @replace-logo="logoTarget = $event"
           />
         </div>
         <div data-map class="h-[340px] p-1 md:h-[520px] lg:h-[630px]">
@@ -63,12 +64,20 @@
       @preview="previewId = $event"
       @select="selectedId = $event"
     />
+    <logo-replacement-modal
+      :model-value="logoTarget !== null"
+      :holding-uuid="logoTarget?.uuid ?? null"
+      :holding-name="logoTarget?.name ?? ''"
+      @update:model-value="logoTarget = null"
+      @replaced="queryClient.invalidateQueries({ queryKey: ['instruments'] })"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, toRef, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
+import { useQueryClient } from '@tanstack/vue-query'
 import type { InstrumentDto, TimeRange } from '../../models/generated/domain-models'
 import { useInstrumentTotals } from '../../composables/use-instrument-totals'
 import { HEATMAP_STEPS, splitDrawable } from '../../services/instrument-heatmap'
@@ -81,6 +90,7 @@ import {
 import AlertMessage from '../shared/alert-message.vue'
 import SkeletonLoader from '../shared/skeleton-loader.vue'
 import DailyProfitLegend from '../portfolio/daily-profit-legend.vue'
+import LogoReplacementModal from '../etf/logo-replacement-modal.vue'
 import InstrumentChangeList from './instrument-change-list.vue'
 import InstrumentHeatmapMap from './instrument-heatmap-map.vue'
 import InstrumentHeatmapReadout from './instrument-heatmap-readout.vue'
@@ -97,6 +107,8 @@ const props = defineProps<{
 
 const selectedId = ref<number | null>(null)
 const previewId = ref<number | null>(null)
+const logoTarget = ref<InstrumentDto | null>(null)
+const queryClient = useQueryClient()
 const wide = useMediaQuery('(min-width: 768px)')
 const interactive = useMediaQuery('(min-width: 1024px)')
 const { totalValue } = useInstrumentTotals(toRef(props, 'instruments'))

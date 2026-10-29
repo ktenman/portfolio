@@ -8,12 +8,20 @@
       :class="{ 'md:hidden': !instrument }"
     >
       <div class="flex min-w-0 flex-1 items-center gap-3">
-        <instrument-logo
+        <button
           v-if="instrument"
-          :logo-uuid="instrument.logoUuid"
-          :symbol="tickerOf(instrument.symbol)"
-          :size="40"
-        />
+          type="button"
+          class="flex shrink-0 cursor-pointer rounded-full"
+          title="Click to replace logo"
+          @click="emit('replaceLogo', instrument)"
+        >
+          <instrument-logo
+            :logo-uuid="instrument.logoUuid"
+            :version="instrument.logoVersion"
+            :symbol="tickerOf(instrument.symbol)"
+            :size="40"
+          />
+        </button>
         <div class="min-w-0">
           <p class="m-0 truncate text-ink">
             <template v-if="instrument">
@@ -58,6 +66,10 @@ const props = defineProps<{
   instrument: InstrumentDto | null
   total: number
   totals: Figure[]
+}>()
+
+const emit = defineEmits<{
+  replaceLogo: [instrument: InstrumentDto]
 }>()
 
 const platforms = (instrument: InstrumentDto): string =>

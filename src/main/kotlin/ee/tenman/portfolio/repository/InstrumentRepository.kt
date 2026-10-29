@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
+import java.time.Instant
 import java.util.*
 
 @Repository
@@ -24,6 +25,8 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun findByProviderNameIn(providerNames: List<ProviderName>): List<Instrument>
 
   fun findByLogoSourceIsNull(): List<Instrument>
+
+  fun findByUuid(uuid: UUID): Instrument?
 
   @Modifying(clearAutomatically = true)
   @Query("UPDATE Instrument i SET i.currentPrice = :price WHERE i.id = :id")
@@ -61,9 +64,10 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   )
 
   @Modifying(clearAutomatically = true)
-  @Query("UPDATE Instrument i SET i.logoSource = :logoSource WHERE i.id = :id")
+  @Query("UPDATE Instrument i SET i.logoSource = :logoSource, i.logoUpdatedAt = :logoUpdatedAt WHERE i.id = :id")
   fun updateLogoSource(
     id: Long,
     logoSource: LogoSource,
+    logoUpdatedAt: Instant,
   )
 }

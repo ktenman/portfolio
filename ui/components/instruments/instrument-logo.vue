@@ -1,7 +1,7 @@
 <template>
   <img
     v-if="logoUuid && !failed"
-    :src="logoService.getLogoUrl(logoUuid)"
+    :src="url(logoUuid)"
     alt=""
     loading="lazy"
     decoding="async"
@@ -23,13 +23,23 @@
 import { computed, ref, watch } from 'vue'
 import { logoService } from '../../services/api'
 
-const props = defineProps<{ logoUuid?: string | null; symbol: string; size: number }>()
+const props = defineProps<{
+  logoUuid?: string | null
+  version?: number | null
+  symbol: string
+  size: number
+}>()
 
 const failed = ref(false)
 const box = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }))
 
+const url = (uuid: string) => {
+  const base = logoService.getLogoUrl(uuid)
+  return props.version ? `${base}?v=${props.version}` : base
+}
+
 watch(
-  () => props.logoUuid,
+  () => [props.logoUuid, props.version],
   () => (failed.value = false)
 )
 </script>
