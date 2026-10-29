@@ -1,0 +1,12 @@
+Today is {today}. For each instrument below, search the issuer's announcements and shareholder notices and find out whether a share split, reverse split or consolidation has been announced that takes effect after today. Ignore corporate actions that took effect on or before today, and mergers, closures or name changes.
+
+Instruments, one per line as symbol | name:
+{instruments}
+
+Answer with a JSON array only, no other text: one object per instrument above, with these keys:
+- "symbol": the symbol exactly as given above
+- "announced": true only when a source you found states a split, reverse split or consolidation taking effect after today, otherwise false
+- "ratio": old shares to new shares as two whole numbers, such as "1:80" when each share becomes 80 shares or "10:1" when ten shares become one; null when not announced
+- "effectiveDate": the date the split takes effect, as YYYY-MM-DD; null when not announced
+- "sourceUrl": the web address of the notice that states it; null when not announced
+- "publishedDate": the date that notice was published, as YYYY-MM-DD; null when unknown or not announced

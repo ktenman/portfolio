@@ -401,24 +401,24 @@ def check_metric_coverage():
     print(f'{len(operations)}-operation and per-item metric coverage passed')
 
 
-def check_radio_delivery(base):
-    def missed(ends_after):
-        incident = alert('RadioCaptureMissed', ends_after)
-        incident['labels'].update(severity='warning', capture='2026-10-24-1155-keskpaevatund', programmes='Keskpäevatund')
-        incident['annotations'] = {'summary': 'Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording'}
-        return incident
+def check_once_delivery(base, name, labels, summary):
+    def incident(ends_after):
+        firing = alert(name, ends_after)
+        firing['labels'].update(severity='warning', **labels)
+        firing['annotations'] = {'summary': summary}
+        return firing
 
     def sent():
-        return [json.loads(event[2])['text'] for event in events('/sendMessage') if 'RadioCaptureMissed' in event[2]]
+        return [json.loads(event[2])['text'] for event in events('/sendMessage') if name in event[2]]
 
-    request(base + '/api/v2/alerts', [missed(30)])
+    request(base + '/api/v2/alerts', [incident(30)])
     wait_for(lambda: len(sent()) == 1)
-    assert sent() == ['production RadioCaptureMissed: Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording']
-    request(base + '/api/v2/alerts', [missed(30)])
+    assert sent() == [f'production {name}: {summary}']
+    request(base + '/api/v2/alerts', [incident(30)])
     time.sleep(3)
-    request(base + '/api/v2/alerts', [missed(-1)])
+    request(base + '/api/v2/alerts', [incident(-1)])
     time.sleep(2)
-    assert len(sent()) == 1, f'A missed capture reached Telegram more than once: {sent()}'
+    assert len(sent()) == 1, f'{name} reached Telegram more than once: {sent()}'
 
 
 def check_delivery():
@@ -500,7 +500,12 @@ def check_delivery():
             time.sleep(2)
             assert not notifications('CollectionInventoryUnavailable', 'firing')
             assert not notifications('CollectionMetricsIncomplete', 'firing')
-            check_radio_delivery(base)
+            check_once_delivery(base, 'RadioCaptureMissed',
+                                {'capture': '2026-10-24-1155-keskpaevatund', 'programmes': 'Keskpäevatund'},
+                                'Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording')
+            check_once_delivery(base, 'SplitAnnounced',
+                                {'instrument': 'BNKE:PAR:EUR', 'ratio': '1:80', 'effective': '2026-10-27'},
+                                'BNKE:PAR:EUR splits 1:80 on 2026-10-27; record it with the recording-etf-splits skill')
             stop_alertmanager(container)
             (directory / 'alertmanager.yml').write_text(production_config)
             container, base = start_alertmanager(directory, network)
