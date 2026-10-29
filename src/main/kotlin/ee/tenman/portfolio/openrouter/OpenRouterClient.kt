@@ -152,6 +152,22 @@ class OpenRouterClient(
       ),
     )
 
+  fun search(
+    model: AiModel,
+    prompt: String,
+  ): String? =
+    send(
+      model,
+      OpenRouterRequest(
+        model = model.modelId,
+        messages = listOf(OpenRouterRequest.Message("user", prompt)),
+        maxTokens = DEFAULT_MAX_TOKENS,
+        temperature = 0.0,
+        provider = OpenRouterRequest.ProviderPreferences(listOf(VERTEX), allowFallbacks = false),
+        plugins = listOf(OpenRouterRequest.Plugin(id = "web", engine = "native")),
+      ),
+    )
+
   private fun send(
     model: AiModel,
     request: OpenRouterRequest,
@@ -181,6 +197,7 @@ class OpenRouterClient(
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
     private const val FLEX_TIER = "google-ai-studio/flex"
+    private const val VERTEX = "google-vertex"
   }
 
   private fun executeRequest(
