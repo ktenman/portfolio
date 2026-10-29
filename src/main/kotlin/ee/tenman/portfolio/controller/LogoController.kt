@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -54,7 +56,7 @@ class LogoController(
 
   @GetMapping("/search")
   fun searchLogoCandidates(
-    @org.springframework.web.bind.annotation.RequestParam name: String,
+    @RequestParam name: String,
   ): ResponseEntity<List<LogoCandidateDto>> {
     log.debug("Searching logo candidates for name: $name")
     val candidates = logoReplacementService.searchByName(name)
@@ -66,11 +68,22 @@ class LogoController(
     @RequestBody request: LogoReplacementRequest,
   ): ResponseEntity<Map<String, Any>> {
     log.info("Replacing logo for holding UUID: ${request.holdingUuid} with candidate index: ${request.candidateIndex}")
-    val success = logoReplacementService.replaceLogo(request.holdingUuid, request.candidateIndex)
-    return if (success) {
+    return replacementResponse(logoReplacementService.replaceLogo(request.holdingUuid, request.candidateIndex))
+  }
+
+  @PostMapping("/{uuid}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+  fun uploadLogo(
+    @PathVariable uuid: UUID,
+    @RequestParam file: MultipartFile,
+  ): ResponseEntity<Map<String, Any>> {
+    log.info("Uploading logo for UUID: $uuid")
+    return replacementResponse(logoReplacementService.uploadLogo(uuid, file.bytes))
+  }
+
+  private fun replacementResponse(success: Boolean): ResponseEntity<Map<String, Any>> =
+    if (success) {
       ResponseEntity.ok(mapOf("success" to true, "message" to "Logo replaced successfully"))
     } else {
       ResponseEntity.badRequest().body(mapOf("success" to false, "message" to "Failed to replace logo"))
     }
-  }
 }

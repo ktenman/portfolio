@@ -149,6 +149,14 @@ class LogoReplacementService(
     return imageProcessingService.resizeToMaxDimension(imageData)
   }
 
+  fun uploadLogo(
+    uuid: UUID,
+    image: ByteArray,
+  ): Boolean {
+    require(logoValidationService.isValidLogo(image)) { "Logo must be a square PNG, JPEG or WebP image of at least 32 px" }
+    return saveLogo(uuid, imageProcessingService.resizeToMaxDimension(image))
+  }
+
   private fun downloadImage(url: String): ByteArray? = imageDownloadService.downloadOrNull(url)
 
   private fun saveLogo(
