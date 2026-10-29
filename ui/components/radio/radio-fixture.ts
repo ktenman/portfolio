@@ -11,6 +11,8 @@ import {
   type EditList,
   type RadioDay,
   type RadioSearch,
+  type RadioStation,
+  RecorderState,
   type RecordingStatus,
   type RecordingSummary,
   RecordingState,
@@ -445,3 +447,15 @@ export const nothingFound = (close: string[] = []): RadioSearch =>
     recordings: 0,
     suggestions: close,
   })
+
+export const station = (overrides: Partial<RadioStation> = {}): RadioStation => ({
+  onAir: null,
+  next: null,
+  capture: null,
+  freeBytes: 364_000_000_000,
+  hours: 3159,
+  recorder: RecorderState.WAITING,
+  last: null,
+  format: null,
+  ...overrides,
+})

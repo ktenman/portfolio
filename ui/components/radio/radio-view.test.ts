@@ -19,6 +19,7 @@ const open = async (path: string) => {
         component: RadioView,
         children: [
           { path: '', name: 'Radio', component: { template: '<p>Recordings table</p>' } },
+          { path: 'shows', name: 'RadioShows', component: { template: '<p>Shows table</p>' } },
           { path: 'catch-up', name: 'RadioCatchUp', component: { template: '<p>Schedule</p>' } },
           { path: ':name', component: { template: '<p>Episode</p>' } },
         ],
@@ -35,12 +36,16 @@ const open = async (path: string) => {
 }
 
 describe('RadioView', () => {
-  it('should put the search field above a tab', async () => {
-    const wrapper = await open('/radio/catch-up')
+  it.each([
+    ['/radio', 'Recordings table'],
+    ['/radio/shows', 'Shows table'],
+    ['/radio/catch-up', 'Schedule'],
+  ])('should put the search field above the tab at %s', async (path, content) => {
+    const wrapper = await open(path)
     expect([
       wrapper.find('input[aria-label="Search what was said"]').exists(),
       wrapper.text(),
-    ]).toEqual([true, expect.stringContaining('Schedule')])
+    ]).toEqual([true, expect.stringContaining(content)])
   })
 
   it('should leave the search field off a recording', async () => {
