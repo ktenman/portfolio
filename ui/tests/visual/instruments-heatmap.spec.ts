@@ -68,6 +68,26 @@ test('heatmap readout shows every figure in full on phones', async ({ page }, te
   }
 })
 
+test('change list bars share one zero line on phones', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          width: window.innerWidth,
+          zeroLines: new Set(
+            Array.from(document.querySelectorAll(':has(> [data-bar])'), track => {
+              const box = track.getBoundingClientRect()
+              return box.left + box.width / 2
+            })
+          ).size,
+        }))
+      )
+      .toEqual({ width, zeroLines: 1 })
+  }
+})
+
 test('view tabs are 44 px tall on phones', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
   const heights = await page

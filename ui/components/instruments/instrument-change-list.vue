@@ -6,7 +6,7 @@
       <li
         v-for="row in rows"
         :key="row.instrument.symbol"
-        class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-control px-1 py-1 md:h-7.5 md:grid-cols-[auto_5.5rem_minmax(0,1fr)_6rem] md:py-0"
+        class="grid grid-cols-[auto_minmax(0,1fr)_6rem] items-center gap-x-2 rounded-control px-1 py-1 md:h-7.5 md:grid-cols-[auto_5.5rem_minmax(0,1fr)_6rem] md:py-0"
         :class="{ 'cursor-pointer hover:bg-surface-hover': interactive }"
         @pointerenter="preview(row.instrument.id)"
         @pointerleave="preview(null)"
