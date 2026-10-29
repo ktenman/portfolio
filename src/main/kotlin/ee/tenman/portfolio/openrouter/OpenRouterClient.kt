@@ -186,14 +186,7 @@ class OpenRouterClient(
     }
     return runCatching {
       log.info("Calling OpenRouter with model: ${request.model}")
-      val authorization = "Bearer ${openRouterProperties.apiKey}"
-      val response =
-        if (options == null) {
-          openRouterFeignClient.chatCompletion(authorization, request)
-        } else {
-          openRouterFeignClient.chatCompletion(authorization, request, options)
-        }
-      val content = response.extractContent()
+      val content = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request, options).extractContent()
       log.debug("OpenRouter response: '$content'")
       circuitBreaker.recordSuccess()
       content

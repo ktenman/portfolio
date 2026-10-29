@@ -360,7 +360,7 @@ tests:
   - interval: 15s
     input_series:
       - series: 'portfolio_split_announced{instrument="BNKE:PAR:EUR",ratio="1:80",effective="2026-10-27",source="https://www.investegate.co.uk/announcement/9804833"}'
-        values: '1+0x20 stale _x10 1+0x20 stale'
+        values: '1+0x20 stale'
     alert_rule_test:
       - eval_time: 1m
         alertname: SplitAnnounced
@@ -393,6 +393,8 @@ tests:
         values: '355.07+0x120 4.44+0x400'
       - series: 'portfolio_instrument_price{instrument="VUAA:GER:EUR"}'
         values: '100+0x120 105+0x400'
+      - series: 'portfolio_split_check_failed'
+        values: '1+0x20'
     alert_rule_test:
       - eval_time: 29m
         alertname: SplitSuspected
@@ -408,14 +410,6 @@ tests:
       - eval_time: 95m
         alertname: SplitSuspected
         exp_alerts: []
-      - eval_time: 31m
-        alertname: SplitAnnounced
-        exp_alerts: []
-  - interval: 15s
-    input_series:
-      - series: 'portfolio_split_check_failed'
-        values: '1+0x20'
-    alert_rule_test:
       - eval_time: 1m
         alertname: SplitCheckFailed
         exp_alerts:

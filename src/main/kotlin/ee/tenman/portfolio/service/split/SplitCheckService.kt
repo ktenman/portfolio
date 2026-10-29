@@ -29,12 +29,6 @@ class SplitCheckService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
   private val prompt = checkNotNull(javaClass.classLoader.getResource(PROMPT)) { "Missing resource $PROMPT" }.readText().trimEnd()
-  private val http =
-    HttpClient
-    .newBuilder()
-    .connectTimeout(TIMEOUT)
-    .followRedirects(HttpClient.Redirect.NORMAL)
-    .build()
 
   fun check() {
     val today = LocalDate.now(clock)
@@ -84,7 +78,12 @@ class SplitCheckService(
         .timeout(TIMEOUT)
         .GET()
         .build()
-      http.send(request, HttpResponse.BodyHandlers.discarding()).uri().toString()
+      HttpClient
+        .newBuilder()
+        .connectTimeout(TIMEOUT)
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
+        .use { it.send(request, HttpResponse.BodyHandlers.discarding()).uri().toString() }
     }.onFailure { log.warn("Keeping $address as the split source because following it failed: ${it.message}") }
       .getOrDefault(address)
 

@@ -13,8 +13,8 @@ class SplitAnswersTest {
 
   private val symbols = setOf("BNKE:PAR:EUR", "VUAA:GER:EUR")
 
-  private val none =
-    """{"symbol":"VUAA:GER:EUR","announced":false,"ratio":null,"effectiveDate":null,"sourceUrl":null,"publishedDate":null}"""
+  private fun none(symbol: String = "VUAA:GER:EUR") =
+    """{"symbol":"$symbol","announced":false,"ratio":null,"effectiveDate":null,"sourceUrl":null,"publishedDate":null}"""
 
   private fun split(
     ratio: String? = "\"1:80\"",
@@ -25,7 +25,7 @@ class SplitAnswersTest {
 
   @Test
   fun `should read the split announced for an instrument`() {
-    expect(parseSplits("[${split()},$none]", symbols, today)).toContainExactly(
+    expect(parseSplits("[${split()},${none()}]", symbols, today)).toContainExactly(
       AnnouncedSplit(
         "BNKE:PAR:EUR",
         "1:80",
@@ -38,18 +38,18 @@ class SplitAnswersTest {
 
   @Test
   fun `should read no split when no instrument has one announced`() {
-    val answer = """[${none.replace("VUAA:GER:EUR", "BNKE:PAR:EUR")},$none]"""
+    val answer = """[${none("BNKE:PAR:EUR")},${none()}]"""
     expect(parseSplits(answer, symbols, today)).toBeEmpty()
   }
 
   @Test
   fun `should read an answer wrapped in a code fence`() {
-    expect(parseSplits("```json\n[${split()},$none]\n```", symbols, today).map { it.ratio }).toContainExactly("1:80")
+    expect(parseSplits("```json\n[${split()},${none()}]\n```", symbols, today).map { it.ratio }).toContainExactly("1:80")
   }
 
   @Test
   fun `should skip a split that took effect before today`() {
-    expect(parseSplits("[${split(effective = "\"2026-10-04\"")},$none]", symbols, today)).toBeEmpty()
+    expect(parseSplits("[${split(effective = "\"2026-10-04\"")},${none()}]", symbols, today)).toBeEmpty()
   }
 
   @Test
@@ -59,30 +59,30 @@ class SplitAnswersTest {
 
   @Test
   fun `should fail when the answer names an instrument it was not asked about`() {
-    val answer = "[${split()},$none,${none.replace("VUAA:GER:EUR", "LSMC:GER:EUR")}]"
+    val answer = "[${split()},${none()},${none("LSMC:GER:EUR")}]"
     expect { parseSplits(answer, symbols, today) }.toThrow<IllegalStateException>().messageToContain("LSMC:GER:EUR")
   }
 
   @Test
   fun `should fail when an instrument is answered twice`() {
-    expect { parseSplits("[${split()},$none,$none]", symbols, today) }.toThrow<IllegalStateException>()
+    expect { parseSplits("[${split()},${none()},${none()}]", symbols, today) }.toThrow<IllegalStateException>()
   }
 
   @Test
   fun `should fail when the ratio is not two whole numbers`() {
-    expect { parseSplits("[${split(ratio = "\"kaheksakümmend\"")},$none]", symbols, today) }
+    expect { parseSplits("[${split(ratio = "\"kaheksakümmend\"")},${none()}]", symbols, today) }
       .toThrow<IllegalStateException>()
       .messageToContain("kaheksakümmend")
   }
 
   @Test
   fun `should fail when an announced split has no effective date`() {
-    expect { parseSplits("[${split(effective = null)},$none]", symbols, today) }.toThrow<IllegalStateException>()
+    expect { parseSplits("[${split(effective = null)},${none()}]", symbols, today) }.toThrow<IllegalStateException>()
   }
 
   @Test
   fun `should fail when an announced split has no web address for its source`() {
-    expect { parseSplits("[${split(source = "\"investegate\"")},$none]", symbols, today) }.toThrow<IllegalStateException>()
+    expect { parseSplits("[${split(source = "\"investegate\"")},${none()}]", symbols, today) }.toThrow<IllegalStateException>()
   }
 
   @Test
@@ -93,7 +93,7 @@ class SplitAnswersTest {
 
   @Test
   fun `should fail when the effective date is not a date`() {
-    expect { parseSplits("[${split(effective = "\"27.10.2026\"")},$none]", symbols, today) }.toThrow<IllegalStateException>()
+    expect { parseSplits("[${split(effective = "\"27.10.2026\"")},${none()}]", symbols, today) }.toThrow<IllegalStateException>()
   }
 
   @Test

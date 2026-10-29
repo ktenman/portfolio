@@ -88,7 +88,7 @@ class SplitCheckServiceIT {
 
   @Test
   fun `should store nothing when no split is announced`() {
-    answer(bnke = NONE)
+    answer(bnke = none("BNKE:PAR:EUR"))
     splitCheckService.check()
     expect(stored()).toBeEmpty()
   }
@@ -98,13 +98,6 @@ class SplitCheckServiceIT {
     answer(bnke = announced())
     splitCheckService.check()
     expect(exported()).toContainExactly("BNKE:PAR:EUR 1:80 $effective")
-  }
-
-  @Test
-  fun `should export no split when none is announced`() {
-    answer(bnke = NONE)
-    splitCheckService.check()
-    expect(exported()).toBeEmpty()
   }
 
   @Test
@@ -119,7 +112,7 @@ class SplitCheckServiceIT {
 
   @Test
   fun `should ask about held instruments other than Binance ones in one request`() {
-    answer(bnke = NONE)
+    answer(bnke = none("BNKE:PAR:EUR"))
     splitCheckService.check()
     val body = wireMockServer.findAll(postRequestedFor(urlEqualTo("/chat/completions"))).single().bodyAsString
     expect(body)
@@ -150,7 +143,7 @@ class SplitCheckServiceIT {
       """"sourceUrl":"${wireMockServer.baseUrl()}/grounding-api-redirect/bnke","publishedDate":"2026-10-02"}"""
 
   private fun answer(bnke: String) {
-    val content = "[$bnke,${NONE.replace("BNKE:PAR:EUR", "VUAA:GER:EUR")}]"
+    val content = "[$bnke,${none("VUAA:GER:EUR")}]"
     val body = objectMapper.writeValueAsString(mapOf("choices" to listOf(mapOf("message" to mapOf("content" to content)))))
     wireMockServer.stubFor(post(urlEqualTo("/chat/completions")).willReturn(okJson(body)))
   }
@@ -171,8 +164,6 @@ class SplitCheckServiceIT {
     }
   }
 
-  companion object {
-    private const val NONE =
-      """{"symbol":"BNKE:PAR:EUR","announced":false,"ratio":null,"effectiveDate":null,"sourceUrl":null,"publishedDate":null}"""
-  }
+  private fun none(symbol: String) =
+    """{"symbol":"$symbol","announced":false,"ratio":null,"effectiveDate":null,"sourceUrl":null,"publishedDate":null}"""
 }

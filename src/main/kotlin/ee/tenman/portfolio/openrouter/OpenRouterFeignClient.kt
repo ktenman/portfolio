@@ -15,12 +15,6 @@ interface OpenRouterFeignClient {
   fun chatCompletion(
     @RequestHeader("Authorization") authorization: String,
     @RequestBody request: OpenRouterRequest,
-  ): OpenRouterResponse
-
-  @PostMapping("/chat/completions")
-  fun chatCompletion(
-    @RequestHeader("Authorization") authorization: String,
-    @RequestBody request: OpenRouterRequest,
-    options: Request.Options,
+    options: Request.Options? = null,
   ): OpenRouterResponse
 }
