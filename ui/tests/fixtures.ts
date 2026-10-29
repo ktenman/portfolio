@@ -81,6 +81,8 @@ export const createInstrumentDto = (overrides?: Partial<InstrumentDto>): Instrum
   firstTransactionDate: '2024-01-01',
   fundCurrency: null,
   logoUuid: null,
+  uuid: null,
+  logoVersion: null,
   ...overrides,
 })
 

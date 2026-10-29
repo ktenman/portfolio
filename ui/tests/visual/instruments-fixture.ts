@@ -31,6 +31,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1521,
     firstTransactionDate: '2019-04-02',
     logoUuid: '00000000-0000-4000-8000-000000000101',
+    uuid: '00000000-0000-4000-8000-000000000101',
+    logoVersion: null,
   },
   {
     id: 102,
@@ -55,6 +57,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1904,
     firstTransactionDate: '2023-01-17',
     logoUuid: '00000000-0000-4000-8000-000000000102',
+    uuid: '00000000-0000-4000-8000-000000000102',
+    logoVersion: null,
   },
   {
     id: 103,
@@ -79,6 +83,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.2488,
     firstTransactionDate: '2022-06-30',
     logoUuid: '00000000-0000-4000-8000-000000000103',
+    uuid: '00000000-0000-4000-8000-000000000103',
+    logoVersion: null,
   },
   {
     id: 104,
@@ -103,6 +109,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1288,
     firstTransactionDate: '2024-02-05',
     logoUuid: '00000000-0000-4000-8000-000000000104',
+    uuid: '00000000-0000-4000-8000-000000000104',
+    logoVersion: null,
   },
   {
     id: 105,
@@ -127,6 +135,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.0824,
     firstTransactionDate: '2024-09-11',
     logoUuid: '00000000-0000-4000-8000-000000000105',
+    uuid: '00000000-0000-4000-8000-000000000105',
+    logoVersion: null,
   },
   {
     id: 106,
@@ -151,6 +161,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1042,
     firstTransactionDate: '2025-01-08',
     logoUuid: '00000000-0000-4000-8000-000000000106',
+    uuid: '00000000-0000-4000-8000-000000000106',
+    logoVersion: null,
   },
   {
     id: 107,
@@ -175,6 +187,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: null,
     firstTransactionDate: '2025-03-24',
     logoUuid: '00000000-0000-4000-8000-000000000107',
+    uuid: '00000000-0000-4000-8000-000000000107',
+    logoVersion: null,
   },
   {
     id: 108,
@@ -199,6 +213,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.2019,
     firstTransactionDate: '2021-11-19',
     logoUuid: '00000000-0000-4000-8000-000000000108',
+    uuid: '00000000-0000-4000-8000-000000000108',
+    logoVersion: null,
   },
   {
     id: 109,
@@ -223,6 +239,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1197,
     firstTransactionDate: '2025-05-06',
     logoUuid: '00000000-0000-4000-8000-000000000109',
+    uuid: '00000000-0000-4000-8000-000000000109',
+    logoVersion: null,
   },
   {
     id: 110,
@@ -247,6 +265,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.0588,
     firstTransactionDate: '2023-08-21',
     logoUuid: '00000000-0000-4000-8000-000000000110',
+    uuid: '00000000-0000-4000-8000-000000000110',
+    logoVersion: null,
   },
   {
     id: 111,
@@ -271,6 +291,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.3902,
     firstTransactionDate: '2020-12-03',
     logoUuid: '00000000-0000-4000-8000-000000000111',
+    uuid: '00000000-0000-4000-8000-000000000111',
+    logoVersion: null,
   },
   {
     id: 112,
@@ -295,6 +317,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.0661,
     firstTransactionDate: '2025-07-15',
     logoUuid: '00000000-0000-4000-8000-000000000112',
+    uuid: '00000000-0000-4000-8000-000000000112',
+    logoVersion: null,
   },
   {
     id: 113,
@@ -319,6 +343,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: 0.1433,
     firstTransactionDate: '2025-10-02',
     logoUuid: '00000000-0000-4000-8000-000000000113',
+    uuid: '00000000-0000-4000-8000-000000000113',
+    logoVersion: null,
   },
   {
     id: 114,
@@ -343,6 +369,8 @@ export const INSTRUMENTS: InstrumentDto[] = [
     xirrAnnualReturn: -0.0059,
     firstTransactionDate: '2024-11-28',
     logoUuid: null,
+    uuid: '00000000-0000-4000-8000-000000000114',
+    logoVersion: null,
   },
 ]
 

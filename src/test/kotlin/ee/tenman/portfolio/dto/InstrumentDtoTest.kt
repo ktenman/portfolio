@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.model.InstrumentSnapshot
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class InstrumentDtoTest {
   @Test
@@ -23,6 +24,24 @@ class InstrumentDtoTest {
   fun `carries the logo uuid through a snapshot`() {
     val instrument = instrument(logoSource = LogoSource.NVSTLY_ICONS)
     expect(InstrumentDto.fromSnapshot(InstrumentSnapshot(instrument = instrument)).logoUuid).toEqual(instrument.uuid)
+  }
+
+  @Test
+  fun `exposes the instrument uuid before a logo is recorded`() {
+    val instrument = instrument(logoSource = null)
+    expect(InstrumentDto.fromEntity(instrument).uuid).toEqual(instrument.uuid)
+  }
+
+  @Test
+  fun `carries the instrument uuid through a snapshot`() {
+    val instrument = instrument(logoSource = null)
+    expect(InstrumentDto.fromSnapshot(InstrumentSnapshot(instrument = instrument)).uuid).toEqual(instrument.uuid)
+  }
+
+  @Test
+  fun `versions the logo by the time it last changed`() {
+    val instrument = instrument(logoSource = LogoSource.MANUAL).apply { logoUpdatedAt = Instant.parse("2026-10-29T09:15:00Z") }
+    expect(InstrumentDto.fromSnapshot(InstrumentSnapshot(instrument = instrument)).logoVersion).toEqual(1793265300000L)
   }
 
   private fun instrument(logoSource: LogoSource?) =

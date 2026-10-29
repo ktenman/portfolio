@@ -2,6 +2,8 @@ package ee.tenman.portfolio.lightyear
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.ProviderName
 import feign.FeignException
 import feign.Request
 import io.mockk.every
@@ -35,6 +37,28 @@ class LightyearLogoUrlTest : LightyearPriceServiceTestBase() {
     val logos = service.fetchLogoUrls(listOf("VWCE:GER:EUR", "ÕUNAD:TLN:EUR"))
 
     expect(logos).toEqual(mapOf("VWCE:GER:EUR" to "https://lightyear.test/vwce.png"))
+  }
+
+  @Test
+  fun `looks up an ETF another provider prices by its ticker instead of sending its foreign id`() {
+    val etf =
+      Instrument(
+        symbol = "BNKE:PAR:EUR",
+        name = "Amundi Euro Stoxx Banks",
+        category = "ETF",
+        baseCurrency = "EUR",
+        providerName = ProviderName.TRADING212,
+        providerExternalId = "BNKEp_EQ",
+      )
+    every { properties.findUuidBySymbol("BNKE:PAR:EUR") } returns null
+    every { instrumentRepository.findBySymbol("BNKE:PAR:EUR") } returns Optional.of(etf)
+    every { lightyearPriceClient.lookupUuid("BNKE:PAR") } returns LightyearUuidLookupResponse("BNKE:PAR", "uuid-bnke")
+    every { lightyearPriceClient.getInstrumentBatch(listOf("uuid-bnke")) } returns
+      listOf(response("uuid-bnke", "https://lightyear.test/amundi.png"))
+
+    val logos = service.fetchLogoUrls(listOf("BNKE:PAR:EUR"))
+
+    expect(logos).toEqual(mapOf("BNKE:PAR:EUR" to "https://lightyear.test/amundi.png"))
   }
 
   @Test

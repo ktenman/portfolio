@@ -15,6 +15,7 @@
         <instrument-logo
           class="max-md:row-span-2"
           :logo-uuid="row.instrument.logoUuid"
+          :version="row.instrument.logoVersion"
           :symbol="row.ticker"
           :size="wide ? 20 : 24"
         />

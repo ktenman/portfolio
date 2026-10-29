@@ -1,10 +1,12 @@
 package ee.tenman.portfolio.service.instrument
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
@@ -37,6 +39,18 @@ class InstrumentServiceFundCurrencyIT {
 
     val reloaded = instrumentRepository.findById(saved.id).get()
     expect(reloaded.fundCurrency).toEqual(Currency.USD)
+  }
+
+  @Test
+  fun `updateLogoSource stamps the time the logo changed`() {
+    val saved =
+      instrumentRepository.save(
+      Instrument(symbol = "LOGO_UPD:XETRA:EUR", name = "Fönd", category = "ETF", baseCurrency = "EUR"),
+    )
+
+    instrumentService.updateLogoSource(saved.id, saved.symbol, LogoSource.MANUAL)
+
+    expect(instrumentRepository.findById(saved.id).get().logoUpdatedAt).notToEqualNull()
   }
 
   @Test

@@ -18,6 +18,8 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 
 @Service
 class InstrumentService(
@@ -25,6 +27,7 @@ class InstrumentService(
   private val transactionProfitService: TransactionProfitService,
   private val instrumentSnapshotService: InstrumentSnapshotService,
   private val cacheInvalidationService: CacheInvalidationService,
+  private val clock: Clock,
 ) {
   @Transactional(readOnly = true)
   @Cacheable(value = [INSTRUMENT_CACHE], key = "#id")
@@ -103,7 +106,7 @@ class InstrumentService(
     symbol: String,
     logoSource: LogoSource,
   ) {
-    instrumentRepository.updateLogoSource(instrumentId, logoSource)
+    instrumentRepository.updateLogoSource(instrumentId, logoSource, Instant.now(clock))
     cacheInvalidationService.evictInstrumentCaches(instrumentId, symbol)
   }
 

@@ -40,10 +40,10 @@ class InstrumentLogoCollectionJob(
   fun collectMissingLogos() {
     val instruments = instrumentRepository.findByLogoSourceIsNull().filterNot { it.isCash() }
     log.info("Found ${instruments.size} instruments without logos")
-    val logoUrls = lightyearLogoUrls(instruments.filter { it.isLightyearEtf() })
+    val logoUrls = lightyearLogoUrls(instruments.filter { it.isEtf() })
     if (logoUrls == null) log.warn("Leaving ETF logos for the next run because the Lightyear lookup failed")
     instruments
-      .filter { logoUrls != null || !it.isLightyearEtf() }
+      .filter { logoUrls != null || !it.isEtf() }
       .forEach { instrument ->
         runCatching { collect(instrument, logoUrls?.get(instrument.symbol)) }
           .onFailure { log.warn("Failed to collect the logo of ${instrument.symbol}: ${it.message}") }
@@ -55,13 +55,13 @@ class InstrumentLogoCollectionJob(
       .onFailure { log.warn("Lightyear logo lookup failed for ${etfs.size} instruments: ${it.message}") }
       .getOrNull()
 
-  private fun Instrument.isLightyearEtf(): Boolean = category == InstrumentCategory.ETF.name && providerName == ProviderName.LIGHTYEAR
+  private fun Instrument.isEtf(): Boolean = category == InstrumentCategory.ETF.name
 
   private fun collect(
     instrument: Instrument,
     logoUrl: String?,
   ) {
-    val result = cryptoLogo(instrument) ?: logoFallbackService.fetchLogo(instrument.name, null, logoUrl) ?: return
+    val result = cryptoLogo(instrument) ?: logoFallbackService.fetchLogo(instrument.issuer(), null, logoUrl) ?: return
     minioService.uploadLogo(instrument.uuid, imageProcessingService.resizeToMaxDimension(result.imageData))
     instrumentService.updateLogoSource(instrument.id, instrument.symbol, result.source)
     log.info("Saved logo from ${result.source} for ${instrument.symbol}")

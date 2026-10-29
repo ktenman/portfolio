@@ -41,6 +41,8 @@ data class InstrumentDto(
   val xirrAnnualReturn: BigDecimal? = null,
   val firstTransactionDate: LocalDate? = null,
   val logoUuid: UUID? = null,
+  val uuid: UUID? = null,
+  val logoVersion: Long? = null,
 ) {
   fun toEntity() =
     Instrument(
@@ -79,6 +81,8 @@ data class InstrumentDto(
         ter = instrument.ter,
         xirrAnnualReturn = instrument.xirrAnnualReturn,
         logoUuid = instrument.logoUuid(),
+        uuid = instrument.uuid,
+        logoVersion = instrument.logoUpdatedAt?.toEpochMilli(),
       )
 
     fun fromSnapshot(snapshot: InstrumentSnapshot) =
@@ -105,6 +109,8 @@ data class InstrumentDto(
         xirrAnnualReturn = snapshot.instrument.xirrAnnualReturn,
         firstTransactionDate = snapshot.firstTransactionDate,
         logoUuid = snapshot.instrument.logoUuid(),
+        uuid = snapshot.instrument.uuid,
+        logoVersion = snapshot.instrument.logoUpdatedAt?.toEpochMilli(),
       )
 
     private fun Instrument.logoUuid(): UUID? = uuid.takeIf { logoSource != null }

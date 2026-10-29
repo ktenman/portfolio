@@ -1,7 +1,10 @@
-import { describe, it, expect, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { TimeRange, type InstrumentDto } from '../../models/generated/domain-models'
+import { logoService } from '../../services/api'
 import { INSTRUMENTS } from '../../tests/visual/instruments-fixture'
+import LogoReplacementModal from '../etf/logo-replacement-modal.vue'
 import InstrumentHeatmap from './instrument-heatmap.vue'
 
 vi.mock('@vueuse/core', async importOriginal => {
@@ -14,9 +17,16 @@ vi.mock('@vueuse/core', async importOriginal => {
 
 enableAutoUnmount(afterEach)
 
+beforeEach(() => {
+  vi.restoreAllMocks()
+})
+
 const RANGE_CHANGE = { changeAmount: 341.19, changePercent: 1.87 }
 
-const mountHeatmap = (props: Partial<{ instruments: InstrumentDto[]; isLoading: boolean }> = {}) =>
+const mountHeatmap = (
+  props: Partial<{ instruments: InstrumentDto[]; isLoading: boolean }> = {},
+  queryClient = new QueryClient()
+) =>
   mount(InstrumentHeatmap, {
     props: {
       instruments: INSTRUMENTS,
@@ -27,6 +37,7 @@ const mountHeatmap = (props: Partial<{ instruments: InstrumentDto[]; isLoading: 
       isError: false,
       ...props,
     },
+    global: { plugins: [[VueQueryPlugin, { queryClient }]] },
   })
 
 type Wrapper = ReturnType<typeof mountHeatmap>
@@ -155,6 +166,39 @@ describe('InstrumentHeatmap', () => {
       expect.stringContaining('No open positions for the selected platforms.'),
       false,
     ])
+  })
+
+  it('asks for every logo again once it changes on the server', async () => {
+    const wrapper = mountHeatmap({
+      instruments: INSTRUMENTS.map(instrument => ({ ...instrument, logoVersion: 7 })),
+    })
+
+    await boxFor(wrapper, 'TSTWLD').trigger('click')
+
+    expect(
+      new Set(wrapper.findAll('img').map(img => img.attributes('src')?.split('?')[1]))
+    ).toEqual(new Set(['v=7']))
+  })
+
+  it('looks up other logos for the selected instrument from its logo', async () => {
+    const candidates = vi.spyOn(logoService, 'getCandidates').mockResolvedValue([])
+    const wrapper = mountHeatmap()
+    await boxFor(wrapper, 'TSTWLD').trigger('click')
+
+    await wrapper.get('[data-readout] [title="Click to replace logo"]').trigger('click')
+
+    expect(candidates).toHaveBeenCalledWith('00000000-0000-4000-8000-000000000101')
+  })
+
+  it('refreshes the instruments once a logo is replaced', () => {
+    const queryClient = new QueryClient()
+    const key = ['instruments', ['LIGHTYEAR'], TimeRange.ONE_DAY]
+    queryClient.setQueryData(key, { instruments: INSTRUMENTS })
+    const wrapper = mountHeatmap({}, queryClient)
+
+    wrapper.findComponent(LogoReplacementModal).vm.$emit('replaced', INSTRUMENTS[0].uuid)
+
+    expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
   })
 
   it('keeps the map height while loading', () => {
