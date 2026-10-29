@@ -22,6 +22,7 @@ data class RadioDay(
   val now: Long,
   val recorded: List<RecordedSpan>,
   val seconds: Long,
+  val planned: List<PlannedSpan>,
   val day: List<DayBlock>,
   val night: List<DayBlock>,
 )
@@ -37,6 +38,12 @@ data class RecordedSpan(
   val start: Long,
   val end: Long,
   val recording: Boolean,
+)
+
+data class PlannedSpan(
+  val programme: String,
+  val start: Long,
+  val end: Long,
 )
 
 data class DayBlock(
@@ -155,6 +162,14 @@ private fun Take.drawn(
   minOf(end - LAG.seconds, slot?.end ?: until, until),
   recording,
 )
+
+fun planned(
+  airings: List<DayAiring>,
+  until: Long,
+): List<PlannedSpan> =
+  airings
+    .filter { it.state == AiringState.PLANNED }
+    .map { PlannedSpan(it.name, it.start, minOf(it.end, until)) }
 
 fun ticks(
   date: LocalDate,

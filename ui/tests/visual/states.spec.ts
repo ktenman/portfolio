@@ -9,7 +9,7 @@ import { stubDiversification, stubDiversificationWithLongFundName } from './dive
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown, stubEtfBreakdownWithTuleva } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
-import { stubRadio, stubRadioLongText } from './radio-fixture'
+import { stubRadio, stubRadioLongText, stubRadioPlannedSoon } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 import { stubWindows } from './windows-fixture'
@@ -232,6 +232,17 @@ test('a radio schedule row opens its recording wherever it is clicked', async ({
   await expect(page).toHaveURL(/\/radio\/2026-10-17$/)
 })
 
+async function labelAt(page: Page, x: number, y: number): Promise<string | null> {
+  return page.evaluate(
+    point =>
+      document
+        .elementFromPoint(point.x, point.y)
+        ?.closest('a, button')
+        ?.getAttribute('aria-label') ?? null,
+    { x, y }
+  )
+}
+
 test('the play button of a radio schedule row stays above the link to its recording', async ({
   page,
 }) => {
@@ -242,11 +253,53 @@ test('the play button of a radio schedule row stays above the link to its record
   const play = page.getByRole('button', { name: 'Listen: Keskpäevatund 12:00' }).first()
   await play.scrollIntoViewIfNeeded()
   const box = (await play.boundingBox())!
-  const hit = await page.evaluate(
-    ({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.getAttribute('aria-label'),
-    { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  expect(await labelAt(page, box.x + box.width / 2, box.y + box.height / 2)).toBe(
+    'Listen: Keskpäevatund 12:00'
   )
-  expect(hit).toBe('Listen: Keskpäevatund 12:00')
+})
+
+test('the radio day bar leaves the room after a recording name unlinked', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const link = page.getByTestId('radio-day-link').filter({ hasText: 'Huvitaja' })
+  await link.scrollIntoViewIfNeeded()
+  const room = (await link.locator('span').first().boundingBox())!
+  expect(await labelAt(page, room.x + room.width - 2, room.y + room.height / 2)).toBe(null)
+})
+
+test('the radio day bar links a recording name that runs past its block', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/catch-up')
+  const link = page.getByTestId('radio-day-link').filter({ hasText: 'Huvitaja' })
+  await link.scrollIntoViewIfNeeded()
+  const block = (await link.boundingBox())!
+  const name = (await link.getByText('Huvitaja').boundingBox())!
+  expect(await labelAt(page, block.x + block.width + 10, name.y + name.height / 2)).toBe(
+    'Huvitaja, 13:10–, recording now'
+  )
+})
+
+test('the radio day bar stops a recording name at the next planned airing', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioPlannedSoon(page)
+  await openRoute(page, '/radio/catch-up')
+  const room = (await page.getByTestId('radio-day-link').locator('span').first().boundingBox())!
+  const plan = (await page.getByTestId('radio-day-planned').boundingBox())!
+  expect(room.x + room.width).toBeLessThanOrEqual(plan.x + SUBPIXEL_PX)
 })
 
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {

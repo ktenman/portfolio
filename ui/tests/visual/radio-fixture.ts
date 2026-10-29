@@ -266,6 +266,15 @@ export const stubRadioStill: RouteStub = async page => {
   await stubRadio(page)
 }
 
+export const stubRadioPlannedSoon: RouteStub = async page => {
+  await stubRadio(page)
+  const day = radioDay()
+  const planned = [{ programme: 'Sihik', start: day.now + 600, end: day.now + 4200 }]
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
+    route.fulfill({ json: { ...day, planned } })
+  )
+}
+
 export const stubRadioLongText: RouteStub = async page => {
   await stubRadio(page)
   const lines = Array.from({ length: 90 }, (_, i) => ({
