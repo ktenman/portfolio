@@ -86,7 +86,7 @@ import {
 import type { TimeRange } from '../../models/generated/domain-models'
 
 const CELL =
-  'relative cursor-pointer border border-hairline bg-surface-sunken px-2.75 py-1.25 text-label font-medium whitespace-nowrap text-ink-soft transition-colors not-first:-ml-px first:rounded-l-container last:rounded-r-container focus-visible:z-2 enabled:hover:not-data-active:bg-surface-hover enabled:hover:not-data-active:text-ink disabled:cursor-not-allowed disabled:text-ink-faint data-active:z-1 data-active:border-brass data-active:bg-brass-wash data-active:text-brass-deep md-down:h-11'
+  'relative cursor-pointer border border-hairline bg-surface-sunken px-2.75 py-1.25 text-label font-medium whitespace-nowrap text-ink-soft transition-colors not-first:-ml-px first:rounded-l-container last:rounded-r-container focus-visible:z-2 enabled:hover:not-data-active:bg-surface-hover enabled:hover:not-data-active:text-ink disabled:cursor-not-allowed disabled:text-ink-faint data-active:z-1 data-active:border-brass data-active:bg-brass-wash data-active:text-brass-deep'
 
 const ROW_CELL = 'md-down:min-w-fit md-down:flex-1 md-down:px-1'
 

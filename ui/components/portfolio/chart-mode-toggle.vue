@@ -4,7 +4,7 @@
     <button
       v-for="benchmark in BENCHMARKS"
       :key="benchmark.key"
-      class="platform-btn md-down:min-h-11"
+      class="platform-btn"
       :class="{ active: selected.includes(benchmark.key) }"
       :aria-pressed="selected.includes(benchmark.key)"
       type="button"

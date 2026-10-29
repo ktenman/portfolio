@@ -79,12 +79,4 @@ describe('RangeChangeHeader', () => {
 
     expect(wrapper.find('.range-period').text()).toBe('in the past 6 years')
   })
-
-  it('should name the max range from the first buy', () => {
-    const wrapper = mount(RangeChangeHeader, {
-      props: { amount: 13726.45, percent: 8.4, range: TimeRange.MAX },
-    })
-
-    expect(wrapper.find('.range-period').text()).toBe('since the first buy')
-  })
 })

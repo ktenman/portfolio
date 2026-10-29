@@ -42,7 +42,6 @@ const OPEN_MODAL = 'dialog.modal[open]'
 const OPEN_REPORT = '.report-popover:popover-open'
 const QUICK_DATES_TOGGLE = '[data-testid="quickDatesToggle"]'
 const PICKER_MARGIN_PX = 8
-const MIN_TOUCH_PX = 44
 
 async function waitForModal(page: Page, title: string | RegExp): Promise<void> {
   const content = page.locator(`${OPEN_MODAL} .modal-content`)
@@ -702,19 +701,6 @@ test.describe('mobile states', () => {
       }
     })
     expect(layout).toEqual({ cells: 9, lines: 1, clipped: 0, overflows: false })
-  })
-
-  test('the period and compare controls are at least 44 px tall on a phone', async ({ page }) => {
-    await stubPortfolioSummary(page)
-    await openRoute(page, '/')
-    await page.getByRole('button', { name: 'More', exact: true }).click()
-    const targets = [
-      ...(await page.getByRole('group', { name: 'Chart period' }).getByRole('button').all()),
-      ...(await page.locator('#period-picker').getByRole('button').all()),
-      ...(await page.getByRole('group', { name: 'Compare' }).getByRole('button').all()),
-    ]
-    const heights = await Promise.all(targets.map(async t => (await t.boundingBox())!.height))
-    expect([targets.length, Math.min(...heights) >= MIN_TOUCH_PX]).toEqual([21, true])
   })
 
   test('the More popover spans the period row on a phone', async ({ page }) => {
