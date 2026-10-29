@@ -6,7 +6,7 @@
       <li
         v-for="row in rows"
         :key="row.instrument.symbol"
-        class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-control px-1 py-1 md:h-7.5 md:grid-cols-[auto_5.5rem_minmax(0,1fr)_6rem] md:py-0"
+        class="grid grid-cols-[auto_minmax(0,1fr)_6rem] items-center gap-x-2 rounded-control px-1 py-1 md:h-7.5 md:grid-cols-[auto_5.5rem_minmax(0,1fr)_6rem] md:py-0"
         :class="{ 'cursor-pointer hover:bg-surface-hover': interactive }"
         @pointerenter="preview(row.instrument.id)"
         @pointerleave="preview(null)"
@@ -20,16 +20,16 @@
         />
         <span class="truncate text-label font-semibold text-ink">{{ row.ticker }}</span>
         <span aria-hidden="true" class="relative h-2 max-md:col-start-2 max-md:row-start-2">
-          <span class="absolute inset-y-[-3px] left-1/2 w-px bg-hairline-strong" />
+          <span class="absolute inset-y-[-3px] left-0 w-px bg-hairline-strong md:left-1/2" />
           <span
             data-bar
-            class="absolute inset-y-0"
+            class="absolute inset-y-0 left-0 w-[calc(var(--share)*100%)] rounded-r-control md:w-[calc(var(--share)*50%)]"
             :class="
               row.gain
-                ? 'left-1/2 rounded-r-control bg-gain'
-                : 'right-1/2 rounded-l-control bg-loss'
+                ? 'bg-gain md:left-1/2'
+                : 'bg-loss md:right-1/2 md:left-auto md:rounded-l-control md:rounded-r-none'
             "
-            :style="{ width: `${row.share * 50}%` }"
+            :style="{ '--share': row.share }"
           />
         </span>
         <span

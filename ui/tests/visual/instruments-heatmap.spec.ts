@@ -68,19 +68,31 @@ test('heatmap readout shows every figure in full on phones', async ({ page }, te
   }
 })
 
-test('heatmap switch buttons are 44 px square on phones', async ({ page }, testInfo) => {
+test('change list bars grow rightward from one edge on phones', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
-  const sizes = await page
-    .getByRole('group', { name: 'View' })
-    .getByRole('button')
-    .evaluateAll(buttons =>
-      buttons.map(button => {
-        const { width, height } = button.getBoundingClientRect()
-        return [width, height]
-      })
-    )
-  expect(sizes).toEqual([
-    [TOUCH_PX, TOUCH_PX],
-    [TOUCH_PX, TOUCH_PX],
-  ])
+  for (const width of PHONE_WIDTHS) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({
+          width: window.innerWidth,
+          starts: new Set(
+            Array.from(
+              document.querySelectorAll('[data-bar]'),
+              bar => bar.getBoundingClientRect().left
+            )
+          ).size,
+        }))
+      )
+      .toEqual({ width, starts: 1 })
+  }
+})
+
+test('view tabs are 44 px tall on phones', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  const heights = await page
+    .getByRole('navigation', { name: 'Instrument views' })
+    .getByRole('link')
+    .evaluateAll(links => links.map(link => link.getBoundingClientRect().height))
+  expect(heights).toEqual([TOUCH_PX, TOUCH_PX])
 })

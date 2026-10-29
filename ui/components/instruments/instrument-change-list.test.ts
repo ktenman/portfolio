@@ -28,9 +28,9 @@ describe('InstrumentChangeList', () => {
     ])
   })
 
-  it('draws a loss bar to the left of the centre line', () =>
+  it('sizes a bar by its share of the largest change', () =>
     expect(rowFor(mountList(false), 'TSTORS').find('[data-bar]').attributes('style')).toContain(
-      `width: ${(84.19 / 212.66) * 50}%`
+      `--share: ${84.19 / 212.66}`
     ))
 
   it('hides the bars from assistive technology', () =>

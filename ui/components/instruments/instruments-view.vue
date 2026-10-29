@@ -14,14 +14,30 @@
       />
     </template>
 
-    <template #toolbar>
-      <div class="controls-row">
-        <segmented-switch
-          label="View"
-          :options="VIEW_OPTIONS"
-          :selected="view"
-          @select="view = $event"
-        />
+    <template #subtitle>
+      <platform-filter
+        v-if="filtersOpen && availablePlatforms.length > 0"
+        class="mt-3"
+        :available="availablePlatforms"
+        :selected="selectedPlatforms"
+        @toggle="togglePlatform"
+        @toggle-all="toggleAllPlatforms"
+      />
+    </template>
+
+    <template #content>
+      <div class="controls-row border-b border-hairline-strong">
+        <nav class="flex gap-7" aria-label="Instrument views">
+          <router-link
+            v-for="tab in VIEWS"
+            :key="tab.to"
+            :to="tab.to"
+            exact-active-class="active"
+            class="relative px-0.5 py-2.5 text-base leading-6 font-medium text-ink-soft transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:transition-colors hover:text-ink hover:after:bg-hairline-strong [&.active]:font-semibold [&.active]:text-ink [&.active]:after:bg-brass"
+          >
+            {{ tab.label }}
+          </router-link>
+        </nav>
         <div class="period-selector-container">
           <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
           <select
@@ -35,33 +51,19 @@
             </option>
           </select>
         </div>
-        <div v-if="view === 'table'" class="toggle-container">
-          <span class="toggle-label">Active only</span>
-          <label class="toggle-switch">
-            <input
-              v-model="showActiveOnly"
-              type="checkbox"
-              role="switch"
-              aria-label="Show active instruments only"
-            />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
       </div>
-    </template>
-
-    <template #subtitle>
-      <platform-filter
-        v-if="filtersOpen && availablePlatforms.length > 0"
-        class="mt-3"
-        :available="availablePlatforms"
-        :selected="selectedPlatforms"
-        @toggle="togglePlatform"
-        @toggle-all="toggleAllPlatforms"
-      />
-    </template>
-
-    <template #content>
+      <div v-if="view === 'table'" class="toggle-container">
+        <span class="toggle-label">Active only</span>
+        <label class="toggle-switch">
+          <input
+            v-model="showActiveOnly"
+            type="checkbox"
+            role="switch"
+            aria-label="Show active instruments only"
+          />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
       <instrument-heatmap
         v-if="view === 'heatmap'"
         :instruments="openPositions"
@@ -103,7 +105,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
 import { TIME_RANGES, usePriceChangePeriod } from '../../composables/use-time-range'
@@ -113,7 +115,6 @@ import { usePlatformFilter } from '../../composables/use-platform-filter'
 import CrudLayout from '../shared/crud-layout.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
-import SegmentedSwitch from '../shared/segmented-switch.vue'
 import InstrumentHeatmap from './instrument-heatmap.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
@@ -125,20 +126,16 @@ import { STORAGE_KEYS } from '../../constants'
 
 type InstrumentsView = 'table' | 'heatmap'
 
-const VIEW_OPTIONS: { value: InstrumentsView; label: string; icon: string }[] = [
-  { value: 'table', label: 'Table', icon: 'M4 6h16M4 12h16M4 18h16' },
-  { value: 'heatmap', label: 'Heatmap', icon: 'M3 4h9v16H3zM15 4h6v7h-6zM15 13h6v7h-6z' },
+const VIEWS = [
+  { to: '/instruments', label: 'Table' },
+  { to: '/instruments/heatmap', label: 'Heatmap' },
 ]
 
 const selectedItem = ref<InstrumentDto | null>(null)
 const route = useRoute()
-const router = useRouter()
-const view = computed<InstrumentsView>({
-  get: () => (route.params.view === 'heatmap' ? 'heatmap' : 'table'),
-  set: value => {
-    router.push(value === 'heatmap' ? '/instruments/heatmap' : '/instruments')
-  },
-})
+const view = computed<InstrumentsView>(() =>
+  route.params.view === 'heatmap' ? 'heatmap' : 'table'
+)
 const showActiveOnly = useLocalStorage<boolean>(STORAGE_KEYS.SHOW_ACTIVE_ONLY, true)
 const filtersOpen = useLocalStorage<boolean>(STORAGE_KEYS.INSTRUMENTS_FILTERS_OPEN, true)
 const isInstrumentModalOpen = ref(false)
@@ -265,15 +262,18 @@ const handleTitleClick = async () => {
 <style scoped>
 .controls-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .toggle-container {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .toggle-label {
@@ -361,13 +361,15 @@ const handleTitleClick = async () => {
 }
 
 @media (max-width: 992px) and (orientation: landscape) {
-  .controls-row {
+  .controls-row,
+  .toggle-container {
     display: none !important;
   }
 }
 
 @media (max-height: 500px) {
-  .controls-row {
+  .controls-row,
+  .toggle-container {
     display: none !important;
   }
 }
