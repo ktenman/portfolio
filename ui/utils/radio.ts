@@ -98,6 +98,9 @@ export const recordedSummary = ({ recorded, seconds }: RadioDay): string | null 
     ? `${recorded.length} ${recorded.length === 1 ? 'recording' : 'recordings'} · ${length(seconds)}`
     : null
 
+export const plannedSummary = ({ planned, plannedSeconds }: RadioDay): string | null =>
+  planned.length ? `${planned.length} planned · ${length(plannedSeconds)}` : null
+
 export const minutes = (seconds: number): string => `${Math.max(1, Math.round(seconds / 60))} min`
 
 export const megabytes = (bytes: number): string => `${Math.round(bytes / 1_000_000)} MB`
