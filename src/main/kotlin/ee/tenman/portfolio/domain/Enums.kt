@@ -66,6 +66,7 @@ enum class SectorSource {
 
 enum class LogoSource {
   LIGHTYEAR,
+  PARQET,
   NVSTLY_ICONS,
   BING,
   LLM_SELECTED,
