@@ -1,6 +1,5 @@
 <template>
   <div>
-    <h3 class="mt-8 mb-3 text-heading">Shows</h3>
     <data-table
       :items="programmes ?? []"
       :columns="columns"

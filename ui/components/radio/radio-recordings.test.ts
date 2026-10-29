@@ -13,7 +13,6 @@ vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
     deleteRecording: vi.fn(),
-    programmes: vi.fn().mockResolvedValue([]),
     station: vi.fn().mockResolvedValue(null),
   },
 }))
@@ -43,7 +42,6 @@ describe('RadioRecordings', () => {
     confirm.mockReset().mockResolvedValue(true)
     vi.mocked(radioService.deleteRecording).mockReset().mockResolvedValue()
     toasts.value = []
-    vi.mocked(radioService.programmes).mockClear()
     vi.mocked(radioService.station).mockClear()
     vi.mocked(radioService.recordings).mockResolvedValue([
       recording(),
@@ -197,12 +195,18 @@ describe('RadioRecordings', () => {
     expect(radioService.recordings).toHaveBeenCalledTimes(2)
   })
 
-  it('should count the archive and the last recording again after a delete', async () => {
+  it('should count the last recording again after a delete', async () => {
     await remove()
-    const calls = [radioService.programmes, radioService.station].map(
-      it => vi.mocked(it).mock.calls.length
-    )
-    expect(calls).toEqual([2, 2])
+    expect(radioService.station).toHaveBeenCalledTimes(2)
+  })
+
+  it('should mark the recordings of each show stale after a delete', async () => {
+    const wrapper = await mount()
+    wrapper.queryClient.setQueryDefaults(['radio-programmes'], { gcTime: Infinity })
+    wrapper.queryClient.setQueryData(['radio-programmes'], [])
+    await wrapper.find('button[aria-label="Delete: Keskpäevatund Sat 17.10"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.queryClient.getQueryState(['radio-programmes'])?.isInvalidated).toBe(true)
   })
 
   it('should mark the search results stale after a delete', async () => {
