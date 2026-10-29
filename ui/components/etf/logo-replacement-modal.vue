@@ -13,7 +13,16 @@
       v-else-if="hasFetched && candidates.length === 0"
       class="py-6 text-center text-body-secondary"
     >
-      No logo candidates found
+      <p>No logo candidates found</p>
+      <AppButton
+        variant="secondary"
+        size="sm"
+        class="mt-3"
+        data-search-again
+        @click="loadCandidates"
+      >
+        Search again
+      </AppButton>
     </div>
     <div v-else class="logo-grid">
       <div

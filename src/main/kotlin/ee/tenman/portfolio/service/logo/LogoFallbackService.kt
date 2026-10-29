@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service
 
 @Service
 class LogoFallbackService(
-  private val nvstlyLogoService: NvstlyLogoService,
   private val imageSearchLogoService: ImageSearchLogoService,
   private val logoValidationService: LogoValidationService,
   private val imageDownloadService: ImageDownloadService,
@@ -21,7 +20,7 @@ class LogoFallbackService(
     lightyearLogoUrl: String?,
   ): LogoFetchResult? =
     tryLightyearLogo(lightyearLogoUrl)
-      ?: tryNvstlyLogo(existingTicker)?.copy(ticker = existingTicker)
+      ?: tryTickerLogo(existingTicker)
       ?: tryLlmSelectedLogo(companyName, existingTicker)?.copy(ticker = existingTicker)
       ?: run {
         log.debug("All logo sources exhausted for company: $companyName")
@@ -43,16 +42,23 @@ class LogoFallbackService(
     return LogoFetchResult(imageData = imageData, source = LogoSource.LIGHTYEAR)
   }
 
-  private fun tryNvstlyLogo(ticker: String?): LogoFetchResult? {
+  private fun tryTickerLogo(ticker: String?): LogoFetchResult? {
     if (ticker.isNullOrBlank()) return null
-    log.debug("Trying nvstly/icons for ticker: $ticker")
-    val imageData = nvstlyLogoService.fetchLogo(ticker) ?: return null
+    return TickerLogo.entries.firstNotNullOfOrNull { tryTickerLogo(it, ticker) }
+  }
+
+  private fun tryTickerLogo(
+    logo: TickerLogo,
+    ticker: String,
+  ): LogoFetchResult? {
+    log.debug("Trying ${logo.source} for ticker: $ticker")
+    val imageData = imageDownloadService.downloadOrNull(logo.url(ticker)) ?: return null
     if (!logoValidationService.isValidLogo(imageData)) {
-      log.debug("Nvstly logo failed validation for ticker: $ticker")
+      log.debug("${logo.source} logo failed validation for ticker: $ticker")
       return null
     }
-    log.info("Successfully fetched logo from nvstly/icons for ticker: $ticker")
-    return LogoFetchResult(imageData = imageData, source = LogoSource.NVSTLY_ICONS, ticker = ticker)
+    log.info("Successfully fetched logo from ${logo.source} for ticker: $ticker")
+    return LogoFetchResult(imageData = imageData, source = logo.source, ticker = ticker)
   }
 
   private fun tryLlmSelectedLogo(

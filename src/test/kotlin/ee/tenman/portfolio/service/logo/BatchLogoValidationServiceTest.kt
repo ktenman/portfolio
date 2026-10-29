@@ -212,8 +212,8 @@ class BatchLogoValidationServiceTest {
       )
       val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
-      every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo", any()) } returns listOf(candidate1)
-      every { imageSearchLogoService.searchLogoCandidates("MSFT Microsoft Corp logo", any()) } returns listOf(candidate2)
+      every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc", any()) } returns listOf(candidate1)
+      every { imageSearchLogoService.searchLogoCandidates("MSFT Microsoft Corp", any()) } returns listOf(candidate2)
       every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"

@@ -22,6 +22,8 @@ class LogoOwnerService(
     etfHoldingRepository.findByUuid(uuid)?.let { LogoSearchQueryBuilder.buildQuery(it.name, it.ticker) }
       ?: instrumentRepository.findByUuid(uuid)?.let { LogoSearchQueryBuilder.buildQuery(it.issuer(), null) }
 
+  fun ticker(uuid: UUID): String? = etfHoldingRepository.findByUuid(uuid)?.ticker
+
   fun saveManualLogo(
     uuid: UUID,
     image: ByteArray,

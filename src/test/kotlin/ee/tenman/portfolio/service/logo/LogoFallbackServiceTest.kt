@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class LogoFallbackServiceTest {
-  private val nvstlyLogoService = mockk<NvstlyLogoService>()
   private val imageSearchLogoService = mockk<ImageSearchLogoService>()
   private val logoValidationService = mockk<LogoValidationService>()
   private val imageDownloadService = mockk<ImageDownloadService>()
@@ -22,7 +21,6 @@ class LogoFallbackServiceTest {
   fun setUp() {
     service =
       LogoFallbackService(
-        nvstlyLogoService,
         imageSearchLogoService,
         logoValidationService,
         imageDownloadService,
@@ -40,41 +38,52 @@ class LogoFallbackServiceTest {
 
     expect(result?.source).toEqual(LogoSource.LIGHTYEAR)
     expect(result?.imageData).toEqual(imageData)
-    verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
+    verify(exactly = 0) { imageDownloadService.downloadOrNull(any()) }
   }
 
   @Test
-  fun `should skip lightyear and try nvstly when lightyear url is null`() {
+  fun `should return the Parqet logo of the ticker when lightyear url is null`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns imageData
+    every { imageDownloadService.downloadOrNull(PARQET_AAPL) } returns imageData
+    every { logoValidationService.isValidLogo(imageData) } returns true
+
+    val result = service.fetchLogo("Apple Inc", "AAPL", null)
+
+    expect(result?.source).toEqual(LogoSource.PARQET)
+  }
+
+  @Test
+  fun `should fall back to nvstly when Parqet has no logo of the ticker`() {
+    val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+    every { imageDownloadService.downloadOrNull(PARQET_AAPL) } returns null
+    every { imageDownloadService.downloadOrNull(NVSTLY_AAPL) } returns imageData
     every { logoValidationService.isValidLogo(imageData) } returns true
 
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
     expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
-    expect(result?.ticker).toEqual("AAPL")
   }
 
   @Test
-  fun `should skip nvstly and fallback to llm selection when no ticker provided`() {
+  fun `should skip the ticker logos and fallback to llm selection when no ticker provided`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
-    every { imageSearchLogoService.searchLogoCandidates("Apple Inc logo") } returns candidates
+    every { imageSearchLogoService.searchLogoCandidates("Apple Inc") } returns candidates
     every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", null, candidates) } returns
       LogoSelectionResult(0, imageData, LogoSource.LLM_SELECTED)
 
     val result = service.fetchLogo("Apple Inc", null, null)
 
     expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
-    verify(exactly = 0) { nvstlyLogoService.fetchLogo(any()) }
+    verify(exactly = 0) { imageDownloadService.downloadOrNull(any()) }
   }
 
   @Test
-  fun `should fallback to llm selection when nvstly fails`() {
+  fun `should fallback to llm selection when the ticker logos fail`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns null
-    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo") } returns candidates
+    every { imageDownloadService.downloadOrNull(any()) } returns null
+    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc") } returns candidates
     every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", "AAPL", candidates) } returns
       LogoSelectionResult(0, imageData, LogoSource.BING)
 
@@ -86,8 +95,8 @@ class LogoFallbackServiceTest {
 
   @Test
   fun `should return null when all sources fail`() {
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns null
-    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc logo") } returns emptyList()
+    every { imageDownloadService.downloadOrNull(any()) } returns null
+    every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc") } returns emptyList()
 
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
@@ -100,10 +109,24 @@ class LogoFallbackServiceTest {
     val validData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } returns invalidData
     every { logoValidationService.isValidLogo(invalidData) } returns false
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns validData
+    every { imageDownloadService.downloadOrNull(PARQET_AAPL) } returns validData
     every { logoValidationService.isValidLogo(validData) } returns true
 
     val result = service.fetchLogo("Apple Inc", "AAPL", "https://lightyear.com/logo.png")
+
+    expect(result?.source).toEqual(LogoSource.PARQET)
+  }
+
+  @Test
+  fun `should try nvstly when the Parqet logo fails validation`() {
+    val invalidData = byteArrayOf(1, 2, 3, 4)
+    val validData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+    every { imageDownloadService.downloadOrNull(PARQET_AAPL) } returns invalidData
+    every { logoValidationService.isValidLogo(invalidData) } returns false
+    every { imageDownloadService.downloadOrNull(NVSTLY_AAPL) } returns validData
+    every { logoValidationService.isValidLogo(validData) } returns true
+
+    val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
     expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
   }
@@ -112,23 +135,27 @@ class LogoFallbackServiceTest {
   fun `should handle lightyear download failure gracefully`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     every { imageDownloadService.download("https://lightyear.com/logo.png") } throws RuntimeException("Network error")
-    every { nvstlyLogoService.fetchLogo("AAPL") } returns imageData
+    every { imageDownloadService.downloadOrNull(PARQET_AAPL) } returns imageData
     every { logoValidationService.isValidLogo(imageData) } returns true
 
     val result = service.fetchLogo("Apple Inc", "AAPL", "https://lightyear.com/logo.png")
 
-    expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
+    expect(result?.source).toEqual(LogoSource.PARQET)
   }
 
   @Test
-  fun `should use existing ticker for nvstly lookup`() {
+  fun `should keep the ticker the logo was found by`() {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    every { nvstlyLogoService.fetchLogo("EXISTING") } returns imageData
+    every { imageDownloadService.downloadOrNull("https://assets.parqet.com/logos/symbol/ÄRI?format=png&size=512") } returns imageData
     every { logoValidationService.isValidLogo(imageData) } returns true
 
-    val result = service.fetchLogo("Apple Inc", "EXISTING", null)
+    val result = service.fetchLogo("Äri AS", "äri", null)
 
-    expect(result?.ticker).toEqual("EXISTING")
-    expect(result?.source).toEqual(LogoSource.NVSTLY_ICONS)
+    expect(result?.ticker).toEqual("äri")
+  }
+
+  companion object {
+    private const val PARQET_AAPL = "https://assets.parqet.com/logos/symbol/AAPL?format=png&size=512"
+    private const val NVSTLY_AAPL = "https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons/AAPL.png"
   }
 }

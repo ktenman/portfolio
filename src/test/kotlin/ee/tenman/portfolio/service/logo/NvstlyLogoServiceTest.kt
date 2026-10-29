@@ -23,8 +23,8 @@ class NvstlyLogoServiceTest {
   }
 
   @Test
-  fun `should return null when ticker is blank`() {
-    val result = service.fetchLogo("   ")
+  fun `should return null when symbol is blank`() {
+    val result = service.fetchCryptoLogo("   ")
 
     expect(result).toEqual(null)
     verify(exactly = 0) { restClient.get() }
@@ -37,7 +37,7 @@ class NvstlyLogoServiceTest {
     every { requestHeadersUriSpec.retrieve() } returns responseSpec
     every { responseSpec.body(ByteArray::class.java) } throws RuntimeException("Not found")
 
-    val result = service.fetchLogo("INVALID")
+    val result = service.fetchCryptoLogo("INVALID")
 
     expect(result).toEqual(null)
   }
@@ -50,24 +50,9 @@ class NvstlyLogoServiceTest {
     every { requestHeadersUriSpec.retrieve() } returns responseSpec
     every { responseSpec.body(ByteArray::class.java) } returns logoData
 
-    val result = service.fetchLogo("AAPL")
+    val result = service.fetchCryptoLogo("BTC")
 
     expect(result).toEqual(logoData)
-  }
-
-  @Test
-  fun `should uppercase ticker in URL`() {
-    val logoData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
-    every { restClient.get() } returns requestHeadersUriSpec
-    every { requestHeadersUriSpec.uri(any<String>()) } returns requestHeadersUriSpec
-    every { requestHeadersUriSpec.retrieve() } returns responseSpec
-    every { responseSpec.body(ByteArray::class.java) } returns logoData
-
-    service.fetchLogo("aapl")
-
-    verify {
-      requestHeadersUriSpec.uri("https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons/AAPL.png")
-    }
   }
 
   @Test

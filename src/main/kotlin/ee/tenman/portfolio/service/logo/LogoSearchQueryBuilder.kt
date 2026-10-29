@@ -4,5 +4,5 @@ object LogoSearchQueryBuilder {
   fun buildQuery(
     name: String,
     ticker: String?,
-  ): String = if (ticker.isNullOrBlank()) "$name logo" else "$ticker $name logo"
+  ): String = if (ticker.isNullOrBlank()) name else "$ticker $name"
 }
