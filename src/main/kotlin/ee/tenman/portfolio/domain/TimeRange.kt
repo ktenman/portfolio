@@ -14,6 +14,11 @@ enum class TimeRange(
   FIVE_DAYS("5D"),
   SIX_DAYS("6D"),
   ONE_WEEK("1W"),
+  TWO_WEEKS("2W"),
+  THREE_WEEKS("3W"),
+  FOUR_WEEKS("4W"),
+  FIVE_WEEKS("5W"),
+  SIX_WEEKS("6W"),
   ONE_MONTH("1M"),
   TWO_MONTHS("2M"),
   THREE_MONTHS("3M"),
@@ -39,6 +44,11 @@ enum class TimeRange(
       FIVE_DAYS -> today.minusDays(5)
       SIX_DAYS -> today.minusDays(6)
       ONE_WEEK -> today.minusWeeks(1)
+      TWO_WEEKS -> today.minusWeeks(2)
+      THREE_WEEKS -> today.minusWeeks(3)
+      FOUR_WEEKS -> today.minusWeeks(4)
+      FIVE_WEEKS -> today.minusWeeks(5)
+      SIX_WEEKS -> today.minusWeeks(6)
       ONE_MONTH -> today.minusMonths(1)
       TWO_MONTHS -> today.minusMonths(2)
       THREE_MONTHS -> today.minusMonths(3)

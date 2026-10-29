@@ -6,46 +6,42 @@ import type { BenchmarkKey } from '../../composables/use-portfolio-chart'
 const createWrapper = (selected: BenchmarkKey[] = []) =>
   mount(ChartModeToggle, { props: { selected } })
 
-const activeLabels = (wrapper: ReturnType<typeof createWrapper>) =>
-  wrapper
-    .findAll('.platform-btn')
-    .filter(button => button.classes('active'))
-    .map(button => button.text())
+const pressedLabels = (wrapper: ReturnType<typeof createWrapper>) =>
+  wrapper.findAll('button[aria-pressed="true"]').map(button => button.text())
 
 describe('ChartModeToggle', () => {
-  it('should render the euro and both benchmark chips', () => {
+  it('should name the chip group Compare', () => {
+    const wrapper = createWrapper()
+    const label = wrapper.find('[role="group"]').attributes('aria-labelledby')
+
+    expect(wrapper.find(`#${label}`).text()).toBe('Compare')
+  })
+
+  it('should render one chip per benchmark', () => {
     const labels = createWrapper()
-      .findAll('.platform-btn')
+      .findAll('button')
       .map(button => button.text())
 
-    expect(labels).toEqual(['€', '% vs S&P 500', '% vs VWCE'])
+    expect(labels).toEqual(['S&P 500', 'VWCE'])
   })
 
-  it('should mark the euro chip active when no benchmark is selected', () => {
-    expect(activeLabels(createWrapper())).toEqual(['€'])
+  it('should press no chip when the chart shows euros', () => {
+    expect(pressedLabels(createWrapper())).toEqual([])
   })
 
-  it('should mark a selected benchmark as active', () => {
-    expect(activeLabels(createWrapper(['vwce']))).toEqual(['% vs VWCE'])
+  it('should press a selected benchmark', () => {
+    expect(pressedLabels(createWrapper(['vwce']))).toEqual(['VWCE'])
   })
 
-  it('should mark both benchmarks active when both are selected', () => {
-    expect(activeLabels(createWrapper(['sp500', 'vwce']))).toEqual(['% vs S&P 500', '% vs VWCE'])
+  it('should press both benchmarks when both are selected', () => {
+    expect(pressedLabels(createWrapper(['sp500', 'vwce']))).toEqual(['S&P 500', 'VWCE'])
   })
 
-  it('should emit the clicked mode', async () => {
-    const wrapper = createWrapper()
-
-    await wrapper.findAll('.platform-btn')[2].trigger('click')
-
-    expect(wrapper.emitted('select')).toEqual([['vwce']])
-  })
-
-  it('should emit null when the euro chip is clicked', async () => {
+  it('should emit the clicked benchmark', async () => {
     const wrapper = createWrapper(['sp500'])
 
-    await wrapper.findAll('.platform-btn')[0].trigger('click')
+    await wrapper.findAll('button')[1].trigger('click')
 
-    expect(wrapper.emitted('select')).toEqual([[null]])
+    expect(wrapper.emitted('select')).toEqual([['vwce']])
   })
 })

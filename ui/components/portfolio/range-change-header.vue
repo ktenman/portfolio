@@ -1,8 +1,11 @@
 <template>
-  <div class="range-change" :class="[changeClass, flashClass]">
-    <span>{{ parts[0] }}</span>
-    <span class="range-cents">{{ parts[1] }}</span>
-    <span>{{ rate }}</span>
+  <div class="range-line">
+    <span class="range-change" :class="[changeClass, flashClass]">
+      <span>{{ parts[0] }}</span>
+      <span class="range-cents">{{ parts[1] }}</span>
+      <span>{{ rate }}</span>
+    </span>
+    <span class="range-period">{{ period }}</span>
   </div>
 </template>
 
@@ -10,6 +13,8 @@
 import { computed, toRefs } from 'vue'
 import { useNumberTransition } from '../../composables/use-number-transition'
 import { useFlashOnChange } from '../../composables/use-flash-on-change'
+import { describeRange } from '../../composables/use-time-range'
+import type { TimeRange } from '../../models/generated/domain-models'
 import {
   formatSignedCurrency,
   formatSignedPercent,
@@ -20,6 +25,7 @@ import {
 const props = defineProps<{
   amount: number
   percent: number
+  range: TimeRange
 }>()
 
 const { amount, percent } = toRefs(props)
@@ -32,14 +38,23 @@ const parts = computed(() => splitCents(formatSignedCurrency(animatedAmount.valu
 
 const rate = computed(() => ` (${formatSignedPercent(animatedPercent.value)})`)
 
+const period = computed(() => ` ${describeRange(props.range)}`)
+
 const changeClass = computed(() => getGainLossClass(amount.value))
 </script>
 
 <style scoped>
-.range-change {
+.range-line {
   font-size: var(--text-control);
-  font-weight: 550;
   line-height: 1.2;
+}
+
+.range-change {
+  font-weight: 550;
+}
+
+.range-period {
+  color: var(--color-ink-soft);
 }
 
 .range-cents {
