@@ -28,6 +28,7 @@ private val WEB_ADDRESS = Regex("https?://\\S+")
 fun parseSplits(
   text: String,
   symbols: Set<String>,
+  pending: Set<String>,
   today: LocalDate,
 ): List<AnnouncedSplit> {
   val answers = read(text)
@@ -35,8 +36,8 @@ fun parseSplits(
   check(answered == symbols.sorted()) { "Split answer covers $answered instead of ${symbols.sorted()}" }
   return answers
     .filter { checkNotNull(it.announced) { "Split answer for ${it.symbol} does not say whether a split is announced" } }
+    .filterNot { it.symbol in pending || it.effectiveDate?.isBefore(today) == true }
     .map(::announced)
-    .filterNot { it.effectiveDate.isBefore(today) }
 }
 
 private fun read(text: String): List<SplitAnswer> {

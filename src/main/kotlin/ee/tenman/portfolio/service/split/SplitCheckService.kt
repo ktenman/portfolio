@@ -35,10 +35,8 @@ class SplitCheckService(
     val held = held().associateBy { it.symbol }
     val answer =
       checkNotNull(openRouterClient.search(AiModel.GEMINI_4_ARGON, question(held.values, today))) { "OpenRouter gave no split answer" }
-    val fresh =
-      parseSplits(answer, held.keys, today).filterNot {
-        instrumentSplitRepository.existsByInstrumentIdAndEffectiveDate(held.getValue(it.symbol).id, it.effectiveDate)
-      }
+    val pending = instrumentSplitRepository.findPending(today).map { it.instrument.symbol }.toSet()
+    val fresh = parseSplits(answer, held.keys, pending, today)
     fresh.forEach { store(held.getValue(it.symbol), it) }
     log.info("Split check asked about ${held.size} instruments and stored ${fresh.size} new splits")
   }
@@ -65,30 +63,34 @@ class SplitCheckService(
     instrument: Instrument,
     split: AnnouncedSplit,
   ) {
-    val source = follow(split.sourceUrl)
+    val source = resolve(split.sourceUrl)
     instrumentSplitRepository.save(InstrumentSplit(instrument, split.ratio, split.effectiveDate, source, split.publishedDate))
     log.info("Stored the ${split.ratio} split of ${instrument.symbol} taking effect on ${split.effectiveDate}, announced at $source")
   }
 
-  private fun follow(address: String): String =
-    runCatching {
+  private fun resolve(address: String): String {
+    if (!GROUNDING_REDIRECT.matches(address)) return address
+    return runCatching {
       val request =
         HttpRequest
-        .newBuilder(URI.create(address))
-        .timeout(TIMEOUT)
-        .GET()
-        .build()
+          .newBuilder(URI.create(address))
+          .timeout(TIMEOUT)
+          .build()
       HttpClient
         .newBuilder()
         .connectTimeout(TIMEOUT)
-        .followRedirects(HttpClient.Redirect.NORMAL)
         .build()
-        .use { it.send(request, HttpResponse.BodyHandlers.discarding()).uri().toString() }
-    }.onFailure { log.warn("Keeping $address as the split source because following it failed: ${it.message}") }
+        .use { it.send(request, HttpResponse.BodyHandlers.discarding()) }
+        .headers()
+        .firstValue("location")
+        .orElse(address)
+    }.onFailure { log.warn("Keeping $address as the split source because resolving it failed: ${it.message}") }
       .getOrDefault(address)
+  }
 
   companion object {
     private const val PROMPT = "split/check-prompt.txt"
+    private val GROUNDING_REDIRECT = Regex("https?://[^/?#]+/grounding-api-redirect/\\S+")
     private val TIMEOUT = Duration.ofSeconds(15)
   }
 }

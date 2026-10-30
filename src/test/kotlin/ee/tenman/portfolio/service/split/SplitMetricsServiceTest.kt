@@ -36,11 +36,14 @@ class SplitMetricsServiceTest {
     splits: List<InstrumentSplit> = emptyList(),
     instruments: List<Instrument> = emptyList(),
     status: JobStatus? = null,
+    succeeded: Instant? = null,
   ): SimpleMeterRegistry {
     every { instrumentSplitRepository.findPending(LocalDate.of(2026, 10, 5)) } returns splits
     every { instrumentRepository.findAll() } returns instruments
     every { jobExecutionRepository.findFirstByJobNameOrderByStartTimeDesc("SplitCheckJob") } returns
       status?.let { JobExecution("SplitCheckJob", Instant.EPOCH, Instant.EPOCH, 0, it) }
+    every { jobExecutionRepository.findFirstByJobNameAndStatusOrderByStartTimeDesc("SplitCheckJob", JobStatus.SUCCESS) } returns
+      succeeded?.let { JobExecution("SplitCheckJob", it, it, 0, JobStatus.SUCCESS) }
     val registry = SimpleMeterRegistry()
     SplitMetricsService(instrumentSplitRepository, instrumentRepository, jobExecutionRepository, clock)
       .also { it.bindTo(registry) }
@@ -92,5 +95,16 @@ class SplitMetricsServiceTest {
   @Test
   fun `should not report a split check that succeeded`() {
     expect(refreshed(status = JobStatus.SUCCESS).get("portfolio.split.check.failed").gauge().value()).toEqual(0.0)
+  }
+
+  @Test
+  fun `should export when the split check last succeeded`() {
+    val registry = refreshed(succeeded = Instant.parse("2026-10-15T04:00:00Z"))
+    expect(registry.get("portfolio.split.check.success.timestamp.seconds").gauge().value()).toEqual(1792036800.0)
+  }
+
+  @Test
+  fun `should export no success time before the split check first succeeds`() {
+    expect(refreshed().get("portfolio.split.check.success.timestamp.seconds").gauge().value()).toEqual(Double.NaN)
   }
 }

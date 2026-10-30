@@ -72,6 +72,7 @@ class MonitoringEndpointIT {
       "portfolio_instrument_price{",
       "instrument=\"BNKE:PAR:EUR\"",
       "portfolio_split_check_failed",
+      "portfolio_split_check_success_timestamp_seconds",
     )
   }
 
