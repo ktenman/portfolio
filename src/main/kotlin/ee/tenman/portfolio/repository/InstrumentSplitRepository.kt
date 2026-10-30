@@ -8,11 +8,6 @@ import java.time.LocalDate
 
 @Repository
 interface InstrumentSplitRepository : JpaRepository<InstrumentSplit, Long> {
-  fun existsByInstrumentIdAndEffectiveDate(
-    instrumentId: Long,
-    effectiveDate: LocalDate,
-  ): Boolean
-
   @Query("SELECT s FROM InstrumentSplit s JOIN FETCH s.instrument WHERE s.effectiveDate >= :today ORDER BY s.effectiveDate, s.id")
   fun findPending(today: LocalDate): List<InstrumentSplit>
 }

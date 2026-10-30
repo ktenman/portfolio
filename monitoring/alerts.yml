@@ -178,7 +178,15 @@ groups:
           summary: '{{ $labels.instrument }} price moved {{ printf "%.1f" $value }}-fold within an hour, so it may have split; record it with the recording-etf-splits skill'
       - alert: SplitCheckFailed
         expr: portfolio_split_check_failed == 1
+        keep_firing_for: 1d
         labels:
           severity: warning
         annotations:
           summary: 'Split check failed, so announced splits go unnoticed until its next run succeeds'
+      - alert: SplitCheckStale
+        expr: time() - portfolio_split_check_success_timestamp_seconds > 18 * 86400 unless on() portfolio_split_check_failed == 1
+        keep_firing_for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Split check has not succeeded for over 18 days, so announced splits go unnoticed'

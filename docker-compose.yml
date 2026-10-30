@@ -257,6 +257,7 @@ services:
       - --web.external-url=https://fov.ee/alertmanager/
       - --web.route-prefix=/
       - --storage.path=/alertmanager
+      - --data.retention=4320h
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./monitoring/secrets:/run/monitoring-secrets:ro
