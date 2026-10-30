@@ -5,6 +5,7 @@ import { type TransactionsWithSummaryDto } from '../../models/generated/domain-m
 import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
 import { stubBuildInfo } from './build-info-fixture'
+import { stubCalculator } from './calculator-fixture'
 import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
 import {
@@ -461,6 +462,140 @@ test('the playing radio line stays clear of the player', async ({ page }, testIn
   const card = (await page.getByTestId('radio-player').boundingBox())!
   expect((await line.boundingBox())!.y).toBeGreaterThanOrEqual(card.y + card.height)
 })
+
+async function playRadio(page: Page, path = '/'): Promise<void> {
+  await page.addInitScript(() => {
+    HTMLMediaElement.prototype.play = function () {
+      this.dispatchEvent(new Event('play'))
+      return Promise.resolve()
+    }
+  })
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubPortfolioSummary(page)
+  await stubCalculator(page)
+  await stubRadio(page)
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>
+    route.fulfill({ json: { seconds: 1666 } })
+  )
+  await openRoute(page, '/radio/2026-10-17')
+  await page.getByTestId('radio-play').click()
+  await page.locator(`.nav-link[href="${path}"]`).click()
+}
+
+async function dragRadioCard(page: Page): Promise<void> {
+  const title = page.getByTestId('radio-mini-player').locator('p').first()
+  const box = (await title.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2 - 40, { steps: 4 })
+  await page.mouse.up()
+}
+
+test('the radio mini player floats over the page', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await playRadio(page)
+  await expect(page.getByTestId('radio-mini-player')).toBeVisible()
+  await settleAndFreeze(page)
+  await expect(page).toHaveScreenshot('radio-mini-player.png')
+})
+
+test('the radio keeps its audio after leaving the recording', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await playRadio(page)
+  await expect(page.getByTestId('radio-mini-player')).toBeVisible()
+  await expect(page.locator('audio')).toHaveAttribute('src', /\.(m4a|mp3)/)
+})
+
+test('the radio mini player opens its episode without loading the audio again', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await playRadio(page)
+  const card = page.getByTestId('radio-mini-player')
+  await expect(card).toBeVisible()
+  await page.locator('audio').evaluate(audio => {
+    audio.addEventListener('loadstart', () => audio.setAttribute('data-loaded-again', ''))
+  })
+  await card.getByRole('link', { name: 'Open the episode' }).click()
+  await expect(page.getByTestId('radio-player')).toBeVisible()
+  await expect(card).toHaveCount(0)
+  await expect(page.locator('audio')).not.toHaveAttribute('data-loaded-again')
+})
+
+test('the radio mini player waits for something to play', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubPortfolioSummary(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-17')
+  await page.locator('.nav-link[href="/"]').click()
+  await expect(page.locator('audio')).not.toHaveAttribute('src')
+  await expect(page.getByTestId('radio-mini-player')).toHaveCount(0)
+})
+
+test('a dragged radio mini player stays where it was left after a reload', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await playRadio(page)
+  const card = page.getByTestId('radio-mini-player')
+  const { x, y } = (await card.boundingBox())!
+  await dragRadioCard(page)
+  await openRoute(page, '/radio/2026-10-17')
+  await page.getByTestId('radio-play').click()
+  await page.locator('.nav-link[href="/"]').click()
+  await expect(card).toBeVisible()
+  await expect.poll(() => card.boundingBox()).toMatchObject({ x: x - 40, y: y - 40 })
+})
+
+test('a dragged radio mini player comes back into view when the window shrinks', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await playRadio(page)
+  await dragRadioCard(page)
+  await page.setViewportSize({ width: 800, height: 500 })
+  await expect(page.getByTestId('radio-mini-player')).toBeInViewport({ ratio: 1 })
+})
+
+test('the radio mini player rests at the top of a window shorter than itself', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await playRadio(page)
+  await dragRadioCard(page)
+  await page.setViewportSize({ width: 800, height: 100 })
+  await expect
+    .poll(async () => (await page.getByTestId('radio-mini-player').boundingBox())!.y)
+    .toBe(0)
+})
+
+test('the radio mini player sits above the Reset bar', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await playRadio(page, '/calculator')
+  const card = (await page.getByTestId('radio-mini-player').boundingBox())!
+  const bar = (await page.locator('.calculator-buttons-mobile').boundingBox())!
+  expect(card.y + card.height).toBeLessThanOrEqual(bar.y)
+})
+
+for (const path of ['/', '/calculator']) {
+  test(`the footer of ${path} scrolls clear of the radio mini player`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await playRadio(page, path)
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+        const footer = (await page.locator('footer').boundingBox())!
+        const card = (await page.getByTestId('radio-mini-player').boundingBox())!
+        return footer.y + footer.height <= card.y
+      })
+      .toBe(true)
+  })
+}
 
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
