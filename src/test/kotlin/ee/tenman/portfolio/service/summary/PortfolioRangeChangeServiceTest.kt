@@ -101,6 +101,17 @@ class PortfolioRangeChangeServiceTest {
   }
 
   @Test
+  fun `should keep money dated after today out of the divisor`() {
+    givenTransactions(
+      buy(LocalDate.of(2026, 8, 14), BigDecimal("1000.00")),
+      buy(LocalDate.of(2026, 8, 15), BigDecimal("8000.00")),
+    )
+    givenOpeningYear()
+
+    expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("13.3641"))
+  }
+
+  @Test
   fun `should divide the max range by everything ever paid in`() {
     givenTransactions(
       buy(LocalDate.of(2024, 11, 4), BigDecimal("4000.00")),

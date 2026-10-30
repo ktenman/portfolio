@@ -6,10 +6,13 @@ import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.LocalDate
 
 @Service
 class TransactionCalculationService(
   private val transactionRepository: PortfolioTransactionRepository,
+  private val clock: Clock,
 ) {
   fun calculateNetQuantity(
     instrumentId: Long,
@@ -31,7 +34,11 @@ class TransactionCalculationService(
 
   fun batchCalculateAll(instrumentIds: Collection<Long>): Map<Long, InstrumentTransactionData> {
     if (instrumentIds.isEmpty()) return emptyMap()
-    val allTransactions = transactionRepository.findAllByInstrumentIds(instrumentIds.toList())
+    val today = LocalDate.now(clock)
+    val allTransactions =
+      transactionRepository
+        .findAllByInstrumentIds(instrumentIds.toList())
+        .filter { !it.transactionDate.isAfter(today) }
     return instrumentIds.associateWith { id ->
       val txs = allTransactions.filter { it.instrument.id == id }
       val quantityByPlatform =

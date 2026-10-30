@@ -28,6 +28,7 @@ import ee.tenman.portfolio.service.pricing.PriceChangeService
 import ee.tenman.portfolio.service.pricing.PriceLookup
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -130,6 +131,22 @@ class InstrumentSnapshotServiceTest {
     val result = instrumentSnapshotService.getAllSnapshots(listOf("LIGHTYEAR"))
 
     expect(result).toBeEmpty()
+  }
+
+  @Test
+  fun `should count transactions up to and including today`() {
+    val dates = listOf(testDate.minusDays(1), testDate, testDate.plusDays(1))
+    val counted = slot<List<PortfolioTransaction>>()
+    every { instrumentRepository.findAll() } returns listOf(testInstrument)
+    every { portfolioTransactionRepository.findAllWithInstruments() } returns
+      dates.map { createBuyCashFlow(BigDecimal("10"), BigDecimal("100"), it) }
+    every { investmentMetricsService.calculateInstrumentMetricsWithProfits(testInstrument, capture(counted), any(), any()) } returns
+      createMetrics()
+    every { priceChangeService.getPriceChange(testInstrument, any()) } returns null
+
+    instrumentSnapshotService.getAllSnapshots()
+
+    expect(counted.captured.map { it.transactionDate }).toContainExactly(testDate.minusDays(1), testDate)
   }
 
   @Test

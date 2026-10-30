@@ -25,7 +25,10 @@ import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 class EtfBreakdownServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -34,7 +37,8 @@ class EtfBreakdownServiceTest {
   private val dailyPriceService = mockk<DailyPriceService>()
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val holdingAggregationService = HoldingAggregationService()
-  private val transactionCalculationService = TransactionCalculationService(transactionRepository)
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneId.of("UTC"))
+  private val transactionCalculationService = TransactionCalculationService(transactionRepository, clock)
   private val syntheticEtfCalculationService =
     SyntheticEtfCalculationService(
       instrumentRepository,
@@ -334,6 +338,21 @@ class EtfBreakdownServiceTest {
     expect(result[0].holdingIndustry).toEqual("Cryptocurrency")
   }
 
+  @Test
+  fun `should value holdings from transactions up to and including today`() {
+    val etf = createInstrument(1L, "ETF1", ProviderName.LIGHTYEAR, BigDecimal("100"))
+    val holding = createHolding(1L, "NVDA", "Nvidia", IndustrySector.SEMICONDUCTORS)
+    val position = createPosition(etf, holding, BigDecimal("100.0000"), testDate)
+    val yesterday = createCashFlow(etf, BigDecimal("6"), BigDecimal("100"), date = testDate.minusDays(1))
+    val today = createCashFlow(etf, BigDecimal("4"), BigDecimal("100"), date = testDate)
+    val tomorrow = createCashFlow(etf, BigDecimal("990"), BigDecimal("100"), date = testDate.plusDays(1))
+    setupMocksForBatchLoading(listOf(etf), listOf(position), listOf(yesterday, today, tomorrow))
+
+    val result = etfBreakdownService.getHoldingsBreakdown()
+
+    expect(result[0].totalValueEur).toEqualNumerically(BigDecimal("1000"))
+  }
+
   private fun setupMocksForBatchLoading(
     instruments: List<Instrument>,
     positions: List<EtfPosition>,
@@ -396,13 +415,14 @@ class EtfBreakdownServiceTest {
     quantity: BigDecimal,
     price: BigDecimal,
     platform: Platform = Platform.LIGHTYEAR,
+    date: LocalDate = testDate.minusDays(30),
   ): PortfolioTransaction =
     PortfolioTransaction(
       instrument = instrument,
       transactionType = TransactionType.BUY,
       quantity = quantity,
       price = price,
-      transactionDate = testDate.minusDays(30),
+      transactionDate = date,
       platform = platform,
     )
 }
