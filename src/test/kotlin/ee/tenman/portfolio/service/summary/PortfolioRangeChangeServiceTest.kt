@@ -37,7 +37,7 @@ class PortfolioRangeChangeServiceTest {
 
   @BeforeEach
   fun setUp() {
-    every { transactionService.getAllTransactions(any<List<String>>()) } returns emptyList()
+    givenTransactions()
   }
 
   @Test
@@ -74,6 +74,14 @@ class PortfolioRangeChangeServiceTest {
   }
 
   @Test
+  fun `should ignore money paid in on the day the range opened`() {
+    givenTransactions(buy(LocalDate.of(2025, 8, 14), BigDecimal("1000.00")))
+    givenOpeningYear()
+
+    expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("15.6303"))
+  }
+
+  @Test
   fun `should add money paid in during the range to the divisor`() {
     givenTransactions(buy(LocalDate.of(2026, 3, 9), BigDecimal("1000.00")))
     givenOpeningYear()
@@ -94,6 +102,17 @@ class PortfolioRangeChangeServiceTest {
     givenTransactions(
       buy(LocalDate.of(2026, 3, 9), BigDecimal("1500.00")),
       sell(LocalDate.of(2026, 3, 9), BigDecimal("500.00")),
+    )
+    givenOpeningYear()
+
+    expect(service.calculate(TimeRange.ONE_YEAR, null).changePercent).toEqualNumerically(BigDecimal("13.3641"))
+  }
+
+  @Test
+  fun `should keep money dated after today out of the divisor`() {
+    givenTransactions(
+      buy(LocalDate.of(2026, 8, 14), BigDecimal("1000.00")),
+      buy(LocalDate.of(2026, 8, 15), BigDecimal("8000.00")),
     )
     givenOpeningYear()
 
@@ -146,7 +165,9 @@ class PortfolioRangeChangeServiceTest {
   }
 
   private fun givenTransactions(vararg transactions: PortfolioTransaction) {
-    every { transactionService.getAllTransactions(any<List<String>>()) } returns transactions.toList()
+    every { transactionService.getAllTransactions(any(), any(), any()) } answers {
+      transactions.filter { it.transactionDate in (secondArg<LocalDate?>() ?: LocalDate.MIN)..thirdArg<LocalDate>() }
+    }
   }
 
   private fun givenCurrentSummary(

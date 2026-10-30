@@ -57,8 +57,12 @@ class InstrumentSnapshotService(
     period: TimeRange?,
   ): InstrumentSnapshotsWithPortfolioXirr {
     val instruments = instrumentRepository.findAll().toList()
-    val transactionsByInstrument = portfolioTransactionRepository.findAllWithInstruments().groupBy { it.instrument.id }
     val calculationDate = LocalDate.now(clock)
+    val transactionsByInstrument =
+      portfolioTransactionRepository
+        .findAllWithInstruments()
+        .filter { !it.transactionDate.isAfter(calculationDate) }
+        .groupBy { it.instrument.id }
     val priceLookup = dailyPriceService.buildLatestPriceLookup(instruments, calculationDate)
     val context =
       InstrumentEnrichmentContext(
