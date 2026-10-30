@@ -1,17 +1,18 @@
 package ee.tenman.portfolio.service.instrument
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import com.ninjasquad.springmockk.MockkBean
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Instrument
-import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
-import ee.tenman.portfolio.domain.PortfolioTransaction
-import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.summary.SummaryService
+import ee.tenman.portfolio.service.transaction.TransactionService
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures
+import ee.tenman.portfolio.testing.fixture.TransactionFixtures.ZERO_COMMISSION
 import io.mockk.every
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -34,6 +35,9 @@ class FutureDatedCashDepositIT {
   private lateinit var summaryService: SummaryService
 
   @Resource
+  private lateinit var transactionService: TransactionService
+
+  @Resource
   private lateinit var instrumentRepository: InstrumentRepository
 
   @Resource
@@ -44,16 +48,7 @@ class FutureDatedCashDepositIT {
 
   @BeforeEach
   fun setUp() {
-    val cash =
-      instrumentRepository.save(
-        Instrument(
-          symbol = "EUR",
-          name = "Eurode sularaha",
-          category = InstrumentCategory.CASH.name,
-          baseCurrency = "EUR",
-          currentPrice = BigDecimal.ONE,
-        ),
-      )
+    val cash = instrumentRepository.save(TransactionFixtures.createCashInstrument(name = "Eurode sularaha", id = 0L))
     deposit(cash, BigDecimal("630"), LocalDate.of(2026, 10, 1))
     deposit(cash, BigDecimal("8000"), LocalDate.of(2026, 11, 1))
     every { clock.zone } returns ZoneId.of("Europe/Tallinn")
@@ -94,20 +89,18 @@ class FutureDatedCashDepositIT {
     expect(summaryService.getCurrentDaySummary().totalProfit).toEqualNumerically(BigDecimal.ZERO)
   }
 
+  @Test
+  fun `should read transactions up to and including the until date`() {
+    expect(transactionService.getAllTransactions(null, null, LocalDate.of(2026, 10, 1))).toHaveSize(1)
+  }
+
   private fun deposit(
     cash: Instrument,
     quantity: BigDecimal,
     date: LocalDate,
   ) {
     transactionRepository.save(
-      PortfolioTransaction(
-        instrument = cash,
-        transactionType = TransactionType.BUY,
-        quantity = quantity,
-        price = BigDecimal.ONE,
-        transactionDate = date,
-        platform = Platform.LIGHTYEAR_BUSINESS,
-      ),
+      TransactionFixtures.createBuyTransaction(cash, quantity, BigDecimal.ONE, date, Platform.LIGHTYEAR_BUSINESS, ZERO_COMMISSION),
     )
   }
 }

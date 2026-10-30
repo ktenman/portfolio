@@ -47,7 +47,7 @@ class EtfBreakdownServiceTest {
       dailyPriceService,
     )
   private val dataLoader = EtfBreakdownDataLoaderService(instrumentRepository, etfPositionRepository, transactionCalculationService)
-  private val testDate = LocalDate.of(2024, 1, 15)
+  private val testDate = LocalDate.now(clock)
   private lateinit var etfBreakdownService: EtfBreakdownService
 
   @BeforeEach

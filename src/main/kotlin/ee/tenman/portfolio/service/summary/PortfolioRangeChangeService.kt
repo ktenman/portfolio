@@ -52,16 +52,12 @@ class PortfolioRangeChangeService(
   private fun contributions(
     platforms: List<Platform>?,
     after: LocalDate?,
-  ): BigDecimal {
-    val today = LocalDate.now(clock)
-    return transactionService
-      .getAllTransactions(platforms?.map { it.name })
-      .filter { !it.transactionDate.isAfter(today) }
-      .filter { after == null || it.transactionDate.isAfter(after) }
+  ): BigDecimal =
+    transactionService
+      .getAllTransactions(platforms?.map { it.name }, after?.plusDays(1), LocalDate.now(clock))
       .groupBy { it.transactionDate }
       .values
       .sumOf { netInflow(it) }
-  }
 
   private fun netInflow(sameDay: List<PortfolioTransaction>): BigDecimal =
     InvestmentMath
