@@ -16,6 +16,7 @@
     <footer class="bg-gray-100 py-2 text-center">
       <small>&copy; {{ currentYear }} Portfolio Manager</small>
     </footer>
+    <RadioMiniPlayer v-if="player.started.value" />
     <ConfirmDialog
       v-model="confirmState.isOpen.value"
       :title="confirmState.options.value.title"
@@ -42,6 +43,9 @@ import { useLiveUpdates } from './composables/use-live-updates'
 import { useRadioPlayer } from './composables/use-radio-player'
 
 const ConfirmDialog = defineAsyncComponent(() => import('./components/shared/confirm-dialog.vue'))
+const RadioMiniPlayer = defineAsyncComponent(
+  () => import('./components/radio/radio-mini-player.vue')
+)
 
 const currentYear = new Date().getFullYear()
 const confirmState = provideConfirm()

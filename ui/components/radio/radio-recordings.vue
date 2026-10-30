@@ -103,6 +103,7 @@
 import { useQueryClient } from '@tanstack/vue-query'
 import { RecordingState, type RecordingSummary } from '../../models/generated/domain-models'
 import { useConfirm } from '../../composables/use-confirm'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
@@ -117,6 +118,7 @@ const { data: recordings, isLoading, isError } = useRadioRecordings()
 const { confirm } = useConfirm()
 const toast = useToast()
 const queryClient = useQueryClient()
+const player = useRadioPlayer()
 
 const TONE_TEXT: Record<BadgeTone, string> = {
   plain: 'text-ink-soft',
@@ -143,6 +145,7 @@ const remove = async (item: RecordingSummary) => {
     variant: 'danger',
   })
   if (!confirmed) return
+  if (player.recording.value?.name === item.name) player.close()
   await radioService
     .deleteRecording(item.name)
     .then(() =>

@@ -5,6 +5,7 @@ import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
 import { recording } from './radio-fixture'
 import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 import { toasts } from '../../composables/use-toast'
 
 const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
@@ -188,6 +189,26 @@ describe('RadioRecordings', () => {
   it('should delete the recording once the user confirms', async () => {
     await remove()
     expect(radioService.deleteRecording).toHaveBeenCalledWith('2026-10-17')
+  })
+
+  it('should close the player before deleting the recording in it', async () => {
+    const player = useRadioPlayer()
+    player.load(recording())
+    let playing: string | undefined = 'nothing asked yet'
+    vi.mocked(radioService.deleteRecording).mockImplementation(async () => {
+      playing = player.recording.value?.name
+    })
+    await remove()
+    expect(playing).toBeUndefined()
+  })
+
+  it('should leave the player alone when deleting another recording', async () => {
+    const player = useRadioPlayer()
+    player.load(recording({ name: '2026-10-18' }))
+    await remove()
+    const name = player.recording.value?.name
+    player.close()
+    expect(name).toBe('2026-10-18')
   })
 
   it('should list the recordings again after a delete', async () => {
