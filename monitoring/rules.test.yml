@@ -394,7 +394,7 @@ tests:
       - series: 'portfolio_instrument_price{instrument="VUAA:GER:EUR"}'
         values: '100+0x120 105+0x400'
       - series: 'portfolio_split_check_failed'
-        values: '1+0x20'
+        values: '1+0x20 stale'
     alert_rule_test:
       - eval_time: 29m
         alertname: SplitSuspected
@@ -417,3 +417,42 @@ tests:
               severity: warning
             exp_annotations:
               summary: 'Split check failed, so announced splits go unnoticed until its next run succeeds'
+      - eval_time: 7m
+        alertname: SplitCheckFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Split check failed, so announced splits go unnoticed until its next run succeeds'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_split_check_success_timestamp_seconds'
+        values: '-1555140+0x20 stale'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: SplitCheckStale
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: SplitCheckStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Split check has not succeeded for over 18 days, so announced splits go unnoticed'
+      - eval_time: 7m
+        alertname: SplitCheckStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Split check has not succeeded for over 18 days, so announced splits go unnoticed'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_split_check_success_timestamp_seconds'
+        values: '-1555140+0x20'
+      - series: 'portfolio_split_check_failed'
+        values: '1+0x20'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SplitCheckStale
+        exp_alerts: []

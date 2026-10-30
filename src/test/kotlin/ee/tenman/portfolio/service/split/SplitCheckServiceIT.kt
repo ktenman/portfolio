@@ -4,13 +4,11 @@ import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
-import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
@@ -74,7 +72,6 @@ class SplitCheckServiceIT {
       get(urlEqualTo("/grounding-api-redirect/bnke"))
         .willReturn(aResponse().withStatus(302).withHeader("Location", "${wireMockServer.baseUrl()}/notice/9804833")),
     )
-    wireMockServer.stubFor(get(urlEqualTo("/notice/9804833")).willReturn(ok("Avis aux actionnaires")))
   }
 
   @Test
@@ -84,6 +81,15 @@ class SplitCheckServiceIT {
     expect(stored()).toContainExactly(
       "BNKE:PAR:EUR 1:80 $effective ${wireMockServer.baseUrl()}/notice/9804833 2026-10-02",
     )
+  }
+
+  @Test
+  fun `should keep a source that is not a grounding redirect as given`() {
+    val source = "${wireMockServer.baseUrl()}/notice/vana-teade"
+    wireMockServer.stubFor(get(urlEqualTo("/notice/vana-teade")).willReturn(aResponse().withStatus(302).withHeader("Location", "/uus")))
+    answer(bnke = announced(source = source))
+    splitCheckService.check()
+    expect(stored()).toContainExactly("BNKE:PAR:EUR 1:80 $effective $source 2026-10-02")
   }
 
   @Test
@@ -101,13 +107,13 @@ class SplitCheckServiceIT {
   }
 
   @Test
-  fun `should not store the same split again on the next run`() {
+  fun `should keep the pending split when the next run gives it another date`() {
     answer(bnke = announced())
-    repeat(2) {
-      circuitBreaker.resetRateLimits()
-      splitCheckService.check()
-    }
-    expect(stored()).toHaveSize(1)
+    splitCheckService.check()
+    circuitBreaker.resetRateLimits()
+    answer(bnke = announced(date = effective.plusDays(1)))
+    splitCheckService.check()
+    expect(instrumentSplitRepository.findPending(LocalDate.now(clock)).map { it.effectiveDate }).toContainExactly(effective)
   }
 
   @Test
@@ -138,9 +144,12 @@ class SplitCheckServiceIT {
     }
   }
 
-  private fun announced(): String =
-    """{"symbol":"BNKE:PAR:EUR","announced":true,"ratio":"1:80","effectiveDate":"$effective",""" +
-      """"sourceUrl":"${wireMockServer.baseUrl()}/grounding-api-redirect/bnke","publishedDate":"2026-10-02"}"""
+  private fun announced(
+    date: LocalDate = effective,
+    source: String = "${wireMockServer.baseUrl()}/grounding-api-redirect/bnke",
+  ): String =
+    """{"symbol":"BNKE:PAR:EUR","announced":true,"ratio":"1:80","effectiveDate":"$date",""" +
+      """"sourceUrl":"$source","publishedDate":"2026-10-02"}"""
 
   private fun answer(bnke: String) {
     val content = "[$bnke,${none("VUAA:GER:EUR")}]"

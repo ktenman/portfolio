@@ -27,10 +27,13 @@ class SplitMetricsService(
 
   @Volatile private var failed = 0.0
 
+  @Volatile private var succeeded = Double.NaN
+
   override fun bindTo(registry: MeterRegistry) {
     announced = MultiGauge.builder("portfolio.split.announced").register(registry)
     prices = MultiGauge.builder("portfolio.instrument.price").register(registry)
     Gauge.builder("portfolio.split.check.failed", this) { it.failed }.register(registry)
+    Gauge.builder("portfolio.split.check.success.timestamp.seconds", this) { it.succeeded }.register(registry)
   }
 
   fun refresh() {
@@ -54,6 +57,12 @@ class SplitMetricsService(
       true,
     )
     failed = if (jobExecutionRepository.findFirstByJobNameOrderByStartTimeDesc(CHECK_JOB)?.status == JobStatus.FAILURE) 1.0 else 0.0
+    succeeded =
+      jobExecutionRepository
+        .findFirstByJobNameAndStatusOrderByStartTimeDesc(CHECK_JOB, JobStatus.SUCCESS)
+        ?.startTime
+        ?.epochSecond
+        ?.toDouble() ?: Double.NaN
   }
 
   companion object {

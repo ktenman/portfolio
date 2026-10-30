@@ -262,6 +262,8 @@ def check_compose():
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
     assert '--rules.alert.resend-delay=15s' in services['prometheus']['command']
+    assert '--data.retention=4320h' in services['alertmanager']['command'], \
+        'Alertmanager forgets a sent alert after its data retention, so it must cover twice the 2160h split repeat interval'
     postgres = services['postgres']['command']
     for setting in ('log_lock_waits=on', 'log_temp_files=0'):
         assert setting in postgres, f'postgres is missing {setting}'
