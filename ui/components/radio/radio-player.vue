@@ -92,10 +92,7 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
-onBeforeUnmount(() => {
-  player.pause()
-  void decisions.flush()
-})
+onBeforeUnmount(decisions.flush)
 
 const card = useTemplateRef('card')
 const time = useTemplateRef('time')

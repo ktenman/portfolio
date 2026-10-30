@@ -1,12 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import RadioView from './radio-view.vue'
-
-vi.mock('../../composables/use-radio-player', () => ({
-  useRadioPlayer: () => ({ attach: vi.fn(), detach: vi.fn() }),
-}))
 
 enableAutoUnmount(afterEach)
 

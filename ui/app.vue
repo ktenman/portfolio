@@ -28,16 +28,18 @@
     />
     <ToastContainer />
   </div>
+  <audio ref="audio" preload="metadata" />
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent, onMounted } from 'vue'
+import { defineAsyncComponent, onMounted, useTemplateRef } from 'vue'
 import NavBar from './components/nav-bar.vue'
 import ToastContainer from './components/shared/toast-container.vue'
 import { provideConfirm } from './composables/use-confirm'
 import { useAuthState } from './composables/use-auth-state'
 import { useEnumValues } from './composables/use-enum-values'
 import { useLiveUpdates } from './composables/use-live-updates'
+import { useRadioPlayer } from './composables/use-radio-player'
 
 const ConfirmDialog = defineAsyncComponent(() => import('./components/shared/confirm-dialog.vue'))
 
@@ -45,11 +47,14 @@ const currentYear = new Date().getFullYear()
 const confirmState = provideConfirm()
 const { isAuthChecking, checkAuth } = useAuthState()
 const { loadAll } = useEnumValues()
+const audio = useTemplateRef<HTMLAudioElement>('audio')
+const player = useRadioPlayer()
 useLiveUpdates()
 
 onMounted(() => {
   checkAuth()
   loadAll()
+  if (audio.value) player.attach(audio.value)
 })
 </script>
 

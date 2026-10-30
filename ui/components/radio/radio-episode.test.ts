@@ -27,14 +27,15 @@ enableAutoUnmount(afterEach)
 
 describe('RadioEpisode', () => {
   const player = useRadioPlayer()
+  let audio: HTMLAudioElement
 
   beforeEach(() => {
-    const audio = document.createElement('audio')
+    audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
     player.attach(audio)
   })
 
-  afterEach(() => player.detach())
+  afterEach(() => player.close())
 
   const mountEpisode = (router: Router) =>
     mount(
@@ -56,6 +57,19 @@ describe('RadioEpisode', () => {
     await router.push(`/radio/${item.name}${search}`)
     return { router, wrapper: mountEpisode(router) }
   }
+
+  it('should close a recording left without playing it', async () => {
+    const { wrapper } = await open(recording())
+    wrapper.unmount()
+    expect(player.recording.value).toBeNull()
+  })
+
+  it('should keep a recording that has played when the page goes away', async () => {
+    const { wrapper } = await open(recording())
+    audio.dispatchEvent(new Event('play'))
+    wrapper.unmount()
+    expect(player.recording.value?.name).toBe('2026-10-17')
+  })
 
   it('should open a recording on its cut version', async () => {
     await open(recording())
