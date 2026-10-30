@@ -16,6 +16,7 @@ import {
 import { stubInstruments } from './instruments-fixture'
 import {
   stubRadio,
+  stubRadioLongNames,
   stubRadioLongText,
   stubRadioPlannedOnly,
   stubRadioPlannedSoon,
@@ -463,7 +464,7 @@ test('the playing radio line stays clear of the player', async ({ page }, testIn
   expect((await line.boundingBox())!.y).toBeGreaterThanOrEqual(card.y + card.height)
 })
 
-async function playRadio(page: Page, path = '/'): Promise<void> {
+async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void> {
   await page.addInitScript(() => {
     HTMLMediaElement.prototype.play = function () {
       this.dispatchEvent(new Event('play'))
@@ -474,7 +475,7 @@ async function playRadio(page: Page, path = '/'): Promise<void> {
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await stubCalculator(page)
-  await stubRadio(page)
+  await stub(page)
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>
     route.fulfill({ json: { seconds: 1666 } })
   )
@@ -498,6 +499,23 @@ test('the radio mini player floats over the page', async ({ page }, testInfo) =>
   await expect(page.getByTestId('radio-mini-player')).toBeVisible()
   await settleAndFreeze(page)
   await expect(page).toHaveScreenshot('radio-mini-player.png')
+})
+
+test('the radio mini player keeps its controls inside when names run long', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await playRadio(page, '/', stubRadioLongNames)
+  const card = page.getByTestId('radio-mini-player')
+  await expect(card).toContainText('Keskpäevatund, Tarkade klubi')
+  const { x, width } = (await card.boundingBox())!
+  const edges = await Promise.all(
+    ['Open the episode', 'Stop and close', 'Mute'].map(async name => {
+      const box = (await card.getByLabel(name).boundingBox())!
+      return box.x + box.width
+    })
+  )
+  expect(Math.max(...edges)).toBeLessThanOrEqual(x + width)
 })
 
 test('the radio keeps its audio after leaving the recording', async ({ page }, testInfo) => {

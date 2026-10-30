@@ -3,7 +3,7 @@
     <div class="md:hidden" :class="lifted ? 'h-57' : 'h-35'" aria-hidden="true" />
     <section
       ref="card"
-      class="fixed inset-x-2.5 bottom-2.5 z-(--z-player) grid rounded-xl border border-hairline bg-surface pt-0.5 pr-1.5 pb-1.5 pl-3.5 shadow-overlay md:inset-x-auto md:right-6 md:bottom-6 md:w-93"
+      class="fixed inset-x-2.5 bottom-2.5 z-(--z-player) rounded-xl border border-hairline bg-surface pt-0.5 pr-1.5 pb-1.5 pl-3.5 shadow-overlay md:inset-x-auto md:right-6 md:bottom-6 md:w-93"
       :class="{ 'max-md:bottom-22': lifted }"
       :style="place"
       aria-label="Radio player"

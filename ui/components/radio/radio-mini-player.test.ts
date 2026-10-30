@@ -232,15 +232,6 @@ describe('RadioMiniPlayer', () => {
     ).toContain('size-11')
   })
 
-  it('should cut a long programme and topic short instead of pushing the buttons out', async () => {
-    await play()
-    const lines = card(await open()).findAll('p')
-    expect([
-      lines.map(line => line.classes().includes('truncate')),
-      lines[0]?.element.parentElement?.classList.contains('min-w-0'),
-    ]).toEqual([[true, true], true])
-  })
-
   it('should rise above the Reset bar on the calculator', async () => {
     await play()
     expect(card(await open('/calculator')).classes()).toContain('max-md:bottom-22')
