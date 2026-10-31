@@ -123,7 +123,7 @@ services:
       - backend
     restart: always
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:80 || exit 1" ]
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:80 || exit 1" ]
       interval: 3s
       timeout: 1s
       retries: 5
