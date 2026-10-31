@@ -88,12 +88,12 @@ describe('LogoReplacementModal upload', () => {
 
   it('shows why the server refused the image', async () => {
     vi.spyOn(logoService, 'uploadLogo').mockRejectedValue(
-      new ApiError(400, 'Logo must be a PNG or JPEG up to 4:1 or a square WebP, at least 32 px', '')
+      new ApiError(400, 'Logo must be a PNG or JPEG up to 4:1 or a square WebP, 32 to 4096 px', '')
     )
     const wrapper = await openModal()
     await choose(wrapper, png())
     expect(wrapper.text()).toContain(
-      'Logo must be a PNG or JPEG up to 4:1 or a square WebP, at least 32 px'
+      'Logo must be a PNG or JPEG up to 4:1 or a square WebP, 32 to 4096 px'
     )
   })
 })

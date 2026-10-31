@@ -50,7 +50,7 @@ class OpenRouterLogoSelectionServiceTest {
   inner class SelectBestLogo {
     @Test
     fun `should return null when candidates list is empty`() {
-      val result = service.selectBestLogo("Apple", "AAPL", emptyList())
+      val result = service.selectBestLogo("Apple", emptyList())
 
       expect(result).toEqual(null)
     }
@@ -62,7 +62,7 @@ class OpenRouterLogoSelectionServiceTest {
       every { imageDownloadService.download(candidate.imageUrl) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
 
-      val result = service.selectBestLogo("Apple", "AAPL", listOf(candidate))
+      val result = service.selectBestLogo("Apple", listOf(candidate))
 
       expect(result).notToEqualNull()
       expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
@@ -70,23 +70,19 @@ class OpenRouterLogoSelectionServiceTest {
     }
 
     @Test
-    fun `should use fast path when title contains ticker`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidate = createCandidate(0, "AAPL Stock Logo")
-      every { imageDownloadService.download(candidate.imageUrl) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
+    fun `should ask the LLM when a title holds only the ticker letters`() {
+      llmAnswers("0")
 
-      val result = service.selectBestLogo("Apple Inc", "AAPL", listOf(candidate))
+      val result = service.selectBestLogo("ON Semiconductor Corp", listOf(createCandidate(0, "Click on logo to enlarge")))
 
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
+      expect(result).toEqual(null)
     }
 
     @Test
     fun `should ask the LLM about a single candidate without a fast path match`() {
       llmAnswers("1")
 
-      val result = service.selectBestLogo("Apple", "AAPL", listOf(createCandidate(0, "Some Other Company")))
+      val result = service.selectBestLogo("Apple", listOf(createCandidate(0, "Some Other Company")))
 
       expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
     }
@@ -96,7 +92,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = twoCandidates()
       every { openRouterProperties.apiKey } returns ""
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }.toThrow<LogoSelectionFailedException>()
+      expect { service.selectBestLogo("Apple", candidates) }.toThrow<LogoSelectionFailedException>()
     }
 
     @Test
@@ -117,7 +113,7 @@ class OpenRouterLogoSelectionServiceTest {
       every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
       every { visionResponse.extractContent() } returns "2"
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).notToEqualNull()
       expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
@@ -129,7 +125,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = twoCandidates()
       llmAnswers("99")
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+      expect { service.selectBestLogo("Apple", candidates) }
         .toThrow<LogoSelectionFailedException>()
         .messageToContain("unparsable")
     }
@@ -140,7 +136,7 @@ class OpenRouterLogoSelectionServiceTest {
       llmAnswers("1")
       every { openRouterVisionClient.chatCompletion(any(), any()) } throws IllegalStateException("API error")
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+      expect { service.selectBestLogo("Apple", candidates) }
         .toThrow<LogoSelectionFailedException>()
         .cause<IllegalStateException>()
         .messageToContain("API error")
@@ -152,7 +148,7 @@ class OpenRouterLogoSelectionServiceTest {
       llmAnswers("1")
       every { openRouterProperties.apiTimeoutMs } returns 0L
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+      expect { service.selectBestLogo("Apple", candidates) }
         .toThrow<LogoSelectionFailedException>()
         .messageToContain("timed out")
     }
@@ -167,7 +163,7 @@ class OpenRouterLogoSelectionServiceTest {
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageDownloadService.download(any()) } throws RuntimeException("Download failed")
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).toEqual(null)
     }
@@ -184,22 +180,9 @@ class OpenRouterLogoSelectionServiceTest {
       every { imageDownloadService.download(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns false
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).toEqual(null)
-    }
-
-    @Test
-    fun `should handle null ticker in fast path`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidate = createCandidate(0, "Apple Logo")
-      every { imageDownloadService.download(candidate.imageUrl) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
-
-      val result = service.selectBestLogo("Apple", null, listOf(candidate))
-
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
     }
 
     @Test
@@ -220,7 +203,7 @@ class OpenRouterLogoSelectionServiceTest {
       every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
       every { visionResponse.extractContent() } returns "Image 1 is the best"
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).notToEqualNull()
       expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
@@ -231,7 +214,7 @@ class OpenRouterLogoSelectionServiceTest {
     fun `should return null when the LLM answers zero`() {
       llmAnswers("0")
 
-      val result = service.selectBestLogo("Apple", "AAPL", twoCandidates())
+      val result = service.selectBestLogo("Apple", twoCandidates())
 
       expect(result).toEqual(null)
     }
@@ -240,7 +223,7 @@ class OpenRouterLogoSelectionServiceTest {
     fun `should return null when the LLM explains its zero`() {
       llmAnswers("0 - none of them")
 
-      val result = service.selectBestLogo("Apple", "AAPL", twoCandidates())
+      val result = service.selectBestLogo("Apple", twoCandidates())
 
       expect(result).toEqual(null)
     }
@@ -250,7 +233,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = (0..4).map { createCandidate(it, "Company $it") }
       llmAnswers("0 - none of the 5 images")
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).toEqual(null)
     }
@@ -260,7 +243,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = twoCandidates()
       llmAnswers(null)
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+      expect { service.selectBestLogo("Apple", candidates) }
         .toThrow<LogoSelectionFailedException>()
         .messageToContain("blank")
     }
@@ -270,7 +253,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = twoCandidates()
       llmAnswers("none")
 
-      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+      expect { service.selectBestLogo("Apple", candidates) }
         .toThrow<LogoSelectionFailedException>()
         .messageToContain("unparsable")
     }
@@ -280,7 +263,7 @@ class OpenRouterLogoSelectionServiceTest {
       val request = slot<OpenRouterVisionRequest>()
       llmAnswers("1", request)
 
-      service.selectBestLogo("Apple", "AAPL", twoCandidates())
+      service.selectBestLogo("Apple", twoCandidates())
 
       expect(request.captured.maxTokens).toEqual(200)
     }
@@ -290,7 +273,7 @@ class OpenRouterLogoSelectionServiceTest {
       val request = slot<OpenRouterVisionRequest>()
       llmAnswers("1", request)
 
-      service.selectBestLogo("Apple", "AAPL", twoCandidates())
+      service.selectBestLogo("Apple", twoCandidates())
 
       expect(request.texts().first()).toContain("or 0 if none of them is this company's logo")
     }
@@ -301,7 +284,7 @@ class OpenRouterLogoSelectionServiceTest {
       val candidates = listOf(createCandidate(0, "Põhja Pank logo"), createCandidate(1, " "))
       llmAnswers("1", request)
 
-      service.selectBestLogo("Apple", "AAPL", candidates)
+      service.selectBestLogo("Apple", candidates)
 
       expect(request.texts().drop(1)).toContainExactly("Image 1: Põhja Pank logo", "Image 2")
     }
@@ -315,7 +298,7 @@ class OpenRouterLogoSelectionServiceTest {
         every { imageDownloadService.download(it.imageUrl) } throws RuntimeException("Broken link")
       }
 
-      service.selectBestLogo("Apple", "AAPL", candidates)
+      service.selectBestLogo("Apple", candidates)
 
       verify(exactly = 0) { imageDownloadService.download(candidates[7].imageUrl) }
       expect(request.parts().filterIsInstance<ImageContent>()).toHaveSize(5)

@@ -248,12 +248,21 @@ describe('api services', () => {
     )
   })
 
-  it('uploads a logo to its owner uuid', async () => {
+  it('waits a minute for a logo replacement, as a job can hold the holding that long', async () => {
+    const request = { holdingUuid: '550e8400-e29b-41d4-a716-446655440000', candidateIndex: 5 }
+
+    await logoService.replaceLogo(request)
+
+    expect(httpClient.post).toHaveBeenCalledWith('/logos/replace', request, { timeout: 60000 })
+  })
+
+  it('uploads a logo to its owner uuid and waits a minute', async () => {
     await logoService.uploadLogo('550e8400-e29b-41d4-a716-446655440000', new File(['õ'], 'a.png'))
 
     expect(httpClient.post).toHaveBeenCalledWith(
       '/logos/550e8400-e29b-41d4-a716-446655440000',
-      expect.any(FormData)
+      expect.any(FormData),
+      { timeout: 60000 }
     )
   })
 
