@@ -1,12 +1,14 @@
 <template>
   <section>
     <h2 class="m-0 text-[1.125rem] font-semibold text-ink">{{ period }} change in euros</h2>
-    <p class="mt-0.5 mb-2 text-label text-ink-soft">Largest gain first</p>
-    <ol class="m-0 list-none p-0">
+    <p class="mt-0.5 mb-2 text-2xs text-ink-soft">Largest gain first</p>
+    <ol
+      class="m-0 list-none p-0 md:grid md:grid-cols-[auto_max-content_minmax(0,1fr)_max-content] md:gap-x-2.5"
+    >
       <li
         v-for="row in rows"
         :key="row.instrument.symbol"
-        class="grid grid-cols-[auto_minmax(0,1fr)_6rem] items-center gap-x-2 rounded-control px-1 py-1 md:h-7.5 md:grid-cols-[auto_5.5rem_minmax(0,1fr)_6rem] md:py-0"
+        class="grid grid-cols-[auto_minmax(0,1fr)_6rem] items-center gap-x-2 rounded-control px-1 py-1 md:col-span-full md:h-8 md:grid-cols-subgrid md:gap-x-2.5 md:py-0"
         :class="{ 'cursor-pointer hover:bg-surface-hover': interactive }"
         @pointerenter="preview(row.instrument.id)"
         @pointerleave="preview(null)"
@@ -17,9 +19,9 @@
           :logo-uuid="row.instrument.logoUuid"
           :version="row.instrument.logoVersion"
           :symbol="row.ticker"
-          :size="wide ? 20 : 24"
+          :size="wide ? 22 : 24"
         />
-        <span class="truncate text-label font-semibold text-ink">{{ row.ticker }}</span>
+        <span class="truncate text-sm font-semibold text-ink">{{ row.ticker }}</span>
         <span aria-hidden="true" class="relative h-2 max-md:col-start-2 max-md:row-start-2">
           <span class="absolute inset-y-[-3px] left-0 w-px bg-hairline-strong md:left-1/2" />
           <span
@@ -34,7 +36,7 @@
           />
         </span>
         <span
-          class="text-right text-label text-ink tabular-nums max-md:col-start-3 max-md:row-span-2 max-md:row-start-1"
+          class="text-right text-sm text-ink tabular-nums max-md:col-start-3 max-md:row-span-2 max-md:row-start-1"
         >
           {{ row.amount }}
         </span>
