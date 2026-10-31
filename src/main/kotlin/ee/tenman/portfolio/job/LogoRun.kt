@@ -3,9 +3,9 @@ package ee.tenman.portfolio.job
 private const val MAX_FAILURES_IN_A_ROW = 3
 
 sealed interface LogoOutcome {
-  data object Answered : LogoOutcome
+  object Answered : LogoOutcome
 
-  data object Skipped : LogoOutcome
+  object Skipped : LogoOutcome
 
   data class Failed(
     val reason: String,

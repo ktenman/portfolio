@@ -78,6 +78,7 @@
     "vue-tsc": "^3.3.11"
   },
   "overrides": {
+    "minimatch": "^11.0.1",
     "monaco-editor": {
       "dompurify": "^3.4.17"
     }
