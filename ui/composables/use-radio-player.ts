@@ -23,6 +23,7 @@ const rate = ref(1)
 const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
+const started = ref(false)
 const toast = useToast()
 let loaded = ''
 let opened = ''
@@ -101,6 +102,10 @@ const remember = (at: number) => {
   if (saved !== null && Math.abs(at - saved) >= SAVE_EVERY) store(at)
 }
 
+const keep = () => {
+  if (heard !== saved) store(heard)
+}
+
 const place = (at: number) => {
   const target = recording.value
   heard = at
@@ -149,6 +154,10 @@ const speed = (audio: HTMLAudioElement, value: number) => {
 }
 
 const load = (target: RecordingSummary, wanted: Version = 'raw') => {
+  if (recording.value?.name !== target.name) {
+    keep()
+    started.value = false
+  }
   recording.value = target
   version.value = wanted
   live.value = false
@@ -160,8 +169,6 @@ const play = () =>
   element.value?.play().catch((error: Error) => {
     if (!QUIET.includes(error.name)) toast.error('Could not play the audio')
   })
-
-const pause = () => element.value?.pause()
 
 const swap = (wanted: Version) => {
   const target = recording.value
@@ -176,6 +183,7 @@ const swap = (wanted: Version) => {
 const listen = () => {
   const audio = element.value
   if (!audio) return
+  keep()
   recording.value = null
   live.value = true
   loaded = 'live'
@@ -235,7 +243,10 @@ const listeners: Record<string, () => void> = {
     remember(recordingSeconds.value)
     follow()
   },
-  play: () => (playing.value = true),
+  play: () => {
+    playing.value = true
+    started.value = true
+  },
   pause: () => {
     playing.value = false
     if (!element.value?.ended) store(heard)
@@ -260,16 +271,9 @@ const attach = (audio: HTMLAudioElement) => {
   open()
 }
 
-const detach = () => {
-  if (heard !== saved) store(heard)
-  const audio = element.value
-  if (audio) {
-    audio.pause()
-    Object.entries(listeners).forEach(([name, listener]) =>
-      audio.removeEventListener(name, listener)
-    )
-  }
-  element.value = null
+const close = () => {
+  keep()
+  hangUp()
   loaded = ''
   opened = ''
   recording.value = null
@@ -280,6 +284,7 @@ const detach = () => {
   playing.value = false
   lost.value = false
   muted.value = false
+  started.value = false
   plan = null
 }
 
@@ -307,14 +312,14 @@ export const useRadioPlayer = () => ({
   volume,
   muted,
   lost,
+  started,
   rejoin,
   attach,
-  detach,
+  close,
   load,
   swap,
   listen,
   toggle,
-  pause,
   seek: pick,
   skip,
   playFrom,

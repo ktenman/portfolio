@@ -120,7 +120,7 @@ describe('RadioOnAir', () => {
     const wrapper = await mount({ ...idle, onAir: broadcast })
     await wrapper.find('button').trigger('click')
     const src = audio.src
-    player.detach()
+    player.close()
     expect(src).toContain('/api/radio/live')
   })
 
@@ -136,7 +136,7 @@ describe('RadioOnAir', () => {
     audio.dispatchEvent(new Event('play'))
     await wrapper.find('button').trigger('click')
     const live = audio.hasAttribute('src')
-    player.detach()
+    player.close()
     expect(live).toBe(false)
   })
 
@@ -167,7 +167,7 @@ describe('RadioOnAir', () => {
     const label = (await mount({ ...idle, onAir: broadcast }))
       .find('button')
       .attributes('aria-label')
-    player.detach()
+    player.close()
     expect(label).toBe('Pause')
   })
 

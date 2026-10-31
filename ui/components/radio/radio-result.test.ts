@@ -34,7 +34,7 @@ describe('RadioResult', () => {
 
   afterEach(async () => {
     await useRadioDecisions(() => recording()).flush()
-    player.detach()
+    player.close()
   })
 
   const render = (item: RecordingSummary = recording(), version: Version = 'raw') => {

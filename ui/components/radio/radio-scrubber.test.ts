@@ -132,6 +132,13 @@ describe('RadioScrubber', () => {
     expect(wrapper.find('[data-testid="radio-timeline-labels"]').exists()).toBe(false)
   })
 
+  it('should draw a slim track when bare', () => {
+    const wrapper = mount(RadioScrubber, {
+      props: { value: 0, total: 40, label: 'Position', parts: PARTS, bare: true },
+    })
+    expect(wrapper.get('input').element.parentElement?.classList.contains('h-5')).toBe(true)
+  })
+
   it('should show how much of each part has played', () => {
     const played = render(20).findAll('[data-testid="radio-timeline-part"] > div')
     expect(played.map(fill => fill.attributes('style'))).toEqual([

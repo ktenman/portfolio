@@ -30,7 +30,7 @@ describe('RadioPlayer', () => {
     player.attach(audio)
   })
 
-  afterEach(() => player.detach())
+  afterEach(() => player.close())
 
   const render = (version: Version = 'raw', item = recording()) => {
     player.load(item, version)
@@ -279,11 +279,11 @@ describe('RadioPlayer', () => {
     ]).toEqual([expect.arrayContaining(['md:hidden']), expect.arrayContaining(['max-md:hidden'])])
   })
 
-  it('should pause the recording when the card closes', () => {
+  it('should keep the recording playing when the card closes', () => {
     const wrapper = render()
     const pause = vi.spyOn(audio, 'pause').mockImplementation(() => {})
     wrapper.unmount()
-    expect(pause).toHaveBeenCalledOnce()
+    expect(pause).not.toHaveBeenCalled()
   })
 
   it('should not offer to go back to the playing line', async () => {

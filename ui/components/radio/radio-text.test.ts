@@ -40,7 +40,7 @@ describe('RadioText', () => {
     player.load(recording())
   })
 
-  afterEach(() => player.detach())
+  afterEach(() => player.close())
 
   const render = async (
     target: RecordingSummary = recording(),

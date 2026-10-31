@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { useElementSize, useTitle } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useRadioPlayer } from '../../composables/use-radio-player'
@@ -64,4 +64,8 @@ watch(
   },
   { immediate: true }
 )
+
+onBeforeUnmount(() => {
+  if (!player.started.value) player.close()
+})
 </script>

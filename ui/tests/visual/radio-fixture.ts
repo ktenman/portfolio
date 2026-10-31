@@ -296,6 +296,21 @@ export const stubRadioPlannedOnly: RouteStub = async page => {
   )
 }
 
+const LONG_NAME = 'Keskpäevatund, Tarkade klubi, Digitund ja Arenduskeskuste minutid ühes saates'
+
+export const stubRadioLongNames: RouteStub = async page => {
+  await stubRadio(page)
+  await page.route(apiRoute(API_ENDPOINTS.RADIO), route =>
+    route.fulfill({
+      json: RECORDINGS.map(item => ({
+        ...item,
+        programme: LONG_NAME,
+        topics: item.topics.map(topic => ({ ...topic, title: LONG_NAME })),
+      })),
+    })
+  )
+}
+
 export const stubRadioLongText: RouteStub = async page => {
   await stubRadio(page)
   const lines = Array.from({ length: 90 }, (_, i) => ({
