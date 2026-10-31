@@ -53,7 +53,7 @@ describe('useRadioPlayer', () => {
     await reload()
   })
 
-  afterEach(() => player.detach())
+  afterEach(() => player.close())
 
   const tick = (seconds: number) => {
     audio.currentTime = seconds
@@ -182,10 +182,12 @@ describe('useRadioPlayer', () => {
     expect(audio.defaultPlaybackRate).toBe(1.5)
   })
 
-  it('should load a recording asked for before the audio element was attached', () => {
-    player.detach()
-    player.load(recording(), 'episode')
-    player.attach(audio)
+  it('should load a recording asked for before the audio element was attached', async () => {
+    vi.resetModules()
+    const { useRadioPlayer } = await import('./use-radio-player')
+    const fresh = useRadioPlayer()
+    fresh.load(recording(), 'episode')
+    fresh.attach(audio)
     expect(audio.src).toContain('episode.m4a')
   })
 
@@ -284,9 +286,9 @@ describe('useRadioPlayer', () => {
     expect(player.lost.value).toBe(false)
   })
 
-  it('should forget being lost when the player is detached', () => {
+  it('should forget being lost when the player is closed', () => {
     player.lost.value = true
-    player.detach()
+    player.close()
     expect(player.lost.value).toBe(false)
   })
 
@@ -362,7 +364,7 @@ describe('useRadioPlayer', () => {
     player.load(recording())
     await flushPromises()
     tick(604)
-    player.detach()
+    player.close()
     expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
   })
 
@@ -370,7 +372,7 @@ describe('useRadioPlayer', () => {
     positions.find.mockResolvedValue({ seconds: 1400 })
     player.load(recording())
     await flushPromises()
-    player.detach()
+    player.close()
     expect(positions.save.mock.calls).toEqual([])
   })
 
@@ -379,7 +381,7 @@ describe('useRadioPlayer', () => {
     player.load(recording())
     await flushPromises()
     tick(1400)
-    player.detach()
+    player.close()
     expect(positions.save.mock.calls).toEqual([])
   })
 
@@ -444,5 +446,76 @@ describe('useRadioPlayer', () => {
     expect(toasts.value.map(toast => toast.message)).toEqual([
       'Could not find where you left the recording',
     ])
+  })
+
+  it('should not count as started until the audio plays', () => {
+    player.load(recording())
+    expect(player.started.value).toBe(false)
+  })
+
+  it('should stay started when paused', () => {
+    player.load(recording())
+    audio.dispatchEvent(new Event('play'))
+    audio.dispatchEvent(new Event('pause'))
+    expect(player.started.value).toBe(true)
+  })
+
+  it('should keep the audio and stay started when the same recording opens again', () => {
+    player.load(recording(), 'episode')
+    audio.dispatchEvent(new Event('play'))
+    const src = audio.src
+    player.load(recording(), 'episode')
+    expect([audio.src, player.started.value]).toEqual([src, true])
+  })
+
+  it('should forget being started when another recording opens', () => {
+    player.load(recording())
+    audio.dispatchEvent(new Event('play'))
+    player.load(recording({ name: '2026-10-18' }))
+    expect(player.started.value).toBe(false)
+  })
+
+  it('should save where the listener left a recording when another one opens', async () => {
+    positions.find.mockResolvedValue({ seconds: 600 })
+    player.load(recording())
+    await flushPromises()
+    tick(604)
+    player.load(recording({ name: '2026-10-18' }))
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
+  })
+
+  it('should save where the listener left a recording when the live stream starts', async () => {
+    positions.find.mockResolvedValue({ seconds: 600 })
+    player.load(recording())
+    await flushPromises()
+    tick(604)
+    player.listen()
+    expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
+  })
+
+  it('should drop the audio and forget being started when closed', () => {
+    player.load(recording())
+    audio.dispatchEvent(new Event('play'))
+    player.close()
+    expect([audio.hasAttribute('src'), player.started.value]).toEqual([false, false])
+  })
+
+  it('should keep following the audio element after being closed', async () => {
+    player.load(recording())
+    player.close()
+    player.load(recording())
+    await flushPromises()
+    tick(5)
+    expect(player.seconds.value).toBe(5)
+  })
+
+  it('should ignore a saved position that arrives after being closed', async () => {
+    const answer = deferred<RadioPositionDto>()
+    positions.find.mockReturnValue(answer.promise)
+    player.load(recording())
+    player.close()
+    answer.resolve({ seconds: 2296.5 })
+    await flushPromises()
+    expect(audio.currentTime).toBe(0)
   })
 })

@@ -1,26 +1,30 @@
 <template>
   <div
-    class="grid w-full items-center max-md:auto-cols-fr max-md:grid-flow-col max-md:justify-items-center md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6"
+    class="grid w-full items-center"
+    :class="
+      large
+        ? 'max-md:auto-cols-fr max-md:grid-flow-col max-md:justify-items-center md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6'
+        : 'auto-cols-fr grid-flow-col justify-items-center'
+    "
   >
-    <div class="flex min-w-0 items-center gap-4 md:justify-end">
+    <div :class="large ? 'flex min-w-0 items-center gap-4 md:justify-end' : 'contents'">
       <slot />
       <button
         v-if="!player.live.value"
         type="button"
         data-testid="radio-speed"
-        :class="SUNKEN"
-        class="text-sm font-medium"
+        :class="[ROUND, large ? SUNKEN : 'size-11', 'text-sm font-medium']"
         :aria-label="`Speed ${player.rate.value}×, change`"
         @click="step"
       >
         {{ player.rate.value }}×
       </button>
     </div>
-    <div class="contents md:flex md:items-center md:gap-5">
+    <div :class="large ? 'contents md:flex md:items-center md:gap-5' : 'contents'">
       <button
         v-if="!player.live.value"
         type="button"
-        :class="[ROUND, large ? 'size-13' : 'size-12', 'flex-col']"
+        :class="[ROUND, 'text-label', large ? 'size-13' : 'size-11', 'flex-col']"
         aria-label="Back 15 s"
         @click="player.skip(-15)"
       >
@@ -29,7 +33,7 @@
       </button>
       <button
         type="button"
-        :class="[PLAY, large ? 'size-14 max-md:size-16' : 'size-14 md:size-12']"
+        :class="[PLAY, large ? 'size-14 max-md:size-16' : 'size-11']"
         :aria-label="player.playing.value ? 'Pause' : 'Play'"
         data-testid="radio-play"
         @click="player.toggle()"
@@ -39,7 +43,7 @@
       <button
         v-if="!player.live.value"
         type="button"
-        :class="[ROUND, large ? 'size-13' : 'size-12', 'flex-col-reverse']"
+        :class="[ROUND, 'text-label', large ? 'size-13' : 'size-11', 'flex-col-reverse']"
         aria-label="Forward 30 s"
         @click="player.skip(30)"
       >
@@ -47,10 +51,10 @@
         <radio-icon name="forward" />
       </button>
     </div>
-    <div class="flex items-center gap-2.5 md:justify-self-start">
+    <div :class="large ? 'flex items-center gap-2.5 md:justify-self-start' : 'contents'">
       <button
         type="button"
-        :class="SUNKEN"
+        :class="[ROUND, large ? SUNKEN : 'size-11']"
         aria-label="Mute"
         :aria-pressed="player.muted.value"
         @click="player.muted.value = !player.muted.value"
@@ -58,6 +62,7 @@
         <radio-icon :name="player.muted.value ? 'muted' : 'volume'" />
       </button>
       <input
+        v-if="large"
         v-model.number="player.volume.value"
         type="range"
         class="volume-range hidden w-22 md:block"
@@ -81,11 +86,10 @@ import RadioIcon from './radio-icon.vue'
 
 defineProps<{ large?: boolean }>()
 
-const SUNKEN =
-  'inline-flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-sunken text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+const SUNKEN = 'h-11 w-12 bg-surface-sunken'
 
 const ROUND =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-label text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
 const player = useRadioPlayer()
 

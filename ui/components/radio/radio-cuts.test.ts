@@ -56,7 +56,7 @@ describe('Radio cuts', () => {
     player.load(recording())
   })
 
-  afterEach(() => player.detach())
+  afterEach(() => player.close())
 
   const render = async (target: RecordingSummary = recording()) => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

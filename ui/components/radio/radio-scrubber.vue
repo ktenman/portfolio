@@ -36,9 +36,13 @@
       </div>
     </div>
     <div
-      class="relative h-7 rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass"
+      class="relative rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brass"
+      :class="bare ? 'h-5' : 'h-7'"
     >
-      <div class="absolute inset-x-0 top-2 flex h-3 gap-0.5 md:top-2.5 md:h-2">
+      <div
+        class="absolute inset-x-0 flex gap-0.5"
+        :class="bare ? 'top-1.75 h-1.5' : 'top-2 h-3 md:top-2.5 md:h-2'"
+      >
         <div
           v-for="part in parts"
           :key="part.start"
@@ -55,12 +59,14 @@
         </div>
       </div>
       <div
-        class="pointer-events-none absolute top-0 h-7 w-1 -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface"
+        class="pointer-events-none absolute -translate-x-1/2 rounded-full bg-brass ring-2 ring-surface"
+        :class="bare ? 'top-0.5 h-4 w-0.75' : 'top-0 h-7 w-1'"
         :style="{ left: `${share}%` }"
       />
       <input
         type="range"
-        class="absolute inset-0 w-full cursor-pointer opacity-0 max-md:-inset-y-2"
+        class="absolute inset-0 w-full cursor-pointer opacity-0"
+        :class="bare ? '-inset-y-1' : 'max-md:-inset-y-2'"
         min="0"
         :max="total"
         step="1"
