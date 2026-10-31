@@ -26,7 +26,7 @@
     </template>
 
     <template #content>
-      <div class="controls-row border-b border-hairline-strong">
+      <div class="controls-row">
         <nav class="flex gap-7" aria-label="Instrument views">
           <router-link
             v-for="tab in VIEWS"
@@ -38,31 +38,23 @@
             {{ tab.label }}
           </router-link>
         </nav>
-        <div class="period-selector-container">
-          <label class="period-label hidden md:inline" for="periodSelect">Period:</label>
-          <select
-            id="periodSelect"
-            v-model="selectedPeriod"
-            class="form-select form-select-sm period-select"
-            aria-label="Price change period"
-          >
-            <option v-for="range in TIME_RANGES" :key="range" :value="range">
-              {{ range }}
-            </option>
-          </select>
+        <div class="controls-group">
+          <div v-if="view === 'table'" class="toggle-container">
+            <span class="toggle-label">Active only</span>
+            <label
+              class="toggle-switch md-down:before:absolute md-down:before:-inset-x-0.5 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2"
+            >
+              <input
+                v-model="showActiveOnly"
+                type="checkbox"
+                role="switch"
+                aria-label="Show active instruments only"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <instrument-period-picker :selected="selectedPeriod" @select="selectedPeriod = $event" />
         </div>
-      </div>
-      <div v-if="view === 'table'" class="toggle-container">
-        <span class="toggle-label">Active only</span>
-        <label class="toggle-switch">
-          <input
-            v-model="showActiveOnly"
-            type="checkbox"
-            role="switch"
-            aria-label="Show active instruments only"
-          />
-          <span class="toggle-slider"></span>
-        </label>
       </div>
       <instrument-heatmap
         v-if="view === 'heatmap'"
@@ -108,7 +100,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query'
 import { useToast } from '../../composables/use-toast'
-import { TIME_RANGES, usePriceChangePeriod } from '../../composables/use-time-range'
+import { usePriceChangePeriod } from '../../composables/use-time-range'
 import { useSortableTable } from '../../composables/use-sortable-table'
 import { useAuthState } from '../../composables/use-auth-state'
 import { usePlatformFilter } from '../../composables/use-platform-filter'
@@ -116,6 +108,7 @@ import CrudLayout from '../shared/crud-layout.vue'
 import PlatformFilter from '../shared/platform-filter.vue'
 import FilterToggle from '../shared/filter-toggle.vue'
 import InstrumentHeatmap from './instrument-heatmap.vue'
+import InstrumentPeriodPicker from './instrument-period-picker.vue'
 import InstrumentTable from './instrument-table.vue'
 import InstrumentModal from './instrument-modal.vue'
 import XirrWindowsModal from './xirr-windows-modal.vue'
@@ -261,19 +254,38 @@ const handleTitleClick = async () => {
 
 <style scoped>
 .controls-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1px;
+}
+
+.controls-row::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 2.75rem;
+  border-bottom: 1px solid var(--color-hairline-strong);
+}
+
+.controls-row > nav {
+  margin-right: auto;
+}
+
+.controls-group {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
 }
 
 .toggle-container {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 0.5rem;
-  margin-bottom: 1rem;
 }
 
 .toggle-label {
@@ -331,45 +343,14 @@ const handleTitleClick = async () => {
   box-shadow: 0 0 0 2px var(--color-brass-wash);
 }
 
-.period-selector-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.period-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-ink-muted);
-  margin: 0;
-}
-
-.period-select {
-  width: auto;
-  min-width: 5.5rem;
-  cursor: pointer;
-}
-
-@media (max-width: 768px) {
-  .period-selector-container {
-    width: auto;
-  }
-
-  .period-select {
-    flex: 1;
-  }
-}
-
 @media (max-width: 992px) and (orientation: landscape) {
-  .controls-row,
-  .toggle-container {
+  .controls-row {
     display: none !important;
   }
 }
 
 @media (max-height: 500px) {
-  .controls-row,
-  .toggle-container {
+  .controls-row {
     display: none !important;
   }
 }

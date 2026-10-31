@@ -25,6 +25,7 @@ vi.mock('../../composables/use-toast', () => ({
 vi.mock('@vueuse/core', () => ({
   useLocalStorage: vi.fn((_key: string, defaultValue: any) => ref(defaultValue)),
   onClickOutside: vi.fn(),
+  onKeyStroke: vi.fn(),
 }))
 
 const requestAdd = async (wrapper: VueWrapper) => {
@@ -53,6 +54,36 @@ describe('InstrumentsView', () => {
       await mountAndSettle()
 
       expect(instrumentsService.getAll).toHaveBeenCalled()
+    })
+  })
+
+  describe('tab rail', () => {
+    const picker = (wrapper: VueWrapper) =>
+      wrapper.find('.controls-row [aria-label="Price change period"] button')
+
+    it('should offer the saved period on the compact picker instead of a select', async () => {
+      const { wrapper } = await mountAndSettle()
+
+      expect([wrapper.find('select').exists(), picker(wrapper).text()]).toEqual([false, '1D'])
+    })
+
+    it('should load the period picked from the popover', async () => {
+      const { wrapper } = await mountAndSettle()
+      await picker(wrapper).trigger('click')
+
+      await wrapper
+        .findAll('#period-picker button')
+        .find(cell => cell.text() === 'MAX')!
+        .trigger('click')
+      await flushPromises()
+
+      expect(vi.mocked(instrumentsService.getAll).mock.lastCall?.[1]).toBe('MAX')
+    })
+
+    it('should keep Active only on the rail', async () => {
+      const { wrapper } = await mountAndSettle()
+
+      expect(wrapper.find('.controls-row .toggle-container').exists()).toBe(true)
     })
   })
 

@@ -7,7 +7,7 @@ import {
   barShare,
   boxLabel,
   changeOrder,
-  splitDrawable,
+  drawablePositions,
   squarify,
   tickerOf,
   tierFor,
@@ -130,25 +130,18 @@ describe('instrument heatmap', () => {
 
   it('leaves positions under 0.1% out of the map', () =>
     expect(
-      [valued(999, 1), valued(999.5, 0.5)].map(list => {
-        const { drawn, hidden } = splitDrawable(list)
-        return [
-          drawn.map(({ currentValue }) => currentValue),
-          hidden.map(({ currentValue }) => currentValue),
-        ]
-      })
-    ).toEqual([
-      [[999, 1], []],
-      [[999.5], [0.5]],
-    ]))
+      [valued(999, 1), valued(999.5, 0.5)].map(list =>
+        drawablePositions(list).map(({ currentValue }) => currentValue)
+      )
+    ).toEqual([[999, 1], [999.5]]))
 
   it('draws positions largest value first', () =>
-    expect(splitDrawable(valued(10, 30, 20)).drawn.map(({ currentValue }) => currentValue)).toEqual(
-      [30, 20, 10]
-    ))
+    expect(drawablePositions(valued(10, 30, 20)).map(({ currentValue }) => currentValue)).toEqual([
+      30, 20, 10,
+    ]))
 
   it('draws nothing when the total value is zero', () =>
-    expect(splitDrawable(valued(0, 0))).toEqual({ drawn: [], hidden: valued(0, 0) }))
+    expect(drawablePositions(valued(0, 0))).toEqual([]))
 
   it('orders the list by change with unknown changes last', () =>
     expect(changeOrder(INSTRUMENTS).map(({ symbol }) => tickerOf(symbol))).toEqual([

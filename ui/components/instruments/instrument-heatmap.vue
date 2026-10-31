@@ -24,7 +24,7 @@
           </p>
           <instrument-heatmap-map
             v-else
-            :positions="split.drawn"
+            :positions="drawn"
             :total="totalValue"
             :period="period"
             :selected-id="selectedId"
@@ -34,26 +34,12 @@
           />
         </div>
       </div>
-      <template v-if="showsFigures">
-        <div data-total class="mt-3 hidden items-baseline gap-x-6 text-label md:flex">
-          <span class="font-semibold text-ink">Total</span>
-          <dl class="m-0 flex flex-wrap gap-x-6">
-            <div v-for="figure in totals" :key="figure.label" class="flex gap-1.5">
-              <dt class="text-ink-soft">{{ figure.label }}</dt>
-              <dd class="m-0 font-semibold text-ink tabular-nums">{{ figure.value }}</dd>
-            </div>
-          </dl>
-        </div>
-        <p class="mt-3 mb-0 text-label text-ink-soft">
-          Box size is the position's value. Colour is its {{ period }} change in percent.
-          <template v-if="split.hidden.length > 0">{{ hiddenText }}</template>
-        </p>
-        <daily-profit-legend
-          :missing="hasMissingChange"
-          :steps="HEATMAP_STEPS[period]"
-          :missing-label="`No ${period} change`"
-        />
-      </template>
+      <daily-profit-legend
+        v-if="showsFigures"
+        :missing="hasMissingChange"
+        :steps="HEATMAP_STEPS[period]"
+        :missing-label="`No ${period} change`"
+      />
     </div>
     <instrument-change-list
       v-if="showsFigures"
@@ -80,7 +66,7 @@ import { useMediaQuery } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { InstrumentDto, TimeRange } from '../../models/generated/domain-models'
 import { useInstrumentTotals } from '../../composables/use-instrument-totals'
-import { HEATMAP_STEPS, splitDrawable } from '../../services/instrument-heatmap'
+import { HEATMAP_STEPS, drawablePositions } from '../../services/instrument-heatmap'
 import {
   formatCurrencyChange,
   formatCurrencyWithSymbol,
@@ -113,7 +99,7 @@ const wide = useMediaQuery('(min-width: 768px)')
 const interactive = useMediaQuery('(min-width: 1024px)')
 const { totalValue } = useInstrumentTotals(toRef(props, 'instruments'))
 
-const split = computed(() => splitDrawable(props.instruments))
+const drawn = computed(() => drawablePositions(props.instruments))
 const showsFigures = computed(
   () => !props.isLoading && !props.isError && props.instruments.length > 0
 )
@@ -144,22 +130,15 @@ const totals = computed(() => {
   ]
 })
 
-const hiddenText = computed(() => {
-  const count = split.value.hidden.length
-  return count === 1
-    ? '1 position under 0.1% is too small to draw and appears only in the list.'
-    : `${count} positions under 0.1% are too small to draw and appear only in the list.`
-})
-
 watch(
-  () => split.value.drawn.map(({ id }) => id),
-  drawn => {
+  () => drawn.value.map(({ id }) => id),
+  ids => {
     if (props.isLoading) {
       previewId.value = null
       return
     }
-    if (selectedId.value !== null && !drawn.includes(selectedId.value)) selectedId.value = null
-    if (previewId.value !== null && !drawn.includes(previewId.value)) previewId.value = null
+    if (selectedId.value !== null && !ids.includes(selectedId.value)) selectedId.value = null
+    if (previewId.value !== null && !ids.includes(previewId.value)) previewId.value = null
   }
 )
 </script>

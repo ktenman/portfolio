@@ -684,11 +684,11 @@ nothing reflows on hover, and removing it would make every chip row jump by 2px.
 **The active-segment gesture now spans four surfaces**, and all four share the same three declarations —
 `--color-brass-wash` fill, `--color-brass` border, `--color-brass-deep` text. Beyond the filter chips
 (`controls.css:103`) it drives the ETF breakdown's dimension tabs (`etf-breakdown.vue:465`), the allocation
-table's display-mode toggle (`allocation-table.vue:849`), and the summary chart's time-range row, which reuses
-`.platform-btn` verbatim rather than restyling it (`chart-range-filter.vue`). Only the resting states differ:
-tabs rest transparent so the row does not gain three boxes, the display-mode toggle rests sunken with a real
-hairline and joined radii, and the range row inherits the chip exactly — three resting treatments across the
-four surfaces. A fifth surface that needs "selected" should reach for one of those three, not invent another.
+table's display-mode toggle (`allocation-table.vue:849`), and the time-range row (`chart-range-filter.vue`). Only
+the resting states differ: tabs rest transparent so the row does not gain three boxes, the chips keep their own
+rest, and the display-mode toggle and the range row both rest sunken with a real hairline and joined radii —
+three resting treatments across the four surfaces. A fifth surface that needs "selected" should reach for one of
+those three, not invent another.
 
 **The value flash** is the one piece of ambient motion. When a price or portfolio value changes, its cell
 animates `pulse-increase` or `pulse-decrease` — a 3s ease-in-out background wash peaking at `--color-gain-wash`
@@ -784,11 +784,12 @@ legend swatches with its default grey and the key stops matching the lines.
 
 The chart on `/` carries three pieces around it, and their arrangement is the design decision worth preserving.
 
-**The range row is chips, not a select.** `chart-range-filter.vue` renders all fourteen `TimeRange` values as
-`.platform-btn` inside `.platform-buttons` — the same classes the platform filters use, with no additional
-styling of its own. Fourteen chips wrap onto two rows on a phone, and that is the intended outcome: every range
-stays one tap away, which a `<select>` would cost two. It sits **below** the chart, because it changes what the
-chart already showed rather than introducing it.
+**The range row is joined cells, not a select.** `chart-range-filter.vue` shows the eight shortlist periods
+plus More, which opens a popover of Days to Years and 1 to 6, so all 26 `TimeRange` values stay within reach and
+the row keeps to one line on a phone. It sits **below** the chart, because it changes what the chart already
+showed rather than introducing it. On Instruments, `instrument-period-picker.vue` opens the same popover from
+one button naming the selected period, which sits on the tab rail, neutral at rest so Active only keeps the
+accent. The shortlist joins the popover there, above the other two rows.
 
 **The change figure floats over the plot, not above it.** `range-change-header.vue` is absolutely positioned at
 the chart's top-left inside `.chart-frame` and is `pointer-events: none`, so it reads as an annotation on the
