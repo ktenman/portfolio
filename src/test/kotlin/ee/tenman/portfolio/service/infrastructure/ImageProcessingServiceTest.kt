@@ -1,15 +1,19 @@
 package ee.tenman.portfolio.service.infrastructure
 
-import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import javax.imageio.IIOException
 import javax.imageio.ImageIO
 
 class ImageProcessingServiceTest {
@@ -21,57 +25,59 @@ class ImageProcessingServiceTest {
   }
 
   @Test
-  fun `should not resize image within bounds`() {
-    val imageData = createTestImage(255, 251)
-
-    val result = service.resizeToMaxDimension(imageData)
-    val dimensions = getImageDimensions(result)
-
-    expect(dimensions.first).toEqual(255)
-    expect(dimensions.second).toEqual(251)
+  fun `should pad a wide image to a 256 pixel square`() {
+    val result = service.resizeToMaxDimension(createTestImage(400, 100))
+    expect(getImageDimensions(result)).toEqual(Pair(256, 256))
   }
 
   @Test
-  fun `should scale down large image based on max dimension`() {
-    val imageData = createTestImage(512, 256)
-
-    val result = service.resizeToMaxDimension(imageData)
-    val dimensions = getImageDimensions(result)
-
-    expect(dimensions.first).toBeLessThanOrEqualTo(256)
-    expect(dimensions.second).toBeLessThanOrEqualTo(256)
+  fun `should keep the proportions of a wide image inside the square`() {
+    val result = service.resizeToMaxDimension(png(400, 100, Color.BLUE, Color.WHITE))
+    expect(listOf(pixel(result, 128, 97), pixel(result, 128, 90))).toEqual(listOf(Color.BLUE.rgb, Color.WHITE.rgb))
   }
 
   @Test
-  fun `should scale up small image based on min dimension`() {
-    val imageData = createTestImage(100, 100)
-
-    val result = service.resizeToMaxDimension(imageData)
-    val dimensions = getImageDimensions(result)
-
-    expect(dimensions.first).toBeGreaterThanOrEqualTo(250)
-    expect(dimensions.second).toBeGreaterThanOrEqualTo(250)
+  fun `should pad a portrait image at the sides`() {
+    val result = service.resizeToMaxDimension(png(100, 400, Color.BLUE, Color.WHITE))
+    val pixels = listOf(pixel(result, 128, 128), pixel(result, 90, 128), pixel(result, 170, 128))
+    expect(pixels).toEqual(listOf(Color.BLUE.rgb, Color.WHITE.rgb, Color.WHITE.rgb))
   }
 
   @Test
-  fun `should maintain aspect ratio when scaling down`() {
-    val imageData = createTestImage(520, 500)
-
-    val result = service.resizeToMaxDimension(imageData)
-    val dimensions = getImageDimensions(result)
-
-    expect(dimensions.first).toEqual(256)
-    expect(dimensions.second).toEqual(246)
+  fun `should fill the padding with the colour of the top left pixel`() {
+    val result = service.resizeToMaxDimension(png(400, 100, Color.BLUE, Color.RED))
+    expect(pixel(result, 0, 0)).toEqual(Color.RED.rgb)
   }
 
   @Test
-  fun `should maintain aspect ratio when scaling up`() {
-    val imageData = createTestImage(100, 80)
+  fun `should keep a transparent background transparent`() {
+    val result = service.resizeToMaxDimension(png(400, 100, Color(0, 0, 0, 0)))
+    expect(pixel(result, 0, 0) ushr 24).toEqual(0)
+  }
 
-    val result = service.resizeToMaxDimension(imageData)
-    val dimensions = getImageDimensions(result)
+  @ParameterizedTest
+  @ValueSource(ints = [250, 256])
+  fun `should leave an exact square from 250 to 256 pixels untouched`(side: Int) {
+    val data = createTestImage(side, side)
+    expect(service.resizeToMaxDimension(data).contentEquals(data)).toEqual(true)
+  }
 
-    expect(dimensions.first).toBeGreaterThanOrEqualTo(250)
+  @Test
+  fun `should scale a small square up to 256 pixels`() {
+    val result = service.resizeToMaxDimension(createTestImage(100, 100))
+    expect(getImageDimensions(result)).toEqual(Pair(256, 256))
+  }
+
+  @Test
+  fun `should scale a large square down to 256 pixels`() {
+    val result = service.resizeToMaxDimension(createTestImage(300, 300))
+    expect(getImageDimensions(result)).toEqual(Pair(256, 256))
+  }
+
+  @Test
+  fun `should square a near-square image`() {
+    val result = service.resizeToMaxDimension(createTestImage(255, 251))
+    expect(getImageDimensions(result)).toEqual(Pair(256, 256))
   }
 
   @Test
@@ -81,6 +87,12 @@ class ImageProcessingServiceTest {
     val result = service.resizeToMaxDimension(invalidData)
 
     expect(result).toEqual(invalidData)
+  }
+
+  @Test
+  fun `should throw when a truncated image cannot be decoded`() {
+    val data = createPhotoLikeImage(400, 100)
+    expect { service.resizeToMaxDimension(data.copyOf(data.size / 2)) }.toThrow<IIOException>()
   }
 
   @Test
@@ -151,6 +163,29 @@ class ImageProcessingServiceTest {
     ImageIO.write(image, "PNG", outputStream)
     return outputStream.toByteArray()
   }
+
+  private fun png(
+    width: Int,
+    height: Int,
+    fill: Color,
+    corner: Color = fill,
+  ): ByteArray {
+    val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val graphics = image.createGraphics()
+    graphics.color = fill
+    graphics.fillRect(0, 0, width, height)
+    graphics.dispose()
+    image.setRGB(0, 0, corner.rgb)
+    val outputStream = ByteArrayOutputStream()
+    ImageIO.write(image, "PNG", outputStream)
+    return outputStream.toByteArray()
+  }
+
+  private fun pixel(
+    data: ByteArray,
+    x: Int,
+    y: Int,
+  ): Int = ImageIO.read(ByteArrayInputStream(data)).getRGB(x, y)
 
   private fun createPhotoLikeImage(
     width: Int,

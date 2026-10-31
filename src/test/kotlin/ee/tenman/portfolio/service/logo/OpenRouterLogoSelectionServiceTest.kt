@@ -1,16 +1,28 @@
 package ee.tenman.portfolio.service.logo
 
+import ch.tutteli.atrium.api.fluent.en_GB.cause
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.exception.LogoSelectionFailedException
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterResponse
 import ee.tenman.portfolio.openrouter.OpenRouterVisionClient
+import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
+import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.ImageContent
+import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.TextContent
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.testing.fixture.ImageFixtures
+import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -53,7 +65,7 @@ class OpenRouterLogoSelectionServiceTest {
       val result = service.selectBestLogo("Apple", "AAPL", listOf(candidate))
 
       expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+      expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
       expect(result?.selectedIndex).toEqual(0)
     }
 
@@ -67,39 +79,24 @@ class OpenRouterLogoSelectionServiceTest {
       val result = service.selectBestLogo("Apple Inc", "AAPL", listOf(candidate))
 
       expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+      expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
     }
 
     @Test
-    fun `should return first valid when only one candidate and no fast path match`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidate = createCandidate(0, "Some Other Company")
-      every { imageDownloadService.download(candidate.imageUrl) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
+    fun `should ask the LLM about a single candidate without a fast path match`() {
+      llmAnswers("1")
 
-      val result = service.selectBestLogo("Apple", "AAPL", listOf(candidate))
+      val result = service.selectBestLogo("Apple", "AAPL", listOf(createCandidate(0, "Some Other Company")))
 
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+      expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
     }
 
     @Test
-    fun `should skip LLM selection when API key is blank`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidates =
-        listOf(
-          createCandidate(0, "Other Company 1"),
-          createCandidate(1, "Other Company 2"),
-        )
+    fun `should fail when the API key is blank`() {
+      val candidates = twoCandidates()
       every { openRouterProperties.apiKey } returns ""
-      every { imageDownloadService.download(any()) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
-
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
-      verify(exactly = 0) { openRouterVisionClient.chatCompletion(any(), any()) }
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }.toThrow<LogoSelectionFailedException>()
     }
 
     @Test
@@ -128,49 +125,36 @@ class OpenRouterLogoSelectionServiceTest {
     }
 
     @Test
-    fun `should fall back to first valid when LLM returns invalid index`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidates =
-        listOf(
-          createCandidate(0, "Company A"),
-          createCandidate(1, "Company B"),
-        )
-      val visionResponse = mockk<OpenRouterResponse>()
-      every { openRouterProperties.apiKey } returns "test-api-key"
-      every { openRouterProperties.visionModel } returns "test-model"
-      every { openRouterProperties.apiTimeoutMs } returns 30000L
-      every { imageDownloadService.download(any()) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
-      every { logoValidationService.detectMediaType(any()) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns "99"
+    fun `should fail when the LLM answers beyond the last image`() {
+      val candidates = twoCandidates()
+      llmAnswers("99")
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
-
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+        .toThrow<LogoSelectionFailedException>()
+        .messageToContain("unparsable")
     }
 
     @Test
-    fun `should fall back to first valid when LLM call fails`() {
-      val imageData = ImageFixtures.createPngHeader()
-      val candidates =
-        listOf(
-          createCandidate(0, "Company A"),
-          createCandidate(1, "Company B"),
-        )
-      every { openRouterProperties.apiKey } returns "test-api-key"
-      every { openRouterProperties.visionModel } returns "test-model"
-      every { openRouterProperties.apiTimeoutMs } returns 30000L
-      every { imageDownloadService.download(any()) } returns imageData
-      every { logoValidationService.isValidLogo(imageData) } returns true
-      every { logoValidationService.detectMediaType(any()) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } throws RuntimeException("API error")
+    fun `should fail when the LLM call fails`() {
+      val candidates = twoCandidates()
+      llmAnswers("1")
+      every { openRouterVisionClient.chatCompletion(any(), any()) } throws IllegalStateException("API error")
 
-      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+        .toThrow<LogoSelectionFailedException>()
+        .cause<IllegalStateException>()
+        .messageToContain("API error")
+    }
 
-      expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+    @Test
+    fun `should fail when the LLM call times out`() {
+      val candidates = twoCandidates()
+      llmAnswers("1")
+      every { openRouterProperties.apiTimeoutMs } returns 0L
+
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+        .toThrow<LogoSelectionFailedException>()
+        .messageToContain("timed out")
     }
 
     @Test
@@ -180,7 +164,7 @@ class OpenRouterLogoSelectionServiceTest {
           createCandidate(0, "Company A"),
           createCandidate(1, "Company B"),
         )
-      every { openRouterProperties.apiKey } returns ""
+      every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageDownloadService.download(any()) } throws RuntimeException("Download failed")
 
       val result = service.selectBestLogo("Apple", "AAPL", candidates)
@@ -196,7 +180,7 @@ class OpenRouterLogoSelectionServiceTest {
           createCandidate(0, "Company A"),
           createCandidate(1, "Company B"),
         )
-      every { openRouterProperties.apiKey } returns ""
+      every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageDownloadService.download(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns false
 
@@ -215,7 +199,7 @@ class OpenRouterLogoSelectionServiceTest {
       val result = service.selectBestLogo("Apple", null, listOf(candidate))
 
       expect(result).notToEqualNull()
-      expect(result?.source).toEqual(LogoSource.BING)
+      expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
     }
 
     @Test
@@ -242,7 +226,122 @@ class OpenRouterLogoSelectionServiceTest {
       expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
       expect(result?.selectedIndex).toEqual(0)
     }
+
+    @Test
+    fun `should return null when the LLM answers zero`() {
+      llmAnswers("0")
+
+      val result = service.selectBestLogo("Apple", "AAPL", twoCandidates())
+
+      expect(result).toEqual(null)
+    }
+
+    @Test
+    fun `should return null when the LLM explains its zero`() {
+      llmAnswers("0 - none of them")
+
+      val result = service.selectBestLogo("Apple", "AAPL", twoCandidates())
+
+      expect(result).toEqual(null)
+    }
+
+    @Test
+    fun `should return null when the LLM counts the images after its zero`() {
+      val candidates = (0..4).map { createCandidate(it, "Company $it") }
+      llmAnswers("0 - none of the 5 images")
+
+      val result = service.selectBestLogo("Apple", "AAPL", candidates)
+
+      expect(result).toEqual(null)
+    }
+
+    @Test
+    fun `should fail when the LLM reply is blank`() {
+      val candidates = twoCandidates()
+      llmAnswers(null)
+
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+        .toThrow<LogoSelectionFailedException>()
+        .messageToContain("blank")
+    }
+
+    @Test
+    fun `should fail when the LLM reply holds no number`() {
+      val candidates = twoCandidates()
+      llmAnswers("none")
+
+      expect { service.selectBestLogo("Apple", "AAPL", candidates) }
+        .toThrow<LogoSelectionFailedException>()
+        .messageToContain("unparsable")
+    }
+
+    @Test
+    fun `should allow the LLM 200 tokens`() {
+      val request = slot<OpenRouterVisionRequest>()
+      llmAnswers("1", request)
+
+      service.selectBestLogo("Apple", "AAPL", twoCandidates())
+
+      expect(request.captured.maxTokens).toEqual(200)
+    }
+
+    @Test
+    fun `should tell the LLM it may answer zero`() {
+      val request = slot<OpenRouterVisionRequest>()
+      llmAnswers("1", request)
+
+      service.selectBestLogo("Apple", "AAPL", twoCandidates())
+
+      expect(request.texts().first()).toContain("or 0 if none of them is this company's logo")
+    }
+
+    @Test
+    fun `should send each title after its image`() {
+      val request = slot<OpenRouterVisionRequest>()
+      val candidates = listOf(createCandidate(0, "Põhja Pank logo"), createCandidate(1, " "))
+      llmAnswers("1", request)
+
+      service.selectBestLogo("Apple", "AAPL", candidates)
+
+      expect(request.texts().drop(1)).toContainExactly("Image 1: Põhja Pank logo", "Image 2")
+    }
+
+    @Test
+    fun `should offer the LLM five valid candidates after broken ones`() {
+      val request = slot<OpenRouterVisionRequest>()
+      val candidates = (0..7).map { createCandidate(it, "Company $it") }
+      llmAnswers("1", request)
+      candidates.take(2).forEach {
+        every { imageDownloadService.download(it.imageUrl) } throws RuntimeException("Broken link")
+      }
+
+      service.selectBestLogo("Apple", "AAPL", candidates)
+
+      verify(exactly = 0) { imageDownloadService.download(candidates[7].imageUrl) }
+      expect(request.parts().filterIsInstance<ImageContent>()).toHaveSize(5)
+    }
   }
+
+  private fun llmAnswers(
+    reply: String?,
+    request: CapturingSlot<OpenRouterVisionRequest> = slot(),
+  ) {
+    val imageData = ImageFixtures.createPngHeader()
+    val response = OpenRouterResponse(listOf(OpenRouterResponse.Choice(OpenRouterResponse.Message(content = reply))))
+    every { openRouterProperties.apiKey } returns "test-api-key"
+    every { openRouterProperties.visionModel } returns "test-model"
+    every { openRouterProperties.apiTimeoutMs } returns 30000L
+    every { imageDownloadService.download(any()) } returns imageData
+    every { logoValidationService.isValidLogo(imageData) } returns true
+    every { logoValidationService.detectMediaType(any()) } returns "image/png"
+    every { openRouterVisionClient.chatCompletion(any(), capture(request)) } returns response
+  }
+
+  private fun CapturingSlot<OpenRouterVisionRequest>.parts() = captured.messages.single().content
+
+  private fun CapturingSlot<OpenRouterVisionRequest>.texts() = parts().filterIsInstance<TextContent>().map { it.text }
+
+  private fun twoCandidates() = listOf(createCandidate(0, "Company A"), createCandidate(1, "Company B"))
 
   private fun createCandidate(
     index: Int,

@@ -13,6 +13,8 @@ const CANDIDATE: LogoCandidateDto = {
   imageDataUrl: 'data:image/png;base64,AAAA',
 }
 
+const UNAVAILABLE = new ApiError(503, 'Logo search is unavailable right now', '')
+
 enableAutoUnmount(afterEach)
 
 beforeEach(() => {
@@ -86,12 +88,12 @@ describe('LogoReplacementModal upload', () => {
 
   it('shows why the server refused the image', async () => {
     vi.spyOn(logoService, 'uploadLogo').mockRejectedValue(
-      new ApiError(400, 'Logo must be a square PNG, JPEG or WebP image of at least 32 px', '')
+      new ApiError(400, 'Logo must be a PNG or JPEG up to 4:1 or a square WebP, at least 32 px', '')
     )
     const wrapper = await openModal()
     await choose(wrapper, png())
     expect(wrapper.text()).toContain(
-      'Logo must be a square PNG, JPEG or WebP image of at least 32 px'
+      'Logo must be a PNG or JPEG up to 4:1 or a square WebP, at least 32 px'
     )
   })
 })
@@ -101,5 +103,53 @@ describe('LogoReplacementModal search', () => {
     const wrapper = await openModal()
     await wrapper.get('[data-search-again]').trigger('click')
     expect(logoService.getCandidates).toHaveBeenCalledTimes(2)
+  })
+
+  it('says search is unavailable when the server answers 503', async () => {
+    vi.spyOn(logoService, 'getCandidates').mockRejectedValue(UNAVAILABLE)
+    const wrapper = await openModal()
+    expect(wrapper.text()).toContain(UNAVAILABLE.message)
+    expect(wrapper.text()).not.toContain('No logo candidates found')
+    expect(wrapper.find('[data-search-again]').exists()).toBe(true)
+  })
+
+  it('says the same when a search by name is unavailable', async () => {
+    vi.spyOn(logoService, 'searchByName').mockRejectedValue(UNAVAILABLE)
+    const wrapper = await openModal(null)
+    expect(wrapper.text()).toContain(UNAVAILABLE.message)
+  })
+
+  it('keeps the alert for other failures', async () => {
+    vi.spyOn(logoService, 'getCandidates').mockRejectedValue(new ApiError(500, 'õ', ''))
+    const wrapper = await openModal()
+    expect(wrapper.text()).toContain('Failed to load logo candidates')
+    expect(wrapper.find('[data-search-again]').exists()).toBe(false)
+  })
+
+  it('clears the message when Search again finds candidates', async () => {
+    vi.spyOn(logoService, 'getCandidates')
+      .mockRejectedValueOnce(UNAVAILABLE)
+      .mockResolvedValueOnce([CANDIDATE])
+    const wrapper = await openModal()
+    await wrapper.get('[data-search-again]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).not.toContain(UNAVAILABLE.message)
+    expect(wrapper.find('.candidate-image').exists()).toBe(true)
+  })
+
+  it('says no candidates when Search again finds none after an outage', async () => {
+    vi.spyOn(logoService, 'getCandidates')
+      .mockRejectedValueOnce(UNAVAILABLE)
+      .mockResolvedValueOnce([])
+    const wrapper = await openModal()
+    await wrapper.get('[data-search-again]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('No logo candidates found')
+  })
+
+  it('says no candidates when a 503 has no message', async () => {
+    vi.spyOn(logoService, 'getCandidates').mockRejectedValue(new ApiError(503, '', ''))
+    const wrapper = await openModal()
+    expect(wrapper.text()).toContain('No logo candidates found')
   })
 })

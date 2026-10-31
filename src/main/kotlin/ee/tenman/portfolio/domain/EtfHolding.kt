@@ -8,6 +8,7 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.PreUpdate
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -65,6 +66,10 @@ class EtfHolding(
   @Enumerated(EnumType.STRING)
   @Column(name = "logo_source", length = 20)
   var logoSource: LogoSource? = null,
+  @Column(name = "logo_fetch_attempts", nullable = false)
+  var logoFetchAttempts: Int = 0,
+  @Column(name = "logo_searched_at")
+  var logoSearchedAt: Instant? = null,
   @Column(name = "name_block_key", length = 255)
   var nameBlockKey: String? = null,
 ) : BaseEntity() {

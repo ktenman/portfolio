@@ -69,6 +69,7 @@ enum class LogoSource {
   PARQET,
   NVSTLY_ICONS,
   BING,
+  DUCKDUCKGO,
   LLM_SELECTED,
   MANUAL,
 }

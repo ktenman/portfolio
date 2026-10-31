@@ -65,7 +65,7 @@ class LogoControllerIT {
         .perform(mvcGet("/api/logos/${holding.uuid}").cookie(Cookie("AUTHSESSION", SESSION)))
         .andReturn()
         .response.contentAsByteArray
-    expect(ImageIO.read(ByteArrayInputStream(logo)).width).toEqual(250)
+    expect(ImageIO.read(ByteArrayInputStream(logo)).width).toEqual(256)
   }
 
   @Test

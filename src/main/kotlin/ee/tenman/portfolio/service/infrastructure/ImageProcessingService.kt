@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.infrastructure
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.awt.Color
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -10,25 +11,20 @@ import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 import javax.imageio.stream.MemoryCacheImageOutputStream
+import kotlin.math.roundToInt
 
 @Service
 class ImageProcessingService {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun resizeToMaxDimension(imageData: ByteArray): ByteArray {
-    val inputStream = ByteArrayInputStream(imageData)
-    val originalImage = ImageIO.read(inputStream) ?: return imageData
-    val originalWidth = originalImage.width
-    val originalHeight = originalImage.height
-    val scale = calculateScale(originalWidth, originalHeight)
-    if (scale == 1.0) {
-      log.debug("Image ${originalWidth}x$originalHeight within bounds, no resize needed")
+    val source = ImageIO.read(ByteArrayInputStream(imageData)) ?: return imageData
+    if (source.width == source.height && source.width in MIN_DIMENSION..MAX_DIMENSION) {
+      log.debug("Image ${source.width}x${source.height} is already square, no padding needed")
       return imageData
     }
-    val newWidth = (originalWidth * scale).toInt()
-    val newHeight = (originalHeight * scale).toInt()
-    log.debug("Resizing image from ${originalWidth}x$originalHeight to ${newWidth}x$newHeight")
-    return resizeImage(originalImage, newWidth, newHeight)
+    log.debug("Padding image ${source.width}x${source.height} to a ${MAX_DIMENSION}x$MAX_DIMENSION square")
+    return padToSquare(source)
   }
 
   fun resizeForPlateDetection(imageData: ByteArray): ByteArray {
@@ -86,25 +82,19 @@ class ImageProcessingService {
     return outputStream.toByteArray()
   }
 
-  private fun calculateScale(
-    width: Int,
-    height: Int,
-  ): Double {
-    val maxSide = maxOf(width, height)
-    val minSide = minOf(width, height)
-    if (maxSide > MAX_DIMENSION) return MAX_DIMENSION.toDouble() / maxSide
-    if (minSide < MIN_DIMENSION) return MIN_DIMENSION.toDouble() / minSide
-    return 1.0
-  }
-
-  private fun resizeImage(
-    originalImage: BufferedImage,
-    newWidth: Int,
-    newHeight: Int,
-  ): ByteArray {
-    val resized = renderResized(originalImage, newWidth, newHeight, BufferedImage.TYPE_INT_ARGB)
+  private fun padToSquare(source: BufferedImage): ByteArray {
+    val scale = MAX_DIMENSION.toDouble() / maxOf(source.width, source.height)
+    val width = (source.width * scale).roundToInt().coerceAtLeast(1)
+    val height = (source.height * scale).roundToInt().coerceAtLeast(1)
+    val resized = renderResized(source, width, height, BufferedImage.TYPE_INT_ARGB)
+    val canvas = BufferedImage(MAX_DIMENSION, MAX_DIMENSION, BufferedImage.TYPE_INT_ARGB)
+    val graphics = canvas.createGraphics()
+    graphics.color = Color(source.getRGB(0, 0), true)
+    graphics.fillRect(0, 0, MAX_DIMENSION, MAX_DIMENSION)
+    graphics.drawImage(resized, (MAX_DIMENSION - width) / 2, (MAX_DIMENSION - height) / 2, null)
+    graphics.dispose()
     val outputStream = ByteArrayOutputStream()
-    ImageIO.write(resized, "PNG", outputStream)
+    ImageIO.write(canvas, "PNG", outputStream)
     return outputStream.toByteArray()
   }
 

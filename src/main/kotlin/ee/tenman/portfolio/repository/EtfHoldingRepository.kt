@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.Instant
 import java.util.Optional
 import java.util.UUID
 
@@ -121,12 +122,16 @@ interface EtfHoldingRepository : JpaRepository<EtfHolding, Long> {
     JOIN EtfPosition ep ON ep.holding.id = h.id
     JOIN balances b ON b.instrumentId = ep.etfInstrument.id
     WHERE h.logoSource IS NULL
+      AND (h.logoFetchAttempts < :maxAttempts OR h.logoSearchedAt < :retryBefore)
     GROUP BY h.id
     HAVING SUM(b.quantity) > 0.01
     ORDER BY MAX(ep.weightPercentage) DESC
   """,
   )
-  fun findHoldingsWithoutLogosForCurrentPortfolio(): List<EtfHolding>
+  fun findHoldingsWithoutLogosForCurrentPortfolio(
+    @Param("maxAttempts") maxAttempts: Int,
+    @Param("retryBefore") retryBefore: Instant,
+  ): List<EtfHolding>
 
   @Query(
     """

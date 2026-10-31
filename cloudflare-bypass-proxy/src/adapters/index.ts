@@ -4,7 +4,7 @@ import { trading212EtfHoldingsAdapter, trading212EtfSummaryAdapter } from './tra
 import { lightyearAdapter, lightyearBatchAdapter, lightyearLookupAdapter } from './lightyear'
 import { auto24Adapter } from './auto24'
 import { fetchAdapter } from './fetch'
-import { bingAdapter } from './bing'
+import { duckduckgoAdapter, duckduckgoImageAdapter } from './duckduckgo'
 
 export const adapters: ServiceAdapter[] = [
   trading212Adapter,
@@ -15,5 +15,6 @@ export const adapters: ServiceAdapter[] = [
   lightyearLookupAdapter,
   auto24Adapter,
   fetchAdapter,
-  bingAdapter,
+  duckduckgoAdapter,
+  duckduckgoImageAdapter,
 ]

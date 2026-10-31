@@ -17,6 +17,16 @@ class PriceRefreshException(
   message: String,
 ) : IllegalStateException(message)
 
+class LogoSelectionFailedException(
+  message: String,
+  cause: Throwable? = null,
+) : RuntimeException(message, cause)
+
+class LogoSearchUnavailableException(
+  message: String,
+  cause: Throwable? = null,
+) : RuntimeException(message, cause)
+
 class RecordingInProgressException(
   name: String,
 ) : IllegalStateException("Recording $name is still being recorded")

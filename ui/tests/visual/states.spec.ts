@@ -11,6 +11,7 @@ import { stubEnums } from './enums-fixture'
 import {
   stubEtfBreakdown,
   stubEtfBreakdownWithLogoCandidates,
+  stubEtfBreakdownWithLogoSearchDown,
   stubEtfBreakdownWithTuleva,
 } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
@@ -141,6 +142,13 @@ const MODALS: {
     title: /^Replace Logo: /,
     open: page => page.locator('.company-logo.clickable').filter({ visible: true }).first().click(),
     stub: stubEtfBreakdownWithLogoCandidates,
+  },
+  {
+    name: 'logo-replacement-unavailable',
+    route: '/etf-breakdown',
+    title: /^Replace Logo: /,
+    open: page => page.locator('.company-logo.clickable').filter({ visible: true }).first().click(),
+    stub: stubEtfBreakdownWithLogoSearchDown,
   },
   {
     name: 'config-export',

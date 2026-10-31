@@ -24,6 +24,11 @@ route:
         - alertname=~"Split.+"
       group_by: [environment, alertname, instrument]
       repeat_interval: 2160h
+    - receiver: plain
+      matchers:
+        - alertname="LogoCollectionFailed"
+      group_by: [environment, alertname]
+      repeat_interval: 168h
 receivers:
   - name: telegram
     telegram_configs:

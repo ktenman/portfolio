@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.repository
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
@@ -24,6 +25,7 @@ import org.springframework.data.jpa.repository.Query
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 import java.util.function.UnaryOperator
 import javax.sql.DataSource
@@ -94,7 +96,7 @@ class EtfHoldingRepositoryIT {
     val combined = holding("Kombineeritud Osalus")
     position(held, combined, "4")
     position(sold, combined, "11")
-    expect(repository.findHoldingsWithoutLogosForCurrentPortfolio().map { it.name }).toContainExactly("Kombineeritud Osalus", "Škoda Auto")
+    expect(missingLogos().map { it.name }).toContainExactly("Kombineeritud Osalus", "Škoda Auto")
   }
 
   @ParameterizedTest
@@ -108,7 +110,31 @@ class EtfHoldingRepositoryIT {
     val holding = holding("Väike Osalus")
     trade(fund, TransactionType.BUY, quantity)
     repeat(snapshots) { position(fund, holding, "5", LocalDate.of(2026, 9, 1).plusDays(it.toLong())) }
-    expect(repository.findHoldingsWithoutLogosForCurrentPortfolio().isNotEmpty()).toEqual(selected)
+    expect(missingLogos().isNotEmpty()).toEqual(selected)
+  }
+
+  @Test
+  fun `should keep a holding with attempts left whatever its last search`() {
+    val fund = fund("HELD")
+    trade(fund, TransactionType.BUY, "1")
+    position(fund, holding("Õnnelik Ühistu", attempts = 2, searchedAt = RETRY_BEFORE.plusSeconds(1)), "5")
+    expect(missingLogos().map { it.name }).toContainExactly("Õnnelik Ühistu")
+  }
+
+  @Test
+  fun `should leave out a holding with no attempts left`() {
+    val fund = fund("HELD")
+    trade(fund, TransactionType.BUY, "1")
+    position(fund, holding("Väsinud Ühistu", attempts = 3, searchedAt = RETRY_BEFORE.plusSeconds(1)), "5")
+    expect(missingLogos()).toBeEmpty()
+  }
+
+  @Test
+  fun `should retry a holding once its last search is older than the retry date`() {
+    val fund = fund("HELD")
+    trade(fund, TransactionType.BUY, "1")
+    position(fund, holding("Vana Ühistu", attempts = 3, searchedAt = RETRY_BEFORE.minusSeconds(1)), "5")
+    expect(missingLogos().map { it.name }).toContainExactly("Vana Ühistu")
   }
 
   @Test
@@ -128,13 +154,17 @@ class EtfHoldingRepositoryIT {
     expect(maximumRows(explain(logoSql()))).toBeLessThanOrEqualTo(4000L)
   }
 
+  private fun missingLogos(): List<EtfHolding> = repository.findHoldingsWithoutLogosForCurrentPortfolio(3, RETRY_BEFORE)
+
   private fun fund(symbol: String): Instrument =
     instruments.save(Instrument(symbol = symbol, name = "$symbol fond", category = "ETF", baseCurrency = "EUR"))
 
   private fun holding(
     name: String,
     logo: LogoSource? = null,
-  ): EtfHolding = repository.save(EtfHolding(name = name, logoSource = logo))
+    attempts: Int = 0,
+    searchedAt: Instant? = null,
+  ): EtfHolding = repository.save(EtfHolding(name = name, logoSource = logo, logoFetchAttempts = attempts, logoSearchedAt = searchedAt))
 
   private fun position(
     fund: Instrument,
@@ -180,7 +210,7 @@ class EtfHoldingRepositoryIT {
     var sql = ""
     val hql =
       EtfHoldingRepository::class.java
-        .getMethod("findHoldingsWithoutLogosForCurrentPortfolio")
+        .getMethod("findHoldingsWithoutLogosForCurrentPortfolio", Int::class.java, Instant::class.java)
         .getAnnotation(Query::class.java)
         .value
     val factory = entityManager.entityManagerFactory.unwrap(SessionFactory::class.java)
@@ -190,9 +220,14 @@ class EtfHoldingRepositoryIT {
         statement
       }
     factory.withOptions().statementInspector(inspector).openSession().use { session ->
-      session.createSelectionQuery(hql, EtfHolding::class.java).setTimeout(10).resultList
+      session
+        .createSelectionQuery(hql, EtfHolding::class.java)
+        .setParameter("maxAttempts", 3)
+        .setParameter("retryBefore", RETRY_BEFORE)
+        .setTimeout(10)
+        .resultList
     }
-    return sql
+    return sql.replaceFirst("?", "3").replaceFirst("?", "TIMESTAMP WITH TIME ZONE '2026-10-30 00:00:00+00'")
   }
 
   private fun explain(sql: String): JsonNode =
@@ -214,5 +249,9 @@ class EtfHoldingRepositoryIT {
 
   private fun execute(sql: String) {
     entityManager.createNativeQuery(sql).executeUpdate()
+  }
+
+  companion object {
+    private val RETRY_BEFORE = Instant.parse("2026-10-30T00:00:00Z")
   }
 }

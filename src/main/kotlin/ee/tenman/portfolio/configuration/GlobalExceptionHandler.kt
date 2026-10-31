@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.configuration
 
+import ee.tenman.portfolio.exception.LogoSearchUnavailableException
 import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -38,6 +39,18 @@ class GlobalExceptionHandler {
         status = HttpStatus.BAD_REQUEST,
         message = "Invalid request",
         debugMessage = "Malformed multipart request",
+      )
+    return ResponseEntity(apiError, apiError.status)
+  }
+
+  @ExceptionHandler(LogoSearchUnavailableException::class)
+  fun handleLogoSearchUnavailable(exception: LogoSearchUnavailableException): ResponseEntity<ApiError> {
+    log.warn("Logo search is unavailable: ${exception.message}")
+    val apiError =
+      ApiError(
+        status = HttpStatus.SERVICE_UNAVAILABLE,
+        message = "Logo search is unavailable right now",
+        debugMessage = "Logo search failed",
       )
     return ResponseEntity(apiError, apiError.status)
   }

@@ -77,6 +77,11 @@ class MonitoringEndpointIT {
   }
 
   @Test
+  fun `should expose the logo collection metric on the management listener`() {
+    expect(get(managementPort, "/actuator/prometheus").body()).toContain("portfolio_logo_collection_failed")
+  }
+
+  @Test
   fun `should keep collection metrics off the application listener`() {
     expect(get(applicationPort, "/actuator/prometheus").statusCode()).toEqual(404)
   }

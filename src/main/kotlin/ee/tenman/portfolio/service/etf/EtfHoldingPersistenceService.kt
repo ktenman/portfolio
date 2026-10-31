@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.time.LocalDate
 
 @Service
@@ -212,6 +213,18 @@ class EtfHoldingPersistenceService(
     holding.sectorFetchAttempts++
     etfHoldingRepository.save(holding)
     log.info("Incremented sector fetch attempts for holding id=$holdingId to ${holding.sectorFetchAttempts}")
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun incrementLogoFetchAttempts(
+    holdingId: Long,
+    searchedAt: Instant,
+  ) {
+    val holding = etfHoldingRepository.findById(holdingId).orNotFound(holdingId)
+    holding.logoFetchAttempts++
+    holding.logoSearchedAt = searchedAt
+    etfHoldingRepository.save(holding)
+    log.info("Incremented logo fetch attempts for holding id=$holdingId to ${holding.logoFetchAttempts}")
   }
 
   private fun findOrCreateEtf(symbol: String): Instrument =

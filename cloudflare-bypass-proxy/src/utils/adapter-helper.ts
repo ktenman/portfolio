@@ -38,11 +38,11 @@ export async function handleProxyRequest(
       res.json(JSON.parse(stdout))
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    logger.error(errorMessage)
+    const message = errorMessage(error)
+    logger.error(message)
     res.status(500).json({
       error: 'Failed to fetch data',
-      message: errorMessage,
+      message,
     })
   }
 }
@@ -55,10 +55,14 @@ export function validateParam(
 ): string | null {
   const value = paramType === 'query' ? req.query[paramName] : req.params[paramName]
 
-  if (!value || (paramType === 'query' && typeof value !== 'string')) {
+  if (!value || typeof value !== 'string') {
     res.status(400).json({ error: `Missing ${paramName} parameter` })
     return null
   }
 
-  return value as string
+  return value
+}
+
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error'
 }

@@ -5,19 +5,32 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toStartWith
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.okJson
+import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension
+import ee.tenman.portfolio.cloudflarebypassproxy.CloudflareBypassProxyProperties
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INTRADAY_REPLAY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.LOGO_CANDIDATES_CACHE
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.TimeRange
+import ee.tenman.portfolio.service.logo.ImageSearchLogoService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources
 import org.springframework.boot.env.YamlPropertySourceLoader
 import org.springframework.cloud.openfeign.FeignClientProperties
+import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.io.FileSystemResource
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
+import org.springframework.web.client.ResourceAccessException
+import org.springframework.web.client.RestClient
 import java.time.Duration
 
 class TimeRangeConverterTest {
@@ -48,6 +61,48 @@ class RedisConfigurationTest {
     val ttl = manager.cacheConfigurations[LOGO_CANDIDATES_CACHE]?.ttlFunction
     expect(ttl?.getTimeToLive("7c9e6679-7425-40de-944b-e07fc1f90ae7", null)).toEqual(Duration.ofHours(1))
   }
+}
+
+class RestClientConfigurationTest {
+  @RegisterExtension
+  val server: WireMockExtension = WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build()
+
+  @Test
+  fun `should wait for logo search responses beyond the default timeout`() {
+    server.stubFor(
+      post(anyUrl()).willReturn(
+        okJson(
+          """{"success":true,"results":[{"image":"https://example.com/logo.png","thumbnail":"","title":"Äri"}]}""",
+        ).withFixedDelay(5500),
+      ),
+    )
+    context().use { context ->
+      val result = context.getBean(ImageSearchLogoService::class.java).searchLogoCandidates("Äri AS").map { it.imageUrl }
+      expect(result).toEqual(listOf("${server.baseUrl()}/duckduckgo/image?url=https%3A%2F%2Fexample.com%2Flogo.png"))
+    }
+  }
+
+  @Test
+  fun `should preserve the default timeout for unrelated HTTP requests`() {
+    server.stubFor(get(urlEqualTo("/slow")).willReturn(okJson("{}").withFixedDelay(5500)))
+    context().use { context ->
+      val client = context.getBean(RestClient::class.java)
+      expect {
+        client
+          .get()
+          .uri("${server.baseUrl()}/slow")
+          .retrieve()
+          .body(String::class.java)
+      }.toThrow<ResourceAccessException>()
+    }
+  }
+
+  private fun context(): AnnotationConfigApplicationContext =
+    AnnotationConfigApplicationContext().apply {
+      beanFactory.registerSingleton("cloudflareBypassProxyProperties", CloudflareBypassProxyProperties(server.baseUrl()))
+      register(RestClientConfiguration::class.java, ImageSearchLogoService::class.java)
+      refresh()
+    }
 }
 
 class JsonMapperFactoryTest {
