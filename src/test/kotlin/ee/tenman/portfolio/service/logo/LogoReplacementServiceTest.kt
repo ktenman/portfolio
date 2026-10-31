@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.logo
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
@@ -240,6 +241,15 @@ class LogoReplacementServiceTest {
 
       expect(result).toEqual(false)
       verify(exactly = 0) { minioService.uploadLogo(any(), any()) }
+    }
+
+    @Test
+    fun `should name the allowed sizes when an upload is refused`() {
+      every { logoValidationService.isValidLogo(any()) } returns false
+
+      expect { service.uploadLogo(UUID.randomUUID(), "õ".toByteArray()) }
+        .toThrow<IllegalArgumentException>()
+        .messageToContain("32 to 4096 px")
     }
   }
 

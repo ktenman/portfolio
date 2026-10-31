@@ -39,7 +39,7 @@ import type { Page } from '../models/page'
 import type { CachedState } from '../components/diversification/types'
 import { API_ENDPOINTS } from '../constants'
 
-const LOGO_SEARCH_TIMEOUT = 60000
+const LOGO_TIMEOUT = 60000
 
 const platformParams = (platforms?: string[]) => (platforms?.length ? { platforms } : {})
 
@@ -191,22 +191,26 @@ export const fundReportService = {
 export const logoService = {
   getCandidates: (holdingUuid: string) =>
     httpClient.get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/${holdingUuid}/candidates`, {
-      timeout: LOGO_SEARCH_TIMEOUT,
+      timeout: LOGO_TIMEOUT,
     }),
 
   searchByName: (name: string) =>
     httpClient.get<LogoCandidateDto[]>(`${API_ENDPOINTS.LOGOS}/search`, {
       params: { name },
-      timeout: LOGO_SEARCH_TIMEOUT,
+      timeout: LOGO_TIMEOUT,
     }),
 
   replaceLogo: (request: LogoReplacementRequest) =>
-    httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request),
+    httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/replace`, request, {
+      timeout: LOGO_TIMEOUT,
+    }),
 
   uploadLogo: (uuid: string, file: File) => {
     const form = new FormData()
     form.append('file', file)
-    return httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/${uuid}`, form)
+    return httpClient.post<LogoReplacementResponse>(`${API_ENDPOINTS.LOGOS}/${uuid}`, form, {
+      timeout: LOGO_TIMEOUT,
+    })
   },
 
   getLogoUrl: (uuid: string): string => `/api${API_ENDPOINTS.LOGOS}/${uuid}`,
