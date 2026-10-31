@@ -17,11 +17,11 @@ class ImageDownloadService(
       .getOrNull()
 
   fun download(url: String): ByteArray {
-    validateUrl(url)
+    val uri = validateUrl(url)
     val data =
       restClient
       .get()
-      .uri(url)
+      .uri(uri)
       .retrieve()
       .body(ByteArray::class.java)
       ?: error("Empty response from $url")
@@ -31,12 +31,13 @@ class ImageDownloadService(
     return data
   }
 
-  private fun validateUrl(url: String) {
+  private fun validateUrl(url: String): URI {
     val uri = runCatching { URI(url) }.getOrElse { error("Invalid URL: $url") }
     val scheme = uri.scheme?.lowercase()
     if (scheme !in ALLOWED_SCHEMES) {
       error("Invalid URL scheme: $scheme (allowed: $ALLOWED_SCHEMES)")
     }
+    return uri
   }
 
   companion object {

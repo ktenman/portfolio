@@ -190,3 +190,12 @@ groups:
           severity: warning
         annotations:
           summary: 'Split check has not succeeded for over 18 days, so announced splits go unnoticed'
+  - name: portfolio-logo
+    interval: 15s
+    rules:
+      - alert: LogoCollectionFailed
+        expr: min_over_time(portfolio_logo_collection_failed[5h]) == 1
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'

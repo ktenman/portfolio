@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.GlobalExceptionHandler
 import ee.tenman.portfolio.domain.TimeRange
+import ee.tenman.portfolio.exception.LogoSearchUnavailableException
 import io.mockk.every
 import io.mockk.mockk
 import jakarta.validation.ConstraintViolation
@@ -117,6 +118,25 @@ class GlobalExceptionHandlerTest {
     expect(response.statusCode).toEqual(HttpStatus.BAD_REQUEST)
     expect(response.body?.message).toEqual("Invalid value '1D' for parameter 'range'")
     expect(response.body?.debugMessage).toEqual("Failed to convert request parameter")
+  }
+
+  @Test
+  fun `should answer 503 when logo search is unavailable`() {
+    val exception = LogoSearchUnavailableException("DuckDuckGo search failed for Äri AS: blocked")
+
+    val response = globalExceptionHandler.handleLogoSearchUnavailable(exception)
+
+    expect(response.statusCode).toEqual(HttpStatus.SERVICE_UNAVAILABLE)
+    expect(response.body?.message).toEqual("Logo search is unavailable right now")
+  }
+
+  @Test
+  fun `should not send the proxy details of a logo search failure to the browser`() {
+    val exception = LogoSearchUnavailableException("Search failed for Äri AS: http://cloudflare-bypass-proxy:3000")
+
+    val response = globalExceptionHandler.handleLogoSearchUnavailable(exception)
+
+    expect(response.body?.debugMessage).toEqual("Logo search failed")
   }
 
   @Test

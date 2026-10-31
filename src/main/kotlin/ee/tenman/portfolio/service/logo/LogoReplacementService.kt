@@ -165,7 +165,7 @@ class LogoReplacementService(
     uuid: UUID,
     image: ByteArray,
   ): Boolean {
-    require(logoValidationService.isValidLogo(image)) { "Logo must be a square PNG, JPEG or WebP image of at least 32 px" }
+    require(logoValidationService.isValidLogo(image)) { "Logo must be a PNG or JPEG up to 4:1 or a square WebP, at least 32 px" }
     return saveLogo(uuid, imageProcessingService.resizeToMaxDimension(image))
   }
 

@@ -13,7 +13,7 @@
       v-else-if="hasFetched && candidates.length === 0"
       class="py-6 text-center text-body-secondary"
     >
-      <p>No logo candidates found</p>
+      <p>{{ unavailable || 'No logo candidates found' }}</p>
       <AppButton
         variant="secondary"
         size="sm"
@@ -99,6 +99,7 @@ const selectedIndex = ref<number | null>(null)
 const isLoading = ref(true)
 const isReplacing = ref(false)
 const error = ref<string | null>(null)
+const unavailable = ref<string | null>(null)
 const hasFetched = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 
@@ -118,6 +119,7 @@ const loadCandidates = async () => {
   isLoading.value = true
   hasFetched.value = false
   error.value = null
+  unavailable.value = null
   candidates.value = []
   selectedIndex.value = null
   try {
@@ -126,8 +128,12 @@ const loadCandidates = async () => {
     } else {
       candidates.value = await logoService.searchByName(props.holdingName)
     }
-  } catch {
-    error.value = 'Failed to load logo candidates'
+  } catch (failure) {
+    if (failure instanceof ApiError && failure.status === 503) {
+      unavailable.value = failure.message
+    } else {
+      error.value = 'Failed to load logo candidates'
+    }
   } finally {
     isLoading.value = false
     hasFetched.value = true
@@ -188,6 +194,7 @@ const resetState = () => {
   candidates.value = []
   selectedIndex.value = null
   error.value = null
+  unavailable.value = null
   isLoading.value = true
   hasFetched.value = false
 }

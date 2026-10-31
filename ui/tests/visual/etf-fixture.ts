@@ -245,6 +245,13 @@ export const stubEtfBreakdownWithLogoCandidates: RouteStub = async page => {
   await page.route('**/api/logos/*/candidates', route => route.fulfill({ json: LOGO_CANDIDATES }))
 }
 
+export const stubEtfBreakdownWithLogoSearchDown: RouteStub = async page => {
+  await stubEtfBreakdown(page)
+  await page.route('**/api/logos/*/candidates', route =>
+    route.fulfill({ status: 503, json: { message: 'Logo search is unavailable right now' } })
+  )
+}
+
 const TULEVA_REPORTS: FundReportDto[] = [
   {
     asOfDate: '2026-08-31',

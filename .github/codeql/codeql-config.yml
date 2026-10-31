@@ -31,6 +31,7 @@ queries:
 paths-ignore:
   - '**/node_modules/**'
   - '**/test/**'
+  - '**/__tests__/**'
   - '**/vendor/**'
   - '**/third-party/**'
   - '**/build/**'

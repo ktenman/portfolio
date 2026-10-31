@@ -3,11 +3,13 @@ package ee.tenman.portfolio.service.logo
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.LogoReplacementProperties
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.exception.LogoSearchUnavailableException
 import ee.tenman.portfolio.repository.EtfHoldingRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
@@ -108,6 +110,17 @@ class LogoReplacementServiceTest {
     }
 
     @Test
+    fun `should let an unavailable search reach the modal`() {
+      val uuid = UUID.randomUUID()
+      every { logoCandidateCacheService.getCachedData(uuid) } returns null
+      every { etfHoldingRepository.findByUuid(uuid) } returns createHolding(uuid, "Äri AS", null)
+      every { imageSearchLogoService.searchLogoCandidates("Äri AS", 50) } throws
+        LogoSearchUnavailableException("DuckDuckGo request was blocked")
+
+      expect { service.getCandidates(uuid) }.toThrow<LogoSearchUnavailableException>()
+    }
+
+    @Test
     fun `should offer the Parqet and nvstly logos of the ticker before the search results`() {
       val uuid = UUID.randomUUID()
       stubTickerAndSearchCandidates(uuid)
@@ -117,7 +130,7 @@ class LogoReplacementServiceTest {
       expect(result.map { it.thumbnailUrl }).toContainExactly(
         "https://assets.parqet.com/logos/symbol/NVDA?format=png&size=512",
         "https://raw.githubusercontent.com/nvstly/icons/main/ticker_icons/NVDA.png",
-        "https://bing.example/kronleuchter.jpg",
+        "https://duckduckgo.example/kronleuchter.jpg",
       )
     }
 
@@ -132,10 +145,11 @@ class LogoReplacementServiceTest {
     }
 
     private fun stubTickerAndSearchCandidates(uuid: UUID) {
-      val bing = LogoCandidate("https://bing.example/kronleuchter.jpg", "https://bing.example/kronleuchter.jpg", "Kronleuchter", 0)
+      val image = "https://duckduckgo.example/kronleuchter.jpg"
+      val duckDuckGo = LogoCandidate(image, image, "Kronleuchter", 0)
       every { logoCandidateCacheService.getCachedData(uuid) } returns null
       every { etfHoldingRepository.findByUuid(uuid) } returns createHolding(uuid, "NVIDIA", "NVDA")
-      every { imageSearchLogoService.searchLogoCandidates("NVDA NVIDIA", 50) } returns listOf(bing)
+      every { imageSearchLogoService.searchLogoCandidates("NVDA NVIDIA", 50) } returns listOf(duckDuckGo)
       every { imageDownloadService.downloadOrNull(any()) } returns "image".toByteArray()
       every { logoValidationService.isValidLogo(any()) } returns true
       every { logoValidationService.detectMediaType(any()) } returns "image/png"
