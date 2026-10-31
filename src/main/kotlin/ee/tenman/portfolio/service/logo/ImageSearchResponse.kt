@@ -10,6 +10,4 @@ data class ImageResult(
   val image: String,
   val thumbnail: String,
   val title: String,
-  val width: Int,
-  val height: Int,
 )

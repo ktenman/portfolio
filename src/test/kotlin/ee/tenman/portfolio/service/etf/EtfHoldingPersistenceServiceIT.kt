@@ -26,6 +26,7 @@ import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 import javax.sql.DataSource
 
@@ -614,6 +615,18 @@ class EtfHoldingPersistenceServiceIT {
     etfHoldingIndustryService.incrementIndustryFetchAttempts(holding.id)
 
     expect(etfHoldingRepository.findById(holding.id).orElseThrow().industryFetchAttempts).toEqual(2)
+  }
+
+  @Test
+  fun `should incrementLogoFetchAttempts add one to the counter and record the search time`() {
+    val holding = etfHoldingPersistenceService.findOrCreateHolding("Mystery Öl AG", "MYS", null)
+    val searchedAt = Instant.parse("2026-10-30T12:00:00Z")
+
+    etfHoldingPersistenceService.incrementLogoFetchAttempts(holding.id, searchedAt)
+
+    val updated = etfHoldingRepository.findById(holding.id).orElseThrow()
+    expect(updated.logoFetchAttempts).toEqual(1)
+    expect(updated.logoSearchedAt).toEqual(searchedAt)
   }
 
   @Test

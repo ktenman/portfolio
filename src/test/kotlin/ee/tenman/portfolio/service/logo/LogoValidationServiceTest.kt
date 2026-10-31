@@ -6,6 +6,8 @@ import ee.tenman.portfolio.testing.fixture.ImageFixtures
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 class LogoValidationServiceTest {
   private lateinit var service: LogoValidationService
@@ -80,11 +82,22 @@ class LogoValidationServiceTest {
       expect(service.isValidLogo(pngData)).toEqual(true)
     }
 
-    @Test
-    fun `should reject non-square PNG image`() {
-      val pngData = ImageFixtures.createPngHeader(200, 100)
+    @ParameterizedTest
+    @CsvSource("400, 100", "100, 400", "200, 100", "100, 115")
+    fun `should accept a PNG up to 4 to 1 either way`(
+      width: Int,
+      height: Int,
+    ) {
+      expect(service.isValidLogo(ImageFixtures.createPngHeader(width, height))).toEqual(true)
+    }
 
-      expect(service.isValidLogo(pngData)).toEqual(false)
+    @ParameterizedTest
+    @CsvSource("401, 100", "100, 401")
+    fun `should reject a PNG beyond 4 to 1 either way`(
+      width: Int,
+      height: Int,
+    ) {
+      expect(service.isValidLogo(ImageFixtures.createPngHeader(width, height))).toEqual(false)
     }
 
     @Test
@@ -102,10 +115,8 @@ class LogoValidationServiceTest {
     }
 
     @Test
-    fun `should reject PNG outside aspect ratio tolerance`() {
-      val pngData = ImageFixtures.createPngHeader(100, 115)
-
-      expect(service.isValidLogo(pngData)).toEqual(false)
+    fun `should reject a wide PNG with a side under 32 pixels`() {
+      expect(service.isValidLogo(ImageFixtures.createPngHeader(124, 31))).toEqual(false)
     }
 
     @Test
@@ -143,10 +154,13 @@ class LogoValidationServiceTest {
     }
 
     @Test
-    fun `should reject non-square JPEG image`() {
-      val jpegData = ImageFixtures.createJpegHeader(200, 100, 0xC0)
+    fun `should accept a JPEG up to 4 to 1`() {
+      expect(service.isValidLogo(ImageFixtures.createJpegHeader(400, 100, 0xC0))).toEqual(true)
+    }
 
-      expect(service.isValidLogo(jpegData)).toEqual(false)
+    @Test
+    fun `should reject a JPEG beyond 4 to 1`() {
+      expect(service.isValidLogo(ImageFixtures.createJpegHeader(401, 100, 0xC0))).toEqual(false)
     }
 
     @Test

@@ -1,97 +1,62 @@
 package ee.tenman.portfolio.service.logo
 
 import ee.tenman.portfolio.cloudflarebypassproxy.CloudflareBypassProxyProperties
-import ee.tenman.portfolio.domain.LogoSource
-import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
+import ee.tenman.portfolio.exception.LogoSearchUnavailableException
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets.UTF_8
 
 @Service
 class ImageSearchLogoService(
-  private val restClient: RestClient,
+  @param:Qualifier("logoSearchRestClient") private val restClient: RestClient,
   private val cloudflareBypassProxyProperties: CloudflareBypassProxyProperties,
-  private val imageDownloadService: ImageDownloadService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
-
-  fun searchAndDownloadLogo(companyName: String): ImageSearchResult? {
-    if (companyName.isBlank()) return null
-    val urls = searchLogoUrls(companyName)
-    val imageData = downloadFirstValidImage(urls) ?: return null
-    return ImageSearchResult(imageData = imageData, source = LogoSource.BING)
-  }
+  private val baseUrl: String get() = cloudflareBypassProxyProperties.url.trimEnd('/')
 
   fun searchLogoCandidates(
     companyName: String,
     maxResults: Int = 10,
   ): List<LogoCandidate> {
     if (companyName.isBlank()) return emptyList()
-    log.debug("Searching Bing for company logo candidates: $companyName")
-    val baseUrl = cloudflareBypassProxyProperties.url
-    val request = ImageSearchRequest(query = companyName, maxResults = maxResults, squareOnly = true)
+    log.debug("Searching DuckDuckGo for company logo candidates: $companyName")
+    val request = ImageSearchRequest(query = companyName, maxResults = maxResults)
     val response =
       runCatching {
         restClient
           .post()
-          .uri("$baseUrl$BING_ENDPOINT")
+          .uri("$baseUrl$DUCKDUCKGO_ENDPOINT")
           .contentType(MediaType.APPLICATION_JSON)
           .body(request)
           .retrieve()
           .body(ImageSearchResponse::class.java)
-      }.onFailure { log.warn("Bing search request failed: ${it.message}") }.getOrNull()
-    if (response == null || !response.success) return emptyList()
+      }.getOrElse { throw LogoSearchUnavailableException("DuckDuckGo search request failed for $companyName: ${it.message}", it) }
+    if (response == null || !response.success) {
+      throw LogoSearchUnavailableException("DuckDuckGo search failed for $companyName: ${response?.error}")
+    }
     val candidates =
       response.results.mapIndexed { index, result ->
         LogoCandidate(
-          imageUrl = result.image,
-          thumbnailUrl = result.thumbnail,
+          imageUrl = proxyImageUrl(result.image),
+          thumbnailUrl = proxyImageUrl(result.thumbnail),
           title = result.title,
           index = index,
         )
       }
-    log.debug("Bing returned ${candidates.size} logo candidates")
+    log.debug("DuckDuckGo returned ${candidates.size} logo candidates")
     return candidates
   }
 
-  fun searchLogoUrls(
-    companyName: String,
-    maxResults: Int = 10,
-  ): List<String> {
-    if (companyName.isBlank()) return emptyList()
-    log.debug("Searching Bing for company logo: $companyName")
-    val baseUrl = cloudflareBypassProxyProperties.url
-    val request = ImageSearchRequest(query = companyName, maxResults = maxResults, squareOnly = true)
-    val response =
-      runCatching {
-        restClient
-          .post()
-          .uri("$baseUrl$BING_ENDPOINT")
-          .contentType(MediaType.APPLICATION_JSON)
-          .body(request)
-          .retrieve()
-          .body(ImageSearchResponse::class.java)
-      }.onFailure { log.warn("Bing search request failed: ${it.message}") }.getOrNull()
-    if (response == null || !response.success) return emptyList()
-    val urls = response.results.map { it.image }
-    log.debug("Bing returned ${urls.size} image URLs")
-    return urls
-  }
-
-  private fun downloadFirstValidImage(imageUrls: List<String>): ByteArray? {
-    for (url in imageUrls) {
-      val imageData = imageDownloadService.downloadOrNull(url)
-      if (imageData != null && imageData.isNotEmpty()) {
-        log.info("Successfully downloaded logo image from: $url")
-        return imageData
-      }
-    }
-    log.debug("No valid images found from ${imageUrls.size} URLs")
-    return null
+  private fun proxyImageUrl(url: String): String {
+    val encoded = URLEncoder.encode(url, UTF_8)
+    return "$baseUrl/duckduckgo/image?url=$encoded"
   }
 
   companion object {
-    private const val BING_ENDPOINT = "/bing/images"
+    private const val DUCKDUCKGO_ENDPOINT = "/duckduckgo/images"
   }
 }

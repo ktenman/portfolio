@@ -1,15 +1,25 @@
 package ee.tenman.portfolio.service.infrastructure
 
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension
+import ee.tenman.portfolio.configuration.RestClientConfiguration
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.web.client.RestClient
+import java.net.URI
 
 class ImageDownloadServiceTest {
   private val restClient = mockk<RestClient>()
@@ -119,12 +129,30 @@ class ImageDownloadServiceTest {
     }
   }
 
+  @Nested
+  inner class EncodedUrls {
+    @RegisterExtension
+    val proxy: WireMockExtension = WireMockExtension.newInstance().options(wireMockConfig().dynamicPort()).build()
+
+    @Test
+    fun `should preserve encoded query parameters when downloading images`() {
+      proxy.stubFor(
+        get(urlPathEqualTo("/image"))
+          .withQueryParam("url", equalTo("http://127.0.0.1/logo png?token=a+b&next=c?d=e"))
+          .willReturn(aResponse().withHeader("Content-Type", "image/png").withBody(byteArrayOf(1, 2, 3, 4))),
+      )
+      val downloader = ImageDownloadService(RestClientConfiguration().restClient())
+      val image = downloader.download("${proxy.baseUrl()}/image?url=http%3A%2F%2F127.0.0.1%2Flogo+png%3Ftoken%3Da%2Bb%26next%3Dc%3Fd%3De")
+      expect(image.toList()).toContainExactly(1, 2, 3, 4)
+    }
+  }
+
   private fun setupMocksForUrl(
     url: String,
     responseBody: ByteArray?,
   ) {
     every { restClient.get() } returns requestHeadersUriSpec
-    every { requestHeadersUriSpec.uri(url) } returns requestHeadersSpec
+    every { requestHeadersUriSpec.uri(URI(url)) } returns requestHeadersSpec
     every { requestHeadersSpec.retrieve() } returns responseSpec
     every { responseSpec.body(ByteArray::class.java) } returns responseBody
   }

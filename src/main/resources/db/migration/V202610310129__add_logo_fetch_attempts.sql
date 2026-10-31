@@ -1,0 +1,3 @@
+ALTER TABLE etf_holding
+  ADD COLUMN logo_fetch_attempts INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN logo_searched_at TIMESTAMP WITH TIME ZONE;

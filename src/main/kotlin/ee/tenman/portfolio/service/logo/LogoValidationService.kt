@@ -22,14 +22,17 @@ class LogoValidationService {
   fun isValidLogo(imageData: ByteArray): Boolean {
     if (imageData.isEmpty()) return false
     val dimensions = getImageDimensions(imageData) ?: return logAndReturnFalse("Could not determine image dimensions")
-    return validateDimensions(dimensions)
+    return validateDimensions(dimensions, if (isWebP(imageData)) NEAR_SQUARE else PADDABLE)
   }
 
-  private fun validateDimensions(dimensions: ImageDimensions): Boolean {
-    val isSquare = isSquareAspectRatio(dimensions)
+  private fun validateDimensions(
+    dimensions: ImageDimensions,
+    ratios: ClosedFloatingPointRange<Double>,
+  ): Boolean {
+    val hasAllowedRatio = dimensions.width.toDouble() / dimensions.height in ratios
     val hasMinimumSize = dimensions.width >= MIN_DIMENSION && dimensions.height >= MIN_DIMENSION
     return when {
-      !isSquare -> logAndReturnFalse("Image is not square: ${dimensions.width}x${dimensions.height}")
+      !hasAllowedRatio -> logAndReturnFalse("Image has the wrong shape: ${dimensions.width}x${dimensions.height}")
       !hasMinimumSize -> logAndReturnFalse("Image is too small: ${dimensions.width}x${dimensions.height}")
       else -> true
     }
@@ -38,11 +41,6 @@ class LogoValidationService {
   private fun logAndReturnFalse(message: String): Boolean {
     log.debug(message)
     return false
-  }
-
-  private fun isSquareAspectRatio(dimensions: ImageDimensions): Boolean {
-    val ratio = dimensions.width.toDouble() / dimensions.height.toDouble()
-    return ratio in MIN_ASPECT_RATIO..MAX_ASPECT_RATIO
   }
 
   private fun getImageDimensions(data: ByteArray): ImageDimensions? =
@@ -146,8 +144,8 @@ class LogoValidationService {
 
   companion object {
     private const val MIN_DIMENSION = 32
-    private const val MIN_ASPECT_RATIO = 0.9
-    private const val MAX_ASPECT_RATIO = 1.1
+    private val NEAR_SQUARE = 0.9..1.1
+    private val PADDABLE = 0.25..4.0
     private const val MIN_HEADER_SIZE = 4
     private const val WEBP_VP8_LOSSY = 0x20.toByte()
     private const val WEBP_VP8L_LOSSLESS = 0x4C.toByte()

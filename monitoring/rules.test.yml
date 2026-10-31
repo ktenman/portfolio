@@ -456,3 +456,41 @@ tests:
       - eval_time: 2m
         alertname: SplitCheckStale
         exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_logo_collection_failed'
+        values: '0x100 1x1400'
+    alert_rule_test:
+      - eval_time: 5h24m
+        alertname: LogoCollectionFailed
+        exp_alerts: []
+      - eval_time: 5h26m
+        alertname: LogoCollectionFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_logo_collection_failed'
+        values: '0x100 1x960 0x400'
+    alert_rule_test:
+      - eval_time: 4h25m
+        alertname: LogoCollectionFailed
+        exp_alerts: []
+      - eval_time: 5h26m
+        alertname: LogoCollectionFailed
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_logo_collection_failed'
+        values: '0x100 1x400 stale _x40 1x800'
+    alert_rule_test:
+      - eval_time: 5h26m
+        alertname: LogoCollectionFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'

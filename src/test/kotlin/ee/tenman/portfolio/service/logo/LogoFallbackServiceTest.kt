@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.service.logo
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.exception.LogoSearchUnavailableException
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import io.mockk.every
 import io.mockk.mockk
@@ -85,11 +87,11 @@ class LogoFallbackServiceTest {
     every { imageDownloadService.downloadOrNull(any()) } returns null
     every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc") } returns candidates
     every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", "AAPL", candidates) } returns
-      LogoSelectionResult(0, imageData, LogoSource.BING)
+      LogoSelectionResult(0, imageData, LogoSource.DUCKDUCKGO)
 
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
-    expect(result?.source).toEqual(LogoSource.BING)
+    expect(result?.source).toEqual(LogoSource.DUCKDUCKGO)
     expect(result?.ticker).toEqual("AAPL")
   }
 
@@ -101,6 +103,13 @@ class LogoFallbackServiceTest {
     val result = service.fetchLogo("Apple Inc", "AAPL", null)
 
     expect(result).toEqual(null)
+  }
+
+  @Test
+  fun `should let an unavailable search reach the caller`() {
+    every { imageSearchLogoService.searchLogoCandidates("Äri AS") } throws LogoSearchUnavailableException("DuckDuckGo request was blocked")
+
+    expect { service.fetchLogo("Äri AS", null, null) }.toThrow<LogoSearchUnavailableException>()
   }
 
   @Test

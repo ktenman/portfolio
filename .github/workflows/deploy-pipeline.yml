@@ -170,7 +170,7 @@ jobs:
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \
-            if [ '$MONITORING_ENABLED' = true ]; then MONITORING_HEALTHY=0; for i in \$(seq 1 20); do READY=0; for service in prometheus alertmanager; do CID=\$(docker compose ps -q \$service); if [ -n \"\$CID\" ] && [ \"\$(docker inspect -f '{{.State.Health.Status}}' \$CID)\" = healthy ]; then READY=\$((READY + 1)); fi; done; if [ \"\$READY\" -eq 2 ]; then MONITORING_HEALTHY=1; break; fi; sleep 3; done; test \"\$MONITORING_HEALTHY\" -eq 1; fi && \
+            if [ '$MONITORING_ENABLED' = true ]; then MONITORING_HEALTHY=0; for i in \$(seq 1 20); do READY=0; for service in prometheus alertmanager; do CID=\$(docker compose ps -q \$service); if [ -n \"\$CID\" ] && [ \"\$(docker inspect -f '{{.State.Health.Status}}' \$CID)\" = healthy ]; then READY=\$((READY + 1)); fi; done; if [ \"\$READY\" -eq 2 ]; then MONITORING_HEALTHY=1; break; fi; sleep 3; done; test \"\$MONITORING_HEALTHY\" -eq 1 && docker compose exec -T alertmanager kill -HUP 1 && docker compose exec -T prometheus kill -HUP 1; fi && \
             docker ps --format 'table {{.Names}}\t{{.Status}}'"
       - name: Cleanup on runner
         if: always()
