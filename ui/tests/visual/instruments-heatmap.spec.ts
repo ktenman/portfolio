@@ -169,6 +169,17 @@ test('view tabs are 44 px tall on phones', async ({ page }, testInfo) => {
   expect(heights).toEqual([TOUCH_PX, TOUCH_PX])
 })
 
+test('page heading sits 8 px above the view tabs', async ({ page }) => {
+  const gap = await page
+    .locator('.controls-row')
+    .evaluate(
+      rail =>
+        rail.getBoundingClientRect().top -
+        rail.previousElementSibling!.getBoundingClientRect().bottom
+    )
+  expect(gap).toBe(8)
+})
+
 test('view tabs sit 16 px apart on phones', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
   const gap = await page
