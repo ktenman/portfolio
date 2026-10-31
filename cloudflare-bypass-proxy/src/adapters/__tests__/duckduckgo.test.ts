@@ -155,6 +155,29 @@ describe('DuckDuckGo logo search', () => {
     expect(imagesOf(response)).toEqual(['https://brand.example/logo.png'])
   })
 
+  it('refuses to parse a page with too many tags', async () => {
+    serve({
+      [SEARCH]: searchResults(FIRST, SECOND),
+      [FIRST]: `${'<p>'.repeat(20000)}<img src="/hidden.png" alt="NVIDIA logo">`,
+      [SECOND]: '<img src="/logo.png" alt="NVIDIA logo">',
+    })
+
+    const response = await searchFor()
+
+    expect(imagesOf(response)).toEqual(['https://brand.example/logo.png'])
+  })
+
+  it('parses a page at the tag limit', async () => {
+    serve({
+      [SEARCH]: searchResults(FIRST),
+      [FIRST]: `${'<p>'.repeat(19999)}<img src="/logo.png" alt="NVIDIA logo">`,
+    })
+
+    const response = await searchFor()
+
+    expect(imagesOf(response)).toEqual(['https://logos.example/logo.png'])
+  })
+
   it('deduplicates images repeated as metadata and inline images', async () => {
     serve({
       [SEARCH]: searchResults(FIRST),

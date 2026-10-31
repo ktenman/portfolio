@@ -16,8 +16,10 @@ import {
 const MAX_PAGES = 4
 const MAX_RESULTS = 24
 const MAX_PAGE_IMAGES = 8
+const MAX_PAGE_TAGS = 20000
 const RETRY_DELAY_MS = 1000
 const CONTROL_QUERIES = ['Apple', 'Microsoft']
+const OPENING_TAG = /<[a-z]/gi
 const RASTER_IMAGE = /\.(png|jpe?g|webp)(?:\?|$)/i
 const WORDS = /[\p{L}\p{N}]+(?:&[\p{L}\p{N}]+)*/gu
 const LOGO_WORD = /^(logos?|icons?|brands?|brandmarks?|marks?|symbols?)$/i
@@ -159,6 +161,8 @@ function metadataImages($: CheerioAPI, page: SearchPage, terms: string[]): Image
 }
 
 function pageImages(page: SearchPage, terms: string[]): ImageResult[] {
+  const tags = page.html.match(OPENING_TAG)?.length ?? 0
+  if (tags > MAX_PAGE_TAGS) throw new Error(`Logo page has ${tags} tags: ${page.url}`)
   const $ = load(page.html)
   const images = $('img, a')
     .map((_, element) => {

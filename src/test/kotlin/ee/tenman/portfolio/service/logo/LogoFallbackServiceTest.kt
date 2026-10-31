@@ -71,7 +71,7 @@ class LogoFallbackServiceTest {
     val imageData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
     val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
     every { imageSearchLogoService.searchLogoCandidates("Apple Inc") } returns candidates
-    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", null, candidates) } returns
+    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", candidates) } returns
       LogoSelectionResult(0, imageData, LogoSource.LLM_SELECTED)
 
     val result = service.fetchLogo("Apple Inc", null, null)
@@ -86,7 +86,7 @@ class LogoFallbackServiceTest {
     val candidates = listOf(LogoCandidate("http://img.com", "http://thumb.com", "Apple Logo", 0))
     every { imageDownloadService.downloadOrNull(any()) } returns null
     every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc") } returns candidates
-    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", "AAPL", candidates) } returns
+    every { openRouterLogoSelectionService.selectBestLogo("Apple Inc", candidates) } returns
       LogoSelectionResult(0, imageData, LogoSource.DUCKDUCKGO)
 
     val result = service.fetchLogo("Apple Inc", "AAPL", null)

@@ -73,7 +73,7 @@ class LogoFallbackService(
       log.debug("No logo candidates found for company: $companyName")
       return null
     }
-    val selectionResult = openRouterLogoSelectionService.selectBestLogo(companyName, ticker, candidates)
+    val selectionResult = openRouterLogoSelectionService.selectBestLogo(companyName, candidates)
     if (selectionResult == null) {
       log.debug("LLM selection failed for company: $companyName")
       return null

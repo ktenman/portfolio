@@ -100,6 +100,25 @@ class LogoValidationServiceTest {
       expect(service.isValidLogo(ImageFixtures.createPngHeader(width, height))).toEqual(false)
     }
 
+    @ParameterizedTest
+    @CsvSource("4097, 4097", "4097, 2000", "2000, 4097", "17000, 17000")
+    fun `should reject a PNG with a side over 4096 pixels`(
+      width: Int,
+      height: Int,
+    ) {
+      expect(service.isValidLogo(ImageFixtures.createPngHeader(width, height))).toEqual(false)
+    }
+
+    @Test
+    fun `should accept a PNG with sides of exactly 4096 pixels`() {
+      expect(service.isValidLogo(ImageFixtures.createPngHeader(4096, 4096))).toEqual(true)
+    }
+
+    @Test
+    fun `should reject a JPEG with a side over 4096 pixels`() {
+      expect(service.isValidLogo(ImageFixtures.createJpegHeader(4097, 4097, 0xC0))).toEqual(false)
+    }
+
     @Test
     fun `should accept slightly non-square PNG within tolerance`() {
       val pngData = ImageFixtures.createPngHeader(100, 105)

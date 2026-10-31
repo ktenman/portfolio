@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import EtfBreakdownTable from './etf-breakdown-table.vue'
+import LogoReplacementModal from './logo-replacement-modal.vue'
 import type { EtfHoldingBreakdownDto } from '../../models/generated/domain-models'
 
 describe('EtfBreakdownTable', () => {
@@ -391,6 +393,27 @@ describe('EtfBreakdownTable', () => {
       })
 
       expect(wrapper.find('.table-footer-totals').exists()).toBe(false)
+    })
+  })
+
+  describe('logo replacement', () => {
+    it('should point the row at the new logo right after it is replaced', async () => {
+      localStorage.clear()
+      const wrapper = mount(EtfBreakdownTable, {
+        props: {
+          holdings: mockHoldings,
+          isLoading: false,
+          isError: false,
+          errorMessage: '',
+        },
+      })
+
+      wrapper.findComponent(LogoReplacementModal).vm.$emit('replaced', 'uuid-1')
+      await nextTick()
+
+      expect(wrapper.find('img.company-logo').attributes('src')).toMatch(
+        /^\/api\/logos\/uuid-1\?v=\d+$/
+      )
     })
   })
 })

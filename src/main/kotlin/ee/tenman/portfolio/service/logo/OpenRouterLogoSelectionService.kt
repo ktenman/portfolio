@@ -26,26 +26,19 @@ class OpenRouterLogoSelectionService(
 
   fun selectBestLogo(
     companyName: String,
-    ticker: String?,
     candidates: List<LogoCandidate>,
   ): LogoSelectionResult? {
     if (candidates.isEmpty()) return null
-    return tryFastPath(companyName, ticker, candidates) ?: tryLlmSelection(companyName, candidates)
+    return tryFastPath(companyName, candidates) ?: tryLlmSelection(companyName, candidates)
   }
 
   private fun tryFastPath(
     companyName: String,
-    ticker: String?,
     candidates: List<LogoCandidate>,
   ): LogoSelectionResult? {
     val normalizedName = companyName.lowercase().trim()
-    val normalizedTicker = ticker?.lowercase()?.trim()
     for (candidate in candidates) {
-      val titleLower = candidate.title.lowercase()
-      val isExactMatch =
-        titleLower.contains(normalizedName) ||
-          (normalizedTicker != null && titleLower.contains(normalizedTicker))
-      if (!isExactMatch) continue
+      if (!candidate.title.lowercase().contains(normalizedName)) continue
       log.info("Fast path match for $companyName: title '${candidate.title}' matches")
       val result = downloadAndValidate(candidate, LogoSource.DUCKDUCKGO)
       if (result != null) return result

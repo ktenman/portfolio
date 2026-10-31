@@ -30,10 +30,10 @@ class LogoValidationService {
     ratios: ClosedFloatingPointRange<Double>,
   ): Boolean {
     val hasAllowedRatio = dimensions.width.toDouble() / dimensions.height in ratios
-    val hasMinimumSize = dimensions.width >= MIN_DIMENSION && dimensions.height >= MIN_DIMENSION
+    val hasAllowedSize = dimensions.width in ALLOWED_SIDES && dimensions.height in ALLOWED_SIDES
     return when {
       !hasAllowedRatio -> logAndReturnFalse("Image has the wrong shape: ${dimensions.width}x${dimensions.height}")
-      !hasMinimumSize -> logAndReturnFalse("Image is too small: ${dimensions.width}x${dimensions.height}")
+      !hasAllowedSize -> logAndReturnFalse("Image has the wrong size: ${dimensions.width}x${dimensions.height}")
       else -> true
     }
   }
@@ -143,7 +143,7 @@ class LogoValidationService {
   }
 
   companion object {
-    private const val MIN_DIMENSION = 32
+    private val ALLOWED_SIDES = 32..4096
     private val NEAR_SQUARE = 0.9..1.1
     private val PADDABLE = 0.25..4.0
     private const val MIN_HEADER_SIZE = 4
