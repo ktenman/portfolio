@@ -9,8 +9,19 @@ const TOUCH_PX = 44
 const WIDTHS = [1440, 1024, 1023, 768, 390, 375, 320]
 const PHONE_WIDTHS = [390, 375, 320]
 const PICKER = '[aria-controls="period-picker"]'
+const FORM_SELECT_FACE = [
+  'background-color',
+  'background-image',
+  'border-top-color',
+  'border-top-left-radius',
+  'color',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'height',
+]
 const RAIL_PX = 45
-const WRAPPED_ROW_PX = 42
+const WRAPPED_ROW_PX = 43
 const TABLE_RAIL = [
   { width: 1440, oneLine: true },
   { width: 768, oneLine: true },
@@ -52,6 +63,12 @@ const openTable = (page: Page) =>
     .getByRole('navigation', { name: 'Instrument views' })
     .getByRole('link', { name: 'Table' })
     .click()
+
+const pickPeriod = async (page: Page, period: string) => {
+  await page.locator(PICKER).click()
+  await page.locator('#period-picker').getByRole('button', { name: period, exact: true }).click()
+  await expect(page.locator(PICKER)).toHaveText(period)
+}
 
 const railLayout = (page: Page) =>
   page.evaluate(picker => {
@@ -155,6 +172,7 @@ test('view tabs are 44 px tall on phones', async ({ page }, testInfo) => {
 test('table controls stay beside the tabs until they wrap together', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await openTable(page)
+  await pickPeriod(page, 'MAX')
   for (const { width, oneLine } of TABLE_RAIL) {
     await page.setViewportSize({ width, height: 900 })
     await expect
@@ -232,17 +250,31 @@ test('period popover stays inside the viewport with every cell whole', async ({
   }
 })
 
-test('period button keeps its width whatever the period', async ({ page }, testInfo) => {
+test('period button looks like the form select', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  const button = page.locator(PICKER)
-  const widthWith = async (period: string) => {
-    await button.click()
-    await page.locator('#period-picker').getByRole('button', { name: period, exact: true }).click()
-    await expect(button).toHaveText(period)
-    return (await button.boundingBox())?.width
+  const [button, select] = await page.locator(PICKER).evaluate((picker, properties) => {
+    const field = document.createElement('select')
+    field.className = 'form-select form-select-sm'
+    picker.after(field)
+    return [picker, field].map(target =>
+      properties.map(property => getComputedStyle(target).getPropertyValue(property))
+    )
+  }, FORM_SELECT_FACE)
+  expect(button).toEqual(select)
+})
+
+test('period button leaves the same room beside every period', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  const roomWith = async (period: string) => {
+    await pickPeriod(page, period)
+    return page.locator(PICKER).evaluate(button => {
+      const label = document.createRange()
+      label.selectNodeContents(button)
+      return button.getBoundingClientRect().width - label.getBoundingClientRect().width
+    })
   }
-  const widths = [await widthWith('1D'), await widthWith('YTD'), await widthWith('MAX')]
-  expect(new Set(widths).size).toBe(1)
+  const rooms = [await roomWith('1D'), await roomWith('YTD'), await roomWith('MAX')]
+  expect(new Set(rooms).size).toBe(1)
 })
 
 test('period picker and Active only are 44 px tall to tap', async ({ page }, testInfo) => {

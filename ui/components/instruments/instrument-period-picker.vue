@@ -3,29 +3,13 @@
     <div class="flex" role="group" aria-label="Price change period">
       <button
         ref="toggleButton"
-        :class="[
-          PERIOD_CELL,
-          'inline-flex min-w-16.75 items-center justify-center gap-1 not-data-active:text-ink',
-        ]"
-        :data-active="open || undefined"
+        class="form-select form-select-sm relative cursor-pointer bg-position-[right_0.25rem_center] pr-5.5 text-left hover:bg-surface-hover md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2"
         :aria-expanded="open"
         aria-controls="period-picker"
         type="button"
         @click="toggle"
       >
         {{ selected }}
-        <svg
-          aria-hidden="true"
-          class="size-3 shrink-0"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
       </button>
     </div>
     <period-popover

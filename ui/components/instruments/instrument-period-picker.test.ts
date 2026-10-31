@@ -42,14 +42,10 @@ describe('InstrumentPeriodPicker', () => {
     expect(cell(createWrapper(TimeRange.ONE_YEAR), 'Price change period', '1Y').exists()).toBe(true)
   })
 
-  it('should leave the button neutral at rest on a period outside the shortlist', () => {
-    expect(toggle(createWrapper(TimeRange.SIX_YEARS)).attributes('data-active')).toBeUndefined()
-  })
-
-  it('should mark the button active while the popover is open', async () => {
+  it('should report the open popover on the button', async () => {
     const wrapper = await openPicker()
 
-    expect(toggle(wrapper).attributes('data-active')).toBe('true')
+    expect(toggle(wrapper).attributes('aria-expanded')).toBe('true')
   })
 
   it('should list the shortlist above the unit and length rows', async () => {
