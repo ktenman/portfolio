@@ -1,13 +1,12 @@
 <template>
   <div data-readout class="flex size-full items-center px-3 max-[374px]:px-2.5">
-    <p v-if="!instrument" class="m-0 text-label text-ink-soft max-md:hidden">
-      Select a box to see its figures.
-    </p>
     <div
       class="flex min-w-0 flex-1 items-center gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2"
-      :class="{ 'md:hidden': !instrument }"
     >
-      <div class="flex min-w-0 flex-1 items-center gap-3">
+      <div
+        class="flex min-w-0 flex-1 items-center gap-3"
+        :class="{ 'lg:max-[1280px]:hidden': !instrument }"
+      >
         <button
           v-if="instrument"
           type="button"
@@ -31,12 +30,20 @@
             </template>
             <span v-else class="font-semibold">All positions</span>
           </p>
-          <p class="m-0 truncate text-label text-ink-soft">
-            {{ instrument ? platforms(instrument) : 'Tap a box to see its figures' }}
+          <p v-if="instrument" class="m-0 truncate text-label text-ink-soft">
+            {{ platforms(instrument) }}
+          </p>
+          <p v-else class="m-0 truncate text-sm text-ink-soft">
+            <span class="md:hidden">Tap</span>
+            <span class="max-md:hidden">Select</span>
+            a box to see its figures
           </p>
         </div>
       </div>
-      <dl class="m-0 flex shrink-0 justify-between gap-x-2.5 md:gap-x-8">
+      <dl
+        class="m-0 flex shrink-0 justify-between gap-x-2.5 md:gap-x-8"
+        :class="{ 'lg:max-[1280px]:flex-1 lg:max-[1280px]:gap-x-3': !instrument }"
+      >
         <div v-for="figure in figures" :key="figure.label" class="min-w-0">
           <dt class="text-2xs font-medium tracking-wider text-ink-soft uppercase">
             {{ figure.label }}

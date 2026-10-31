@@ -1,6 +1,6 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3">
-    <div class="mb-6 flex items-start justify-between">
+    <div class="mb-2 flex items-start justify-between">
       <div class="grow">
         <div class="flex flex-wrap items-center justify-between gap-y-2">
           <div class="flex items-center gap-3">

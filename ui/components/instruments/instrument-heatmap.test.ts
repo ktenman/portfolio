@@ -52,12 +52,18 @@ const readout = (wrapper: Wrapper) => wrapper.find('[data-readout]').text()
 const without = (symbol: string) => INSTRUMENTS.filter(instrument => instrument.symbol !== symbol)
 
 describe('InstrumentHeatmap', () => {
-  it('shows the totals of the Total row', () =>
+  it('shows the totals in the readout until a box is picked', () =>
     expect(
       mountHeatmap()
-        .findAll('[data-total] dd')
+        .findAll('[data-readout] dd')
         .map(figure => figure.text())
     ).toEqual(['€155,377.72', '+€341.19 / +1.87%', '18.42%']))
+
+  it('repeats no totals under the map', () =>
+    expect(mountHeatmap().find('[data-total]').exists()).toBe(false))
+
+  it('explains nothing under the map', () =>
+    expect(mountHeatmap().text()).not.toContain('Box size is'))
 
   it('previews a box in the readout and returns to the selection after', async () => {
     const wrapper = mountHeatmap()
@@ -93,7 +99,7 @@ describe('InstrumentHeatmap', () => {
     await wrapper.setProps({ instruments: without('TSTINF:GER:EUR') })
 
     expect([readout(wrapper), wrapper.findAll('[aria-pressed="true"]').length]).toEqual([
-      expect.stringContaining('Select a box to see its figures.'),
+      expect.stringContaining('a box to see its figures'),
       0,
     ])
   })
@@ -124,7 +130,7 @@ describe('InstrumentHeatmap', () => {
 
     await wrapper.setProps({ instruments: INSTRUMENTS, isLoading: false })
 
-    expect(readout(wrapper)).toContain('Select a box to see its figures.')
+    expect(readout(wrapper)).toContain('a box to see its figures')
   })
 
   it('shows a dash for a missing XIRR', async () => {
@@ -138,16 +144,6 @@ describe('InstrumentHeatmap', () => {
       '—',
     ])
   })
-
-  it('counts positions too small to draw', () =>
-    expect(
-      mountHeatmap({
-        instruments: [
-          ...INSTRUMENTS,
-          { ...INSTRUMENTS[0], id: 999, symbol: 'TSTÄÄR', currentValue: 77.7 },
-        ],
-      }).text()
-    ).toContain('1 position under 0.1% is too small to draw and appears only in the list.'))
 
   it('shows the missing key only when a change is missing', () =>
     expect(

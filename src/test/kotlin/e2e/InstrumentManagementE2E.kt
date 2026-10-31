@@ -77,10 +77,12 @@ class InstrumentManagementE2E {
 
   @Test
   fun `should display period selector with options`() {
-    val periodSelector = element(className("period-select")).shouldBe(visible, Duration.ofSeconds(10))
-    expect(periodSelector.isDisplayed).toEqual(true)
+    val periodPicker = element(cssSelector("[aria-controls='period-picker']")).shouldBe(visible, Duration.ofSeconds(10))
+    expect(periodPicker.isDisplayed).toEqual(true)
 
-    val options = periodSelector.findAll(tagName("option"))
+    periodPicker.click()
+
+    val options = element(cssSelector("#period-picker")).shouldBe(visible).findAll(tagName("button"))
     expect(options.size()).toBeGreaterThan(3)
 
     val optionTexts = options.texts()

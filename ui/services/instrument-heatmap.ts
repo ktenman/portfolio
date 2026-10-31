@@ -138,16 +138,11 @@ export const tickerOf = (symbol: string): string => symbol.split(':')[0]
 
 const valueOf = (instrument: InstrumentDto): number => instrument.currentValue ?? 0
 
-export const splitDrawable = (
-  instruments: InstrumentDto[]
-): { drawn: InstrumentDto[]; hidden: InstrumentDto[] } => {
+export const drawablePositions = (instruments: InstrumentDto[]): InstrumentDto[] => {
   const total = instruments.reduce((sum, instrument) => sum + valueOf(instrument), 0)
-  const isDrawn = (instrument: InstrumentDto) =>
-    total > 0 && valueOf(instrument) / total >= DRAWN_SHARE
-  return {
-    drawn: instruments.filter(isDrawn).sort((a, b) => valueOf(b) - valueOf(a)),
-    hidden: instruments.filter(instrument => !isDrawn(instrument)),
-  }
+  return instruments
+    .filter(instrument => total > 0 && valueOf(instrument) / total >= DRAWN_SHARE)
+    .sort((a, b) => valueOf(b) - valueOf(a))
 }
 
 const amountOf = (instrument: InstrumentDto): number =>

@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { TimeRange } from '../../models/generated/domain-models'
-import { splitDrawable, tickerOf } from '../../services/instrument-heatmap'
+import { drawablePositions, tickerOf } from '../../services/instrument-heatmap'
 import { INSTRUMENTS } from '../../tests/visual/instruments-fixture'
 import InstrumentHeatmapMap from './instrument-heatmap-map.vue'
 
@@ -15,7 +15,7 @@ vi.mock('@vueuse/core', async importOriginal => {
 
 enableAutoUnmount(afterEach)
 
-const POSITIONS = splitDrawable(INSTRUMENTS).drawn
+const POSITIONS = drawablePositions(INSTRUMENTS)
 const TOTAL = INSTRUMENTS.reduce((sum, { currentValue }) => sum + (currentValue ?? 0), 0)
 
 const mountMap = (selectedId: number | null = null) =>

@@ -1,9 +1,12 @@
-import { computed } from 'vue'
-import { useLocalStorage } from '@vueuse/core'
+import { computed, ref, type ShallowRef } from 'vue'
+import { onClickOutside, onKeyStroke, useLocalStorage } from '@vueuse/core'
 import { STORAGE_KEYS } from '../constants'
 import { TimeRange } from '../models/generated/domain-models'
 
 export const TIME_RANGES = Object.values(TimeRange)
+
+export const PERIOD_CELL =
+  'relative cursor-pointer border border-hairline bg-surface-sunken px-2.75 py-1.25 text-label font-medium whitespace-nowrap text-ink-soft transition-colors not-first:-ml-px first:rounded-l-container last:rounded-r-container focus-visible:z-2 enabled:hover:not-data-active:bg-surface-hover enabled:hover:not-data-active:text-ink disabled:cursor-not-allowed disabled:text-ink-faint data-active:z-1 data-active:border-brass data-active:bg-brass-wash data-active:text-brass-deep md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
 
 export const DEFAULT_CHART_RANGE = TimeRange.ONE_MONTH
 
@@ -64,4 +67,24 @@ export function useChartRange() {
 
 export function usePriceChangePeriod() {
   return useStoredRange(STORAGE_KEYS.PRICE_CHANGE_PERIOD, TimeRange.ONE_DAY)
+}
+
+export function usePeriodPopover(
+  root: Readonly<ShallowRef<HTMLElement | null>>,
+  toggleButton: Readonly<ShallowRef<HTMLElement | null>>
+) {
+  const open = ref(false)
+  const close = () => {
+    open.value = false
+  }
+  const toggle = () => {
+    open.value = !open.value
+  }
+  onClickOutside(root, close)
+  onKeyStroke('Escape', () => {
+    if (!open.value) return
+    close()
+    toggleButton.value?.focus()
+  })
+  return { open, close, toggle }
 }
