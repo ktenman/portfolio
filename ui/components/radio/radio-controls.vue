@@ -1,6 +1,6 @@
 <template>
   <div
-    class="grid w-full items-center"
+    class="grid items-center"
     :class="
       large
         ? 'max-md:auto-cols-fr max-md:grid-flow-col max-md:justify-items-center md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6'

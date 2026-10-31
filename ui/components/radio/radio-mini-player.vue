@@ -1,10 +1,18 @@
 <template>
   <template v-if="shown">
-    <div class="md:hidden" :class="lifted ? 'h-57' : 'h-35'" aria-hidden="true" />
+    <div
+      class="md:hidden"
+      :class="lifted ? 'mb-27' : 'mb-5'"
+      :style="{ height: `${size.height.value}px` }"
+      aria-hidden="true"
+    />
     <section
       ref="card"
-      class="fixed inset-x-2.5 bottom-2.5 z-(--z-player) rounded-xl border border-hairline bg-surface pt-0.5 pr-1.5 pb-1.5 pl-3.5 shadow-overlay md:inset-x-auto md:right-6 md:bottom-6 md:w-93"
-      :class="{ 'max-md:bottom-22': lifted }"
+      class="fixed right-2.5 bottom-2.5 z-(--z-player) rounded-xl border border-hairline bg-surface pr-1.5 pb-1.5 pl-3.5 shadow-overlay md:right-6 md:bottom-6"
+      :class="[
+        recording ? 'pt-0.5 max-md:left-2.5 md:w-93' : 'w-max pt-1.5',
+        { 'max-md:bottom-22': lifted },
+      ]"
       :style="place"
       aria-label="Radio player"
       data-testid="radio-mini-player"
@@ -27,29 +35,27 @@
         >
           <radio-icon name="open" />
         </router-link>
+        <radio-controls v-else class="ml-3" />
         <button type="button" :class="ICON" aria-label="Stop and close" @click="player.close()">
           <radio-icon name="close" />
         </button>
       </div>
-      <div
-        v-if="recording"
-        class="mb-0.5 flex items-center gap-2 pr-2 text-label text-ink-soft tabular-nums"
-      >
-        <span>{{ position(player.seconds.value) }}</span>
-        <radio-scrubber
-          class="min-w-0 grow"
-          bare
-          :value="player.seconds.value"
-          :total="player.total.value"
-          :parts="parts"
-          label="Position in the recording"
-          @seek="player.seek"
-        />
-        <span>{{ position(player.total.value) }}</span>
-      </div>
-      <div class="pr-2">
-        <radio-controls />
-      </div>
+      <template v-if="recording">
+        <div class="mb-0.5 flex items-center gap-2 pr-2 text-label text-ink-soft tabular-nums">
+          <span>{{ position(player.seconds.value) }}</span>
+          <radio-scrubber
+            class="min-w-0 grow"
+            bare
+            :value="player.seconds.value"
+            :total="player.total.value"
+            :parts="parts"
+            label="Position in the recording"
+            @seek="player.seek"
+          />
+          <span>{{ position(player.total.value) }}</span>
+        </div>
+        <radio-controls class="pr-2" />
+      </template>
     </section>
   </template>
 </template>

@@ -464,7 +464,7 @@ test('the playing radio line stays clear of the player', async ({ page }, testIn
   expect((await line.boundingBox())!.y).toBeGreaterThanOrEqual(card.y + card.height)
 })
 
-async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void> {
+async function stubPlayer(page: Page, stub: RouteStub): Promise<void> {
   await page.addInitScript(() => {
     HTMLMediaElement.prototype.play = function () {
       this.dispatchEvent(new Event('play'))
@@ -479,9 +479,20 @@ async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>
     route.fulfill({ json: { seconds: 1666 } })
   )
+}
+
+async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void> {
+  await stubPlayer(page, stub)
   await openRoute(page, '/radio/2026-10-17')
   await page.getByTestId('radio-play').click()
   await page.locator(`.nav-link[href="${path}"]`).click()
+}
+
+async function listenLive(page: Page): Promise<void> {
+  await stubPlayer(page, stubRadio)
+  await openRoute(page, '/radio')
+  await page.getByRole('button', { name: 'Listen live' }).click()
+  await page.locator('.nav-link[href="/"]').click()
 }
 
 async function dragRadioCard(page: Page): Promise<void> {
@@ -499,6 +510,14 @@ test('the radio mini player floats over the page', async ({ page }, testInfo) =>
   await expect(page.getByTestId('radio-mini-player')).toBeVisible()
   await settleAndFreeze(page)
   await expect(page).toHaveScreenshot('radio-mini-player.png')
+})
+
+test('the live radio mini player floats over the page', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await listenLive(page)
+  await expect(page.getByTestId('radio-mini-player')).toBeVisible()
+  await settleAndFreeze(page)
+  await expect(page).toHaveScreenshot('radio-mini-player-live.png')
 })
 
 test('the radio mini player keeps its controls inside when names run long', async ({
@@ -578,6 +597,19 @@ test('a dragged radio mini player comes back into view when the window shrinks',
   await expect(page.getByTestId('radio-mini-player')).toBeInViewport({ ratio: 1 })
 })
 
+test('a dragged live radio mini player keeps its width when the window shrinks', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await listenLive(page)
+  const card = page.getByTestId('radio-mini-player')
+  const { width } = (await card.boundingBox())!
+  await dragRadioCard(page)
+  await page.setViewportSize({ width: 800, height: 500 })
+  await expect(card).toBeInViewport({ ratio: 1 })
+  expect((await card.boundingBox())!.width).toBe(width)
+})
+
 test('the radio mini player rests at the top of a window shorter than itself', async ({
   page,
 }, testInfo) => {
@@ -598,22 +630,28 @@ test('the radio mini player sits above the Reset bar', async ({ page }, testInfo
   expect(card.y + card.height).toBeLessThanOrEqual(bar.y)
 })
 
+async function footerGap(page: Page): Promise<number> {
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  const footer = (await page.locator('footer').boundingBox())!
+  const card = (await page.getByTestId('radio-mini-player').boundingBox())!
+  return card.y - footer.y - footer.height
+}
+
 for (const path of ['/', '/calculator']) {
   test(`the footer of ${path} scrolls clear of the radio mini player`, async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile')
     await playRadio(page, path)
-    await expect
-      .poll(async () => {
-        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-        const footer = (await page.locator('footer').boundingBox())!
-        const card = (await page.getByTestId('radio-mini-player').boundingBox())!
-        return footer.y + footer.height <= card.y
-      })
-      .toBe(true)
+    await expect.poll(() => footerGap(page)).toBeGreaterThanOrEqual(0)
   })
 }
+
+test('the footer stops just above the live radio mini player', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await listenLive(page)
+  await expect.poll(() => footerGap(page)).toBeCloseTo(10, 0)
+})
 
 test.describe('desktop states', () => {
   test.beforeEach(({}, testInfo) => {
