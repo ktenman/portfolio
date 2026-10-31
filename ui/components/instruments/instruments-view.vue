@@ -27,7 +27,7 @@
 
     <template #content>
       <div class="controls-row">
-        <nav class="flex gap-7" aria-label="Instrument views">
+        <nav class="flex gap-7 max-md:gap-4" aria-label="Instrument views">
           <router-link
             v-for="tab in VIEWS"
             :key="tab.to"

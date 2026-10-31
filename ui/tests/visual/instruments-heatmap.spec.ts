@@ -26,7 +26,7 @@ const TABLE_RAIL = [
   { width: 1440, oneLine: true },
   { width: 768, oneLine: true },
   { width: 390, oneLine: true },
-  { width: 375, oneLine: false },
+  { width: 375, oneLine: true },
   { width: 320, oneLine: false },
 ]
 const SELECT_HINT = ['All positions', 'Select a box to see its figures']
@@ -167,6 +167,14 @@ test('view tabs are 44 px tall on phones', async ({ page }, testInfo) => {
     .getByRole('link')
     .evaluateAll(links => links.map(link => link.getBoundingClientRect().height))
   expect(heights).toEqual([TOUCH_PX, TOUCH_PX])
+})
+
+test('view tabs sit 16 px apart on phones', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  const gap = await page
+    .getByRole('navigation', { name: 'Instrument views' })
+    .evaluate(tabs => getComputedStyle(tabs).columnGap)
+  expect(gap).toBe('16px')
 })
 
 test('table controls stay beside the tabs until they wrap together', async ({ page }, testInfo) => {

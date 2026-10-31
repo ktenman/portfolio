@@ -789,7 +789,7 @@ plus More, which opens a popover of Days to Years and 1 to 6, so all 26 `TimeRan
 the row keeps to one line on a phone. It sits **below** the chart, because it changes what the chart already
 showed rather than introducing it. On Instruments, `instrument-period-picker.vue` opens the same popover from
 one button on the tab rail naming the selected period. It wears `.form-select-sm` and hugs its label, with the
-chevron pulled in so the rail stays on one line at 390 px. The shortlist joins the popover there, above the other
+chevron pulled in so the rail stays on one line at 375 px. The shortlist joins the popover there, above the other
 two rows.
 
 **The change figure floats over the plot, not above it.** `range-change-header.vue` is absolutely positioned at
