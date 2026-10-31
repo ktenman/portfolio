@@ -20,10 +20,9 @@ RUN ls -la /app/dist/
 
 FROM nginx:stable-alpine-slim
 
-# Update packages to fix CVE-2024-58251, CVE-2025-46394, CVE-2025-62408, and openssl CVEs (libssl3/libcrypto3)
+# Update packages to fix CVE-2024-58251, CVE-2025-46394, and openssl CVEs (libssl3/libcrypto3)
 RUN apk update && \
-    apk upgrade --no-cache busybox busybox-binsh ssl_client c-ares libcrypto3 libssl3 && \
-    apk add --no-cache curl && \
+    apk upgrade --no-cache busybox busybox-binsh ssl_client libcrypto3 libssl3 && \
     rm -rf /var/cache/apk/*
 
 COPY --from=build /app/dist /usr/share/nginx/html
