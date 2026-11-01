@@ -208,6 +208,7 @@ private fun follow(
 ): Int {
   val station = options.text("--station")
   val schedule = station?.let { SCHEDULES[it] ?: usage("--station takes ARIPAEV, not $it") } ?: Schedule()
+  if (station != null && options.text("--source") == null) usage("--station $station needs --source")
   val source = options.text("--source") ?: KUKU
   val model = options.path("--model", MODEL)
   val threads = options.whole("--threads") ?: 1

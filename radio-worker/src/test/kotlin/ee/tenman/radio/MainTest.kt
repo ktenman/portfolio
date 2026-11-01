@@ -329,6 +329,13 @@ class MainTest {
   }
 
   @Test
+  fun `planned for a station refuses to run without its source`(
+    @TempDir tmp: Path,
+  ) {
+    expect(runs("planned", "--recordings", "$tmp", "--station", "ARIPAEV", stop = CountDownLatch(0))).toEqual(2)
+  }
+
+  @Test
   fun `station returns once stopped`(
     @TempDir tmp: Path,
   ) {

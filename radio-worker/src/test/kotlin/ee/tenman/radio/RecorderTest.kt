@@ -277,13 +277,13 @@ class RecorderTest {
       ProcessBuilder(command(source, 600.0, 0, tmp.resolve("raw")))
         .redirectError(Redirect.DISCARD)
         .start()
-    val ended =
+    val code =
       try {
-        ffmpeg.waitFor(30, TimeUnit.SECONDS)
+        ffmpeg.takeIf { it.waitFor(30, TimeUnit.SECONDS) }?.exitValue()
       } finally {
         ffmpeg.destroyForcibly()
       }
-    expect(ended).toEqual(true)
+    expect(Pair(code, Files.size(tmp.resolve("raw.mp3")) > 0)).toEqual(Pair(0, true))
   }
 
   @Test
