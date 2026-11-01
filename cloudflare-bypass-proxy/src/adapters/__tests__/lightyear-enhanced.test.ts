@@ -1,6 +1,7 @@
 import type { MockInstance } from 'vitest'
 import request from 'supertest'
 import express from 'express'
+import { listen } from '../../__tests__/listen'
 import { lightyearBatchAdapter, lightyearLookupAdapter } from '../lightyear'
 
 const mockExecFile = vi.fn()
@@ -67,7 +68,9 @@ describe('Lightyear lookup and batch routes', () => {
       })
     )
 
-    const response = await request(app).get('/lightyear/lookup').query({ symbol: 'VUAA:LON:USD' })
+    const response = await request(await listen(app))
+      .get('/lightyear/lookup')
+      .query({ symbol: 'VUAA:LON:USD' })
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ symbol: 'VUAA:LON:USD', uuid: 'london' })
@@ -86,7 +89,9 @@ describe('Lightyear lookup and batch routes', () => {
       '{"results":[{"instrument":{"id":"matched","symbol":"A&B","exchange":"LSE","currency":"USD"}}]}'
     )
 
-    const response = await request(app).get('/lightyear/lookup').query({ symbol: 'A&B:LON:USD' })
+    const response = await request(await listen(app))
+      .get('/lightyear/lookup')
+      .query({ symbol: 'A&B:LON:USD' })
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ symbol: 'A&B:LON:USD', uuid: 'matched' })
@@ -103,7 +108,9 @@ describe('Lightyear lookup and batch routes', () => {
   it('should send batch POST requests to the existing API endpoint', async () => {
     respond('[{"id":"instrument-id","name":"Example fund"}]')
 
-    const response = await request(app).post('/lightyear/batch').send(['instrument-id'])
+    const response = await request(await listen(app))
+      .post('/lightyear/batch')
+      .send(['instrument-id'])
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual([{ id: 'instrument-id', name: 'Example fund' }])
@@ -124,8 +131,20 @@ describe('Lightyear lookup and batch routes', () => {
   })
 
   it.each([
-    ['lookup', () => request(app).get('/lightyear/lookup').query({ symbol: 'VUAA:GER:EUR' })],
-    ['batch', () => request(app).post('/lightyear/batch').send(['instrument-id'])],
+    [
+      'lookup',
+      async () =>
+        request(await listen(app))
+          .get('/lightyear/lookup')
+          .query({ symbol: 'VUAA:GER:EUR' }),
+    ],
+    [
+      'batch',
+      async () =>
+        request(await listen(app))
+          .post('/lightyear/batch')
+          .send(['instrument-id']),
+    ],
   ])('should leave the User-Agent of a %s to the impersonated browser', async (_, send) => {
     respond('[]')
 
@@ -135,14 +154,16 @@ describe('Lightyear lookup and batch routes', () => {
   })
 
   it('should reject an empty batch before contacting Lightyear', async () => {
-    const response = await request(app).post('/lightyear/batch').send([])
+    const response = await request(await listen(app))
+      .post('/lightyear/batch')
+      .send([])
 
     expect(response.status).toBe(400)
     expect(mockExecFile).not.toHaveBeenCalled()
   })
 
   it('should reject a missing lookup symbol before contacting Lightyear', async () => {
-    const response = await request(app).get('/lightyear/lookup')
+    const response = await request(await listen(app)).get('/lightyear/lookup')
 
     expect(response.status).toBe(400)
     expect(mockExecFile).not.toHaveBeenCalled()
@@ -151,17 +172,23 @@ describe('Lightyear lookup and batch routes', () => {
   it('should preserve instrument-not-found behavior for a valid empty search', async () => {
     respond('{"results":[]}')
 
-    const response = await request(app).get('/lightyear/lookup').query({ symbol: 'MISSING' })
+    const response = await request(await listen(app))
+      .get('/lightyear/lookup')
+      .query({ symbol: 'MISSING' })
 
     expect(response.status).toBe(404)
     expect(response.body).toEqual({ error: 'Instrument not found', symbol: 'MISSING' })
   })
 
   describe.each(['lookup', 'batch'])('%s upstream errors', route => {
-    function sendRequest(): request.Test {
+    async function sendRequest() {
       if (route === 'lookup')
-        return request(app).get('/lightyear/lookup').query({ symbol: 'VUAA:LON:USD' })
-      return request(app).post('/lightyear/batch').send(['instrument-id'])
+        return request(await listen(app))
+          .get('/lightyear/lookup')
+          .query({ symbol: 'VUAA:LON:USD' })
+      return request(await listen(app))
+        .post('/lightyear/batch')
+        .send(['instrument-id'])
     }
 
     it.each([

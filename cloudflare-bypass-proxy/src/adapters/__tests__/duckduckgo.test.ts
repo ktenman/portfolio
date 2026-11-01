@@ -1,5 +1,6 @@
 import express from 'express'
 import request from 'supertest'
+import { listen } from '../../__tests__/listen'
 import { duckduckgoAdapter, duckduckgoImageAdapter } from '../duckduckgo'
 import { logger } from '../../utils/logger'
 
@@ -53,8 +54,10 @@ function application() {
     .get(duckduckgoImageAdapter.path, duckduckgoImageAdapter.handler)
 }
 
-const searchFor = (query = 'NVDA NVIDIA', maxResults?: number) =>
-  request(application()).post('/duckduckgo/images').send({ query, maxResults })
+const searchFor = async (query = 'NVDA NVIDIA', maxResults?: number) =>
+  request(await listen(application()))
+    .post('/duckduckgo/images')
+    .send({ query, maxResults })
 
 const imagesOf = (response: { body: { results: { image: string }[] } }) =>
   response.body.results.map(result => result.image)
@@ -211,7 +214,9 @@ describe('DuckDuckGo logo search', () => {
   })
 
   it.each([undefined, '', '   ', 42])('rejects an invalid search query %j', async query => {
-    const response = await request(application()).post('/duckduckgo/images').send({ query })
+    const response = await request(await listen(application()))
+      .post('/duckduckgo/images')
+      .send({ query })
 
     expect(response.status).toBe(400)
   })
@@ -251,7 +256,7 @@ describe('DuckDuckGo logo search', () => {
     const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0xff, 0x00])
     mockFetchImage.mockResolvedValue({ content: bytes, type: 'image/png' })
 
-    const response = await request(application())
+    const response = await request(await listen(application()))
       .get('/duckduckgo/image')
       .query({ url: 'https://logos.example/logo.png?version=2&size=large' })
 
@@ -266,7 +271,7 @@ describe('DuckDuckGo logo search', () => {
   it('rejects an image when public destination validation fails', async () => {
     mockFetchImage.mockRejectedValue(new Error('Logo page must resolve to a public address'))
 
-    const response = await request(application())
+    const response = await request(await listen(application()))
       .get('/duckduckgo/image')
       .query({ url: 'http://127.0.0.1.nip.io/nvidia-logo.png' })
 
@@ -274,14 +279,14 @@ describe('DuckDuckGo logo search', () => {
   })
 
   it('rejects an image request without a URL', async () => {
-    const response = await request(application()).get('/duckduckgo/image')
+    const response = await request(await listen(application())).get('/duckduckgo/image')
 
     expect(response.status).toBe(400)
     expect(mockFetchImage).not.toHaveBeenCalled()
   })
 
   it('rejects an image request with a repeated URL parameter', async () => {
-    const response = await request(application()).get(
+    const response = await request(await listen(application())).get(
       '/duckduckgo/image?url=https://logos.example/a.png&url=https://logos.example/b.png'
     )
 
@@ -290,7 +295,7 @@ describe('DuckDuckGo logo search', () => {
   })
 
   it('rejects an image request with an overlong URL', async () => {
-    const response = await request(application())
+    const response = await request(await listen(application()))
       .get('/duckduckgo/image')
       .query({ url: `https://logos.example/${'a'.repeat(2048)}.png` })
 

@@ -1,6 +1,7 @@
 import type { MockInstance } from 'vitest'
 import request from 'supertest'
 import express from 'express'
+import { listen } from '../../__tests__/listen'
 import { lightyearAdapter } from '../lightyear'
 
 const mockExecFile = vi.fn()
@@ -46,7 +47,7 @@ describe('Lightyear fetch route', () => {
   })
 
   it('should reject a missing path without contacting Lightyear', async () => {
-    const response = await request(app).get('/lightyear/fetch')
+    const response = await request(await listen(app)).get('/lightyear/fetch')
 
     expect(response.status).toBe(400)
     expect(response.body).toEqual({ error: 'Missing path parameter' })
@@ -82,7 +83,9 @@ describe('Lightyear fetch route', () => {
   ])('should fetch %s through the public site API', async (path, upstreamUrl, payload) => {
     respond(JSON.stringify(payload), 200, 'application/json; charset=utf-8')
 
-    const response = await request(app).get('/lightyear/fetch').query({ path })
+    const response = await request(await listen(app))
+      .get('/lightyear/fetch')
+      .query({ path })
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual(payload)
@@ -98,7 +101,9 @@ describe('Lightyear fetch route', () => {
   it('should leave the User-Agent to the impersonated browser', async () => {
     respond('{"price":"42.50"}')
 
-    await request(app).get('/lightyear/fetch').query({ path: '/v1/market-data/id/price' })
+    await request(await listen(app))
+      .get('/lightyear/fetch')
+      .query({ path: '/v1/market-data/id/price' })
 
     expect(mockExecFile.mock.calls[0][1]).not.toContainEqual(expect.stringMatching(/^user-agent:/i))
   })
@@ -113,7 +118,7 @@ describe('Lightyear fetch route', () => {
     async (status, contentType, body) => {
       respond(body, status, contentType)
 
-      const response = await request(app)
+      const response = await request(await listen(app))
         .get('/lightyear/fetch')
         .query({ path: '/v1/test?access_token=request-secret' })
 
@@ -143,7 +148,9 @@ describe('Lightyear fetch route', () => {
   ])('should reject invalid upstream JSON: %i %s %s', async (status, contentType, body, code) => {
     respond(body, status, contentType)
 
-    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
+    const response = await request(await listen(app))
+      .get('/lightyear/fetch')
+      .query({ path: '/v1/test' })
 
     expect(response.status).toBe(502)
     expect(response.body).toEqual({
@@ -169,7 +176,9 @@ describe('Lightyear fetch route', () => {
     )
     mockExecFile.mockImplementation((_cmd, _args, _opts, callback) => callback(failure, null))
 
-    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
+    const response = await request(await listen(app))
+      .get('/lightyear/fetch')
+      .query({ path: '/v1/test' })
 
     expect(response.status).toBe(status)
     expect(response.body).toEqual({ error: 'Lightyear upstream request failed', code })
@@ -182,7 +191,9 @@ describe('Lightyear fetch route', () => {
   it('should accept structured JSON media types', async () => {
     respond('{"price":42}', 200, 'application/vnd.lightyear+json; charset=utf-8')
 
-    const response = await request(app).get('/lightyear/fetch').query({ path: '/v1/test' })
+    const response = await request(await listen(app))
+      .get('/lightyear/fetch')
+      .query({ path: '/v1/test' })
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual({ price: 42 })
