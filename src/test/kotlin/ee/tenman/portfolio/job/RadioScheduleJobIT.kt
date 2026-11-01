@@ -159,15 +159,11 @@ class RadioScheduleJobIT {
     record: Boolean,
   ) = mvcPut("/api/radio/airings/$id").contentType(APPLICATION_JSON).content("""{"record":$record}""")
 
-  private fun aripaevRecording(
-    name: String,
-    state: String,
-  ) {
-    val directory = Files.createDirectories(radioProperties.recordings.resolve(name))
-    val start = at("08:00").toEpochSecond()
+  private fun aripaevRecording(state: String) {
+    val directory = Files.createDirectories(radioProperties.recordings.resolve("2026-11-09-1100-aripaev-kuum-tool"))
     Files.writeString(
       directory.resolve("status.json"),
-      """{"state":"$state","startedAt":$start,"seconds":600,"programmes":["Kuum tool"],"station":"ARIPAEV"}""",
+      """{"state":"$state","startedAt":${at("08:00").toEpochSecond()},"seconds":600,"programmes":["Kuum tool"],"station":"ARIPAEV"}""",
     )
   }
 
@@ -385,14 +381,14 @@ class RadioScheduleJobIT {
 
   @Test
   fun `should name the last recording of the given station`() {
-    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "captured")
+    aripaevRecording("captured")
     recording("2026-11-09-1200-keskpaevatund", at("11:55"), 4200)
     expect(radioScheduleService.station(Station.ARIPAEV).last?.programme).toEqual("Kuum tool")
   }
 
   @Test
   fun `should keep the recordings of Äripäev out of the last recording of Kuku`() {
-    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "captured")
+    aripaevRecording("captured")
     expect(radioScheduleService.station().last).toEqual(null)
   }
 
@@ -409,8 +405,7 @@ class RadioScheduleJobIT {
 
   @Test
   fun `should call the recorder waiting while the worker beats`() {
-    val heartbeat = radioProperties.recordings.resolve(Station.KUKU.heartbeat)
-    Files.writeString(heartbeat, """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
+    beat(Station.KUKU)
     expect(radioScheduleService.station().recorder).toEqual(RecorderState.WAITING)
   }
 
@@ -425,7 +420,7 @@ class RadioScheduleJobIT {
   fun `should not call Kuku recording while only Äripäev records`() {
     beat(Station.KUKU)
     beat(Station.ARIPAEV)
-    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "recording")
+    aripaevRecording("recording")
     expect(radioScheduleService.station().recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
       .toEqual(RecorderState.WAITING to RecorderState.RECORDING)
   }
