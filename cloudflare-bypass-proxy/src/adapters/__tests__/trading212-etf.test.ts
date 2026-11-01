@@ -1,5 +1,6 @@
 import request from 'supertest'
 import express from 'express'
+import { listen } from '../../__tests__/listen'
 import { trading212EtfHoldingsAdapter, trading212EtfSummaryAdapter } from '../trading212-etf'
 
 const { executeCurl } = vi.hoisted(() => ({ executeCurl: vi.fn() }))
@@ -18,7 +19,7 @@ describe('Trading212 ETF Adapters', () => {
   })
 
   it('should return 400 when holdings endpoint is called without ticker', async () => {
-    const response = await request(app).get('/trading212/etf-holdings')
+    const response = await request(await listen(app)).get('/trading212/etf-holdings')
     expect(response.status).toBe(400)
   })
 
@@ -26,7 +27,9 @@ describe('Trading212 ETF Adapters', () => {
     const mockResponse = [{ ticker: 'SANe_EQ', percentage: 13.94, externalName: null }]
     executeCurl.mockResolvedValue({ stdout: JSON.stringify(mockResponse), duration: 100 })
 
-    const response = await request(app).get('/trading212/etf-holdings?ticker=BNKEp_EQ')
+    const response = await request(await listen(app)).get(
+      '/trading212/etf-holdings?ticker=BNKEp_EQ'
+    )
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual(mockResponse)
@@ -41,7 +44,7 @@ describe('Trading212 ETF Adapters', () => {
     const mockResponse = { expenseRatio: 0.3, holdingsCount: 29, holdings: [] }
     executeCurl.mockResolvedValue({ stdout: JSON.stringify(mockResponse), duration: 100 })
 
-    const response = await request(app).get('/trading212/etf-summary?ticker=BNKEp_EQ')
+    const response = await request(await listen(app)).get('/trading212/etf-summary?ticker=BNKEp_EQ')
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual(mockResponse)
@@ -55,7 +58,9 @@ describe('Trading212 ETF Adapters', () => {
   it('should return 500 when curl fails', async () => {
     executeCurl.mockRejectedValue(new Error('Network timeout'))
 
-    const response = await request(app).get('/trading212/etf-holdings?ticker=BNKEp_EQ')
+    const response = await request(await listen(app)).get(
+      '/trading212/etf-holdings?ticker=BNKEp_EQ'
+    )
 
     expect(response.status).toBe(500)
   })

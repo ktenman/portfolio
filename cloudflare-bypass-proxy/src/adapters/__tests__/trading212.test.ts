@@ -1,5 +1,6 @@
 import request from 'supertest'
 import express from 'express'
+import { listen } from '../../__tests__/listen'
 import { trading212Adapter } from '../trading212'
 
 const { executeCurl } = vi.hoisted(() => ({ executeCurl: vi.fn() }))
@@ -17,7 +18,7 @@ describe('Trading212 Adapter', () => {
   })
 
   it('should return 400 if tickers parameter is missing', async () => {
-    const response = await request(app).get('/prices')
+    const response = await request(await listen(app)).get('/prices')
 
     expect(response.status).toBe(400)
     expect(response.body).toEqual({ error: 'Missing tickers parameter' })
@@ -34,7 +35,7 @@ describe('Trading212 Adapter', () => {
       duration: 100,
     })
 
-    const response = await request(app).get('/prices?tickers=AAPL,GOOGL')
+    const response = await request(await listen(app)).get('/prices?tickers=AAPL,GOOGL')
 
     expect(response.status).toBe(200)
     expect(response.body).toEqual(mockResponse)
@@ -49,7 +50,7 @@ describe('Trading212 Adapter', () => {
   it('should handle curl execution errors', async () => {
     executeCurl.mockRejectedValue(new Error('Network timeout'))
 
-    const response = await request(app).get('/prices?tickers=AAPL')
+    const response = await request(await listen(app)).get('/prices?tickers=AAPL')
 
     expect(response.status).toBe(500)
     expect(response.body).toHaveProperty('error', 'Failed to fetch data')
@@ -62,7 +63,7 @@ describe('Trading212 Adapter', () => {
       duration: 100,
     })
 
-    const response = await request(app).get('/prices?tickers=AAPL')
+    const response = await request(await listen(app)).get('/prices?tickers=AAPL')
 
     expect(response.status).toBe(500)
     expect(response.body).toHaveProperty('error')

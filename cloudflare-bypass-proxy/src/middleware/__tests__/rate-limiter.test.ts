@@ -1,6 +1,7 @@
 import { createRateLimiter } from '../rate-limiter'
 import express from 'express'
 import request from 'supertest'
+import { listen } from '../../__tests__/listen'
 
 describe('Rate Limiter', () => {
   let app: express.Application
@@ -14,7 +15,7 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    const response = await request(app).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.status).toBe(200)
     expect(response.headers['ratelimit-limit']).toBe('100')
@@ -26,7 +27,7 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    const response = await request(app).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.status).toBe(200)
     expect(response.headers['ratelimit-limit']).toBe('10')
@@ -37,7 +38,7 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    const response = await request(app).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.status).toBe(200)
     expect(response.headers['ratelimit-limit']).toBe('30')
@@ -48,9 +49,9 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    await request(app).get('/test')
-    await request(app).get('/test')
-    const response = await request(app).get('/test')
+    await request(await listen(app)).get('/test')
+    await request(await listen(app)).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.status).toBe(429)
     expect(response.body).toHaveProperty('error')
@@ -62,7 +63,7 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    const response = await request(app).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.headers).toHaveProperty('ratelimit-limit')
     expect(response.headers).toHaveProperty('ratelimit-remaining')
@@ -74,7 +75,7 @@ describe('Rate Limiter', () => {
       res.json({ success: true })
     })
 
-    const response = await request(app).get('/test')
+    const response = await request(await listen(app)).get('/test')
 
     expect(response.headers).not.toHaveProperty('x-ratelimit-limit')
     expect(response.headers).not.toHaveProperty('x-ratelimit-remaining')
@@ -84,11 +85,11 @@ describe('Rate Limiter', () => {
     app.get('/endpoint1', createRateLimiter({ max: 2 }), (req, res) => res.json({ id: 1 }))
     app.get('/endpoint2', createRateLimiter({ max: 2 }), (req, res) => res.json({ id: 2 }))
 
-    await request(app).get('/endpoint1')
-    await request(app).get('/endpoint1')
+    await request(await listen(app)).get('/endpoint1')
+    await request(await listen(app)).get('/endpoint1')
 
-    const response1 = await request(app).get('/endpoint1')
-    const response2 = await request(app).get('/endpoint2')
+    const response1 = await request(await listen(app)).get('/endpoint1')
+    const response2 = await request(await listen(app)).get('/endpoint2')
 
     expect(response1.status).toBe(429)
     expect(response2.status).toBe(200)

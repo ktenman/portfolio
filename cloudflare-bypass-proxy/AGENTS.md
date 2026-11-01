@@ -27,5 +27,6 @@ npm run dev                 # Run with ts-node
 ## Testing
 
 - Use Vitest with supertest for HTTP endpoint testing
+- Pass supertest a running server, `request(await listen(app))`, never the app: its own `listen(0)` binds `[::]` and connects to `127.0.0.1`, so on macOS the request can reach another process holding that port on IPv4
 - Follow the same test naming conventions as the main project (backtick naming)
 - Run from project root: `npm run test:proxy`
