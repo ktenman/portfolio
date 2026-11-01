@@ -2,14 +2,14 @@ import { Request, Response } from 'express'
 import * as cheerio from 'cheerio'
 import { auto24Adapter, extractVehicleName } from '../auto24'
 
-const mockExecFile = jest.fn()
+const mockExecFile = vi.fn()
 
-jest.mock('child_process', () => ({
+vi.mock('child_process', () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
-jest.mock('util', () => ({
-  ...jest.requireActual('util'),
+vi.mock('util', async () => ({
+  ...(await vi.importActual('util')),
   promisify:
     (fn: (...args: unknown[]) => void) =>
     (...args: unknown[]) =>
@@ -41,12 +41,12 @@ describe('Auto24 vehicle name extraction', () => {
 
 describe('Auto24 price route', () => {
   it('should leave the User-Agent to the impersonated browser', async () => {
-    jest.spyOn(console, 'log').mockImplementation()
-    jest.spyOn(console, 'error').mockImplementation()
+    vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
     mockExecFile.mockImplementation((_cmd, _args, _opts, callback) =>
       callback(null, { stdout: '<html></html>', stderr: '' })
     )
-    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() }
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() }
 
     await auto24Adapter.handler(
       { query: { regNumber: '123ÄBC' } } as unknown as Request,

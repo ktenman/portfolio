@@ -25,6 +25,7 @@ const val RATE = 16000
 const val KUKU = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000"
 val TALLINN: ZoneId = ZoneId.of("Europe/Tallinn")
 const val LOOKBACK = 3600.0
+private val TOOLS = listOf("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin").map { Path.of(it) }
 
 enum class RecordingState {
   @JsonProperty("recording")
@@ -166,6 +167,11 @@ fun append(
 fun round3(value: Double): Double = BigDecimal(value).setScale(3, RoundingMode.HALF_EVEN).toDouble()
 
 fun revision(model: Path): String = Files.readString(model.resolve("revision")).trim()
+
+fun tool(
+  name: String,
+  directories: List<Path> = TOOLS,
+): String = directories.map { it.resolve(name) }.firstOrNull(Files::isExecutable)?.toString() ?: error("$name is not in $directories")
 
 fun now(): Double = System.currentTimeMillis() / 1000.0
 

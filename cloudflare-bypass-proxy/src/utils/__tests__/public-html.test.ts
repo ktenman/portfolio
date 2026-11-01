@@ -1,10 +1,10 @@
 import { fetchPublicHtml, fetchPublicImage } from '../image-utils'
 
-const mockExecFile = jest.fn()
-const mockLookup = jest.fn()
+const mockExecFile = vi.fn()
+const mockLookup = vi.fn()
 
-jest.mock('child_process', () => ({ execFile: (...args: unknown[]) => mockExecFile(...args) }))
-jest.mock('dns/promises', () => ({ lookup: (...args: unknown[]) => mockLookup(...args) }))
+vi.mock('child_process', () => ({ execFile: (...args: unknown[]) => mockExecFile(...args) }))
+vi.mock('dns/promises', () => ({ lookup: (...args: unknown[]) => mockLookup(...args) }))
 
 const curlAnswers = (stdout: string | Buffer) =>
   mockExecFile.mockImplementation((_command, _args, _options, callback) =>
@@ -13,7 +13,7 @@ const curlAnswers = (stdout: string | Buffer) =>
 
 describe('Public logo page downloads', () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    vi.resetAllMocks()
     mockLookup.mockResolvedValue([{ address: '93.184.215.14', family: 4 }])
     curlAnswers('<html>NVIDIA logo</html>\n200\t\ttext/html; charset=utf-8')
   })

@@ -122,7 +122,7 @@ internal fun command(
   reach: Int,
   base: Path,
 ): List<String> =
-  listOf("ffmpeg", "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n", "-rw_timeout", "15000000") +
+  listOf(tool("ffmpeg"), "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n", "-rw_timeout", "15000000") +
     (if (reach > 0) listOf("-live_start_index", "${-(BEHIND + reach)}") else emptyList()) +
     listOf("-t", "%.3f".format(Locale.ROOT, seconds + extra(reach)), "-i", source) +
     listOf("-map", "0:a:0", "-c:a", "copy", "-flush_packets", "1", "$base.mp3") +
@@ -240,7 +240,7 @@ private fun finish(
 
 private fun probe(mp3: Path): String {
   val ffprobe =
-    ProcessBuilder("ffprobe", "-v", "error", "-show_format", "-show_streams", "-of", "json", mp3.toString())
+    ProcessBuilder(tool("ffprobe"), "-v", "error", "-show_format", "-show_streams", "-of", "json", mp3.toString())
       .redirectError(Redirect.DISCARD)
       .start()
   return ffprobe.inputReader(StandardCharsets.UTF_8).readText().also { ffprobe.waitFor() }

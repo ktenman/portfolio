@@ -3,15 +3,15 @@ import request from 'supertest'
 import { duckduckgoAdapter, duckduckgoImageAdapter } from '../duckduckgo'
 import { logger } from '../../utils/logger'
 
-const mockFetchPage = jest.fn()
-const mockFetchImage = jest.fn()
+const mockFetchPage = vi.fn()
+const mockFetchImage = vi.fn()
 
-jest.mock('../../utils/image-utils', () => ({
-  ...jest.requireActual('../../utils/image-utils'),
+vi.mock('../../utils/image-utils', async () => ({
+  ...(await vi.importActual('../../utils/image-utils')),
   fetchPublicHtml: (...args: unknown[]) => mockFetchPage(...args),
   fetchPublicImage: (...args: unknown[]) => mockFetchImage(...args),
 }))
-jest.mock('timers/promises', () => ({ setTimeout: jest.fn().mockResolvedValue(undefined) }))
+vi.mock('timers/promises', () => ({ setTimeout: vi.fn().mockResolvedValue(undefined) }))
 
 const SEARCH = 'https://html.duckduckgo.com/html/?q=NVDA%20NVIDIA%20logo%20png'
 const FIRST = 'https://logos.example/nvidia'
@@ -61,7 +61,7 @@ const imagesOf = (response: { body: { results: { image: string }[] } }) =>
 
 describe('DuckDuckGo logo search', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('finds branded raster images through DuckDuckGo HTML result pages', async () => {
@@ -210,7 +210,7 @@ describe('DuckDuckGo logo search', () => {
     expect(response.body.results).toEqual([])
   })
 
-  it.each([undefined, '', '   ', 42])('rejects an invalid search query %p', async query => {
+  it.each([undefined, '', '   ', 42])('rejects an invalid search query %j', async query => {
     const response = await request(application()).post('/duckduckgo/images').send({ query })
 
     expect(response.status).toBe(400)
@@ -406,7 +406,7 @@ describe('DuckDuckGo logo search', () => {
   })
 
   it('logs why each control failed when the search has no results', async () => {
-    const warn = jest.spyOn(logger, 'warn')
+    const warn = vi.spyOn(logger, 'warn')
     serve({ [SEARCH]: NO_RESULTS })
 
     await searchFor()

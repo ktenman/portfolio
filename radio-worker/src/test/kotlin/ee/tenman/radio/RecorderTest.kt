@@ -260,6 +260,11 @@ class RecorderTest {
   }
 
   @Test
+  fun `runs ffmpeg from an absolute path`() {
+    expect(Path.of(command(KUKU, 30.0, 0, Path.of("raw")).first()).isAbsolute).toEqual(true)
+  }
+
+  @Test
   fun `asks ffmpeg for only the time left in a resumed live part`() {
     val status = Status(RecordingState.RECORDING, KUKU, 1792832400.0, 1792836000.0, 3600.0, listOf(Part("raw.mp3", 1.4, 0.0, 60.0)))
     expect(length(status, 30.0, 4)).toEqual(30.0)

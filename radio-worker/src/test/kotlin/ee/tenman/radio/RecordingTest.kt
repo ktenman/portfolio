@@ -1,7 +1,9 @@
 package ee.tenman.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -100,4 +102,31 @@ class RecordingTest {
     val pcm = Files.write(tmp.resolve("raw.pcm"), byteArrayOf(0, 64, 0, -64))
     expect(floats(pcm, 1, 2).toList()).toEqual(listOf(-0.5f, 0f))
   }
+
+  @Test
+  fun `finds a tool in the first directory that holds it`(
+    @TempDir tmp: Path,
+  ) {
+    val empty = Files.createDirectory(tmp.resolve("tühi"))
+    val binary = runnable(Files.createDirectory(tmp.resolve("tööriistad")).resolve("ffprobe"))
+    expect(tool("ffprobe", listOf(empty, binary.parent))).toEqual(binary.toString())
+  }
+
+  @Test
+  fun `passes over a file that cannot be run`(
+    @TempDir tmp: Path,
+  ) {
+    Files.createFile(tmp.resolve("ffmpeg"))
+    val binary = runnable(Files.createDirectory(tmp.resolve("järgmine")).resolve("ffmpeg"))
+    expect(tool("ffmpeg", listOf(tmp, binary.parent))).toEqual(binary.toString())
+  }
+
+  @Test
+  fun `names the tool and the directories it searched when no directory holds it`(
+    @TempDir tmp: Path,
+  ) {
+    expect { tool("ffprobe", listOf(tmp)) }.toThrow<IllegalStateException>().messageToContain("ffprobe", "$tmp")
+  }
+
+  private fun runnable(path: Path): Path = Files.createFile(path).also { it.toFile().setExecutable(true) }
 }

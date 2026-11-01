@@ -1,13 +1,13 @@
 import { execCurl, executeCurl } from '../curl-executor'
 
-const mockExecFile = jest.fn()
+const mockExecFile = vi.fn()
 
-jest.mock('child_process', () => ({
+vi.mock('child_process', () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
-jest.mock('util', () => ({
-  ...jest.requireActual('util'),
+vi.mock('util', async () => ({
+  ...(await vi.importActual('util')),
   promisify:
     (fn: (...args: unknown[]) => void) =>
     (...args: unknown[]) =>
@@ -27,7 +27,7 @@ function respond(stdout: string): void {
 
 describe('Curl Executor', () => {
   beforeEach(() => {
-    jest.resetAllMocks()
+    vi.resetAllMocks()
   })
 
   it('should separate the response body from HTTP status and content type', async () => {

@@ -1,15 +1,16 @@
+import type { MockInstance } from 'vitest'
 import request from 'supertest'
 import express from 'express'
 import { lightyearAdapter } from '../lightyear'
 
-const mockExecFile = jest.fn()
+const mockExecFile = vi.fn()
 
-jest.mock('child_process', () => ({
+vi.mock('child_process', () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
-jest.mock('util', () => ({
-  ...jest.requireActual('util'),
+vi.mock('util', async () => ({
+  ...(await vi.importActual('util')),
   promisify:
     (fn: (...args: unknown[]) => void) =>
     (...args: unknown[]) =>
@@ -29,19 +30,19 @@ function respond(body: string, status = 200, contentType = 'application/json'): 
 
 describe('Lightyear fetch route', () => {
   let app: express.Application
-  let logSpy: jest.SpyInstance
-  let errorSpy: jest.SpyInstance
+  let logSpy: MockInstance
+  let errorSpy: MockInstance
 
   beforeEach(() => {
-    jest.resetAllMocks()
-    logSpy = jest.spyOn(console, 'log').mockImplementation()
-    errorSpy = jest.spyOn(console, 'error').mockImplementation()
+    vi.resetAllMocks()
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     app = express()
     app.get(lightyearAdapter.path, ...(lightyearAdapter.middleware || []), lightyearAdapter.handler)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should reject a missing path without contacting Lightyear', async () => {

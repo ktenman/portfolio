@@ -1,15 +1,16 @@
+import type { MockInstance } from 'vitest'
 import request from 'supertest'
 import express from 'express'
 import { lightyearBatchAdapter, lightyearLookupAdapter } from '../lightyear'
 
-const mockExecFile = jest.fn()
+const mockExecFile = vi.fn()
 
-jest.mock('child_process', () => ({
+vi.mock('child_process', () => ({
   execFile: (...args: unknown[]) => mockExecFile(...args),
 }))
 
-jest.mock('util', () => ({
-  ...jest.requireActual('util'),
+vi.mock('util', async () => ({
+  ...(await vi.importActual('util')),
   promisify:
     (fn: (...args: unknown[]) => void) =>
     (...args: unknown[]) =>
@@ -29,14 +30,14 @@ function respond(body: string, status = 200, contentType = 'application/json'): 
 
 describe('Lightyear lookup and batch routes', () => {
   let app: express.Application
-  let logSpy: jest.SpyInstance
-  let errorSpy: jest.SpyInstance
+  let logSpy: MockInstance
+  let errorSpy: MockInstance
 
   beforeEach(() => {
-    jest.resetAllMocks()
-    logSpy = jest.spyOn(console, 'log').mockImplementation()
-    errorSpy = jest.spyOn(console, 'error').mockImplementation()
-    jest.spyOn(console, 'warn').mockImplementation()
+    vi.resetAllMocks()
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     app = express()
     app.use(express.json())
     app.get(
@@ -52,7 +53,7 @@ describe('Lightyear lookup and batch routes', () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should look up the exact ticker and exchange through the public search API', async () => {
