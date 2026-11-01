@@ -180,7 +180,7 @@ Flyway runs on backend startup. Migrations include this portfolio's instruments 
 | `./gradlew test --tests '*DailySummaryCalculatorTest'` | A targeted backend test class.                                              |
 | `npm test -- --run`                                    | All frontend tests without watch mode.                                      |
 | `npm run test:coverage`                                | Frontend tests with coverage.                                               |
-| `npm run test:proxy`                                   | Cloudflare proxy Jest tests.                                                |
+| `npm run test:proxy`                                   | Cloudflare proxy Vitest tests.                                              |
 | `npm run test:unit`                                    | Backend, frontend, proxy, radio worker and Whisper worker tests.            |
 | `npm run test:e2e`                                     | Start local services, run Selenide tests, and clean up.                     |
 | `npm run test:all`                                     | Run `test:unit` followed by `test:e2e`.                                     |

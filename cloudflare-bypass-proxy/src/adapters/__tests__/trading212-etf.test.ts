@@ -2,11 +2,9 @@ import request from 'supertest'
 import express from 'express'
 import { trading212EtfHoldingsAdapter, trading212EtfSummaryAdapter } from '../trading212-etf'
 
-jest.mock('../../utils/curl-executor', () => ({
-  executeCurl: jest.fn(),
-}))
+const { executeCurl } = vi.hoisted(() => ({ executeCurl: vi.fn() }))
 
-const { executeCurl } = require('../../utils/curl-executor')
+vi.mock('../../utils/curl-executor', () => ({ executeCurl }))
 
 describe('Trading212 ETF Adapters', () => {
   let app: express.Application
@@ -16,7 +14,7 @@ describe('Trading212 ETF Adapters', () => {
     app.use(express.json())
     app.get(trading212EtfHoldingsAdapter.path, trading212EtfHoldingsAdapter.handler)
     app.get(trading212EtfSummaryAdapter.path, trading212EtfSummaryAdapter.handler)
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should return 400 when holdings endpoint is called without ticker', async () => {
