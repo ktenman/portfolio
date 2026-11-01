@@ -7,9 +7,12 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.kuku.KukuEpisode
 import ee.tenman.portfolio.kuku.KukuShow
+import ee.tenman.portfolio.repository.RadioAiringRepository
+import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -37,7 +40,7 @@ class RadioScheduleTest {
 
   @Test
   fun `should shift a capture by the stream lag to hold ten seconds either side of the airing`() {
-    val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), tallinn)
+    val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), Station.KUKU, tallinn)
     val slot = Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond)
     val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start + 10, slot.end + 30, slot)
     expect(found).toContainExactly(expected)
@@ -50,7 +53,7 @@ class RadioScheduleTest {
         airing("Tarkade klubi", "tarkade-klubi", "2026-10-24T13:00", "2026-10-24T14:00"),
         airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00"),
       )
-    expect(captures(airings, tallinn).map { it.name to it.programmes })
+    expect(captures(airings, Station.KUKU, tallinn).map { it.name to it.programmes })
       .toContainExactly("2026-10-24-1200-keskpaevatund-tarkade-klubi" to listOf("Keskpäevatund", "Tarkade klubi"))
   }
 
@@ -61,7 +64,7 @@ class RadioScheduleTest {
         airing("Digitund", "digitund", "2026-10-26T11:00", "2026-10-26T11:50"),
         airing("Keskpäevatund", "keskpaevatund", "2026-10-26T12:00", "2026-10-26T13:00"),
       )
-    expect(captures(airings, tallinn).map { it.name }).toContainExactly("2026-10-26-1100-digitund-keskpaevatund")
+    expect(captures(airings, Station.KUKU, tallinn).map { it.name }).toContainExactly("2026-10-26-1100-digitund-keskpaevatund")
   }
 
   @Test
@@ -71,12 +74,13 @@ class RadioScheduleTest {
         airing("Neeme Raud. Siin", "neeme-raud-siin", "2026-10-24T09:00", "2026-10-24T11:00"),
         airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00"),
       )
-    expect(captures(airings, tallinn)).toHaveSize(2)
+    expect(captures(airings, Station.KUKU, tallinn)).toHaveSize(2)
   }
 
   @Test
   fun `should name a recording after the minute its first airing starts`() {
-    val found = captures(listOf(airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-25T00:00", "2026-10-25T01:00")), tallinn)
+    val airings = listOf(airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-25T00:00", "2026-10-25T01:00"))
+    val found = captures(airings, Station.KUKU, tallinn)
     expect(found.single().name).toEqual("2026-10-25-0000-naistejutud-kukus")
   }
 
@@ -87,13 +91,19 @@ class RadioScheduleTest {
         airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-24T00:00", "2026-10-24T01:00"),
         airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-24T17:00", "2026-10-24T18:00"),
       )
-    expect(captures(airings, tallinn).map { it.name })
+    expect(captures(airings, Station.KUKU, tallinn).map { it.name })
       .toContainExactly("2026-10-24-0000-naistejutud-kukus", "2026-10-24-1700-naistejutud-kukus")
   }
 
   @Test
+  fun `should name a capture of Äripäev after the minute and the station`() {
+    val found = captures(listOf(airing("Kuum tool", "kuum-tool", "2026-11-09T11:00", "2026-11-09T12:00")), Station.ARIPAEV, tallinn)
+    expect(found.single().name).toEqual("2026-11-09-1100-aripaev-kuum-tool")
+  }
+
+  @Test
   fun `should turn a slug into a safe directory name`() {
-    val found = captures(listOf(airing("Õhtu ÜLE", "Õhtu_ÜLE--Ööl", "2026-10-21T19:00", "2026-10-21T20:00")), tallinn)
+    val found = captures(listOf(airing("Õhtu ÜLE", "Õhtu_ÜLE--Ööl", "2026-10-21T19:00", "2026-10-21T20:00")), Station.KUKU, tallinn)
     expect(found.single().name).toEqual("2026-10-21-1900-htu-le-l")
   }
 
@@ -176,6 +186,11 @@ class RadioScheduleTest {
   }
 
   @Test
+  fun `should report nothing for an idle station with no heartbeat and no captures`() {
+    expect(missed(emptyList(), emptySet(), null, afterwards)).toHaveSize(0)
+  }
+
+  @Test
   fun `should count a deleted recording as recorded`(
     @TempDir root: Path,
   ) {
@@ -193,6 +208,22 @@ class RadioScheduleTest {
   }
 
   @Test
+  fun `should read a status file without a station as Kuku`(
+    @TempDir directory: Path,
+  ) {
+    Files.writeString(directory.resolve(STATUS_FILE), """{"state":"captured","startedAt":1792230900.0}""")
+    expect(readStatus(directory).station).toEqual(Station.KUKU)
+  }
+
+  @Test
+  fun `should read the station a status file names`(
+    @TempDir directory: Path,
+  ) {
+    Files.writeString(directory.resolve(STATUS_FILE), """{"state":"captured","station":"ARIPAEV"}""")
+    expect(readStatus(directory).station).toEqual(Station.ARIPAEV)
+  }
+
+  @Test
   fun `should need the hours of storage the stations table lists`() {
     expect(Station.entries.map { it.bytesPerHour }).toContainExactly(230_400_000L, 172_800_000L)
   }
@@ -200,6 +231,11 @@ class RadioScheduleTest {
   @Test
   fun `should keep the plan and heartbeat of Kuku under the names the recorder reads`() {
     expect(Station.KUKU.plan to Station.KUKU.heartbeat).toEqual("plan.json" to "heartbeat.json")
+  }
+
+  @Test
+  fun `should keep the plan and heartbeat of Äripäev under the names its recorder reads`() {
+    expect(Station.ARIPAEV.plan to Station.ARIPAEV.heartbeat).toEqual("plan-aripaev.json" to "heartbeat-aripaev.json")
   }
 
   @Test
@@ -223,5 +259,16 @@ class RadioScheduleTest {
     expect { service.replace(Station.ARIPAEV, emptyList(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60)) }
       .toThrow<IllegalStateException>()
       .messageToContain("Äripäev schedule from 1970-01-01T00:00:00Z to 1970-01-01T00:01:00Z lists no programmes")
+  }
+
+  @Test
+  fun `should name the station of an airing that has begun`() {
+    val repository = mockk<RadioAiringRepository>()
+    val airing = RadioAiring(7, 1, "Kuum tool", Instant.EPOCH, Instant.EPOCH.plusSeconds(60), station = Station.ARIPAEV)
+    every { repository.findByExternalId(7) } returns airing
+    val service = RadioScheduleService(mockk(), repository, mockk(), RadioProperties(), Clock.systemUTC())
+    expect { service.record(7, AiringChoice(true)) }
+      .toThrow<IllegalArgumentException>()
+      .messageToContain("Äripäev airing 7 began at 1970-01-01T00:00:00Z and can no longer be chosen")
   }
 }

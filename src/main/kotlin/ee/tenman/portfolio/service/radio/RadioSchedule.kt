@@ -149,6 +149,7 @@ data class StationAiring(
 
 fun captures(
   airings: List<PlannedAiring>,
+  station: Station,
   zone: ZoneId,
 ): List<Capture> =
   airings
@@ -159,20 +160,21 @@ fun captures(
         last == null || airing.start > last.maxOf { it.end } + JOIN -> groups + listOf(listOf(airing))
         else -> groups.dropLast(1) + listOf(last + airing)
       }
-    }.map { capture(it, zone) }
+    }.map { capture(it, station, zone) }
 
 private fun capture(
   group: List<PlannedAiring>,
+  station: Station,
   zone: ZoneId,
 ): Capture {
   val slugs = group.map { safe(it.slug) }.distinct()
   val start = group.first().start
   val end = group.maxOf { it.end }
   return Capture(
-    name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-"),
+    name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-${station.prefix}"),
     programmes = group.map { it.programme }.distinct(),
-    start = (start + Station.KUKU.lag - PADDING).epochSecond,
-    end = (end + Station.KUKU.lag + PADDING).epochSecond,
+    start = (start + station.lag - PADDING).epochSecond,
+    end = (end + station.lag + PADDING).epochSecond,
     slot = Slot(start.epochSecond, end.epochSecond),
   )
 }

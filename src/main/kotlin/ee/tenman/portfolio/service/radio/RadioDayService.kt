@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import org.springframework.stereotype.Service
@@ -59,7 +60,7 @@ class RadioDayService(
       radioAiringRepository
         .findAllByExternalIdIn(airings.mapNotNull { it.originalId })
         .associate { it.externalId to original(it, takes, now) }
-    val captures = radioScheduleService.planned(airings)
+    val captures = Station.entries.flatMap { radioScheduleService.planned(airings, it) }
     return airings.map { row(it, names.getValue(it.programmeId), it.originalId?.let(originals::get), captures.cover(it), takes, now) }
   }
 

@@ -16,6 +16,7 @@ import {
   type RecordingStatus,
   type RecordingSummary,
   RecordingState,
+  Station,
   type TextPart,
   type TranscriptLine,
   type TranscriptSection,
@@ -92,6 +93,7 @@ const captured = (): RecordingStatus => ({
   parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: 'ab12', durationSeconds: 4200 }],
   lostSeconds: 0,
   slot: null,
+  station: Station.KUKU,
 })
 
 const spanned = ({ startedAt, seconds }: RecordingStatus) => ({

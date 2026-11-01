@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonProperty
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.Station
 import org.springframework.boot.context.properties.ConfigurationProperties
 import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
@@ -58,6 +59,7 @@ data class RecordingStatus(
   val programmes: List<String> = listOf(PROGRAMME),
   val lostSeconds: Long = 0,
   val slot: Slot? = null,
+  val station: Station = Station.KUKU,
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")

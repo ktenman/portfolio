@@ -427,6 +427,7 @@ export interface RecordingStatus {
     programmes: string[];
     lostSeconds: number;
     slot: Slot | null;
+    station: Station;
 }
 
 export interface ModelVersion {
@@ -797,6 +798,11 @@ export enum RecordingState {
     CAPTURED = "captured",
     PARTIAL = "partial",
     FAILED = "failed",
+}
+
+export enum Station {
+    KUKU = "KUKU",
+    ARIPAEV = "ARIPAEV",
 }
 
 export enum CutKind {

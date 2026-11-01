@@ -64,7 +64,9 @@ class RadioScheduleService(
     choice: AiringChoice,
   ): Boolean {
     val airing = radioAiringRepository.findByExternalId(id) ?: return false
-    require(airing.startsAt > clock.instant()) { "Kuku airing $id began at ${airing.startsAt} and can no longer be chosen" }
+    require(airing.startsAt > clock.instant()) {
+      "${airing.station.label} airing $id began at ${airing.startsAt} and can no longer be chosen"
+    }
     airing.recordOnce = choice.record
     radioAiringRepository.save(airing)
     plan()
@@ -74,25 +76,26 @@ class RadioScheduleService(
   fun plan() {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return
-    save(root.resolve(Station.KUKU.plan), planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())))
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())
+    Station.entries.forEach { save(root.resolve(it.plan), planned(airings, it)) }
   }
 
-  fun station(): RadioStation {
+  fun station(station: Station = Station.KUKU): RadioStation {
     val now = clock.instant()
-    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now)
-    val captures = planned(airings)
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now).filter { it.station == station }
+    val captures = planned(airings, station)
     val (onAir, next) = airing(airings, captures, now)
     val root = radioProperties.recordings
     val free = root.takeIf(Files::isDirectory)?.let { Files.getFileStore(it).usableSpace }
-    val recordings = radioArchiveService.recordings()
+    val recordings = radioArchiveService.recordings().filter { it.status.station == station }
     val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING }
     return RadioStation(
       onAir = onAir,
       next = next,
       capture = captures.firstOrNull(),
       freeBytes = free,
-      hours = free?.div(Station.KUKU.bytesPerHour),
-      recorder = recorder(heartbeat(root), recordings.any { it.status.state == RecordingState.RECORDING }, now),
+      hours = free?.div(station.bytesPerHour),
+      recorder = recorder(heartbeat(root, station), recordings.any { it.status.state == RecordingState.RECORDING }, now),
       last = last?.let { LastRecording(it.programme, (it.status.startedAt + it.status.seconds).toLong()) },
       format = last?.format,
     )
@@ -113,21 +116,30 @@ class RadioScheduleService(
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return emptyList()
     val now = clock.instant()
-    return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), recorded(root), heartbeat(root), now)
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
+    val recorded = recorded(root)
+    return Station.entries.flatMap { missed(planned(airings, it), recorded, heartbeat(root, it), now) }
   }
 
-  private fun heartbeat(root: Path): Heartbeat? =
-    root.resolve(Station.KUKU.heartbeat).takeIf(Files::exists)?.let {
+  private fun heartbeat(
+    root: Path,
+    station: Station,
+  ): Heartbeat? =
+    root.resolve(station.heartbeat).takeIf(Files::exists)?.let {
       JsonMapperFactory.instance.readValue(Files.readString(it), Heartbeat::class.java)
     }
 
-  fun planned(airings: List<RadioAiring>): List<Capture> {
-    val programmes = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associateBy { it.id }
+  fun planned(
+    airings: List<RadioAiring>,
+    station: Station,
+  ): List<Capture> {
+    val own = airings.filter { it.station == station }
+    val programmes = radioProgrammeRepository.findAllById(own.map { it.programmeId }.toSet()).associateBy { it.id }
     val planned =
-      airings
+      own
         .filter { it.recordOnce || (it.originalId == null && programmes[it.programmeId]?.recordEvery == true) }
         .map { airing -> programmes.getValue(airing.programmeId).let { PlannedAiring(it.name, it.slug, airing.startsAt, airing.endsAt) } }
-    return captures(planned, clock.zone)
+    return captures(planned, station, clock.zone)
   }
 
   private fun live(

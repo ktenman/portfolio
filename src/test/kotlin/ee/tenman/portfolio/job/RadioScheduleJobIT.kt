@@ -123,12 +123,18 @@ class RadioScheduleJobIT {
     id: Long,
     start: String,
     end: String,
+  ) = aripaev(id, at(start), at(end))
+
+  private fun aripaev(
+    id: Long,
+    start: ZonedDateTime,
+    end: ZonedDateTime,
   ) = ScheduledAiring(
     id,
     ScheduledShow(ARIPAEV_SHOW, "Kuum tool", "kuum-tool", "Päeva põletavad küsimused"),
     "Kuum tool",
-    at(start).toInstant(),
-    at(end).toInstant(),
+    start.toInstant(),
+    end.toInstant(),
     null,
   )
 
@@ -153,8 +159,24 @@ class RadioScheduleJobIT {
     record: Boolean,
   ) = mvcPut("/api/radio/airings/$id").contentType(APPLICATION_JSON).content("""{"record":$record}""")
 
-  private fun plan(): List<Capture> =
-    JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(Station.KUKU.plan)))
+  private fun aripaevRecording(
+    name: String,
+    state: String,
+  ) {
+    val directory = Files.createDirectories(radioProperties.recordings.resolve(name))
+    val start = at("08:00").toEpochSecond()
+    Files.writeString(
+      directory.resolve("status.json"),
+      """{"state":"$state","startedAt":$start,"seconds":600,"programmes":["Kuum tool"],"station":"ARIPAEV"}""",
+    )
+  }
+
+  private fun beat(station: Station) {
+    Files.writeString(radioProperties.recordings.resolve(station.heartbeat), """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
+  }
+
+  private fun plan(station: Station = Station.KUKU): List<Capture> =
+    JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(station.plan)))
 
   @Test
   fun `should list a programme with the air time of its original airings only`() {
@@ -232,6 +254,46 @@ class RadioScheduleJobIT {
   }
 
   @Test
+  fun `should write an empty Äripäev plan beside an unchanged Kuku plan when only Kuku is ticked`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "14:00", "15:00"))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    val slot = """"slot":{"start":${at("12:00").toEpochSecond()},"end":${at("13:00").toEpochSecond()}}"""
+    val times = """"start":${at("12:00:10").toEpochSecond()},"end":${at("13:00:30").toEpochSecond()}"""
+    val kuku = Files.readString(radioProperties.recordings.resolve("plan.json")).filterNot(Char::isWhitespace)
+    expect(plan(Station.ARIPAEV).size to kuku)
+      .toEqual(0 to """[{"name":"$day-1200-keskpaevatund","programmes":["Keskpäevatund"],$times,$slot}]""")
+  }
+
+  @Test
+  fun `should give two stations at the same minute separate captures`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(ARIPAEV_SHOW, ProgrammeChoice(true))
+    expect(plan().map { it.name } to plan(Station.ARIPAEV).map { it.name })
+      .toEqual(listOf("$day-1200-keskpaevatund") to listOf("$day-1200-aripaev-kuum-tool"))
+  }
+
+  @Test
+  fun `should write the plan of Äripäev into its own file`() {
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    radioScheduleService.record(ARIPAEV_AIRING, AiringChoice(true))
+    expect(Files.exists(radioProperties.recordings.resolve("plan-aripaev.json"))).toEqual(true)
+  }
+
+  @Test
+  fun `should plan only the airings of the given station`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:05", "13:00"))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(ARIPAEV_SHOW, ProgrammeChoice(true))
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())
+    expect(radioScheduleService.planned(airings, Station.ARIPAEV).map { it.programmes })
+      .toContainExactly(listOf("Kuum tool"))
+  }
+
+  @Test
   fun `should find only the airings that overlap a recording begun after the first went on air`() {
     load(
       episode(1, 231, "Tarkade klubi", "11:00", "12:00"),
@@ -287,6 +349,54 @@ class RadioScheduleJobIT {
   }
 
   @Test
+  fun `should count the hours of Äripäev at its own bitrate`() {
+    val station = radioScheduleService.station(Station.ARIPAEV)
+    expect(station.hours).toEqual(station.freeBytes?.div(172_800_000))
+  }
+
+  @Test
+  fun `should name the next airing of the given station`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "14:00", "15:00"))
+    expect(radioScheduleService.station(Station.ARIPAEV).next?.name).toEqual("Kuum tool")
+  }
+
+  @Test
+  fun `should keep the next airing of Kuku when Äripäev airs sooner`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "09:00", "10:00"))
+    expect(radioScheduleService.station().next?.name).toEqual("Keskpäevatund")
+  }
+
+  @Test
+  fun `should name what the given station has on air`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(1), now.plusHours(1)))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, now.minusMinutes(5), now.plusMinutes(5)))
+    expect(radioScheduleService.station(Station.ARIPAEV).onAir?.name).toEqual("Kuum tool")
+  }
+
+  @Test
+  fun `should leave the capture of Kuku out of the station Äripäev`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    expect(radioScheduleService.station(Station.ARIPAEV).capture).toEqual(null)
+  }
+
+  @Test
+  fun `should name the last recording of the given station`() {
+    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "captured")
+    recording("2026-11-09-1200-keskpaevatund", at("11:55"), 4200)
+    expect(radioScheduleService.station(Station.ARIPAEV).last?.programme).toEqual("Kuum tool")
+  }
+
+  @Test
+  fun `should keep the recordings of Äripäev out of the last recording of Kuku`() {
+    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "captured")
+    expect(radioScheduleService.station().last).toEqual(null)
+  }
+
+  @Test
   fun `should give no free space when the recordings directory is missing`() {
     radioProperties.recordings.toFile().deleteRecursively()
     expect(radioScheduleService.station().freeBytes).toEqual(null)
@@ -302,6 +412,45 @@ class RadioScheduleJobIT {
     val heartbeat = radioProperties.recordings.resolve(Station.KUKU.heartbeat)
     Files.writeString(heartbeat, """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
     expect(radioScheduleService.station().recorder).toEqual(RecorderState.WAITING)
+  }
+
+  @Test
+  fun `should read the heartbeat of the given station`() {
+    beat(Station.ARIPAEV)
+    expect(radioScheduleService.station(Station.ARIPAEV).recorder to radioScheduleService.station().recorder)
+      .toEqual(RecorderState.WAITING to RecorderState.OFF)
+  }
+
+  @Test
+  fun `should not call Kuku recording while only Äripäev records`() {
+    beat(Station.KUKU)
+    beat(Station.ARIPAEV)
+    aripaevRecording("2026-11-09-1100-aripaev-kuum-tool", "recording")
+    expect(radioScheduleService.station().recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
+      .toEqual(RecorderState.WAITING to RecorderState.RECORDING)
+  }
+
+  @Test
+  fun `should judge a missed capture by the heartbeat of its own station`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(ARIPAEV_SHOW, ProgrammeChoice(true))
+    beat(Station.ARIPAEV)
+    expect(radioScheduleService.missed().map { it.capture.programmes to it.reason }).toContainExactly(
+      listOf("Keskpäevatund") to MissedReason.NEVER_RAN,
+      listOf("Kuum tool") to MissedReason.SAVED_NOTHING,
+    )
+  }
+
+  @Test
+  fun `should report nothing missed by an idle Äripäev`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    expect(radioScheduleService.missed().map { it.capture.programmes }).toContainExactly(listOf("Keskpäevatund"))
   }
 
   @Test
@@ -347,6 +496,15 @@ class RadioScheduleJobIT {
       .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
       .andExpect(jsonPath("$.day[0].airings[0].state").value("PLANNED"))
       .andExpect(jsonPath("$.day[0].airings[0].once").value(true))
+  }
+
+  @Test
+  fun `should serve an Äripäev airing chosen once as planned`() {
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "13:00", "14:00"))
+    mockMvc.perform(choose(ARIPAEV_AIRING, true)).andExpect(status().isNoContent)
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "$day"))
+      .andExpect(jsonPath("$.day[0].airings[0].state").value("PLANNED"))
   }
 
   @Test
