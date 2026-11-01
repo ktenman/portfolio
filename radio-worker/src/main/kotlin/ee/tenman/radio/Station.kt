@@ -109,7 +109,7 @@ private fun command(
   speed: Double,
 ): List<String> =
   listOf(
-    "ffmpeg",
+    tool("ffmpeg"),
     "-hide_banner",
     "-nostdin",
     "-loglevel",

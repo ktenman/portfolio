@@ -66,6 +66,7 @@ The `radio-worker` service in `docker-compose.yml` runs `planned` with the cappe
 
 - Never write over a recording: FFmpeg runs with `-n`, and an existing directory is reused only when its `status.json` is this worker's recording of the same source
 - Place each part by the stream timestamp FFmpeg reports for its first packet, never by the clock
+- Run FFmpeg and ffprobe through `tool`, which looks only in `/usr/bin`, `/usr/local/bin` and `/opt/homebrew/bin`, never by bare name from `PATH`
 - `transcript.json` and `sounds.json` open with `model` and `revision`, from the `revision` file in the model's directory, because the backend reads only those two fields; the Dockerfile writes Zipformer's from the commit it downloads
 - Tests use generated MP3 and PCM, a stub recognizer and the bundled CED-tiny; they never reach Kuku or Hugging Face
 - Tests are JUnit 5 with Atrium, named as full sentences in backticks: `` `goes off air after the replay ends` ``

@@ -2,11 +2,9 @@ import request from 'supertest'
 import express from 'express'
 import { trading212Adapter } from '../trading212'
 
-jest.mock('../../utils/curl-executor', () => ({
-  executeCurl: jest.fn(),
-}))
+const { executeCurl } = vi.hoisted(() => ({ executeCurl: vi.fn() }))
 
-const { executeCurl } = require('../../utils/curl-executor')
+vi.mock('../../utils/curl-executor', () => ({ executeCurl }))
 
 describe('Trading212 Adapter', () => {
   let app: express.Application
@@ -15,7 +13,7 @@ describe('Trading212 Adapter', () => {
     app = express()
     app.use(express.json())
     app.get(trading212Adapter.path, trading212Adapter.handler)
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should return 400 if tickers parameter is missing', async () => {

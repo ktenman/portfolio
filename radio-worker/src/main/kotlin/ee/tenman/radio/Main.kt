@@ -105,7 +105,7 @@ internal fun span(
 ): Double {
   if (!Files.isRegularFile(Path.of(source))) return duration ?: usage("--duration is required when --source is a stream")
   val ffprobe =
-    ProcessBuilder("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", source)
+    ProcessBuilder(tool("ffprobe"), "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", source)
       .redirectError(Redirect.INHERIT)
       .start()
   val probed = ffprobe.inputReader().readText()
