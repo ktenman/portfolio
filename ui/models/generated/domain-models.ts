@@ -315,6 +315,7 @@ export interface RadioProgrammeDto {
     recordEvery: boolean;
     slots: AirSlot[];
     recordings: number;
+    station: Station;
 }
 
 export interface ProgrammeChoice {
@@ -427,6 +428,7 @@ export interface RecordingStatus {
     programmes: string[];
     lostSeconds: number;
     slot: Slot | null;
+    station: Station;
 }
 
 export interface ModelVersion {
@@ -547,12 +549,14 @@ export interface RecordedSpan {
     start: number;
     end: number;
     recording: boolean;
+    station: Station;
 }
 
 export interface PlannedSpan {
     programme: string;
     start: number;
     end: number;
+    station: Station;
 }
 
 export interface DayBlock {
@@ -567,6 +571,7 @@ export interface TopicHit {
     start: number;
     title: TextPart[];
     summary: TextPart[];
+    station: Station;
 }
 
 export interface LineGroup {
@@ -575,6 +580,7 @@ export interface LineGroup {
     startedAt: number;
     lines: LineHit[];
     more: number;
+    station: Station;
 }
 
 export interface LargestPositionDto extends Serializable {
@@ -643,6 +649,7 @@ export interface DayAiring {
     repeat: boolean;
     original: OriginalAiring | null;
     recording: AiringRecording | null;
+    station: Station;
 }
 
 export interface TextPart {
@@ -784,6 +791,11 @@ export enum CutState {
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
+}
+
+export enum Station {
+    KUKU = "KUKU",
+    ARIPAEV = "ARIPAEV",
 }
 
 export enum RecorderState {

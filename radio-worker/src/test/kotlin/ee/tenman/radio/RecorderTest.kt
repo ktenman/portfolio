@@ -2,6 +2,7 @@ package ee.tenman.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.cause
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -12,12 +13,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import tools.jackson.core.JacksonException
+import java.lang.ProcessBuilder.Redirect
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.math.abs
 
@@ -251,12 +254,36 @@ class RecorderTest {
   @Test
   fun `asks ffmpeg for the missed segments and one more`() {
     expect(command(KUKU, 30.0, 4, Path.of("raw-part-002")).joinToString(" "))
-      .toContain("-rw_timeout 15000000 -live_start_index -7 -t 60.000 -i $KUKU")
+      .toContain("-rw_timeout 15000000 -m3u8_hold_counters 10 -live_start_index -7 -t 60.000 -i $KUKU")
   }
 
   @Test
   fun `starts a new part at the live edge`() {
-    expect(command(KUKU, 30.0, 0, Path.of("raw")).joinToString(" ")).toContain("-rw_timeout 15000000 -t 30.000 -i $KUKU")
+    expect(command(KUKU, 30.0, 0, Path.of("raw")).joinToString(" "))
+      .toContain("-rw_timeout 15000000 -m3u8_hold_counters 10 -t 30.000 -i $KUKU")
+  }
+
+  @Test
+  fun `leaves the hold counters out of an MP3 input`() {
+    expect(command("/recordings/in.mp3", 30.0, 0, Path.of("raw")).joinToString(" ")).notToContain("m3u8_hold_counters")
+  }
+
+  @Test
+  fun `ends the part on its own when the playlist stops growing`(
+    @TempDir tmp: Path,
+  ) {
+    val source = "${stale(tmp.resolve("stream.m3u8"))}"
+    val ffmpeg =
+      ProcessBuilder(command(source, 600.0, 0, tmp.resolve("raw")))
+        .redirectError(Redirect.DISCARD)
+        .start()
+    val code =
+      try {
+        ffmpeg.takeIf { it.waitFor(30, TimeUnit.SECONDS) }?.exitValue()
+      } finally {
+        ffmpeg.destroyForcibly()
+      }
+    expect(Pair(code, Files.size(tmp.resolve("raw.mp3")) > 0)).toEqual(Pair(0, true))
   }
 
   @Test
@@ -328,6 +355,24 @@ class RecorderTest {
   ) {
     prepare(tmp.resolve("raadio"), KUKU, 0.0, slot = Slot(1792832400, 1792836000))
     expect(status(tmp.resolve("raadio")).slot).toEqual(Slot(1792832400, 1792836000))
+  }
+
+  @Test
+  fun `writes no station key into a status without a station`(
+    @TempDir tmp: Path,
+  ) {
+    prepare(tmp.resolve("raadio"), KUKU, 0.0)
+    expect(Files.readString(tmp.resolve("raadio/status.json"))).notToContain("\"station\"")
+  }
+
+  @Test
+  fun `keeps the station in the status through a finished recording`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    prepare(directory, "${tone(tmp.resolve("in.mp3"), 2.0)}", 2.0, station = "ARIPAEV")
+    record(directory, CountDownLatch(1))
+    expect(status(directory).station).toEqual("ARIPAEV")
   }
 
   @Test

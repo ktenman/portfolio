@@ -73,7 +73,8 @@ class RadioEpisodeService(
     val edit = edited(read(directory.resolve(EDIT_LIST_FILE)), findings(directory, status, timeline, todo), status, timeline, heard)
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
-    radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, title(status, edit.found(), clock.zone), temporary)
+    val heading = title(status, edit.found(), clock.zone)
+    radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, heading, temporary, status.station)
     save(directory.resolve(EDIT_LIST_FILE), edit)
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }
@@ -171,7 +172,8 @@ class RadioEpisodeService(
 
   private fun slots(status: RecordingStatus): Map<String, Slot> {
     val from = Instant.ofEpochSecond(status.startedAt.toLong())
-    val airings = radioAiringRepository.findOverlapping(from, from.plusSeconds(status.seconds.toLong()))
+    val airings =
+      radioAiringRepository.findOverlapping(from, from.plusSeconds(status.seconds.toLong())).filter { it.station == status.station }
     val names = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associate { it.id to it.name }
     val slots = airings.map { names.getValue(it.programmeId) to Slot(it.startsAt.epochSecond, it.endsAt.epochSecond) }
     return slots.distinctBy { it.first }.toMap()

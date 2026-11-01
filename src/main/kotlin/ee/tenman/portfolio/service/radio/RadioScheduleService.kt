@@ -3,8 +3,7 @@ package ee.tenman.portfolio.service.radio
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
-import ee.tenman.portfolio.kuku.KukuEpisode
-import ee.tenman.portfolio.kuku.KukuShow
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import org.springframework.stereotype.Service
@@ -24,14 +23,14 @@ class RadioScheduleService(
 ) {
   @Transactional
   fun replace(
-    episodes: List<KukuEpisode>,
+    station: Station,
+    airings: List<ScheduledAiring>,
     from: Instant,
     until: Instant,
   ) {
-    val shown = episodes.mapNotNull { episode -> episode.show?.let { episode to it } }
-    check(shown.isNotEmpty()) { "Kuku schedule from $from to $until lists no programmes" }
-    store(shown, upsert(shown.map { it.second }.distinctBy { it.id }))
-    radioAiringRepository.deleteDropped(from, until, shown.map { it.first.id })
+    check(airings.isNotEmpty()) { "${station.label} schedule from $from to $until lists no programmes" }
+    store(station, airings, upsert(station, airings.map { it.show }.distinctBy { it.externalId }))
+    radioAiringRepository.deleteDropped(station, from, until, airings.map { it.externalId })
   }
 
   fun programmes(): List<RadioProgrammeDto> {
@@ -39,21 +38,21 @@ class RadioScheduleService(
     val archived =
       radioArchiveService
       .statuses()
-      .flatMap { it.programmes }
+      .flatMap { status -> status.programmes.map { status.station to it } }
       .groupingBy { it }
       .eachCount()
     return radioProgrammeRepository
       .findAll()
       .filter { it.recordEvery || it.id in upcoming }
       .sortedWith(compareBy({ !it.recordEvery }, { upcoming[it.id]?.first()?.startsAt ?: Instant.MAX }, { it.name }))
-      .map { dto(it, upcoming[it.id].orEmpty(), archived[it.name] ?: 0) }
+      .map { dto(it, upcoming[it.id].orEmpty(), archived[it.station to it.name] ?: 0) }
   }
 
   fun choose(
     id: Long,
     choice: ProgrammeChoice,
   ): Boolean {
-    val programme = radioProgrammeRepository.findByKukuId(id) ?: return false
+    val programme = radioProgrammeRepository.findByExternalId(id) ?: return false
     programme.recordEvery = choice.recordEvery
     radioProgrammeRepository.save(programme)
     plan()
@@ -64,8 +63,10 @@ class RadioScheduleService(
     id: Long,
     choice: AiringChoice,
   ): Boolean {
-    val airing = radioAiringRepository.findByKukuId(id) ?: return false
-    require(airing.startsAt > clock.instant()) { "Kuku airing $id began at ${airing.startsAt} and can no longer be chosen" }
+    val airing = radioAiringRepository.findByExternalId(id) ?: return false
+    require(airing.startsAt > clock.instant()) {
+      "${airing.station.label} airing $id began at ${airing.startsAt} and can no longer be chosen"
+    }
     airing.recordOnce = choice.record
     radioAiringRepository.save(airing)
     plan()
@@ -75,25 +76,26 @@ class RadioScheduleService(
   fun plan() {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return
-    save(root.resolve(PLAN_FILE), planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())))
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())
+    Station.entries.forEach { save(root.resolve(it.plan), planned(airings, it)) }
   }
 
-  fun station(): RadioStation {
+  fun station(station: Station = Station.KUKU): RadioStation {
     val now = clock.instant()
-    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now)
-    val captures = planned(airings)
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now).filter { it.station == station }
+    val captures = planned(airings, station)
     val (onAir, next) = airing(airings, captures, now)
     val root = radioProperties.recordings
     val free = root.takeIf(Files::isDirectory)?.let { Files.getFileStore(it).usableSpace }
-    val recordings = radioArchiveService.recordings()
+    val recordings = radioArchiveService.recordings().filter { it.status.station == station }
     val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING }
     return RadioStation(
       onAir = onAir,
       next = next,
       capture = captures.firstOrNull(),
       freeBytes = free,
-      hours = free?.div(BYTES_PER_HOUR),
-      recorder = recorder(heartbeat(root), recordings.any { it.status.state == RecordingState.RECORDING }, now),
+      hours = free?.div(station.bytesPerHour),
+      recorder = recorder(heartbeat(root, station), recordings.any { it.status.state == RecordingState.RECORDING }, now),
       last = last?.let { LastRecording(it.programme, (it.status.startedAt + it.status.seconds).toLong()) },
       format = last?.format,
     )
@@ -114,21 +116,30 @@ class RadioScheduleService(
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return emptyList()
     val now = clock.instant()
-    return missed(planned(radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)), recorded(root), heartbeat(root), now)
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
+    val recorded = recorded(root)
+    return Station.entries.flatMap { missed(planned(airings, it), recorded, heartbeat(root, it), now) }
   }
 
-  private fun heartbeat(root: Path): Heartbeat? =
-    root.resolve(HEARTBEAT_FILE).takeIf(Files::exists)?.let {
+  private fun heartbeat(
+    root: Path,
+    station: Station,
+  ): Heartbeat? =
+    root.resolve(station.heartbeat).takeIf(Files::exists)?.let {
       JsonMapperFactory.instance.readValue(Files.readString(it), Heartbeat::class.java)
     }
 
-  fun planned(airings: List<RadioAiring>): List<Capture> {
-    val programmes = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associateBy { it.id }
+  fun planned(
+    airings: List<RadioAiring>,
+    station: Station,
+  ): List<Capture> {
+    val own = airings.filter { it.station == station }
+    val programmes = radioProgrammeRepository.findAllById(own.map { it.programmeId }.toSet()).associateBy { it.id }
     val planned =
-      airings
+      own
         .filter { it.recordOnce || (it.originalId == null && programmes[it.programmeId]?.recordEvery == true) }
         .map { airing -> programmes.getValue(airing.programmeId).let { PlannedAiring(it.name, it.slug, airing.startsAt, airing.endsAt) } }
-    return captures(planned, clock.zone)
+    return captures(planned, station, clock.zone)
   }
 
   private fun live(
@@ -141,38 +152,45 @@ class RadioScheduleService(
     return StationAiring(names.getValue(airing.programmeId), start, end, captures.cover(airing))
   }
 
-  private fun upsert(shows: List<KukuShow>): Map<Long, Long> {
-    val existing = radioProgrammeRepository.findAllByKukuIdIn(shows.map { it.id }).associateBy { it.kukuId }
+  private fun upsert(
+    station: Station,
+    shows: List<ScheduledShow>,
+  ): Map<Long, Long> {
+    val existing = radioProgrammeRepository.findAllByExternalIdIn(shows.map { it.externalId }).associateBy { it.externalId }
     val saved =
       shows.map { show ->
-        (existing[show.id] ?: RadioProgramme(show.id, show.name, show.slug)).apply {
+        (existing[show.externalId] ?: RadioProgramme(show.externalId, show.name, show.slug, station = station)).apply {
           name = show.name
           slug = show.slug
           description = show.description
         }
       }
-    return radioProgrammeRepository.saveAll(saved).associate { it.kukuId to it.id }
+    return radioProgrammeRepository.saveAll(saved).associate { it.externalId to it.id }
   }
 
   private fun store(
-    shown: List<Pair<KukuEpisode, KukuShow>>,
+    station: Station,
+    airings: List<ScheduledAiring>,
     programmes: Map<Long, Long>,
   ) {
-    val existing = radioAiringRepository.findAllByKukuIdIn(shown.map { it.first.id }).associateBy { it.kukuId }
-    radioAiringRepository.saveAll(shown.map { (episode, show) -> airing(existing[episode.id], episode, programmes.getValue(show.id)) })
+    val existing = radioAiringRepository.findAllByExternalIdIn(airings.map { it.externalId }).associateBy { it.externalId }
+    radioAiringRepository.saveAll(
+      airings.map { airing(station, existing[it.externalId], it, programmes.getValue(it.show.externalId)) },
+    )
   }
 
   private fun airing(
+    station: Station,
     existing: RadioAiring?,
-    episode: KukuEpisode,
+    scheduled: ScheduledAiring,
     programmeId: Long,
   ): RadioAiring =
-    (existing ?: RadioAiring(episode.id, programmeId, episode.title, episode.start.toInstant(), episode.end.toInstant())).apply {
+    (existing ?: RadioAiring(scheduled.externalId, programmeId, scheduled.title, scheduled.start, scheduled.end, station = station)).apply {
       this.programmeId = programmeId
-      title = episode.title
-      startsAt = episode.start.toInstant()
-      endsAt = episode.end.toInstant()
-      originalId = episode.originalId
+      title = scheduled.title
+      startsAt = scheduled.start
+      endsAt = scheduled.end
+      originalId = scheduled.originalExternalId
     }
 
   private fun dto(
@@ -181,15 +199,12 @@ class RadioScheduleService(
     recordings: Int,
   ): RadioProgrammeDto =
     RadioProgrammeDto(
-      id = programme.kukuId,
+      id = programme.externalId,
       name = programme.name,
       description = programme.description,
       recordEvery = programme.recordEvery,
       slots = slots(airings.filter { it.originalId == null }.map { it.startsAt to it.endsAt }, clock.zone),
       recordings = recordings,
+      station = programme.station,
     )
-
-  companion object {
-    private const val BYTES_PER_HOUR = (256_000L / 8 + RATE * 2L) * 3600
-  }
 }

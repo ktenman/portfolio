@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.RATE
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.ShortBuffer

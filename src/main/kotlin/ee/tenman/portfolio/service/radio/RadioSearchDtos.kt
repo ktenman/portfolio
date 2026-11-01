@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.Station
+
 data class RadioSearch(
   val topics: List<TopicHit> = emptyList(),
   val moreTopics: Int = 0,
@@ -19,6 +21,7 @@ data class TopicHit(
   val start: Double,
   val title: List<TextPart>,
   val summary: List<TextPart>,
+  val station: Station,
 )
 
 data class LineGroup(
@@ -27,6 +30,7 @@ data class LineGroup(
   val startedAt: Double,
   val lines: List<LineHit>,
   val more: Int,
+  val station: Station,
 )
 
 data class LineHit(
@@ -47,6 +51,7 @@ class IndexedRecording(
   val lines: List<IndexedLine>,
   val words: List<IndexedWord>,
   val topics: List<IndexedTopic>,
+  val station: Station,
 )
 
 data class IndexedLine(

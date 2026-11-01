@@ -32,6 +32,7 @@ fun prepare(
   programmes: List<String>? = null,
   started: Double? = null,
   slot: Slot? = null,
+  station: String? = null,
 ) {
   if (Files.exists(directory)) {
     claim(directory, source)
@@ -42,7 +43,10 @@ fun prepare(
   val start = started ?: clock
   val end = (if (live(source)) start else clock) + seconds
   val named = programmes?.takeIf { it.isNotEmpty() }
-  store(directory, Status(RecordingState.RECORDING, source, round3(start), round3(end), seconds, emptyList(), named, slot))
+  store(
+    directory,
+    Status(RecordingState.RECORDING, source, round3(start), round3(end), seconds, programmes = named, slot = slot, station = station),
+  )
 }
 
 fun hold(directory: Path): AutoCloseable {
@@ -123,6 +127,7 @@ internal fun command(
   base: Path,
 ): List<String> =
   listOf(tool("ffmpeg"), "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n", "-rw_timeout", "15000000") +
+    (if (live(source)) listOf("-m3u8_hold_counters", "10") else emptyList()) +
     (if (reach > 0) listOf("-live_start_index", "${-(BEHIND + reach)}") else emptyList()) +
     listOf("-t", "%.3f".format(Locale.ROOT, seconds + extra(reach)), "-i", source) +
     listOf("-map", "0:a:0", "-c:a", "copy", "-flush_packets", "1", "$base.mp3") +

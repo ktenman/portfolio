@@ -2,6 +2,8 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.RATE
+import ee.tenman.portfolio.domain.Station
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
@@ -27,10 +29,19 @@ class RadioRenderServiceTest {
       chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1")), PROGRAMME),
       "Keskpäevatund 17.10.2026",
       episode,
+      Station.KUKU,
     )
     val found = probe(episode)
     expect((abs(duration(episode) - 18.0) <= 0.1) to found["chapters"].toList().map { it["tags"]["title"].asString() })
       .toEqual(true to listOf("Õhtu; uudised = #1", "Cut 1 (0:08) – Õhtu; uudised = #1"))
+  }
+
+  @Test
+  fun `should name the station of the recording as the artist`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10))))
+    val episode = directory.resolve("episode.m4a")
+    service.render(timeline(directory), listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Kuum tool", episode, Station.ARIPAEV)
+    expect(probe(episode)["format"]["tags"]["artist"].asString()).toEqual("Äripäev")
   }
 
   @Test
@@ -42,7 +53,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
+    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     expect(abs(duration(episode) - 10.0) <= 0.1).toEqual(true)
   }
 
@@ -55,7 +66,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
+    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     val audio = decoded(episode)
     val loud = { start: Double, end: Double ->
       sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average())
@@ -72,7 +83,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode)
+    service.render(timeline(directory), listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     expect(abs(duration(episode) - 5.0) <= 0.05).toEqual(true)
   }
 
@@ -80,7 +91,8 @@ class RadioRenderServiceTest {
   fun `should report how far FFmpeg has got`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30))))
     val shares = mutableListOf<Double>()
-    service.render(timeline(directory), listOf(2.0 to 28.0), listOf(0.0 to "Uudised"), "Keskpäevatund", directory.resolve("episode.m4a")) {
+    val episode = directory.resolve("episode.m4a")
+    service.render(timeline(directory), listOf(2.0 to 28.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU) {
       shares += it
     }
     expect(shares.zipWithNext().all { (a, b) -> a <= b } to (shares.last() >= 0.9)).toEqual(true to true)

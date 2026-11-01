@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.Station
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.DayOfWeek
@@ -10,11 +11,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-const val PLAN_FILE = "plan.json"
-const val HEARTBEAT_FILE = "heartbeat.json"
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
-val LAG: Duration = Duration.ofSeconds(20)
 private val PADDING = Duration.ofSeconds(10)
 private val JOIN = Duration.ofMinutes(10)
 private val UNSAFE = Regex("[^0-9a-z]+")
@@ -27,6 +25,7 @@ data class RadioProgrammeDto(
   val recordEvery: Boolean,
   val slots: List<AirSlot>,
   val recordings: Int,
+  val station: Station,
 )
 
 data class AirSlot(
@@ -37,6 +36,22 @@ data class AirSlot(
 
 data class ProgrammeChoice(
   val recordEvery: Boolean,
+)
+
+data class ScheduledShow(
+  val externalId: Long,
+  val name: String,
+  val slug: String,
+  val description: String?,
+)
+
+data class ScheduledAiring(
+  val externalId: Long,
+  val show: ScheduledShow,
+  val title: String,
+  val start: Instant,
+  val end: Instant,
+  val originalExternalId: Long?,
 )
 
 data class PlannedAiring(
@@ -135,6 +150,7 @@ data class StationAiring(
 
 fun captures(
   airings: List<PlannedAiring>,
+  station: Station,
   zone: ZoneId,
 ): List<Capture> =
   airings
@@ -145,20 +161,21 @@ fun captures(
         last == null || airing.start > last.maxOf { it.end } + JOIN -> groups + listOf(listOf(airing))
         else -> groups.dropLast(1) + listOf(last + airing)
       }
-    }.map { capture(it, zone) }
+    }.map { capture(it, station, zone) }
 
 private fun capture(
   group: List<PlannedAiring>,
+  station: Station,
   zone: ZoneId,
 ): Capture {
   val slugs = group.map { safe(it.slug) }.distinct()
   val start = group.first().start
   val end = group.maxOf { it.end }
   return Capture(
-    name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-"),
+    name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-${station.prefix}"),
     programmes = group.map { it.programme }.distinct(),
-    start = (start + LAG - PADDING).epochSecond,
-    end = (end + LAG + PADDING).epochSecond,
+    start = (start + station.lag - PADDING).epochSecond,
+    end = (end + station.lag + PADDING).epochSecond,
     slot = Slot(start.epochSecond, end.epochSecond),
   )
 }

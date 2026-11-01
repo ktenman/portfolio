@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface RadioProgrammeRepository : JpaRepository<RadioProgramme, Long> {
-  fun findByKukuId(kukuId: Long): RadioProgramme?
+  fun findByExternalId(externalId: Long): RadioProgramme?
 
-  fun findAllByKukuIdIn(kukuIds: Collection<Long>): List<RadioProgramme>
+  fun findAllByExternalIdIn(externalIds: Collection<Long>): List<RadioProgramme>
 }

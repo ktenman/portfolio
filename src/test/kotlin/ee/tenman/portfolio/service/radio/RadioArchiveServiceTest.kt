@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.RATE
 import ee.tenman.portfolio.exception.RecordingInProgressException
 import io.mockk.every
 import io.mockk.just

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.Station
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -39,12 +40,14 @@ data class RecordedSpan(
   val start: Long,
   val end: Long,
   val recording: Boolean,
+  val station: Station,
 )
 
 data class PlannedSpan(
   val programme: String,
   val start: Long,
   val end: Long,
+  val station: Station,
 )
 
 data class DayBlock(
@@ -63,6 +66,7 @@ data class DayAiring(
   val repeat: Boolean,
   val original: OriginalAiring?,
   val recording: AiringRecording?,
+  val station: Station,
 )
 
 data class OriginalAiring(
@@ -91,12 +95,13 @@ data class Take(
   val end: Long,
   val recording: Boolean,
   val slot: Slot?,
+  val station: Station,
 )
 
 fun RecordingSummary.take(now: Long): Take {
   val recording = status.state == RecordingState.RECORDING
   val end = (status.startedAt + status.seconds).toLong()
-  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording, status.slot)
+  return Take(name, programme, status.startedAt.toLong(), if (recording) minOf(end, now) else end, recording, status.slot, status.station)
 }
 
 fun covered(
@@ -159,9 +164,10 @@ private fun Take.drawn(
 ) = RecordedSpan(
   name,
   programme,
-  maxOf(start - LAG.seconds, slot?.start ?: from, from),
-  minOf(end - LAG.seconds, slot?.end ?: until, until),
+  maxOf(start - station.lag.seconds, slot?.start ?: from, from),
+  minOf(end - station.lag.seconds, slot?.end ?: until, until),
   recording,
+  station,
 )
 
 fun planned(
@@ -170,7 +176,7 @@ fun planned(
 ): List<PlannedSpan> =
   airings
     .filter { it.state == AiringState.PLANNED }
-    .map { PlannedSpan(it.name, it.start, minOf(it.end, until)) }
+    .map { PlannedSpan(it.name, it.start, minOf(it.end, until), it.station) }
 
 fun ticks(
   date: LocalDate,
