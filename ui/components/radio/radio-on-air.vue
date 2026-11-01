@@ -3,10 +3,10 @@
     <h3 class="text-heading" :class="aside ? 'mb-0 px-5 pt-5 pb-1.5' : 'mb-3'">On air</h3>
     <div :class="{ 'card mb-0 overflow-hidden': !aside }">
       <template v-for="{ station, onAir, next } in live" :key="station">
-        <div class="flex items-center gap-3.5 px-5 py-3.5">
+        <div class="flex items-center gap-3.5 px-5 py-3">
           <button
             type="button"
-            :class="[PLAY, 'mx-1 size-13 [&>svg]:size-5']"
+            :class="[PLAY, 'size-11 [&>svg]:size-4.5']"
             :aria-label="`${on(station) ? 'Pause' : 'Listen live'}: ${STATIONS[station]}`"
             @click="on(station) ? player.toggle() : player.listen(station)"
           >

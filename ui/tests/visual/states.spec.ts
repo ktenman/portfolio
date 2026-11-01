@@ -326,8 +326,18 @@ test('the play button of a radio schedule row stays above the link to its record
   await play.scrollIntoViewIfNeeded()
   const box = (await play.boundingBox())!
   expect(await labelAt(page, box.x + box.width / 2, box.y + box.height / 2)).toBe(
-    'Listen: Keskpäevatund 12:00'
+    'Listen: Keskpäevatund 12:00 · Kuku'
   )
+})
+
+test('the radio recordings table scrolls inside its box', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio')
+  const width = await page.evaluate(() => document.documentElement.scrollWidth)
+  expect(width).toBe(page.viewportSize()!.width)
 })
 
 test('the radio day bar leaves the room after a recording name unlinked', async ({
@@ -499,7 +509,7 @@ async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void
 async function listenLive(page: Page): Promise<void> {
   await stubPlayer(page, stubRadio)
   await openRoute(page, '/radio')
-  await page.getByRole('button', { name: 'Listen live' }).click()
+  await page.getByRole('button', { name: 'Listen live: Kuku' }).click()
   await page.locator('.nav-link[href="/"]').click()
 }
 

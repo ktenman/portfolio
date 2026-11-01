@@ -147,7 +147,7 @@ describe('RadioOnAir', () => {
 
   it("should show the live button as the player's round play button", async () => {
     expect((await mount({ ...idle, onAir: broadcast })).find('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'bg-brass', 'size-13', '[&>svg]:size-5'])
+      expect.arrayContaining(['rounded-full', 'bg-brass', 'size-11', '[&>svg]:size-4.5'])
     )
   })
 

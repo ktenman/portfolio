@@ -85,11 +85,11 @@ describe('RadioDayBar', () => {
     expect([
       day.findAll('[data-testid="radio-day-planned"]').length,
       day.findAllComponents(RouterLinkStub).length,
-    ]).toEqual([1, 0])
+    ]).toEqual([2, 0])
   })
 
   it('should count the recordings and their time', () => {
-    expect(bar().text()).toContain('1 recording · 1 h 10 min')
+    expect(bar().text()).toContain('3 recordings · 2 h 30 min')
   })
 
   it('should count the planned airings and their time on a day with nothing recorded', () => {
@@ -162,7 +162,9 @@ describe('RadioDayBar', () => {
   })
 
   it('should draw one track on a chip', () => {
-    expect(tracks(Station.ARIPAEV).map(track => track.text())).toEqual(['Äripäev'])
+    expect(
+      tracks(Station.ARIPAEV).map(track => track.get('[data-testid="radio-day-station"]').text())
+    ).toEqual(['Äripäev'])
   })
 
   it('should keep the name of a station beside its track', () => {

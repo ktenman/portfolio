@@ -336,7 +336,7 @@ describe('RadioCatchUp', () => {
   it('should count the recordings of the day under the Schedule heading on a phone', async () => {
     const summary = (await mount()).get('[data-testid="radio-schedule-summary"]')
     expect([summary.text(), summary.classes('md:hidden')]).toEqual([
-      '· 1 recording · 1 h 10 min',
+      '· 3 recordings · 2 h 30 min',
       true,
     ])
   })

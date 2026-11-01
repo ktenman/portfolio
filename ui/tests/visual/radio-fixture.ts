@@ -13,6 +13,7 @@ import {
   CutStep,
   DayOfWeek,
   ProgrammeCutState,
+  type RadioDay,
   RecorderState,
   RecordingState,
   Station,
@@ -98,6 +99,12 @@ const RECORDINGS = [
     render: { percent: 57, secondsLeft: 40 },
   }),
   recording(),
+  recording({
+    name: '2026-10-17-1000-kuum-tool',
+    programme: 'Kuum tool',
+    status: { ...capture('2026-10-17T07:00:00Z', ['Kuum tool'], 3600), station: Station.ARIPAEV },
+    format: { codec: 'mp3', bitRate: 128_000 },
+  }),
 ]
 
 const WEEKDAYS = [
@@ -108,7 +115,7 @@ const WEEKDAYS = [
   DayOfWeek.FRIDAY,
 ]
 
-const PROGRAMMES = [
+const KUKU_PROGRAMMES = [
   {
     id: 175,
     name: 'Keskpäevatund',
@@ -191,9 +198,33 @@ const PROGRAMMES = [
   },
 ]
 
+const ARIPAEV_PROGRAMMES = [
+  {
+    id: 400,
+    name: 'Kuum tool',
+    description: null,
+    recordEvery: true,
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '10:00:00', end: '11:00:00' }],
+    recordings: 1,
+  },
+  {
+    id: 401,
+    name: 'Tööandjate tund',
+    description: 'Tööturu teemad ettevõtjate ja ekspertidega',
+    recordEvery: true,
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '13:00:00', end: '14:00:00' }],
+    recordings: 0,
+  },
+]
+
+const PROGRAMMES = [
+  ...KUKU_PROGRAMMES.map(item => ({ ...item, station: Station.KUKU })),
+  ...ARIPAEV_PROGRAMMES.map(item => ({ ...item, station: Station.ARIPAEV })),
+]
+
 const SATURDAY_ONE = Date.UTC(2026, 9, 24, 10, 0, 0) / 1000
 
-const STATION = {
+const KUKU = {
   station: Station.KUKU,
   onAir: { name: 'Tarkade klubi', start: SATURDAY_ONE, end: SATURDAY_ONE + 3600, recorded: false },
   next: {
@@ -210,14 +241,61 @@ const STATION = {
     slot: { start: Date.UTC(2026, 9, 31, 10) / 1000, end: Date.UTC(2026, 9, 31, 11) / 1000 },
   },
   freeBytes: 364_000_000_000,
-  hours: 3159,
+  hours: 1579,
   recorder: RecorderState.WAITING,
   last: { programme: 'Keskpäevatund', end: Date.UTC(2026, 9, 17, 10, 5, 0) / 1000 },
   format: { codec: 'mp3', bitRate: 256_000 },
 }
 
+const ARIPAEV = {
+  station: Station.ARIPAEV,
+  onAir: { name: 'Tööandjate tund', start: SATURDAY_ONE, end: SATURDAY_ONE + 3600, recorded: true },
+  next: {
+    name: 'Lihtsalt alusta',
+    start: SATURDAY_ONE + 3600,
+    end: SATURDAY_ONE + 7200,
+    recorded: false,
+  },
+  capture: {
+    name: '2026-10-31-1000-kuum-tool',
+    programmes: ['Kuum tool'],
+    start: Date.UTC(2026, 9, 31, 7, 59, 30) / 1000,
+    end: Date.UTC(2026, 9, 31, 9, 0, 30) / 1000,
+    slot: { start: Date.UTC(2026, 9, 31, 8) / 1000, end: Date.UTC(2026, 9, 31, 9) / 1000 },
+  },
+  freeBytes: 364_000_000_000,
+  hours: 2106,
+  recorder: RecorderState.RECORDING,
+  last: { programme: 'Kuum tool', end: Date.UTC(2026, 9, 17, 8, 0, 30) / 1000 },
+  format: { codec: 'mp3', bitRate: 128_000 },
+}
+
+const seconds = (spans: { start: number; end: number }[]) =>
+  spans.reduce((sum, { start, end }) => sum + end - start, 0)
+
+const tuned = (day: RadioDay, station: string | null): RadioDay => {
+  const kept = <T extends { station: Station }>(items: T[]) =>
+    items.filter(item => !station || item.station === station)
+  const groups = (airings: RadioDay['day']) =>
+    airings
+      .map(group => ({ ...group, airings: kept(group.airings) }))
+      .filter(group => group.airings.length)
+  const recorded = kept(day.recorded)
+  const planned = kept(day.planned)
+  return {
+    ...day,
+    recorded,
+    planned,
+    seconds: seconds(recorded),
+    plannedSeconds: seconds(planned),
+    day: groups(day.day),
+    night: groups(day.night),
+  }
+}
+
 export const stubRadio: RouteStub = async page => {
   await page.route(/\/api\/radio\/[^/]+\/[^/]+\.(mp3|m4a)/, route => route.abort())
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/live`), route => route.abort())
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>
     route.fulfill({ json: { seconds: 0 } })
   )
@@ -226,10 +304,11 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: PROGRAMMES })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
-    route.fulfill({ json: [STATION] })
+    route.fulfill({ json: [KUKU, ARIPAEV] })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route => {
-    const date = new URL(route.request().url()).searchParams.get('date')
+    const { searchParams } = new URL(route.request().url())
+    const date = searchParams.get('date')
     const today = radioDay()
     const day =
       date && date !== today.date
@@ -241,13 +320,10 @@ export const stubRadio: RouteStub = async page => {
       start: day.now - 600,
       end: day.now,
       recording: true,
+      station: Station.KUKU,
     }
     route.fulfill({
-      json: {
-        ...day,
-        recorded: [...day.recorded, running],
-        seconds: day.seconds + running.end - running.start,
-      },
+      json: tuned({ ...day, recorded: [...day.recorded, running] }, searchParams.get('station')),
     })
   })
   await page.route(/\/api\/radio\/[^/]+\/cuts(\?|$)/, route => route.fulfill({ json: [] }))
@@ -272,7 +348,9 @@ export const stubRadioStill: RouteStub = async page => {
 export const stubRadioPlannedSoon: RouteStub = async page => {
   await stubRadio(page)
   const day = radioDay()
-  const planned = [{ programme: 'Sihik', start: day.now + 600, end: day.now + 4200 }]
+  const planned = [
+    { programme: 'Sihik', start: day.now + 600, end: day.now + 4200, station: Station.KUKU },
+  ]
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
     route.fulfill({ json: { ...day, planned } })
   )
@@ -282,8 +360,18 @@ export const stubRadioPlannedOnly: RouteStub = async page => {
   await stubRadio(page)
   const day = radioDay()
   const planned = [
-    { programme: 'Sihik', start: day.from + 7 * 3600, end: day.from + 8 * 3600 },
-    { programme: 'Indrek Vaheoja', start: day.from + 10 * 3600, end: day.from + 13 * 3600 },
+    {
+      programme: 'Sihik',
+      start: day.from + 7 * 3600,
+      end: day.from + 8 * 3600,
+      station: Station.KUKU,
+    },
+    {
+      programme: 'Indrek Vaheoja',
+      start: day.from + 10 * 3600,
+      end: day.from + 13 * 3600,
+      station: Station.ARIPAEV,
+    },
   ]
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route =>
     route.fulfill({

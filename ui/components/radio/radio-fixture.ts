@@ -316,6 +316,13 @@ const repeat = (
   overrides: Partial<DayAiring> = {}
 ) => hour(id, start, name, { repeat: true, original, ...overrides })
 
+const ARIPAEV = { station: Station.ARIPAEV }
+const KUUM_TOOL = {
+  name: '2026-10-17-1000-kuum-tool',
+  programme: 'Kuum tool',
+  start: at(10),
+  end: at(11),
+}
 const MISSED = AiringState.MISSED
 const ARCHIVED = { start: at(12), state: AiringState.RECORDED, recording: take(at(12), at(13)) }
 
@@ -349,10 +356,22 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
       recording: false,
       station: Station.KUKU,
     },
+    { ...KUUM_TOOL, ...ARIPAEV, recording: false },
+    {
+      ...ARIPAEV,
+      name: '2026-10-17-1300-tooandjate-tund',
+      programme: 'Tööandjate tund',
+      start: at(13),
+      end: at(13, 20),
+      recording: true,
+    },
   ],
-  seconds: 4200,
-  planned: [{ programme: 'Tarkade klubi', start: at(27), end: at(28), station: Station.KUKU }],
-  plannedSeconds: 3600,
+  seconds: 9000,
+  planned: [
+    { programme: 'Tarkade klubi', start: at(27), end: at(28), station: Station.KUKU },
+    { ...ARIPAEV, programme: 'Lihtsalt alusta', start: at(15), end: at(16) },
+  ],
+  plannedSeconds: 7200,
   day: [
     {
       missed: true,
@@ -370,13 +389,24 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
           state: AiringState.PARTIAL,
           recording: take(at(11, 55), at(12)),
         }),
+        hour(18, 10, 'Kuum tool', {
+          ...ARIPAEV,
+          state: AiringState.RECORDED,
+          recording: { ...KUUM_TOOL, from: at(10), to: at(11) },
+        }),
         hour(5, 12, 'Keskpäevatund', {
           state: AiringState.RECORDED,
           recording: take(at(12), at(13)),
         }),
         hour(6, 13, 'Tarkade klubi', { state: AiringState.ON_AIR }),
+        hour(19, 13, 'Tööandjate tund', { ...ARIPAEV, state: AiringState.RECORDING }),
         hour(7, 14, 'Ilmaparandaja'),
         hour(8, 15, 'ENNtsüklopeedia', { episode: 'Chuck Berry' }),
+        hour(20, 15, 'Lihtsalt alusta', {
+          ...ARIPAEV,
+          state: AiringState.PLANNED,
+          episode: 'Koondamishirm tõukas inseneri ettevõtlusesse',
+        }),
         hour(9, 17, 'Naistejutud Kukus', { episode: '474 · Robin Juhkental' }),
         repeat(10, 18, 'Keskpäevatund', ARCHIVED, { state: AiringState.ARCHIVED }),
         hour(11, 19, 'Ringhääling 75', { episode: 'VII saade' }),
