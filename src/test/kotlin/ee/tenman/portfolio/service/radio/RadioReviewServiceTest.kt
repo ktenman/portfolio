@@ -60,8 +60,8 @@ class RadioReviewServiceTest {
     latch: CountDownLatch,
     share: Double = 0.0,
   ) = mockk<RadioRenderService> {
-    every { render(any(), any(), any(), any(), any(), any()) } answers {
-      arg<(Double) -> Unit>(5)(share)
+    every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
+      arg<(Double) -> Unit>(6)(share)
       latch.await(10, TimeUnit.SECONDS)
     }
   }
@@ -157,10 +157,10 @@ class RadioReviewServiceTest {
     val calls = AtomicInteger()
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } answers {
+        every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
           if (calls.incrementAndGet() == 1) {
             repeat(1000) {
-              arg<(Double) -> Unit>(5)(0.1)
+              arg<(Double) -> Unit>(6)(0.1)
               Thread.sleep(10)
             }
           }
@@ -180,7 +180,7 @@ class RadioReviewServiceTest {
     recorded()
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } throws IllegalStateException("FFmpeg exited with 1")
+        every { render(any(), any(), any(), any(), any(), any(), any()) } throws IllegalStateException("FFmpeg exited with 1")
       }
     val service = service(render)
     service.review(directory, listOf(KeptSpan(10.0, 20.0)))
@@ -194,7 +194,7 @@ class RadioReviewServiceTest {
     recorded()
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } answers { Files.writeString(arg<Path>(4), "uus") }
+        every { render(any(), any(), any(), any(), any(), any(), any()) } answers { Files.writeString(arg<Path>(4), "uus") }
       }
     val service = service(render)
     service.review(directory, listOf(KeptSpan(10.0, 20.0)))
@@ -210,8 +210,8 @@ class RadioReviewServiceTest {
     lateinit var service: RadioReviewService
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } answers {
-          arg<(Double) -> Unit>(5)(0.5)
+        every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
+          arg<(Double) -> Unit>(6)(0.5)
           Files.writeString(arg<Path>(4), "uus")
           if (calls.incrementAndGet() == 1) service.review(directory, keep)
         }
@@ -230,7 +230,7 @@ class RadioReviewServiceTest {
     val latch = CountDownLatch(1)
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } answers {
+        every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
           if (calls.incrementAndGet() == 1) {
             runCatching { latch.await(10, TimeUnit.SECONDS) }
             error("Channel closed by interrupt")
@@ -251,7 +251,7 @@ class RadioReviewServiceTest {
     recorded()
     val render =
       mockk<RadioRenderService> {
-        every { render(any(), any(), any(), any(), any(), any()) } answers {
+        every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
           save(directory.resolve("edit-list.json"), edit().copy(manual = listOf(ManualCut(41.0, 45.5))))
           Files.writeString(arg<Path>(4), "uus")
         }

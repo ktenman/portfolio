@@ -18,16 +18,20 @@ class RadioDayService(
   private val radioScheduleService: RadioScheduleService,
   private val clock: Clock,
 ) {
-  fun day(date: LocalDate?): RadioDay {
+  fun day(
+    date: LocalDate?,
+    station: Station? = null,
+  ): RadioDay {
     val today = LocalDateTime.now(clock).minusSeconds(DAY_STARTS.toSecondOfDay().toLong()).toLocalDate()
     val shown = date ?: today
     val now = clock.instant().epochSecond
-    val takes = radioArchiveService.recordings().map { it.take(now) }
+    val scope = listOfNotNull(station).ifEmpty { Station.entries }
+    val takes = takes(scope, now)
     val from = start(shown)
     val until = start(shown.plusDays(1))
     val midnight = shown.plusDays(1).atStartOfDay(clock.zone).toEpochSecond()
     val airings = radioAiringRepository.findStarting(from, until)
-    val rows = rows(airings, takes, now)
+    val rows = rows(scope, airings, takes, now)
     val (day, night) = rows.partition { it.start < midnight }
     val recorded = spans(takes, from.epochSecond, until.epochSecond)
     val plan = planned(rows, until.epochSecond)
@@ -50,17 +54,33 @@ class RadioDayService(
 
   private fun start(date: LocalDate): Instant = date.atTime(DAY_STARTS).atZone(clock.zone).toInstant()
 
+  private fun takes(
+    scope: List<Station>,
+    now: Long,
+  ): List<Take> = radioArchiveService.recordings().map { it.take(now) }.filter { it.station in scope }
+
+  private fun rows(
+    scope: List<Station>,
+    airings: List<RadioAiring>,
+    takes: List<Take>,
+    now: Long,
+  ): List<DayAiring> =
+    scope
+      .flatMap { station -> rows(airings.filter { it.station == station }, takes.filter { it.station == station }, now, station) }
+      .sortedWith(compareBy(DayAiring::start, DayAiring::station))
+
   private fun rows(
     airings: List<RadioAiring>,
     takes: List<Take>,
     now: Long,
+    station: Station,
   ): List<DayAiring> {
     val names = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associate { it.id to it.name }
     val originals =
       radioAiringRepository
         .findAllByExternalIdIn(airings.mapNotNull { it.originalId })
         .associate { it.externalId to original(it, takes, now) }
-    val captures = Station.entries.flatMap { radioScheduleService.planned(airings, it) }
+    val captures = radioScheduleService.planned(airings, station)
     return airings.map { row(it, names.getValue(it.programmeId), it.originalId?.let(originals::get), captures.cover(it), takes, now) }
   }
 
@@ -86,6 +106,7 @@ class RadioDayService(
       repeat = airing.originalId != null,
       original = original,
       recording = recording,
+      station = airing.station,
     )
   }
 

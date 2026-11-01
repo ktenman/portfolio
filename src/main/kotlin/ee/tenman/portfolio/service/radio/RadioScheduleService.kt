@@ -38,14 +38,14 @@ class RadioScheduleService(
     val archived =
       radioArchiveService
       .statuses()
-      .flatMap { it.programmes }
+      .flatMap { status -> status.programmes.map { status.station to it } }
       .groupingBy { it }
       .eachCount()
     return radioProgrammeRepository
       .findAll()
       .filter { it.recordEvery || it.id in upcoming }
       .sortedWith(compareBy({ !it.recordEvery }, { upcoming[it.id]?.first()?.startsAt ?: Instant.MAX }, { it.name }))
-      .map { dto(it, upcoming[it.id].orEmpty(), archived[it.name] ?: 0) }
+      .map { dto(it, upcoming[it.id].orEmpty(), archived[it.station to it.name] ?: 0) }
   }
 
   fun choose(
@@ -205,5 +205,6 @@ class RadioScheduleService(
       recordEvery = programme.recordEvery,
       slots = slots(airings.filter { it.originalId == null }.map { it.startsAt to it.endsAt }, clock.zone),
       recordings = recordings,
+      station = programme.station,
     )
 }

@@ -9,6 +9,7 @@ import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.mockk.every
 import io.mockk.mockk
@@ -399,6 +400,27 @@ class RadioEpisodeServiceTest {
       programmes(klubi),
       RadioProperties(recordings = directory.resolve("arhiiv")),
       clock,
+    ).make(directory)
+    verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `should take the air time of a programme from the station of the recording`() {
+    shared()
+    val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
+    val namesake = RadioProgramme(1_000_231, "Tarkade klubi", "tarkade-klubi", station = Station.ARIPAEV).apply { id = 8 }
+    val other = RadioAiring(10, 8, "Tarkade klubi", Instant.ofEpochSecond(30), Instant.ofEpochSecond(50), station = Station.ARIPAEV)
+    val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
+    every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
+    RadioEpisodeService(
+      outlineService,
+      RadioCutService(),
+      RadioRenderService(),
+      progress,
+      airings(other, airing),
+      programmes(klubi, namesake),
+      RadioProperties(recordings = directory.resolve("arhiiv")),
+      Clock.systemUTC(),
     ).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
   }

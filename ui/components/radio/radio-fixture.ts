@@ -301,6 +301,7 @@ export const airing = (overrides: Partial<DayAiring> = {}): DayAiring => ({
   repeat: false,
   original: null,
   recording: null,
+  station: Station.KUKU,
   ...overrides,
 })
 
@@ -346,10 +347,11 @@ export const radioDay = (overrides: Partial<RadioDay> = {}): RadioDay => ({
       start: STARTED,
       end: STARTED + 4200,
       recording: false,
+      station: Station.KUKU,
     },
   ],
   seconds: 4200,
-  planned: [{ programme: 'Tarkade klubi', start: at(27), end: at(28) }],
+  planned: [{ programme: 'Tarkade klubi', start: at(27), end: at(28), station: Station.KUKU }],
   plannedSeconds: 3600,
   day: [
     {
@@ -418,6 +420,7 @@ export const radioSearch = (overrides: Partial<RadioSearch> = {}): RadioSearch =
       start: 2700,
       title: said('Kes ', 'valimistel', ' võidab?'),
       summary: said('Saatejuhid arutavad ', 'valimiste', ' järel.'),
+      station: Station.KUKU,
     },
   ],
   moreTopics: 0,
@@ -431,6 +434,7 @@ export const radioSearch = (overrides: Partial<RadioSearch> = {}): RadioSearch =
         { start: 2300, kept: true, text: said('Kevadel tulevad ', 'valimised', '.') },
       ],
       more: 0,
+      station: Station.KUKU,
     },
   ],
   lines: 2,

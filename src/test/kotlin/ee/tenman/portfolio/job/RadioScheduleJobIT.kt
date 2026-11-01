@@ -183,6 +183,16 @@ class RadioScheduleJobIT {
   }
 
   @Test
+  fun `should count the recordings of shows of one name on two stations apart`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    val namesake = ScheduledShow(ARIPAEV_SHOW, "Keskpäevatund", "keskpaevatund", null)
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "13:00", "14:00").copy(show = namesake))
+    recording("2026-11-08-1200-keskpaevatund", at("10:00"), 600)
+    expect(radioScheduleService.programmes().associate { it.station to it.recordings })
+      .toEqual(mapOf(Station.KUKU to 1, Station.ARIPAEV to 0))
+  }
+
+  @Test
   fun `should keep the every time choice when the schedule is imported again`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))

@@ -25,6 +25,7 @@ data class RadioProgrammeDto(
   val recordEvery: Boolean,
   val slots: List<AirSlot>,
   val recordings: Int,
+  val station: Station,
 )
 
 data class AirSlot(

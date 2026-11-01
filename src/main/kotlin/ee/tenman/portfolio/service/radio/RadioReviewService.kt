@@ -141,15 +141,22 @@ class RadioReviewService(
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
     val spans = keep.map { it.start to it.end }
-    val topics = edit.topics.map { OutlineChapter(it.start, it.title) }
-    val marks = chapters(audible(timeline.spans, spans), topics, names(status, edit.found()))
+    val kept = audible(timeline.spans, spans)
+    val marks = marks(kept, edit, status)
     val temporary = directory.resolve(REVIEWED)
-    runCatching { radioRenderService.render(timeline, spans, marks, title(status, edit.found(), clock.zone), temporary, progress) }
+    val heading = title(status, edit.found(), clock.zone)
+    runCatching { radioRenderService.render(timeline, spans, marks, heading, temporary, status.station, progress) }
       .onFailure { Files.deleteIfExists(temporary) }
       .getOrThrow()
     Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    return reviewed(edit, keep, audible(timeline.spans, spans), marks)
+    return reviewed(edit, keep, kept, marks)
   }
+
+  private fun marks(
+    kept: List<Pair<Double, Double>>,
+    edit: EditList,
+    status: RecordingStatus,
+  ): List<Pair<Double, String>> = chapters(kept, edit.topics.map { OutlineChapter(it.start, it.title) }, names(status, edit.found()))
 
   private fun reviewed(
     edit: EditList,
