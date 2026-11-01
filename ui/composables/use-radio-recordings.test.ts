@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
+import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
+import { renderWithProviders } from '../tests/test-utils'
 import { useRadioDay, useRadioSearch } from './use-radio-recordings'
 
 vi.mock('../services/api', () => ({
@@ -19,11 +19,9 @@ vi.mock('./use-auth-state', async () => {
 enableAutoUnmount(afterEach)
 
 const keys = async (use: () => unknown) => {
-  const client = new QueryClient()
-  const page = { setup: () => (use(), () => null) }
-  mount(page, { global: { plugins: [[VueQueryPlugin, { queryClient: client }]] } })
+  const { queryClient } = renderWithProviders({ setup: () => (use(), () => null) })
   await flushPromises()
-  return client
+  return queryClient
     .getQueryCache()
     .getAll()
     .map(query => query.queryKey)

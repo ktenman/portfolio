@@ -21,11 +21,7 @@ class RadioSearchServiceTest {
   private fun recording(
     name: String,
     vararg said: Pair<Double, String>,
-  ): Path {
-    val directory = Files.createDirectories(recordings.resolve(name))
-    save(directory.resolve(STATUS_FILE), RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0))
-    return transcribed(directory, *said)
-  }
+  ): Path = aired(name, Station.KUKU, *said)
 
   private fun aired(
     name: String,
@@ -54,7 +50,7 @@ class RadioSearchServiceTest {
   private fun later(path: Path) = Files.setLastModifiedTime(path, FileTime.fromMillis(Files.getLastModifiedTime(path).toMillis() + 10_000))
 
   private fun said(query: String): List<String> =
-    service.search(query, null).groups.flatMap { group ->
+    service.search(query, null, null).groups.flatMap { group ->
       group.lines.map { line -> "${group.name} ${line.text.joinToString("") { it.text }}" }
     }
 
@@ -75,7 +71,7 @@ class RadioSearchServiceTest {
   fun `should find the lines of every station when none is asked for`() {
     recording("2026-10-17-1200-keskpaevatund", 12.0 to "Valimised tulevad")
     aired("aripaev-2026-10-17-1400-kuum-tool", Station.ARIPAEV, 12.0 to "Valimised lähenevad")
-    expect(service.search("valimised", null).recordings).toEqual(2)
+    expect(service.search("valimised", null, null).recordings).toEqual(2)
   }
 
   @Test
@@ -88,7 +84,7 @@ class RadioSearchServiceTest {
 
   private fun kept(query: String): Boolean =
     service
-      .search(query, null)
+      .search(query, null, null)
       .groups
       .single()
       .lines

@@ -20,7 +20,7 @@ class RadioSearchService(
   fun search(
     query: String,
     after: String?,
-    station: Station? = null,
+    station: Station?,
   ): RadioSearch = search(recordings().filter { station == null || it.station == station }, query, after)
 
   @EventListener(ApplicationReadyEvent::class)
