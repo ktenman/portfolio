@@ -25,7 +25,7 @@
         v-for="chip in CHIPS"
         :key="chip ?? 'all'"
         type="button"
-        class="platform-btn relative max-md:before:absolute max-md:before:inset-x-0 max-md:before:top-1/2 max-md:before:h-11 max-md:before:-translate-y-1/2 max-md:before:content-['']"
+        class="platform-btn relative max-md:before:absolute max-md:before:inset-x-0 max-md:before:top-1/2 max-md:before:h-11 max-md:before:-translate-y-1/2"
         :class="{ active: station === chip }"
         :aria-pressed="station === chip"
         @click="station = chip"

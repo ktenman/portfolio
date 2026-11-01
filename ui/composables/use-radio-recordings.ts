@@ -49,7 +49,7 @@ export const useStationFilter = () => {
 
 export const useRadioDay = (
   date: MaybeRefOrGetter<string | null>,
-  station: MaybeRefOrGetter<Station | null> = null
+  station: MaybeRefOrGetter<Station | null>
 ) => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
@@ -62,7 +62,7 @@ export const useRadioDay = (
 
 export const useRadioSearch = (
   query: MaybeRefOrGetter<string>,
-  station: MaybeRefOrGetter<Station | null> = null
+  station: MaybeRefOrGetter<Station | null>
 ) => {
   const { isAuthenticated } = useAuthState()
   const queryClient = useQueryClient()
