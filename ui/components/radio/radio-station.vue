@@ -1,5 +1,6 @@
 <template>
   <aside class="flex flex-col gap-4" :aria-label="`${title} and broadcast`">
+    <radio-on-air aside class="max-lg:hidden" />
     <radio-card :title="title">
       <template v-if="chosen && stations[0]" #aside>
         <radio-badge :tone="RECORDER_STATES[stations[0].recorder].tone">
@@ -25,7 +26,6 @@
       </ul>
       <radio-facts :rows="facts" />
     </radio-card>
-    <radio-on-air aside class="max-lg:hidden" />
   </aside>
 </template>
 

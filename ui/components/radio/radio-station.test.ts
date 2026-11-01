@@ -123,6 +123,16 @@ describe('RadioStation', () => {
     )
   })
 
+  it.each([
+    ['All', () => all({ ...idle, onAir: broadcast })],
+    ['a chip', () => mount({ ...idle, onAir: broadcast })],
+  ])('should put On air above the recorder on %s', async (_, open) => {
+    expect((await open()).findAll('h3').map(heading => heading.text())).toEqual([
+      'On air',
+      expect.stringMatching(/^Recorders?$/),
+    ])
+  })
+
   it('should show the rows only on All', async () => {
     const wrapper = await chosen('aripaev', idle, aripaev)
     expect(wrapper.find('[data-testid="radio-recorder"]').exists()).toBe(false)

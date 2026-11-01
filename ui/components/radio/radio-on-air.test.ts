@@ -103,10 +103,9 @@ describe('RadioOnAir', () => {
     expect(line.attributes('style')).toContain('width: 100%')
   })
 
-  it('should say in how many minutes the next programme starts', async () => {
-    expect((await mount({ ...idle, onAir: broadcast, next })).text()).toContain(
-      'Ilmaparandaja in 23 min'
-    )
+  it('should give the next programme one line with its start and name', async () => {
+    const line = (await mount({ ...idle, onAir: broadcast, next })).find('p')
+    expect(line.text()).toBe('Next 13:00 · Ilmaparandaja')
   })
 
   it('should show no next row without a next programme', async () => {
@@ -214,7 +213,10 @@ describe('RadioOnAir', () => {
     ])
     const wrapper = renderWithProviders({ render: () => h(RadioOnAir) })
     await flushPromises()
-    expect(wrapper.text()).toMatch(/Ilmaparandaja.*Tööandjate tund/s)
+    expect(wrapper.findAll('p').map(line => line.text())).toEqual([
+      'Next 13:00 · Ilmaparandaja',
+      'Next 13:00 · Tööandjate tund',
+    ])
   })
 
   it('should lead the hours of a show with its station', async () => {

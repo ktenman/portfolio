@@ -53,8 +53,15 @@ describe('RadioMiniPlayer', () => {
 
   afterEach(() => player.close())
 
-  const open = async (path = '/', onAir: typeof BROADCAST | null = null) => {
-    vi.mocked(radioService.stations).mockResolvedValue([{ ...SILENT, onAir }])
+  const open = async (
+    path = '/',
+    onAir: typeof BROADCAST | null = null,
+    aripaev: typeof BROADCAST | null = null
+  ) => {
+    vi.mocked(radioService.stations).mockResolvedValue([
+      { ...SILENT, onAir },
+      { ...SILENT, station: Station.ARIPAEV, onAir: aripaev },
+    ])
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -249,22 +256,34 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open()).text()).toContain('ÄripäevLive')
   })
 
-  it('should stay off the recordings page while only the other station is on air', async () => {
-    listen()
-    vi.mocked(radioService.stations).mockResolvedValue([
-      { ...SILENT, onAir: null },
-      { ...SILENT, station: Station.ARIPAEV, onAir: BROADCAST },
-    ])
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/radio', name: 'Radio', component: PAGE }],
-    })
-    await router.push('/radio')
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const wrapper = mount(RadioMiniPlayer, {
-      global: { plugins: [router, [VueQueryPlugin, { queryClient }]] },
-    })
-    await flushPromises()
-    expect(card(wrapper).exists()).toBe(false)
+  const tune = (station: Station) => {
+    player.listen(station)
+    audio.dispatchEvent(new Event('play'))
+  }
+
+  it.each(['/radio', '/radio?station=aripaev'])(
+    "should stay away from the tuned station's row at %s",
+    async path => {
+      tune(Station.ARIPAEV)
+      expect(card(await open(path, BROADCAST, BROADCAST)).exists()).toBe(false)
+    }
+  )
+
+  it('should show the tuned station while the chip hides its row', async () => {
+    tune(Station.ARIPAEV)
+    expect(card(await open('/radio?station=kuku', BROADCAST, BROADCAST)).exists()).toBe(true)
+  })
+
+  it('should show the tuned station when it goes off air while the other stays on', async () => {
+    tune(Station.KUKU)
+    expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(true)
+  })
+
+  it('should stay away from the On air card with nothing tuned', async () => {
+    expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(false)
+  })
+
+  it('should show with nothing tuned while nothing is on air', async () => {
+    expect(card(await open('/radio')).exists()).toBe(true)
   })
 })

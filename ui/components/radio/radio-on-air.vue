@@ -29,22 +29,9 @@
             :style="{ width: `${progress(onAir)}%` }"
           />
         </div>
-        <div v-if="next" class="flex items-center gap-3.5 px-5 py-3.5">
-          <span
-            class="grid h-13 w-15 shrink-0 content-center justify-items-center gap-1 rounded-container bg-surface-sunken"
-          >
-            <span class="text-label leading-none font-medium text-ink-soft">Next</span>
-            <span class="text-lg leading-none font-semibold tabular-nums">
-              {{ clock(next.start, 0) }}
-            </span>
-          </span>
-          <span class="grid min-w-0 grow gap-0.5">
-            <span class="font-semibold">{{ next.name }}</span>
-            <span class="text-sm text-ink-soft tabular-nums">
-              in {{ minutes(next.start - seconds) }}
-            </span>
-          </span>
-        </div>
+        <p v-if="next" class="mb-0 px-5 pt-2 pb-3 text-sm text-ink-soft tabular-nums">
+          Next {{ clock(next.start, 0) }} · {{ next.name }}
+        </p>
       </template>
     </div>
   </section>
@@ -56,7 +43,7 @@ import { useIntervalFn, useNow } from '@vueuse/core'
 import type { Station, StationAiring } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRailStations } from '../../composables/use-radio-recordings'
-import { clock, minutes, PLAY, range, STATIONS } from '../../utils/radio'
+import { clock, PLAY, range, STATIONS } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 
 defineProps<{ aside?: boolean }>()

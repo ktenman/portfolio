@@ -74,8 +74,9 @@ import {
 } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { useRadioStations } from '../../composables/use-radio-recordings'
+import { useRadioStations, useStationFilter } from '../../composables/use-radio-recordings'
 import { STORAGE_KEYS } from '../../constants/storage-keys'
+import type { RadioStation } from '../../models/generated/domain-models'
 import { episodeParts, fullDay, position, rawParts, STATIONS } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
@@ -90,6 +91,7 @@ const route = useRoute()
 const player = useRadioPlayer()
 const { recording } = player
 const { data: stations } = useRadioStations()
+const chip = useStationFilter()
 const decisions = useRadioDecisions(() => recording.value!)
 
 const card = useTemplateRef('card')
@@ -116,13 +118,16 @@ const place = computed(() => {
 
 const lifted = computed(() => route.name === 'Calculator')
 
+const rowed = ({ station, onAir }: RadioStation) => {
+  const tuned = player.tuned.value
+  if (!onAir) return false
+  return !tuned || (station === tuned && (!chip.value || chip.value === tuned))
+}
+
 const shown = computed(() => {
   if (recording.value) return route.params.name !== recording.value.name
-  const onAir =
-    ON_AIR_PAGES.includes(String(route.name)) &&
-    !route.query.q &&
-    stations.value?.some(station => station.onAir)
-  return !onAir
+  const onPage = ON_AIR_PAGES.includes(String(route.name)) && !route.query.q
+  return !onPage || !stations.value?.some(rowed)
 })
 
 const parts = computed(() => {
