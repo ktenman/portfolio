@@ -9,7 +9,7 @@ import {
   transactionsService,
   utilityService,
 } from './api'
-import { BenchmarkIndex, Platform, TimeRange } from '../models/generated/domain-models'
+import { BenchmarkIndex, Platform, Station, TimeRange } from '../models/generated/domain-models'
 import type { AllocationDto } from '../models/generated/domain-models'
 import type { CachedState } from '../components/diversification/types'
 
@@ -216,11 +216,19 @@ describe('api services', () => {
     ],
     [
       'radio.search',
-      () => radioService.search('valimised', '2026-10-17'),
+      () => radioService.search('valimised', '2026-10-17', Station.ARIPAEV),
       'get',
       '/radio/search',
-      { params: { q: 'valimised', after: '2026-10-17' } },
+      { params: { q: 'valimised', after: '2026-10-17', station: Station.ARIPAEV } },
     ],
+    [
+      'radio.day',
+      () => radioService.day('2026-10-17', Station.ARIPAEV),
+      'get',
+      '/radio/schedule',
+      { params: { date: '2026-10-17', station: Station.ARIPAEV } },
+    ],
+    ['radio.stations', () => radioService.stations(), 'get', '/radio/station', undefined],
   ])('%s calls the right endpoint', async (_name, call, method, url, payload) => {
     await call()
 

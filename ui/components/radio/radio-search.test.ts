@@ -55,7 +55,7 @@ const open = async (client = new QueryClient()) => {
 
 const staleClient = async () => {
   const client = new QueryClient()
-  client.setQueryData(['radio', 'search', 'valimis'], {
+  client.setQueryData(['radio', 'search', 'valimis', null], {
     pages: [radioSearch({ next: '2026-10-17' })],
     pageParams: [null],
   })
@@ -215,8 +215,8 @@ describe('RadioSearch', () => {
     refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
     ])
   })
 
@@ -236,7 +236,7 @@ describe('RadioSearch', () => {
     observe(true)
     vi.mocked(radioService.search).mockRejectedValue(new Error('Search failed'))
     await open(await staleClient())
-    expect(vi.mocked(radioService.search).mock.calls).toEqual([['valimis', null]])
+    expect(vi.mocked(radioService.search).mock.calls).toEqual([['valimis', null, null]])
   })
 
   it('should refresh every page of a search with its own words when the words change meanwhile', async () => {
@@ -254,11 +254,11 @@ describe('RadioSearch', () => {
     refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
-      ['valimis', null],
-      ['eelarve', null],
-      ['valimis', '2026-10-17'],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
+      ['valimis', null, null],
+      ['eelarve', null, null],
+      ['valimis', '2026-10-17', null],
     ])
   })
 
@@ -292,9 +292,9 @@ describe('RadioSearch', () => {
     await new Promise(resolve => setTimeout(resolve, 20))
     await open(client)
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
-      ['valimis', null],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
+      ['valimis', null, null],
     ])
   })
 

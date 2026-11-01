@@ -103,7 +103,7 @@ describe('RadioCatchUp', () => {
     )
     await mount()
     vi.unstubAllGlobals()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19', null)
   })
 
   it('should leave the day buttons to screens wider than a phone', async () => {
@@ -136,7 +136,7 @@ describe('RadioCatchUp', () => {
       .find(b => b.attributes('aria-label') === 'Fri 16.10')!
       .trigger('click')
     await flushPromises()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16', null)
   })
 
   it('should keep the chosen day in the address', async () => {
@@ -154,7 +154,7 @@ describe('RadioCatchUp', () => {
     const wrapper = await mount()
     await wrapper.vm.$router.replace({ query: { day: '2026-10-14' } })
     await flushPromises()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14', null)
   })
 
   it('should say when the recording of an airing was made', async () => {

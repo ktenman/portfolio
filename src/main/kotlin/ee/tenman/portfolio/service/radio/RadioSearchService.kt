@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.Station
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -19,7 +20,8 @@ class RadioSearchService(
   fun search(
     query: String,
     after: String?,
-  ): RadioSearch = search(recordings(), query, after)
+    station: Station? = null,
+  ): RadioSearch = search(recordings().filter { station == null || it.station == station }, query, after)
 
   @EventListener(ApplicationReadyEvent::class)
   fun warm() {

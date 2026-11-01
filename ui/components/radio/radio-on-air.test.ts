@@ -5,10 +5,10 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioOnAir from './radio-on-air.vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { RecorderState } from '../../models/generated/domain-models'
+import { RecorderState, Station } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
-  radioService: { station: vi.fn(), liveUrl: '/api/radio/live' },
+  radioService: { stations: vi.fn(), liveUrl: '/api/radio/live' },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
@@ -20,6 +20,7 @@ enableAutoUnmount(afterEach)
 const SATURDAY_NOON = Date.UTC(2026, 9, 24, 9, 0, 0) / 1000
 
 const idle = {
+  station: Station.KUKU,
   onAir: null,
   next: null,
   capture: null,
@@ -45,10 +46,10 @@ const next = {
 }
 
 const mount = async (
-  station: Awaited<ReturnType<typeof radioService.station>>,
+  station: Awaited<ReturnType<typeof radioService.stations>>[number],
   props: { aside?: boolean } = {}
 ) => {
-  vi.mocked(radioService.station).mockResolvedValue(station)
+  vi.mocked(radioService.stations).mockResolvedValue([station])
   const wrapper = renderWithProviders({ render: () => h(RadioOnAir, props) })
   await flushPromises()
   return wrapper

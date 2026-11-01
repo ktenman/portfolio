@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.controller
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.service.radio.EditList
@@ -15,6 +17,7 @@ import ee.tenman.portfolio.service.radio.TranscriptSegment
 import ee.tenman.portfolio.service.radio.ffmpeg
 import ee.tenman.portfolio.service.radio.taped
 import jakarta.annotation.Resource
+import org.hamcrest.Matchers.contains
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_DISPOSITION
@@ -65,8 +68,53 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should pass on the live station asked for`() {
+    Files.deleteIfExists(Path.of(radioProperties.live))
+    val stream = Path.of(radioProperties.aripaevLive)
+    Files.createDirectories(stream.parent)
+    ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "libmp3lame", stream.toString())
+    val heard =
+      mockMvc
+        .perform(mvcGet("/api/radio/live").param("station", "ARIPAEV"))
+        .andReturn()
+        .response.contentAsByteArray
+    expect(heard.size).toBeGreaterThan(0)
+  }
+
+  @Test
+  fun `should refuse a live station that does not exist`() {
+    mockMvc.perform(mvcGet("/api/radio/live").param("station", "vikerraadio")).andExpect(status().isBadRequest)
+  }
+
+  @Test
   fun `should name the last recording and when it ended`() {
-    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(status().isOk).andExpect(jsonPath("$.last.end").value(1792235100))
+    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(status().isOk).andExpect(jsonPath("$[0].last.end").value(1792235100))
+  }
+
+  @Test
+  fun `should list one entry per station`() {
+    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(jsonPath("$[*].station", contains("KUKU", "ARIPAEV")))
+  }
+
+  @Test
+  fun `should leave Kuku out of the day of Äripäev`() {
+    mockMvc
+      .perform(mvcGet("/api/radio/schedule").param("date", "2026-10-17").param("station", "ARIPAEV"))
+      .andExpect(jsonPath("$.recorded").isEmpty)
+  }
+
+  @Test
+  fun `should show every station on a day when none is asked for`() {
+    mockMvc.perform(mvcGet("/api/radio/schedule").param("date", "2026-10-17")).andExpect(jsonPath("$.recorded[0]").exists())
+  }
+
+  @Test
+  fun `should leave Kuku out of a search of Äripäev`() {
+    val transcript = Transcript(listOf(TranscriptSegment(1.0, 2.5, "Tere, Keskpäevatund!")), emptyList())
+    Files.writeString(directory.resolve("transcript.json"), JsonMapperFactory.instance.writeValueAsString(transcript))
+    mockMvc
+      .perform(mvcGet("/api/radio/search").param("q", "tere").param("station", "ARIPAEV"))
+      .andExpect(jsonPath("$.groups").isEmpty)
   }
 
   @Test

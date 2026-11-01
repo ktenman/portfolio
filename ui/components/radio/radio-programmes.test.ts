@@ -10,7 +10,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     programmes: vi.fn(),
     choose: vi.fn(),
-    station: vi.fn(),
+    stations: vi.fn(),
   },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -29,7 +29,7 @@ const mount = async () => {
 describe('RadioProgrammes', () => {
   beforeEach(() => {
     vi.mocked(radioService.choose).mockReset()
-    vi.mocked(radioService.station).mockReset().mockResolvedValue(station())
+    vi.mocked(radioService.stations).mockReset().mockResolvedValue([station()])
     vi.mocked(radioService.programmes).mockResolvedValue([
       {
         id: 175,
@@ -80,9 +80,9 @@ describe('RadioProgrammes', () => {
       end: noon + 3630,
       slot: { start: noon, end: noon + 3600 },
     }
-    vi.mocked(radioService.station)
-      .mockResolvedValueOnce(station())
-      .mockResolvedValue(station({ capture }))
+    vi.mocked(radioService.stations)
+      .mockResolvedValueOnce([station()])
+      .mockResolvedValue([station({ capture })])
     vi.mocked(radioService.choose).mockResolvedValue()
     const wrapper = await mount()
     await wrapper.find('input[aria-label="Record every time: Keskpäevatund"]').setValue(true)

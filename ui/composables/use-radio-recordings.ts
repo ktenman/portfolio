@@ -1,7 +1,7 @@
 import { computed, type MaybeRefOrGetter, ref, toValue, watch, type WatchSource } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/vue-query'
-import type { RecordingSummary } from '../models/generated/domain-models'
+import { type RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { poll } from '../utils/radio'
 import { useAuthState } from './use-auth-state'
@@ -29,29 +29,37 @@ export const useRadioStation = () => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
     queryKey: ['radio-station'],
-    queryFn: radioService.station,
+    queryFn: radioService.stations,
+    select: stations => stations.find(({ station }) => station === Station.KUKU),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
   })
 }
 
-export const useRadioDay = (date: MaybeRefOrGetter<string | null>) => {
+export const useRadioDay = (
+  date: MaybeRefOrGetter<string | null>,
+  station: MaybeRefOrGetter<Station | null> = null
+) => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
-    queryKey: computed(() => ['radio-day', toValue(date)]),
-    queryFn: () => radioService.day(toValue(date)),
+    queryKey: computed(() => ['radio-day', toValue(date), toValue(station)]),
+    queryFn: () => radioService.day(toValue(date), toValue(station)),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
   })
 }
 
-export const useRadioSearch = (query: MaybeRefOrGetter<string>) => {
+export const useRadioSearch = (
+  query: MaybeRefOrGetter<string>,
+  station: MaybeRefOrGetter<Station | null> = null
+) => {
   const { isAuthenticated } = useAuthState()
   const queryClient = useQueryClient()
-  const queryKey = computed(() => ['radio', 'search', toValue(query)] as const)
+  const queryKey = computed(() => ['radio', 'search', toValue(query), toValue(station)] as const)
   const result = useInfiniteQuery({
     queryKey,
-    queryFn: ({ queryKey: [, , q], pageParam }) => radioService.search(q, pageParam),
+    queryFn: ({ queryKey: [, , q, chosen], pageParam }) =>
+      radioService.search(q, pageParam, chosen),
     initialPageParam: null as string | null,
     getNextPageParam: last => last.next,
     enabled: isAuthenticated,

@@ -4,7 +4,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import type { RecordingSummary } from '../../models/generated/domain-models'
-import { RecorderState } from '../../models/generated/domain-models'
+import { RecorderState, Station } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { recording } from './radio-fixture'
 import RadioMiniPlayer from './radio-mini-player.vue'
@@ -15,7 +15,7 @@ vi.mock('../../services/api', () => ({
     liveUrl: '/api/radio/live',
     position: vi.fn(),
     savePosition: vi.fn(),
-    station: vi.fn(),
+    stations: vi.fn(),
   },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -28,6 +28,7 @@ enableAutoUnmount(afterEach)
 const PAGE = { template: '<p />' }
 const BROADCAST = { name: 'Tarkade klubi', start: 0, end: 3600, recorded: false }
 const SILENT = {
+  station: Station.KUKU,
   next: null,
   capture: null,
   freeBytes: null,
@@ -53,7 +54,7 @@ describe('RadioMiniPlayer', () => {
   afterEach(() => player.close())
 
   const open = async (path = '/', onAir: typeof BROADCAST | null = null) => {
-    vi.mocked(radioService.station).mockResolvedValue({ ...SILENT, onAir })
+    vi.mocked(radioService.stations).mockResolvedValue([{ ...SILENT, onAir }])
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [

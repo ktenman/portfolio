@@ -456,6 +456,7 @@ export const nothingFound = (close: string[] = []): RadioSearch =>
   })
 
 export const station = (overrides: Partial<RadioStation> = {}): RadioStation => ({
+  station: Station.KUKU,
   onAir: null,
   next: null,
   capture: null,

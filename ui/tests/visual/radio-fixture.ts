@@ -194,6 +194,7 @@ const PROGRAMMES = [
 const SATURDAY_ONE = Date.UTC(2026, 9, 24, 10, 0, 0) / 1000
 
 const STATION = {
+  station: Station.KUKU,
   onAir: { name: 'Tarkade klubi', start: SATURDAY_ONE, end: SATURDAY_ONE + 3600, recorded: false },
   next: {
     name: 'Ilmaparandaja',
@@ -225,7 +226,7 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: PROGRAMMES })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
-    route.fulfill({ json: STATION })
+    route.fulfill({ json: [STATION] })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/schedule`), route => {
     const date = new URL(route.request().url()).searchParams.get('date')

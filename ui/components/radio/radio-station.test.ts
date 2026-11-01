@@ -3,10 +3,10 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioStation from './radio-station.vue'
-import { RecorderState } from '../../models/generated/domain-models'
+import { RecorderState, Station } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
-  radioService: { station: vi.fn(), liveUrl: '/api/radio/live' },
+  radioService: { stations: vi.fn(), liveUrl: '/api/radio/live' },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
@@ -17,14 +17,15 @@ enableAutoUnmount(afterEach)
 
 const SATURDAY_NOON = Date.UTC(2026, 9, 24, 9, 0, 0) / 1000
 
-const mount = async (station: Awaited<ReturnType<typeof radioService.station>>) => {
-  vi.mocked(radioService.station).mockResolvedValue(station)
+const mount = async (...stations: Awaited<ReturnType<typeof radioService.stations>>) => {
+  vi.mocked(radioService.stations).mockResolvedValue(stations)
   const wrapper = renderWithProviders(RadioStation)
   await flushPromises()
   return wrapper
 }
 
 const idle = {
+  station: Station.KUKU,
   onAir: null,
   next: null,
   capture: null,
@@ -43,6 +44,11 @@ const broadcast = {
 }
 
 describe('RadioStation', () => {
+  it('should show Kuku from the list of stations', async () => {
+    const aripaev = { ...idle, station: Station.ARIPAEV, hours: 2106 }
+    expect((await mount(aripaev, idle)).text()).toContain('≈ 3,159 h')
+  })
+
   it('should say no programme is chosen when nothing is planned', async () => {
     expect((await mount(idle)).text()).toContain('None selected')
   })

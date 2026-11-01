@@ -19,7 +19,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
     deleteRecording: vi.fn(),
-    station: vi.fn().mockResolvedValue(null),
+    stations: vi.fn().mockResolvedValue([]),
   },
 }))
 vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm }) }))
@@ -48,7 +48,7 @@ describe('RadioRecordings', () => {
     confirm.mockReset().mockResolvedValue(true)
     vi.mocked(radioService.deleteRecording).mockReset().mockResolvedValue()
     toasts.value = []
-    vi.mocked(radioService.station).mockClear()
+    vi.mocked(radioService.stations).mockClear()
     vi.mocked(radioService.recordings).mockResolvedValue([
       recording(),
       recording({
@@ -224,7 +224,7 @@ describe('RadioRecordings', () => {
 
   it('should count the last recording again after a delete', async () => {
     await remove()
-    expect(radioService.station).toHaveBeenCalledTimes(2)
+    expect(radioService.stations).toHaveBeenCalledTimes(2)
   })
 
   it.each([
