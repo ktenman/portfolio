@@ -4,7 +4,7 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioCatchUp from './radio-catch-up.vue'
 import { airing, radioDay, recording } from './radio-fixture'
-import { AiringState } from '../../models/generated/domain-models'
+import { AiringState, Station } from '../../models/generated/domain-models'
 
 const player = vi.hoisted(() => ({
   load: vi.fn(),
@@ -155,6 +155,46 @@ describe('RadioCatchUp', () => {
     await wrapper.vm.$router.replace({ query: { day: '2026-10-14' } })
     await flushPromises()
     expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14', null)
+  })
+
+  it('should keep the station in the address when another day is chosen', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find(b => b.attributes('aria-label') === 'Wed 14.10')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.vm.$router.currentRoute.value.query).toEqual({
+        station: 'aripaev',
+        day: '2026-10-14',
+      })
+    )
+  })
+
+  it('should ask for the day of the station in the address', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(radioService.day).toHaveBeenLastCalledWith(null, Station.ARIPAEV)
+  })
+
+  it("should ask for tomorrow's schedule of the station on a phone", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    vi.mocked(radioService.day).mockResolvedValue(
+      radioDay({ date: '2026-10-18', today: '2026-10-18' })
+    )
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    vi.unstubAllGlobals()
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19', Station.ARIPAEV)
   })
 
   it('should say when the recording of an airing was made', async () => {

@@ -1,6 +1,7 @@
 import { computed, type MaybeRefOrGetter, ref, toValue, watch, type WatchSource } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { useRoute, useRouter } from 'vue-router'
 import { type RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { poll } from '../utils/radio'
@@ -33,6 +34,16 @@ export const useRadioStation = () => {
     select: stations => stations.find(({ station }) => station === Station.KUKU),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
+  })
+}
+
+export const useStationFilter = () => {
+  const route = useRoute()
+  const router = useRouter()
+  return computed({
+    get: () => Object.values(Station).find(s => s.toLowerCase() === route.query.station) ?? null,
+    set: (station: Station | null) =>
+      router.replace({ query: { ...route.query, station: station?.toLowerCase() } }),
   })
 }
 

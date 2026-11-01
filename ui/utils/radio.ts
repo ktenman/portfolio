@@ -14,6 +14,7 @@ import {
   RecorderState,
   type RecordingSummary,
   RecordingState,
+  Station,
   type TimelineEntry,
   type TranscriptSection,
   TranscriptState,
@@ -31,6 +32,11 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.MANUAL]: 'manual',
   [BoundaryMethod.SOUND]: 'sound analysis',
   [BoundaryMethod.REPEATED_AUDIO]: 'repeated audio',
+}
+
+export const STATIONS: Record<Station, string> = {
+  [Station.KUKU]: 'Kuku',
+  [Station.ARIPAEV]: 'Äripäev',
 }
 
 const DAYS = Object.values(DayOfWeek)

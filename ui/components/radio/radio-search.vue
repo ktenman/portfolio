@@ -113,7 +113,7 @@ import { computed, type FunctionalComponent, h, useTemplateRef } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import type { TextPart } from '../../models/generated/domain-models'
-import { useRadioSearch } from '../../composables/use-radio-recordings'
+import { useRadioSearch, useStationFilter } from '../../composables/use-radio-recordings'
 import { clock, day } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
@@ -131,6 +131,7 @@ const RadioMarked: FunctionalComponent<{ parts: TextPart[] }> = ({ parts }) =>
   )
 
 const route = useRoute()
+const station = useStationFilter()
 const {
   data,
   isError,
@@ -143,7 +144,7 @@ const {
   isFetchNextPageError,
   isFetchingNextPage,
   loadMore,
-} = useRadioSearch(() => props.query)
+} = useRadioSearch(() => props.query, station)
 
 useIntersectionObserver(
   useTemplateRef<HTMLElement>('more'),

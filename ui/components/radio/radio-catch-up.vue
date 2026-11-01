@@ -41,7 +41,7 @@
 import { computed } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
-import { useRadioDay } from '../../composables/use-radio-recordings'
+import { useRadioDay, useStationFilter } from '../../composables/use-radio-recordings'
 import { dateDay } from '../../utils/radio'
 import RadioDayBar from './radio-day-bar.vue'
 import RadioSchedule from './radio-schedule.vue'
@@ -53,9 +53,10 @@ const route = useRoute()
 const router = useRouter()
 const date = computed({
   get: () => (typeof route.query.day === 'string' ? route.query.day : null),
-  set: (day: string) => router.replace({ query: { day } }),
+  set: (day: string) => router.replace({ query: { ...route.query, day } }),
 })
-const { data: radioDay, isLoading, isError } = useRadioDay(date)
+const station = useStationFilter()
+const { data: radioDay, isLoading, isError } = useRadioDay(date, station)
 const phone = useMediaQuery('(max-width: 767px)')
 
 const selected = computed(() => date.value ?? radioDay.value?.date)
@@ -68,5 +69,5 @@ const tomorrow = computed(() =>
     : null
 )
 
-const { data: next } = useRadioDay(() => (phone.value ? tomorrow.value : null))
+const { data: next } = useRadioDay(() => (phone.value ? tomorrow.value : null), station)
 </script>
