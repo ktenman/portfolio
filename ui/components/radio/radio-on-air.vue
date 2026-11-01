@@ -51,7 +51,6 @@ defineProps<{ aside?: boolean }>()
 const stations = useRailStations()
 const player = useRadioPlayer()
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
-const seconds = computed(() => now.value.getTime() / 1000)
 
 const live = computed(() =>
   stations.value.flatMap(({ station, onAir, next }) => (onAir ? [{ station, onAir, next }] : []))
@@ -60,7 +59,7 @@ const live = computed(() =>
 const on = (station: Station) => player.tuned.value === station && player.playing.value
 
 const progress = ({ start, end }: StationAiring) => {
-  const share = (seconds.value - start) / (end - start)
+  const share = (now.value.getTime() / 1000 - start) / (end - start)
   return Math.round(Math.min(1, Math.max(0, share)) * 100)
 }
 </script>

@@ -52,7 +52,7 @@
 import { computed } from 'vue'
 import { useRadioProgrammes, useStationFilter } from '../../composables/use-radio-recordings'
 import { airTime, STATIONS } from '../../utils/radio'
-import type { RadioProgrammeDto } from '../../models/generated/domain-models'
+import type { Station } from '../../models/generated/domain-models'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioOnAir from './radio-on-air.vue'
 import RadioRecordEvery from './radio-record-every.vue'
@@ -66,11 +66,7 @@ const shown = computed(() =>
 
 const columns: ColumnDefinition[] = [
   { key: 'name', label: 'Show' },
-  {
-    key: 'station',
-    label: 'Station',
-    formatter: (_, item: RadioProgrammeDto) => STATIONS[item.station],
-  },
+  { key: 'station', label: 'Station', formatter: (value: Station) => STATIONS[value] },
   { key: 'slots', label: 'On air' },
   { key: 'recordings', label: 'Archived' },
   { key: 'recordEvery', label: 'Recording' },

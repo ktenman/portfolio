@@ -49,21 +49,15 @@ const upcoming = ({ capture }: RadioStation) =>
     ? `${capture.programmes.join(', ')}, ${day(capture.slot.start)} ${clock(capture.slot.start, 0)}`
     : 'None selected'
 
-const disk = computed<[string, string][]>(() => {
-  const s = chosen.value
-    ? stations.value[0]
-    : stations.value.find(({ station }) => station === Station.KUKU)
+const facts = computed<[string, string][]>(() => {
+  const s = stations.value.find(({ station }) => station === (chosen.value ?? Station.KUKU))
   if (!s) return []
-  return [
+  const disk: [string, string][] = [
     ['Free space', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],
     ['Room for', s.hours == null ? '—' : `≈ ${s.hours.toLocaleString('en-US')} h`],
   ]
-})
-
-const facts = computed<[string, string][]>(() => {
-  const s = stations.value[0]
-  if (!chosen.value || !s) return disk.value
+  if (!chosen.value) return disk
   const last = s.last ? `${s.last.programme}, ${day(s.last.end)} ${clock(s.last.end, 0)}` : '—'
-  return [['Last', last], ['Next', upcoming(s)], ['Format', audioFormat(s.format)], ...disk.value]
+  return [['Last', last], ['Next', upcoming(s)], ['Format', audioFormat(s.format)], ...disk]
 })
 </script>

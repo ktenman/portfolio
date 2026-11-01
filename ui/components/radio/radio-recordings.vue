@@ -102,7 +102,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
-import { RecordingState, type RecordingSummary } from '../../models/generated/domain-models'
+import {
+  RecordingState,
+  type RecordingSummary,
+  type Station,
+} from '../../models/generated/domain-models'
 import { useConfirm } from '../../composables/use-confirm'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecordings, useStationFilter } from '../../composables/use-radio-recordings'
@@ -165,11 +169,7 @@ const remove = async (item: RecordingSummary) => {
 
 const columns: ColumnDefinition[] = [
   { key: 'programme', label: 'Show' },
-  {
-    key: 'station',
-    label: 'Station',
-    formatter: (_, item: RecordingSummary) => STATIONS[item.status.station],
-  },
+  { key: 'status.station', label: 'Station', formatter: (value: Station) => STATIONS[value] },
   {
     key: 'recorded',
     label: 'Recorded',
