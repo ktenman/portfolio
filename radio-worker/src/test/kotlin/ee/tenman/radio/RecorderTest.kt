@@ -275,7 +275,6 @@ class RecorderTest {
     val source = "${stale(tmp.resolve("stream.m3u8"))}"
     val ffmpeg =
       ProcessBuilder(command(source, 600.0, 0, tmp.resolve("raw")))
-        .redirectOutput(Redirect.DISCARD)
         .redirectError(Redirect.DISCARD)
         .start()
     val ended =

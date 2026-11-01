@@ -27,7 +27,7 @@ fun planned(
   val (capture, now) = await(recordings, schedule, clock, sleep, null) ?: return 130
   val directory = recordings.resolve(capture.name)
   val begin = max(capture.start.toDouble(), now - LOOKBACK)
-  beat(recordings.resolve(schedule.heartbeat), now, capture.end.toDouble())
+  write(recordings.resolve(schedule.heartbeat), Heartbeat(now, capture.end.toDouble()))
   println("Recording $directory")
   runCatching { record(directory, begin, capture.end - begin, capture.programmes, capture.slot) }
     .onSuccess { println("${it.name.lowercase()}: $directory") }
@@ -50,7 +50,7 @@ private tailrec fun await(
   }
   if (capture != null && capture.start <= now) return Pair(capture, now)
   val wait = capture?.let { min(CHECK_SECONDS, it.start - now) } ?: CHECK_SECONDS
-  beat(recordings.resolve(schedule.heartbeat), now, now + wait)
+  write(recordings.resolve(schedule.heartbeat), Heartbeat(now, now + wait))
   return if (sleep(wait)) null else await(recordings, schedule, clock, sleep, capture ?: announced)
 }
 
@@ -83,14 +83,6 @@ private fun unreadable(
   error: Throwable,
 ) {
   System.err.println("Cannot read $path: ${"$error".lines().joinToString(" ")}")
-}
-
-private fun beat(
-  path: Path,
-  seen: Double,
-  until: Double,
-) {
-  write(path, Heartbeat(seen, until))
 }
 
 private fun shown(moment: Long): String =

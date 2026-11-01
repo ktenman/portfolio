@@ -187,8 +187,6 @@ fun stale(path: Path): Path =
     "hls",
     "-hls_time",
     "1",
-    "-hls_list_size",
-    "0",
     "-hls_flags",
     "omit_endlist",
   )
