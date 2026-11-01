@@ -103,7 +103,6 @@ const RECORDINGS = [
     name: '2026-10-17-1000-kuum-tool',
     programme: 'Kuum tool',
     status: { ...capture('2026-10-17T07:00:00Z', ['Kuum tool'], 3600), station: Station.ARIPAEV },
-    format: { codec: 'mp3', bitRate: 128_000 },
   }),
 ]
 
@@ -248,14 +247,10 @@ const KUKU = {
 }
 
 const ARIPAEV = {
+  ...KUKU,
   station: Station.ARIPAEV,
-  onAir: { name: 'Tööandjate tund', start: SATURDAY_ONE, end: SATURDAY_ONE + 3600, recorded: true },
-  next: {
-    name: 'Lihtsalt alusta',
-    start: SATURDAY_ONE + 3600,
-    end: SATURDAY_ONE + 7200,
-    recorded: false,
-  },
+  onAir: { ...KUKU.onAir, name: 'Tööandjate tund', recorded: true },
+  next: { ...KUKU.next, name: 'Lihtsalt alusta' },
   capture: {
     name: '2026-10-31-1000-kuum-tool',
     programmes: ['Kuum tool'],
@@ -263,7 +258,6 @@ const ARIPAEV = {
     end: Date.UTC(2026, 9, 31, 9, 0, 30) / 1000,
     slot: { start: Date.UTC(2026, 9, 31, 8) / 1000, end: Date.UTC(2026, 9, 31, 9) / 1000 },
   },
-  freeBytes: 364_000_000_000,
   hours: 2106,
   recorder: RecorderState.RECORDING,
   last: { programme: 'Kuum tool', end: Date.UTC(2026, 9, 17, 8, 0, 30) / 1000 },
