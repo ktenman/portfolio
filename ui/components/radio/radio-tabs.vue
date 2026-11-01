@@ -12,7 +12,7 @@
       {{ view.label }}
     </router-link>
   </nav>
-  <div class="mb-6 flex gap-x-4 gap-y-3 max-md:flex-col md:items-center">
+  <div class="mb-6 flex items-center gap-x-4 gap-y-3 md-down:flex-col md-down:items-stretch">
     <search-input
       v-model="text"
       :active="!!query"
@@ -25,7 +25,7 @@
         v-for="chip in CHIPS"
         :key="chip ?? 'all'"
         type="button"
-        class="platform-btn relative max-md:before:absolute max-md:before:inset-x-0 max-md:before:top-1/2 max-md:before:h-11 max-md:before:-translate-y-1/2"
+        class="platform-btn relative md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2"
         :class="{ active: station === chip }"
         :aria-pressed="station === chip"
         @click="station = chip"

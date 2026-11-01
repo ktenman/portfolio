@@ -23,7 +23,7 @@
           class="min-w-0 grow md:cursor-grab md:touch-none md:select-none md:active:cursor-grabbing"
         >
           <p class="mb-0 truncate text-sm/4.5 font-semibold">
-            {{ recording?.programme ?? 'Kuku' }}
+            {{ recording?.programme ?? STATIONS[player.tuned.value!] }}
           </p>
           <p class="mb-0 truncate text-label/4 text-brass-deep">{{ topic }}</p>
         </div>
@@ -74,9 +74,9 @@ import {
 } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { useRadioStation } from '../../composables/use-radio-recordings'
+import { useRadioStations } from '../../composables/use-radio-recordings'
 import { STORAGE_KEYS } from '../../constants/storage-keys'
-import { episodeParts, fullDay, position, rawParts } from '../../utils/radio'
+import { episodeParts, fullDay, position, rawParts, STATIONS } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioScrubber from './radio-scrubber.vue'
@@ -89,7 +89,7 @@ const ICON =
 const route = useRoute()
 const player = useRadioPlayer()
 const { recording } = player
-const { data: station } = useRadioStation()
+const { data: stations } = useRadioStations()
 const decisions = useRadioDecisions(() => recording.value!)
 
 const card = useTemplateRef('card')
@@ -118,7 +118,10 @@ const lifted = computed(() => route.name === 'Calculator')
 
 const shown = computed(() => {
   if (recording.value) return route.params.name !== recording.value.name
-  const onAir = ON_AIR_PAGES.includes(String(route.name)) && !route.query.q && station.value?.onAir
+  const onAir =
+    ON_AIR_PAGES.includes(String(route.name)) &&
+    !route.query.q &&
+    stations.value?.some(station => station.onAir)
   return !onAir
 })
 

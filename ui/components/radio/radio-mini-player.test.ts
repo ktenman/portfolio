@@ -86,7 +86,7 @@ describe('RadioMiniPlayer', () => {
   }
 
   const listen = () => {
-    player.listen()
+    player.listen(Station.KUKU)
     audio.dispatchEvent(new Event('play'))
   }
 
@@ -241,5 +241,30 @@ describe('RadioMiniPlayer', () => {
   it('should stay at the bottom of every other page', async () => {
     await play()
     expect(card(await open()).classes()).not.toContain('max-md:bottom-22')
+  })
+
+  it('should name the tuned station', async () => {
+    player.listen(Station.ARIPAEV)
+    audio.dispatchEvent(new Event('play'))
+    expect(card(await open()).text()).toContain('ÄripäevLive')
+  })
+
+  it('should stay off the recordings page while only the other station is on air', async () => {
+    listen()
+    vi.mocked(radioService.stations).mockResolvedValue([
+      { ...SILENT, onAir: null },
+      { ...SILENT, station: Station.ARIPAEV, onAir: BROADCAST },
+    ])
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/radio', name: 'Radio', component: PAGE }],
+    })
+    await router.push('/radio')
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const wrapper = mount(RadioMiniPlayer, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }]] },
+    })
+    await flushPromises()
+    expect(card(wrapper).exists()).toBe(false)
   })
 })

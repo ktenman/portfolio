@@ -158,18 +158,18 @@ describe('RadioOnAir', () => {
 
   it('should name the live button for screen readers', async () => {
     const button = (await mount({ ...idle, onAir: broadcast })).find('button')
-    expect(button.attributes('aria-label')).toBe('Listen live')
+    expect(button.attributes('aria-label')).toBe('Listen live: Kuku')
   })
 
   it('should name the live button Pause while the station plays', async () => {
     const player = useRadioPlayer()
-    player.live.value = true
+    player.tuned.value = Station.KUKU
     player.playing.value = true
     const label = (await mount({ ...idle, onAir: broadcast }))
       .find('button')
       .attributes('aria-label')
     player.close()
-    expect(label).toBe('Pause')
+    expect(label).toBe('Pause: Kuku')
   })
 
   it('should draw the whole section as one card beside the recorder', async () => {
@@ -180,5 +180,72 @@ describe('RadioOnAir', () => {
   it('should keep the heading above the card between the recordings and the shows', async () => {
     const section = (await mount({ ...idle, onAir: broadcast })).find('section')
     expect(section.classes()).not.toContain('card')
+  })
+
+  const aripaev = { ...idle, station: Station.ARIPAEV, onAir: { ...broadcast, name: 'Kuum tool' } }
+
+  const both = async (props: { aside?: boolean } = {}) => {
+    vi.mocked(radioService.stations).mockResolvedValue([{ ...idle, onAir: broadcast }, aripaev])
+    const wrapper = renderWithProviders({ render: () => h(RadioOnAir, props) })
+    await flushPromises()
+    return wrapper
+  }
+
+  const labels = (wrapper: ReturnType<typeof renderWithProviders>) =>
+    wrapper.findAll('button').map(button => button.attributes('aria-label'))
+
+  it('should give each station on air its own row', async () => {
+    expect(labels(await both())).toEqual(['Listen live: Kuku', 'Listen live: Äripäev'])
+  })
+
+  it('should leave out a station with nothing on air', async () => {
+    expect(labels(await mount(idle))).toEqual([])
+  })
+
+  it('should give each station its own progress line', async () => {
+    const lines = (await both()).findAll('[data-testid="radio-on-air-progress"]')
+    expect(lines).toHaveLength(2)
+  })
+
+  it('should give each station its own next show', async () => {
+    vi.mocked(radioService.stations).mockResolvedValue([
+      { ...idle, onAir: broadcast, next },
+      { ...aripaev, next: { ...next, name: 'Tööandjate tund' } },
+    ])
+    const wrapper = renderWithProviders({ render: () => h(RadioOnAir) })
+    await flushPromises()
+    expect(wrapper.text()).toMatch(/Ilmaparandaja.*Tööandjate tund/s)
+  })
+
+  it('should lead the hours of a show with its station', async () => {
+    expect((await both()).text()).toContain('Äripäev · 12:00–13:00 · not recorded')
+  })
+
+  it('should tune to the station of the row', async () => {
+    const audio = document.createElement('audio')
+    vi.spyOn(audio, 'play').mockResolvedValue()
+    const player = useRadioPlayer()
+    player.attach(audio)
+    const wrapper = await both()
+    await wrapper.findAll('button')[1].trigger('click')
+    const src = audio.src
+    player.close()
+    expect(src).toContain('/api/radio/live?station=ARIPAEV')
+  })
+
+  it('should show Pause on the tuned station only', async () => {
+    const player = useRadioPlayer()
+    player.tuned.value = Station.ARIPAEV
+    player.playing.value = true
+    const found = labels(await both())
+    player.close()
+    expect(found).toEqual(['Listen live: Kuku', 'Pause: Äripäev'])
+  })
+
+  it('should show only the chosen station', async () => {
+    const wrapper = await both()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(labels(wrapper)).toEqual(['Listen live: Äripäev'])
   })
 })

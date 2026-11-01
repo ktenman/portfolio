@@ -26,12 +26,11 @@ export const useRadioProgrammes = () => {
   })
 }
 
-export const useRadioStation = () => {
+export const useRadioStations = () => {
   const { isAuthenticated } = useAuthState()
   return useQuery({
     queryKey: ['radio-station'],
     queryFn: radioService.stations,
-    select: stations => stations.find(({ station }) => station === Station.KUKU),
     enabled: isAuthenticated,
     refetchInterval: 60_000,
   })
@@ -47,6 +46,14 @@ export const useStationFilter = () => {
   })
 }
 
+export const useRailStations = () => {
+  const { data } = useRadioStations()
+  const chosen = useStationFilter()
+  return computed(() =>
+    (data.value ?? []).filter(({ station }) => !chosen.value || station === chosen.value)
+  )
+}
+
 export const useRadioDay = (
   date: MaybeRefOrGetter<string | null>,
   station: MaybeRefOrGetter<Station | null>
@@ -56,6 +63,7 @@ export const useRadioDay = (
     queryKey: computed(() => ['radio-day', toValue(date), toValue(station)]),
     queryFn: () => radioService.day(toValue(date), toValue(station)),
     enabled: isAuthenticated,
+    placeholderData: keepPreviousData,
     refetchInterval: 60_000,
   })
 }

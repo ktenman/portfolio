@@ -2,7 +2,7 @@
   <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="min-w-0">
       <data-table
-        :items="recordings ?? []"
+        :items="shown"
         :columns="columns"
         key-field="name"
         :is-loading="isLoading"
@@ -37,7 +37,7 @@
                 {{ item.programme }}
               </router-link>
               <span class="text-sm text-ink-soft tabular-nums">
-                {{ clock(item.span.start, 0) }} ·
+                {{ STATIONS[item.status.station] }} · {{ clock(item.span.start, 0) }} ·
                 <span :class="TONE_TEXT[STATES[item.status.state].tone]">
                   {{
                     item.status.state === RecordingState.CAPTURED
@@ -100,14 +100,15 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { RecordingState, type RecordingSummary } from '../../models/generated/domain-models'
 import { useConfirm } from '../../composables/use-confirm'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { useRadioRecordings } from '../../composables/use-radio-recordings'
+import { useRadioRecordings, useStationFilter } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { clock, day, length, ROW_LINK, span, STATES, textState } from '../../utils/radio'
+import { clock, day, length, ROW_LINK, span, STATES, STATIONS, textState } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioBadge, { type BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
@@ -115,6 +116,10 @@ import RadioOnAir from './radio-on-air.vue'
 import RadioStation from './radio-station.vue'
 
 const { data: recordings, isLoading, isError } = useRadioRecordings()
+const station = useStationFilter()
+const shown = computed(() =>
+  (recordings.value ?? []).filter(item => !station.value || item.status.station === station.value)
+)
 const { confirm } = useConfirm()
 const toast = useToast()
 const queryClient = useQueryClient()
@@ -160,6 +165,11 @@ const remove = async (item: RecordingSummary) => {
 
 const columns: ColumnDefinition[] = [
   { key: 'programme', label: 'Show' },
+  {
+    key: 'station',
+    label: 'Station',
+    formatter: (_, item: RecordingSummary) => STATIONS[item.status.station],
+  },
   {
     key: 'recorded',
     label: 'Recorded',

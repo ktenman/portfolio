@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import RadioDayBar from './radio-day-bar.vue'
 import { radioDay } from './radio-fixture'
+import { Station } from '../../models/generated/domain-models'
 
-const bar = (overrides = {}) =>
+const bar = (overrides = {}, station: Station | null = null) =>
   mount(RadioDayBar, {
-    props: { radioDay: radioDay(overrides) },
+    props: { radioDay: radioDay(overrides), station },
     global: { stubs: { RouterLink: RouterLinkStub } },
   })
 
@@ -17,6 +18,7 @@ const RUNNING = {
   start: DAY.now - 600,
   end: DAY.now,
   recording: true,
+  station: Station.KUKU,
 }
 
 const hours = (overrides = {}) =>
@@ -127,7 +129,7 @@ describe('RadioDayBar', () => {
   })
 
   it('should mark midnight stronger than the other ticks', () => {
-    const ticks = bar().findAll('[data-testid="radio-day-tick"]')
+    const ticks = bar({}, Station.KUKU).findAll('[data-testid="radio-day-tick"]')
     expect(ticks.map(tick => tick.classes('bg-ink-faint'))).toEqual([false, false, false, true])
   })
 
@@ -147,5 +149,74 @@ describe('RadioDayBar', () => {
   it('should keep the current time inside the card just before five in the morning', () => {
     const clock = bar({ now: DAY.until - 600 }).find('[data-testid="radio-day-clock"]')
     expect(clock.classes('-translate-x-full')).toBe(true)
+  })
+
+  const tracks = (station?: Station | null, overrides = {}) =>
+    bar(overrides, station).findAll('[data-testid="radio-day-track"]')
+
+  it('should draw one track per station on All', () => {
+    expect(tracks().map(track => track.get('[data-testid="radio-day-station"]').text())).toEqual([
+      'Kuku',
+      'Äripäev',
+    ])
+  })
+
+  it('should draw one track on a chip', () => {
+    expect(tracks(Station.ARIPAEV).map(track => track.text())).toEqual(['Äripäev'])
+  })
+
+  it('should keep the name of a station beside its track', () => {
+    expect(tracks()[0].classes()).toContain('grid-cols-[72px_minmax(0,1fr)]')
+  })
+
+  it('should put each recording on the track of its station', () => {
+    const recorded = [FINISHED, { ...RUNNING, station: Station.ARIPAEV }]
+    const links = tracks(null, { recorded }).map(
+      track => track.findAll('[data-testid="radio-day-link"]').length
+    )
+    expect(links).toEqual([1, 1])
+  })
+
+  it('should put each planned airing on the track of its station', () => {
+    const planned = [{ ...DAY.planned[0], station: Station.ARIPAEV }]
+    const plans = tracks(null, { planned }).map(
+      track => track.findAll('[data-testid="radio-day-planned"]').length
+    )
+    expect(plans).toEqual([0, 1])
+  })
+
+  it('should share one row of hours between the tracks', () => {
+    expect(hours({ now: DAY.until + 60 })).toEqual(['06', '12', '18', '00'])
+  })
+
+  it('should line the hours up with the tracks', () => {
+    const row = bar().get('[data-testid="radio-day-hours"]')
+    expect(row.classes()).toContain('grid-cols-[72px_minmax(0,1fr)]')
+  })
+
+  const room = (recorded: (typeof FINISHED)[], planned: typeof DAY.planned, at: number) => {
+    const { room, tracks } = bar({ recorded, planned }).vm as unknown as {
+      room: (span: { start: number; end: number }, starts: number[]) => string
+      tracks: { station: Station; starts: number[] }[]
+    }
+    return tracks.map(track => room({ start: at, end: at + 600 }, track.starts))
+  }
+
+  it('should not stop a label at a start on the other track', () => {
+    const later = { ...FINISHED, start: FINISHED.start + 900, station: Station.ARIPAEV }
+    const whole = `min(${((DAY.until - FINISHED.start) / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED, later], [], FINISHED.start)[0]).toContain(whole)
+  })
+
+  it('should stop a label at the next start on its own track', () => {
+    const later = { ...FINISHED, start: FINISHED.start + 900 }
+    const short = `min(${(900 / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED, later], [], FINISHED.start)[0]).toContain(short)
+  })
+
+  it('should stop a label at a planned start on its own track', () => {
+    const planned = [{ ...DAY.planned[0], start: FINISHED.start + 900 }]
+    const short = `min(${(900 / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED], planned, FINISHED.start)[0]).toContain(short)
   })
 })

@@ -179,4 +179,19 @@ describe('RadioTabs', () => {
     await open('/radio?q=valimis&station=aripaev')
     expect(radioService.search).toHaveBeenLastCalledWith('valimis', null, Station.ARIPAEV)
   })
+
+  it('should stack the search and the chips at the width the search drops its cap', async () => {
+    const { wrapper } = await open('/radio')
+    const row = wrapper.get('[role="group"][aria-label="Station"]').element.parentElement!
+    expect([...row.classList]).toEqual(
+      expect.arrayContaining(['items-center', 'md-down:flex-col', 'md-down:items-stretch'])
+    )
+  })
+
+  it('should give the chips their hit area at the same width', async () => {
+    const { wrapper } = await open('/radio')
+    expect(chip(wrapper, 'All').classes()).toEqual(
+      expect.arrayContaining(['md-down:before:absolute', 'md-down:before:h-11'])
+    )
+  })
 })

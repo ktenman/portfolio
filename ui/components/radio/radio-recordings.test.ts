@@ -253,4 +253,43 @@ describe('RadioRecordings', () => {
       .map(button => button.attributes('aria-label'))
     expect(new Set(labels)).toEqual(new Set(['Delete: Keskpäevatund Sat 17.10']))
   })
+
+  const aripaev = () =>
+    recording({
+      name: '2026-10-17-aripaev',
+      programme: 'Kuum tool',
+      status: { ...recording().status, station: Station.ARIPAEV },
+    })
+
+  it('should keep a Station column right after Show', async () => {
+    const headers = (await mount()).findAll('thead th').map(header => header.text())
+    expect(headers.slice(0, 2)).toEqual(['Show', 'Station'])
+  })
+
+  it('should name the station of a recording in its column', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([aripaev()])
+    expect((await mount()).find('tbody tr').text()).toContain('Äripäev')
+  })
+
+  it('should lead the line of a recording on a phone with its station', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([aripaev()])
+    expect((await mount()).find('[data-testid="radio-recording-row"]').text()).toContain(
+      'Äripäev · 11:55 ·'
+    )
+  })
+
+  it('should show only the recordings of the chosen station', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([recording(), aripaev()])
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(wrapper.findAll('tbody tr').map(row => row.text().includes('Kuum tool'))).toEqual([true])
+  })
+
+  it('should keep the Station column on a chip', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'kuku' } })
+    await flushPromises()
+    expect(wrapper.findAll('thead th').map(header => header.text())).toContain('Station')
+  })
 })

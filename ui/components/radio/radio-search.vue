@@ -50,7 +50,7 @@
               <span class="font-semibold"><radio-marked :parts="topic.title" /></span>
               <span v-if="topic.summary.length"><radio-marked :parts="topic.summary" /></span>
               <span class="text-sm text-ink-soft">
-                {{ topic.programme }} · {{ day(topic.startedAt) }} ·
+                {{ STATIONS[topic.station] }} · {{ topic.programme }} · {{ day(topic.startedAt) }} ·
                 {{ clock(topic.startedAt, topic.start) }}
               </span>
             </router-link>
@@ -64,6 +64,7 @@
         <div class="divide-y divide-hairline">
           <div v-for="group in groups" :key="group.name" class="py-3 first:pt-0 last:pb-0">
             <p class="mb-1 text-sm text-ink-soft">
+              {{ STATIONS[group.station] }} ·
               <b class="font-semibold text-ink">{{ group.programme }}</b>
               ·
               {{ day(group.startedAt) }}
@@ -114,7 +115,7 @@ import { useIntersectionObserver } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import type { TextPart } from '../../models/generated/domain-models'
 import { useRadioSearch, useStationFilter } from '../../composables/use-radio-recordings'
-import { clock, day } from '../../utils/radio'
+import { clock, day, STATIONS } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
 

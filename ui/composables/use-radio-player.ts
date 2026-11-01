@@ -1,5 +1,5 @@
 import { computed, ref, shallowRef, watch } from 'vue'
-import type { RecordingSummary } from '../models/generated/domain-models'
+import type { RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { episodeTime, recordingTime } from '../utils/radio'
 import { useToast } from './use-toast'
@@ -12,7 +12,8 @@ const QUIET = ['NotAllowedError', 'AbortError']
 
 const element = shallowRef<HTMLAudioElement | null>(null)
 const recording = shallowRef<RecordingSummary | null>(null)
-const live = ref(false)
+const tuned = ref<Station | null>(null)
+const live = computed(() => tuned.value !== null)
 const version = ref<Version>('raw')
 const part = ref(0)
 const current = ref(0)
@@ -160,7 +161,7 @@ const load = (target: RecordingSummary, wanted: Version = 'raw') => {
   }
   recording.value = target
   version.value = wanted
-  live.value = false
+  tuned.value = null
   if (element.value) speed(element.value, rate.value)
   open()
 }
@@ -180,16 +181,16 @@ const swap = (wanted: Version) => {
   if (was) play()
 }
 
-const listen = () => {
+const listen = (station: Station) => {
   const audio = element.value
   if (!audio) return
   keep()
   recording.value = null
-  live.value = true
+  tuned.value = station
   loaded = 'live'
   plan = null
   current.value = 0
-  audio.src = radioService.liveUrl
+  audio.src = `${radioService.liveUrl}?station=${station}`
   speed(audio, 1)
   play()
 }
@@ -204,7 +205,7 @@ const hangUp = () => {
 }
 
 const toggle = () => {
-  if (live.value) return playing.value ? hangUp() : listen()
+  if (tuned.value) return playing.value ? hangUp() : listen(tuned.value)
   return playing.value ? element.value?.pause() : play()
 }
 
@@ -277,7 +278,7 @@ const close = () => {
   loaded = ''
   opened = ''
   recording.value = null
-  live.value = false
+  tuned.value = null
   version.value = 'raw'
   part.value = 0
   current.value = 0
@@ -302,6 +303,7 @@ watch(muted, value => {
 
 export const useRadioPlayer = () => ({
   recording,
+  tuned,
   live,
   version,
   seconds,

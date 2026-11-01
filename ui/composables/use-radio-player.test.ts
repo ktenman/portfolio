@@ -62,32 +62,35 @@ describe('useRadioPlayer', () => {
   }
 
   it('should play the station live through the server', () => {
-    player.listen()
-    expect([audio.src.endsWith('/api/radio/live'), player.live.value]).toEqual([true, true])
+    player.listen(Station.KUKU)
+    expect([audio.src.endsWith('/api/radio/live?station=KUKU'), player.live.value]).toEqual([
+      true,
+      true,
+    ])
   })
 
   it('should drop the live stream when it is stopped', () => {
-    player.listen()
+    player.listen(Station.KUKU)
     audio.dispatchEvent(new Event('play'))
     player.toggle()
     expect(audio.getAttribute('src')).toBeNull()
   })
 
   it('should stop playing when the live stream is stopped', () => {
-    player.listen()
+    player.listen(Station.KUKU)
     audio.dispatchEvent(new Event('play'))
     player.toggle()
     expect(player.playing.value).toBe(false)
   })
 
   it('should leave the live stream when a recording is loaded', () => {
-    player.listen()
+    player.listen(Station.KUKU)
     player.load(split())
     expect(player.live.value).toBe(false)
   })
 
   it('should play at the volume chosen on the slider', async () => {
-    player.listen()
+    player.listen(Station.KUKU)
     player.volume.value = 0.35
     await nextTick()
     expect(audio.volume).toBe(0.35)
@@ -95,7 +98,7 @@ describe('useRadioPlayer', () => {
 
   it('should play the station at normal speed', () => {
     player.rate.value = 1.5
-    player.listen()
+    player.listen(Station.KUKU)
     expect(audio.playbackRate).toBe(1)
   })
 
@@ -490,7 +493,7 @@ describe('useRadioPlayer', () => {
     player.load(recording())
     await flushPromises()
     tick(604)
-    player.listen()
+    player.listen(Station.KUKU)
     expect(positions.save.mock.calls).toEqual([['2026-10-17', { seconds: 604 }]])
   })
 
@@ -518,5 +521,40 @@ describe('useRadioPlayer', () => {
     answer.resolve({ seconds: 2296.5 })
     await flushPromises()
     expect(audio.currentTime).toBe(0)
+  })
+
+  it('should tune to the chosen station', () => {
+    player.listen(Station.ARIPAEV)
+    expect([audio.src.endsWith('/api/radio/live?station=ARIPAEV'), player.tuned.value]).toEqual([
+      true,
+      Station.ARIPAEV,
+    ])
+  })
+
+  it('should come back to the tuned station after a stop', () => {
+    player.listen(Station.ARIPAEV)
+    audio.dispatchEvent(new Event('play'))
+    player.toggle()
+    player.toggle()
+    expect(audio.src.endsWith('/api/radio/live?station=ARIPAEV')).toBe(true)
+  })
+
+  it('should change station while playing', () => {
+    player.listen(Station.KUKU)
+    audio.dispatchEvent(new Event('play'))
+    player.listen(Station.ARIPAEV)
+    expect(player.tuned.value).toBe(Station.ARIPAEV)
+  })
+
+  it('should drop the tuned station when a recording is loaded', () => {
+    player.listen(Station.ARIPAEV)
+    player.load(recording())
+    expect(player.tuned.value).toBe(null)
+  })
+
+  it('should drop the tuned station when it closes', () => {
+    player.listen(Station.ARIPAEV)
+    player.close()
+    expect([player.tuned.value, player.live.value]).toEqual([null, false])
   })
 })

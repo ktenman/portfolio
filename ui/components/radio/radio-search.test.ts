@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { radioService } from '../../services/api'
 import { deferred } from '../../tests/test-utils'
 import RadioSearch from './radio-search.vue'
+import { Station } from '../../models/generated/domain-models'
 import { nothingFound, radioSearch } from './radio-fixture'
 
 vi.mock('../../services/api', () => ({ radioService: { search: vi.fn() } }))
@@ -345,5 +346,28 @@ describe('RadioSearch', () => {
     await wrapper.get('[role="status"] + button').trigger('click')
     await flushPromises()
     expect(wrapper.findAll('[data-testid="radio-search-line"]')).toHaveLength(2)
+  })
+
+  const aripaev = () => {
+    const { topics, groups } = radioSearch()
+    return radioSearch({
+      topics: [{ ...topics[0], station: Station.ARIPAEV }],
+      groups: [{ ...groups[0], station: Station.ARIPAEV }],
+    })
+  }
+
+  it('should lead the line under a topic with its station', async () => {
+    vi.mocked(radioService.search).mockResolvedValue(aripaev())
+    const topic = (await open()).wrapper.get('[data-testid="radio-search-topic"]')
+    expect(topic.text()).toContain('Äripäev · Keskpäevatund · Sat 17.10 · 12:40')
+  })
+
+  it('should lead the line over a recording with its station', async () => {
+    vi.mocked(radioService.search).mockResolvedValue(aripaev())
+    expect((await open()).wrapper.text()).toContain('Äripäev · Keskpäevatund · Sat 17.10')
+  })
+
+  it('should lead every meta line on Kuku too', async () => {
+    expect((await open()).wrapper.text()).toContain('Kuku · Keskpäevatund · Sat 17.10')
   })
 })
