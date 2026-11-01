@@ -246,6 +246,8 @@ class MainTest {
         run + listOf("--source", file, "--tagger", "$tmp"),
         run + listOf("--source", "http://127.0.0.1:8770/stream.m3u8", "--tagger", CED_TINY),
         listOf("station", "${tmp.resolve("puudub.mp3")}"),
+        listOf("planned", "--recordings", "$tmp", "--station", "KUKU"),
+        run + listOf("--source", file, "--tagger", CED_TINY, "--station", "ARIPAEV"),
       )
     val codes = errors.map { runs(*it.toTypedArray()) }
     expect(Pair(codes, Files.exists(tmp.resolve("rec")))).toEqual(Pair(List(errors.size) { 2 }, false))
@@ -307,6 +309,23 @@ class MainTest {
       }
     val status = status(directory)
     expect(Triple(code, status.state, status.startedAt)).toEqual(Triple(130, RecordingState.RECORDING, start.toDouble()))
+  }
+
+  @Test
+  fun `planned for a station follows its own plan and heartbeat and names the station`(
+    @TempDir tmp: Path,
+  ) {
+    val recordings = Files.createDirectories(tmp.resolve("recordings"))
+    val model = model(tmp)
+    val start = now().toLong()
+    write(recordings.resolve("plan.json"), listOf(Capture("kuku", listOf("Kuku"), start, start + 30)))
+    write(recordings.resolve("plan-aripaev.json"), listOf(Capture("aripaev", listOf("Fookus"), start, start + 30)))
+    val source = "http://127.0.0.1:9/stream.m3u8"
+    val flags = arrayOf("--recordings", "$recordings", "--source", source, "--model", model, "--tagger", CED_TINY)
+    runs("planned", "--station", "ARIPAEV", *flags, stop = CountDownLatch(0))
+    val names = Files.list(recordings).use { paths -> paths.map { "${it.fileName}" }.sorted().toList() }
+    val written = listOf("aripaev", "heartbeat-aripaev.json", "plan-aripaev.json", "plan.json")
+    expect(Pair(names, status(recordings.resolve("aripaev")).station)).toEqual(Pair(written, "ARIPAEV"))
   }
 
   @Test

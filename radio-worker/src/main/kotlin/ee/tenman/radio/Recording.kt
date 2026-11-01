@@ -65,6 +65,7 @@ data class Status(
   val programmes: List<String>? = null,
   val slot: Slot? = null,
   val lostSeconds: Long? = null,
+  val station: String? = null,
 )
 
 data class Capture(

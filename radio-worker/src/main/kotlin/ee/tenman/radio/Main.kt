@@ -18,7 +18,7 @@ private val FLAGS =
   mapOf(
     "station" to setOf("--host", "--port", "--from", "--speed"),
     "run" to setOf("--source", "--duration", "--start", "--programme", "--out", "--model", "--tagger", "--threads"),
-    "planned" to setOf("--recordings", "--source", "--model", "--tagger", "--threads"),
+    "planned" to setOf("--recordings", "--station", "--source", "--model", "--tagger", "--threads"),
     "sounds" to setOf("--tagger"),
   )
 private val ARGUMENT = mapOf("station" to "recording", "sounds" to "directory")
@@ -87,8 +87,9 @@ internal fun capture(
   programmes: List<String>? = null,
   started: Double? = null,
   slot: Slot? = null,
+  station: String? = null,
 ): RecordingState {
-  prepare(directory, source, seconds, programmes, started, slot)
+  prepare(directory, source, seconds, programmes, started, slot, station)
   hold(directory).use {
     val recorder = thread(name = "recorder") { record(directory, stop) }
     val transcribed = runCatching { transcribe(directory, load, tagger, recorder::isAlive, stop) }
@@ -205,6 +206,8 @@ private fun follow(
   ears: (Path, Int) -> Ears,
   stop: CountDownLatch,
 ): Int {
+  val station = options.text("--station")
+  val schedule = station?.let { SCHEDULES[it] ?: usage("--station takes ARIPAEV, not $it") } ?: Schedule()
   val source = options.text("--source") ?: KUKU
   val model = options.path("--model", MODEL)
   val threads = options.whole("--threads") ?: 1
@@ -213,10 +216,11 @@ private fun follow(
     planned(
       options.path("--recordings", "/recordings"),
       { directory, started, seconds, programmes, slot ->
-        capture(directory, source, seconds, { ears(model, threads) }, tagger, stop, programmes, started, slot)
+        capture(directory, source, seconds, { ears(model, threads) }, tagger, stop, programmes, started, slot, station)
       },
       ::now,
       { stop.await((it * 1000).toLong(), TimeUnit.MILLISECONDS) },
+      schedule,
     )
   if (code == 130) System.err.println("Stopped; the next start resumes an unfinished recording")
   return code

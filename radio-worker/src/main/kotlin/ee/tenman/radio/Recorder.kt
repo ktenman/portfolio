@@ -22,6 +22,7 @@ import kotlin.math.roundToInt
 private const val STATUS = "status.json"
 private const val SEGMENT = 6
 private const val BEHIND = 3
+private const val HOLD_COUNTERS = 10
 private val START = Regex("""start: (-?\d+\.\d+)""")
 private val WRAP = 2.0.pow(33) / 90000
 
@@ -32,6 +33,7 @@ fun prepare(
   programmes: List<String>? = null,
   started: Double? = null,
   slot: Slot? = null,
+  station: String? = null,
 ) {
   if (Files.exists(directory)) {
     claim(directory, source)
@@ -42,7 +44,10 @@ fun prepare(
   val start = started ?: clock
   val end = (if (live(source)) start else clock) + seconds
   val named = programmes?.takeIf { it.isNotEmpty() }
-  store(directory, Status(RecordingState.RECORDING, source, round3(start), round3(end), seconds, emptyList(), named, slot))
+  store(
+    directory,
+    Status(RecordingState.RECORDING, source, round3(start), round3(end), seconds, programmes = named, slot = slot, station = station),
+  )
 }
 
 fun hold(directory: Path): AutoCloseable {
@@ -123,6 +128,7 @@ internal fun command(
   base: Path,
 ): List<String> =
   listOf(tool("ffmpeg"), "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n", "-rw_timeout", "15000000") +
+    (if (live(source)) listOf("-m3u8_hold_counters", "$HOLD_COUNTERS") else emptyList()) +
     (if (reach > 0) listOf("-live_start_index", "${-(BEHIND + reach)}") else emptyList()) +
     listOf("-t", "%.3f".format(Locale.ROOT, seconds + extra(reach)), "-i", source) +
     listOf("-map", "0:a:0", "-c:a", "copy", "-flush_packets", "1", "$base.mp3") +

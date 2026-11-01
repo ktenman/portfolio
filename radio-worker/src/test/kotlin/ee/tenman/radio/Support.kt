@@ -174,6 +174,25 @@ private fun render(
   return path
 }
 
+fun stale(path: Path): Path =
+  render(
+    path,
+    "-f",
+    "lavfi",
+    "-i",
+    "sine=duration=3",
+    "-c:a",
+    "libmp3lame",
+    "-f",
+    "hls",
+    "-hls_time",
+    "1",
+    "-hls_list_size",
+    "0",
+    "-hls_flags",
+    "omit_endlist",
+  )
+
 fun noise(seconds: Double): ShortArray {
   val random = Random(7)
   return ShortArray((seconds * RATE).toInt()) { random.nextInt(-8000, 8000).toShort() }
