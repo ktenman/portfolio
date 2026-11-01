@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.Station
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.DayOfWeek
@@ -10,11 +11,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-const val PLAN_FILE = "plan.json"
-const val HEARTBEAT_FILE = "heartbeat.json"
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
-val LAG: Duration = Duration.ofSeconds(20)
 private val PADDING = Duration.ofSeconds(10)
 private val JOIN = Duration.ofMinutes(10)
 private val UNSAFE = Regex("[^0-9a-z]+")
@@ -37,6 +35,22 @@ data class AirSlot(
 
 data class ProgrammeChoice(
   val recordEvery: Boolean,
+)
+
+data class ScheduledShow(
+  val externalId: Long,
+  val name: String,
+  val slug: String,
+  val description: String?,
+)
+
+data class ScheduledAiring(
+  val externalId: Long,
+  val show: ScheduledShow,
+  val title: String,
+  val start: Instant,
+  val end: Instant,
+  val originalExternalId: Long?,
 )
 
 data class PlannedAiring(
@@ -157,8 +171,8 @@ private fun capture(
   return Capture(
     name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-"),
     programmes = group.map { it.programme }.distinct(),
-    start = (start + LAG - PADDING).epochSecond,
-    end = (end + LAG + PADDING).epochSecond,
+    start = (start + Station.KUKU.lag - PADDING).epochSecond,
+    end = (end + Station.KUKU.lag + PADDING).epochSecond,
     slot = Slot(start.epochSecond, end.epochSecond),
   )
 }

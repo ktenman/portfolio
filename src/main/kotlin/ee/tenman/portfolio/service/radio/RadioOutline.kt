@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.Station
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -153,7 +154,7 @@ fun describe(
       "Recording: Kuku Raadio live internet stream, ${at(show.from).format(DAY)}, ${show.minutes} minutes, " +
         "stream clock ${clock(show.from)}-${clock(show.to)}.",
       "The published schedule lists the talk show \"${show.name}\"${air(show.slot)}. " +
-        "The stream lags the broadcast by about ${LAG.seconds} s.",
+        "The stream lags the broadcast by about ${Station.KUKU.lag.seconds} s.",
       "",
       "## Audio events from the loudness analysis",
       "Stretches of digital silence (below -75 dB for at least 30 ms) or quiet (below -50 dB for at least 0.3 s).",

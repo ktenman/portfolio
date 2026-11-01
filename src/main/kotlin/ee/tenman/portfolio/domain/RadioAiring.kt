@@ -2,14 +2,16 @@ package ee.tenman.portfolio.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
 @Table(name = "radio_airing")
 class RadioAiring(
-  @Column(name = "kuku_id", nullable = false, unique = true)
-  var kukuId: Long,
+  @Column(name = "external_id", nullable = false, unique = true)
+  var externalId: Long,
   @Column(name = "programme_id", nullable = false)
   var programmeId: Long,
   @Column(nullable = false)
@@ -22,4 +24,7 @@ class RadioAiring(
   var originalId: Long? = null,
   @Column(name = "record_once", nullable = false)
   var recordOnce: Boolean = false,
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  var station: Station = Station.KUKU,
 ) : BaseEntity()

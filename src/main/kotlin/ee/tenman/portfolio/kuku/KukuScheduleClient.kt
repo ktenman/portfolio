@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.kuku
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import ee.tenman.portfolio.service.radio.ScheduledAiring
+import ee.tenman.portfolio.service.radio.ScheduledShow
 import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -31,7 +33,12 @@ data class KukuEpisode(
   @JsonProperty("original_id")
   val originalId: Long? = null,
   val show: KukuShow? = null,
-)
+) {
+  fun scheduled(): ScheduledAiring? =
+    show?.let {
+      ScheduledAiring(id, ScheduledShow(it.id, it.name, it.slug, it.description), title, start.toInstant(), end.toInstant(), originalId)
+    }
+}
 
 data class KukuShow(
   val id: Long,

@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.RATE
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir

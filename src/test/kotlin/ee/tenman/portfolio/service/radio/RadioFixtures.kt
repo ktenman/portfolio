@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.RATE
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.repository.RadioAiringRepository

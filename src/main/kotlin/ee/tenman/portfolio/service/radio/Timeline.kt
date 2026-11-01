@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.RATE
 import java.nio.ByteOrder
 import java.nio.ShortBuffer
 import java.nio.channels.FileChannel
@@ -13,7 +14,6 @@ import kotlin.math.min
 import kotlin.math.round
 import kotlin.math.sqrt
 
-const val RATE = 16000
 const val HOP = 160
 const val FRAME = HOP.toDouble() / RATE
 private const val BLOCK = 300

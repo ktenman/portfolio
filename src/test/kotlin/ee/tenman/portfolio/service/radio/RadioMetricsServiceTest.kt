@@ -4,6 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.JobExecution
 import ee.tenman.portfolio.domain.JobStatus
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.JobExecutionRepository
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
@@ -57,7 +58,7 @@ class RadioMetricsServiceTest {
 
   @Test
   fun `should report when the plan was last written`() {
-    Files.writeString(directory.resolve(PLAN_FILE), "[]").also {
+    Files.writeString(directory.resolve(Station.KUKU.plan), "[]").also {
       Files.setLastModifiedTime(it, FileTime.from(Instant.ofEpochSecond(1_792_821_600)))
     }
     expect(refreshed().get("portfolio.radio.plan.timestamp.seconds").gauge().value()).toEqual(1_792_821_600.0)

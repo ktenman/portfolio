@@ -13,6 +13,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.kuku.KukuScheduleClient
 import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
@@ -20,13 +21,13 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.AirSlot
 import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.Capture
-import ee.tenman.portfolio.service.radio.HEARTBEAT_FILE
 import ee.tenman.portfolio.service.radio.MissedReason
-import ee.tenman.portfolio.service.radio.PLAN_FILE
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RecorderState
+import ee.tenman.portfolio.service.radio.ScheduledAiring
+import ee.tenman.portfolio.service.radio.ScheduledShow
 import ee.tenman.portfolio.service.radio.Slot
 import io.mockk.mockk
 import jakarta.annotation.Resource
@@ -118,6 +119,23 @@ class RadioScheduleJobIT {
     RadioScheduleJob(kukuScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock).execute()
   }
 
+  private fun aripaev(
+    id: Long,
+    start: String,
+    end: String,
+  ) = ScheduledAiring(
+    id,
+    ScheduledShow(ARIPAEV_SHOW, "Kuum tool", "kuum-tool", "Päeva põletavad küsimused"),
+    "Kuum tool",
+    at(start).toInstant(),
+    at(end).toInstant(),
+    null,
+  )
+
+  private fun replaceAripaev(vararg airings: ScheduledAiring) {
+    radioScheduleService.replace(Station.ARIPAEV, airings.toList(), at("00:00").toInstant(), at("00:00").plusDays(1).toInstant())
+  }
+
   private fun recording(
     name: String,
     start: ZonedDateTime,
@@ -135,7 +153,8 @@ class RadioScheduleJobIT {
     record: Boolean,
   ) = mvcPut("/api/radio/airings/$id").contentType(APPLICATION_JSON).content("""{"record":$record}""")
 
-  private fun plan(): List<Capture> = JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(PLAN_FILE)))
+  private fun plan(): List<Capture> =
+    JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(Station.KUKU.plan)))
 
   @Test
   fun `should list a programme with the air time of its original airings only`() {
@@ -150,7 +169,7 @@ class RadioScheduleJobIT {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
-    expect(radioProgrammeRepository.findByKukuId(175)?.recordEvery).toEqual(true)
+    expect(radioProgrammeRepository.findByExternalId(175)?.recordEvery).toEqual(true)
   }
 
   @Test
@@ -158,6 +177,43 @@ class RadioScheduleJobIT {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), episode(3, 231, "Tarkade klubi", "13:00", "14:00"))
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     expect(radioScheduleService.programmes().map { it.name }).toContainExactly("Keskpäevatund")
+  }
+
+  @Test
+  fun `should keep the airings of Kuku when the schedule of Äripäev is replaced`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    expect(radioAiringRepository.findByExternalId(1)).notToEqualNull()
+  }
+
+  @Test
+  fun `should keep the airings of Äripäev when the schedule of Kuku is imported`() {
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    expect(radioAiringRepository.findByExternalId(ARIPAEV_AIRING)).notToEqualNull()
+  }
+
+  @Test
+  fun `should drop an airing of Äripäev that left its schedule`() {
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"), aripaev(ARIPAEV_AIRING + 1, "14:00", "15:00"))
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    expect(radioAiringRepository.findByExternalId(ARIPAEV_AIRING + 1)).toEqual(null)
+  }
+
+  @Test
+  fun `should store a new airing and its programme under the station of the import`() {
+    replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
+    val airing = radioAiringRepository.findByExternalId(ARIPAEV_AIRING)
+    val programme = radioProgrammeRepository.findByExternalId(ARIPAEV_SHOW)
+    expect(airing?.station to programme?.station).toEqual(Station.ARIPAEV to Station.ARIPAEV)
+  }
+
+  @Test
+  fun `should store the rows of a Kuku import as Kuku`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    val airing = radioAiringRepository.findByExternalId(1)
+    val programme = radioProgrammeRepository.findByExternalId(175)
+    expect(airing?.station to programme?.station).toEqual(Station.KUKU to Station.KUKU)
   }
 
   @Test
@@ -183,7 +239,7 @@ class RadioScheduleJobIT {
       episode(3, 231, "Tarkade klubi", "13:30", "14:00"),
     )
     val found = radioAiringRepository.findOverlapping(at("12:00:10").toInstant(), at("13:00:30").toInstant())
-    expect(found.map { it.kukuId }).toContainExactly(2L)
+    expect(found.map { it.externalId }).toContainExactly(2L)
   }
 
   @Test
@@ -243,7 +299,8 @@ class RadioScheduleJobIT {
 
   @Test
   fun `should call the recorder waiting while the worker beats`() {
-    Files.writeString(radioProperties.recordings.resolve(HEARTBEAT_FILE), """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
+    val heartbeat = radioProperties.recordings.resolve(Station.KUKU.heartbeat)
+    Files.writeString(heartbeat, """{"seen":0,"until":${clock.instant().epochSecond + 60}}""")
     expect(radioScheduleService.station().recorder).toEqual(RecorderState.WAITING)
   }
 
@@ -319,5 +376,7 @@ class RadioScheduleJobIT {
 
   companion object {
     private val SLUGS = mapOf(175L to "keskpaevatund", 231L to "tarkade-klubi")
+    private const val ARIPAEV_SHOW = (1L shl 48) + 1
+    private const val ARIPAEV_AIRING = (1L shl 48) + 2
   }
 }

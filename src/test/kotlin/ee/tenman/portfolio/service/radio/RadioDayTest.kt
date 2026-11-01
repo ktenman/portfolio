@@ -32,7 +32,7 @@ class RadioDayTest {
     return RadioDayService(
       mockk<RadioAiringRepository> {
         every { findStarting(any(), any()) } returns airings
-        every { findAllByKukuIdIn(any()) } returns emptyList()
+        every { findAllByExternalIdIn(any()) } returns emptyList()
       },
       names,
       mockk<RadioArchiveService> { every { recordings() } returns emptyList() },

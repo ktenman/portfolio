@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.Station
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -159,8 +160,8 @@ private fun Take.drawn(
 ) = RecordedSpan(
   name,
   programme,
-  maxOf(start - LAG.seconds, slot?.start ?: from, from),
-  minOf(end - LAG.seconds, slot?.end ?: until, until),
+  maxOf(start - Station.KUKU.lag.seconds, slot?.start ?: from, from),
+  minOf(end - Station.KUKU.lag.seconds, slot?.end ?: until, until),
   recording,
 )
 

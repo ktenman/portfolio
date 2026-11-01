@@ -56,7 +56,9 @@ class RadioDayService(
   ): List<DayAiring> {
     val names = radioProgrammeRepository.findAllById(airings.map { it.programmeId }.toSet()).associate { it.id to it.name }
     val originals =
-      radioAiringRepository.findAllByKukuIdIn(airings.mapNotNull { it.originalId }).associate { it.kukuId to original(it, takes, now) }
+      radioAiringRepository
+        .findAllByExternalIdIn(airings.mapNotNull { it.originalId })
+        .associate { it.externalId to original(it, takes, now) }
     val captures = radioScheduleService.planned(airings)
     return airings.map { row(it, names.getValue(it.programmeId), it.originalId?.let(originals::get), captures.cover(it), takes, now) }
   }
@@ -73,7 +75,7 @@ class RadioDayService(
     val end = airing.endsAt.epochSecond
     val recording = covered(start, end, takes)
     return DayAiring(
-      id = airing.kukuId,
+      id = airing.externalId,
       name = name,
       episode = episode(airing.title, name),
       start = start,

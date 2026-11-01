@@ -1,18 +1,26 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.kuku.KukuEpisode
+import ee.tenman.portfolio.kuku.KukuShow
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Clock
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 
 class RadioScheduleTest {
@@ -182,5 +190,38 @@ class RadioScheduleTest {
   ) {
     Files.writeString(root.resolve(DELETED_FILE), """["${ended.name}"]""")
     expect(missed(listOf(ended), recorded(root), null, afterwards)).toHaveSize(0)
+  }
+
+  @Test
+  fun `should need the hours of storage the stations table lists`() {
+    expect(Station.entries.map { it.bytesPerHour }).toContainExactly(230_400_000L, 172_800_000L)
+  }
+
+  @Test
+  fun `should keep the plan and heartbeat of Kuku under the names the recorder reads`() {
+    expect(Station.KUKU.plan to Station.KUKU.heartbeat).toEqual("plan.json" to "heartbeat.json")
+  }
+
+  @Test
+  fun `should map a Kuku row to a scheduled airing`() {
+    val start = OffsetDateTime.parse("2026-11-02T12:00:00+02:00")
+    val end = start.plusHours(1)
+    val row = KukuEpisode(7, start, end, "Õhtu uudised", 5, KukuShow(175, "Keskpäevatund", "keskpaevatund", "Ülle saade"))
+    val show = ScheduledShow(175, "Keskpäevatund", "keskpaevatund", "Ülle saade")
+    expect(row.scheduled()).toEqual(ScheduledAiring(7, show, "Õhtu uudised", start.toInstant(), end.toInstant(), 5))
+  }
+
+  @Test
+  fun `should leave out a Kuku row with no show`() {
+    val start = OffsetDateTime.parse("2026-11-02T12:00:00+02:00")
+    expect(KukuEpisode(7, start, start.plusHours(1), "Muusika").scheduled()).toEqual(null)
+  }
+
+  @Test
+  fun `should name the station whose schedule lists no programmes`() {
+    val service = RadioScheduleService(mockk(), mockk(), mockk(), RadioProperties(), Clock.systemUTC())
+    expect { service.replace(Station.ARIPAEV, emptyList(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60)) }
+      .toThrow<IllegalStateException>()
+      .messageToContain("Äripäev schedule from 1970-01-01T00:00:00Z to 1970-01-01T00:01:00Z lists no programmes")
   }
 }
