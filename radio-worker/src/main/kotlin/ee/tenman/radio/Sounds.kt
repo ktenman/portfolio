@@ -100,7 +100,8 @@ private fun decode(
 ): Path {
   val source = directory.resolve(part.file)
   val target = pcm(directory, part)
-  val command = listOf("ffmpeg", "-n", "-v", "error", "-i", source.toString(), "-ac", "1", "-ar", "$RATE", "-f", "s16le", target.toString())
+  val command =
+    listOf(tool("ffmpeg"), "-n", "-v", "error", "-i", source.toString(), "-ac", "1", "-ar", "$RATE", "-f", "s16le", target.toString())
   val process = ProcessBuilder(command).redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT).start()
   check(process.waitFor() == 0) { "FFmpeg could not decode $source, exit ${process.exitValue()}" }
   return target
