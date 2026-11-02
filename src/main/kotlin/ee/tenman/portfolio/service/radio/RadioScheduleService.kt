@@ -82,7 +82,7 @@ class RadioScheduleService(
 
   fun stations(): List<RadioStation> = Station.entries.map(::station)
 
-  fun station(station: Station = Station.KUKU): RadioStation {
+  fun station(station: Station): RadioStation {
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now).filter { it.station == station }
     val captures = planned(airings, station)
@@ -95,7 +95,7 @@ class RadioScheduleService(
       station = station,
       onAir = onAir,
       next = next,
-      capture = captures.firstOrNull(),
+      capture = captures.firstOrNull { it.start > now.epochSecond },
       freeBytes = free,
       hours = free?.div(station.bytesPerHour),
       recorder = recorder(heartbeat(root, station), recordings.any { it.status.state == RecordingState.RECORDING }, now),

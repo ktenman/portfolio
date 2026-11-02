@@ -60,11 +60,19 @@ class RadioControllerIT {
   }
 
   @Test
-  fun `should pass the live station on as MP3`() {
+  fun `should pass Kuku on as MP3 when no live station is asked for`() {
+    Files.deleteIfExists(Path.of(radioProperties.aripaevLive))
     val playlist = Files.createDirectories(Path.of(radioProperties.live).parent).resolve("stream.m3u8")
     val tone = arrayOf("-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:a", "libmp3lame")
     ffmpeg(*tone, "-f", "hls", "-hls_list_size", "0", playlist.toString())
-    mockMvc.perform(mvcGet("/api/radio/live")).andExpect(status().isOk).andExpect(header().string(CONTENT_TYPE, "audio/mpeg"))
+    val heard =
+      mockMvc
+        .perform(mvcGet("/api/radio/live"))
+        .andExpect(status().isOk)
+        .andExpect(header().string(CONTENT_TYPE, "audio/mpeg"))
+        .andReturn()
+        .response.contentAsByteArray
+    expect(heard.size).toBeGreaterThan(0)
   }
 
   @Test
