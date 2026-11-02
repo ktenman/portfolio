@@ -144,6 +144,11 @@ class RadioScheduleTest {
 
   private fun beat(until: String) = Heartbeat(at(until).epochSecond.toDouble())
 
+  private fun take(
+    start: Long,
+    end: Long,
+  ) = Take("2026-10-24-1200-keskpaevatund-päevakaja", "Keskpäevatund", start, end, false, null, Station.KUKU)
+
   @Test
   fun `should call the recorder off when it left no heartbeat`() {
     expect(recorder(null, false, afterwards)).toEqual(RecorderState.OFF)
@@ -166,38 +171,50 @@ class RadioScheduleTest {
 
   @Test
   fun `should miss a capture that ended without a recording from a recorder that never ran`() {
-    expect(missed(listOf(ended), emptySet(), null, afterwards)).toContainExactly(MissedCapture(ended, MissedReason.NEVER_RAN))
+    expect(missed(listOf(ended), emptySet(), emptyList(), null, afterwards)).toContainExactly(MissedCapture(ended, MissedReason.NEVER_RAN))
   }
 
   @Test
   fun `should blame a recorder that is down for a missed capture`() {
-    expect(missed(listOf(ended), emptySet(), beat("2026-10-24T11:00"), afterwards).map { it.reason }).toContainExactly(MissedReason.DOWN)
+    val found = missed(listOf(ended), emptySet(), emptyList(), beat("2026-10-24T11:00"), afterwards)
+    expect(found.map { it.reason }).toContainExactly(MissedReason.DOWN)
   }
 
   @Test
   fun `should blame a running recorder that saved nothing for a missed capture`() {
-    val found = missed(listOf(ended), emptySet(), beat("2026-10-24T13:07"), afterwards)
+    val found = missed(listOf(ended), emptySet(), emptyList(), beat("2026-10-24T13:07"), afterwards)
     expect(found.map { it.reason }).toContainExactly(MissedReason.SAVED_NOTHING)
   }
 
   @Test
   fun `should not miss a capture that left a recording directory`() {
-    expect(missed(listOf(ended), setOf(ended.name), null, afterwards)).toHaveSize(0)
+    expect(missed(listOf(ended), setOf(ended.name), emptyList(), null, afterwards)).toHaveSize(0)
+  }
+
+  @Test
+  fun `should not miss a capture that a recording under another name covers`() {
+    expect(missed(listOf(ended), emptySet(), listOf(take(ended.start, ended.end)), null, afterwards)).toHaveSize(0)
+  }
+
+  @Test
+  fun `should still miss a capture when the recording before it overlaps by only seconds`() {
+    val found = missed(listOf(ended), emptySet(), listOf(take(ended.start - 3600, ended.start + 20)), null, afterwards)
+    expect(found.map { it.capture }).toContainExactly(ended)
   }
 
   @Test
   fun `should not miss a capture that has not ended`() {
-    expect(missed(listOf(ended), emptySet(), null, at("2026-10-24T13:00"))).toHaveSize(0)
+    expect(missed(listOf(ended), emptySet(), emptyList(), null, at("2026-10-24T13:00"))).toHaveSize(0)
   }
 
   @Test
   fun `should forget a missed capture a day after it ended`() {
-    expect(missed(listOf(ended), emptySet(), null, at("2026-10-25T13:06"))).toHaveSize(0)
+    expect(missed(listOf(ended), emptySet(), emptyList(), null, at("2026-10-25T13:06"))).toHaveSize(0)
   }
 
   @Test
   fun `should report nothing for an idle station with no heartbeat and no captures`() {
-    expect(missed(emptyList(), emptySet(), null, afterwards)).toHaveSize(0)
+    expect(missed(emptyList(), emptySet(), emptyList(), null, afterwards)).toHaveSize(0)
   }
 
   @Test
@@ -214,7 +231,7 @@ class RadioScheduleTest {
     @TempDir root: Path,
   ) {
     Files.writeString(root.resolve(DELETED_FILE), """["${ended.name}"]""")
-    expect(missed(listOf(ended), recorded(root), null, afterwards)).toHaveSize(0)
+    expect(missed(listOf(ended), recorded(root), emptyList(), null, afterwards)).toHaveSize(0)
   }
 
   @Test

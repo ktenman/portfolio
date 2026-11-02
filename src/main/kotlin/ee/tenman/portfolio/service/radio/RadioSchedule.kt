@@ -125,6 +125,7 @@ fun recorded(root: Path): Set<String> {
 fun missed(
   captures: List<Capture>,
   recorded: Set<String>,
+  takes: List<Take>,
   heartbeat: Heartbeat?,
   now: Instant,
 ): List<MissedCapture> {
@@ -135,7 +136,9 @@ fun missed(
       else -> MissedReason.SAVED_NOTHING
     }
   val window = (now - MISSED_FOR).epochSecond..now.epochSecond
-  return captures.filter { it.end in window && it.name !in recorded }.map { MissedCapture(it, reason) }
+  return captures
+    .filter { it.end in window && it.name !in recorded && covered(it.start, it.end, takes) == null }
+    .map { MissedCapture(it, reason) }
 }
 
 private fun alive(

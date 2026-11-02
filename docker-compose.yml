@@ -327,8 +327,6 @@ services:
     depends_on:
       alertmanager:
         condition: service_started
-      backend:
-        condition: service_started
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]

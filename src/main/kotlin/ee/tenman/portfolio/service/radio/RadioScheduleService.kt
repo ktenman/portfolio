@@ -121,7 +121,10 @@ class RadioScheduleService(
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
     val recorded = recorded(root)
-    return Station.entries.associateWith { missed(planned(airings, it), recorded, heartbeat(root, it), now) }
+    val takes = radioArchiveService.recordings().map { it.take(now.epochSecond) }
+    return Station.entries.associateWith { station ->
+      missed(planned(airings, station), recorded, takes.filter { it.station == station }, heartbeat(root, station), now)
+    }
   }
 
   private fun heartbeat(

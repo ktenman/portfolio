@@ -33,18 +33,18 @@ class CollectionScheduleServiceTest {
   }
 
   @Test
-  fun `should respect the four minute Lightyear startup delay`() {
+  fun `should keep waiting for Lightyear prices through the startup delay and its grace`() {
     val clock = clock("2026-09-25T10:00:00Z")
     val service = service(clock)
-    every { clock.instant() } returns Instant.parse("2026-09-25T10:03:59Z")
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:05:59Z")
     expect(service.expectation(snapshot(CollectionKey.LIGHTYEAR_PRICES)).expectedNow).toEqual(false)
   }
 
   @Test
-  fun `should expect Lightyear prices after startup grace`() {
+  fun `should expect Lightyear prices once the startup delay and its grace have passed`() {
     val clock = clock("2026-09-25T10:00:00Z")
     val service = service(clock)
-    every { clock.instant() } returns Instant.parse("2026-09-25T10:04:00Z")
+    every { clock.instant() } returns Instant.parse("2026-09-25T10:06:00Z")
     expect(service.expectation(snapshot(CollectionKey.LIGHTYEAR_PRICES)).expectedNow).toEqual(true)
   }
 

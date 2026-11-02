@@ -252,6 +252,25 @@ class RadioStationsIT : RadioScheduleTestBase() {
   }
 
   @Test
+  fun `should not report a capture that a recording under another name covers`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    recording("2026-11-09-1200-keskpaevatund-sihik", now.minusHours(2), 3600)
+    expect(radioScheduleService.missed().values.flatten()).toHaveSize(0)
+  }
+
+  @Test
+  fun `should not let a recording of Äripäev cover a capture of Kuku`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    recording("2026-11-09-1200-aripaev-kuum-tool", now.minusHours(2), 3600, "captured", "Kuum tool", Station.ARIPAEV)
+    val missed = radioScheduleService.missed().values.flatten()
+    expect(missed.map { it.capture.programmes }).toContainExactly(listOf("Keskpäevatund"))
+  }
+
+  @Test
   fun `should serve an Äripäev airing chosen once as planned`() {
     replaceAripaev(aripaev(ARIPAEV_AIRING, "13:00", "14:00"))
     mockMvc.perform(choose(ARIPAEV_AIRING, true)).andExpect(status().isNoContent)

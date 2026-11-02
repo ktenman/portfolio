@@ -57,7 +57,7 @@ groups:
         annotations:
           summary: 'No prices persisted for {{ $labels.provider }} {{ $labels.operation }} ({{ printf "%.0f" $value }} expected items)'
           last_persistence: '{{ with query (printf "portfolio_collection_last_persisted_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
-          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}none{{ end }}'
         keep_firing_for: 2m
       - alert: CollectionItemsStale
         expr: |
@@ -75,7 +75,7 @@ groups:
         annotations:
           summary: '{{ printf "%.0f" $value }} stale items for {{ $labels.provider }} {{ $labels.operation }}'
           last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
-          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}none{{ end }}'
         keep_firing_for: 2m
       - alert: CollectionDeadlineMissed
         expr: |
@@ -89,7 +89,7 @@ groups:
         annotations:
           summary: 'Collection deadline missed for {{ $labels.provider }} {{ $labels.operation }} ({{ printf "%.0f" $value }} expected items)'
           last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
-          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}none{{ end }}'
         keep_firing_for: 2m
       - alert: CollectionRunHung
         expr: |
@@ -103,7 +103,7 @@ groups:
         annotations:
           summary: 'Collection run has not completed for {{ $labels.provider }} {{ $labels.operation }}'
           last_success: '{{ with query (printf "portfolio_collection_last_full_success_timestamp_seconds{provider=%q,operation=%q}" $labels.provider $labels.operation) }}{{ if gt (value (first .)) 0.0 }}{{ humanizeTimestamp (value (first .)) }}{{ else }}never{{ end }}{{ else }}unknown{{ end }}'
-          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}unknown{{ end }}'
+          recent_failure: '{{ with query (printf "topk(1, sum by(category,status) (increase(portfolio_collection_failures_total{provider=%q,operation=%q}[1h])) > 0)" $labels.provider $labels.operation) }}{{ label "category" (first .) }}/{{ label "status" (first .) }}{{ else }}none{{ end }}'
         keep_firing_for: 2m
       - alert: CollectionInventoryUnavailable
         expr: portfolio_collection_inventory_ready != 1 or absent(portfolio_collection_inventory_ready)

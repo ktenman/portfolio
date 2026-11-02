@@ -28,7 +28,7 @@ class CollectionScheduleService(
   fun expectation(snapshot: CollectionSnapshot): CollectionExpectation {
     val now = clock.instant()
     val delay = startup(snapshot.key)
-    val warming = now.isBefore(started.plusSeconds(maxOf(delay, properties.startupGrace.seconds)))
+    val warming = now.isBefore(started.plusSeconds(delay).plus(properties.startupGrace))
     val window = window(snapshot, now)
     val expected = enabled && snapshot.expected.isNotEmpty() && !warming && active(snapshot.key, now)
     val deadline = if (snapshot.key.operation == "prices") priceDeadline(snapshot, window) else dailyDeadline(snapshot)

@@ -97,7 +97,7 @@ tests:
             exp_annotations:
               summary: '1 stale items for trading212 prices'
               last_success: unknown
-              recent_failure: unknown
+              recent_failure: none
       - eval_time: 13m
         alertname: CollectionItemsStale
         exp_alerts:
@@ -108,7 +108,7 @@ tests:
             exp_annotations:
               summary: '1 stale items for trading212 prices'
               last_success: unknown
-              recent_failure: unknown
+              recent_failure: none
       - eval_time: 16m
         alertname: CollectionItemsStale
         exp_alerts: []
@@ -142,7 +142,7 @@ tests:
             exp_annotations:
               summary: '1 stale items for trading212 prices'
               last_success: unknown
-              recent_failure: unknown
+              recent_failure: none
   - interval: 15s
     input_series:
       - series: 'up{job="portfolio-backend"}'
@@ -205,7 +205,7 @@ tests:
             exp_annotations:
               summary: 'Collection deadline missed for ft history (2 expected items)'
               last_success: never
-              recent_failure: unknown
+              recent_failure: none
       - eval_time: 31m15s
         alertname: CollectionRunHung
         exp_alerts:
@@ -216,7 +216,7 @@ tests:
             exp_annotations:
               summary: 'Collection run has not completed for ft history'
               last_success: never
-              recent_failure: unknown
+              recent_failure: none
       - eval_time: 11m
         alertname: CollectionItemsStale
         exp_alerts: []
@@ -247,7 +247,7 @@ tests:
             exp_annotations:
               summary: 'Collection deadline missed for ft history (2 expected items)'
               last_success: '1970-01-01 00:05:00 +0000 UTC'
-              recent_failure: unknown
+              recent_failure: none
   - interval: 15s
     input_series:
       - series: 'up{job="portfolio-backend"}'

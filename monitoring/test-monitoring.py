@@ -264,6 +264,7 @@ def check_compose():
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
     assert '--rules.alert.resend-delay=15s' in services['prometheus']['command']
+    assert 'backend' not in services['prometheus']['depends_on'], 'a deploy must not restart Prometheus with the backend'
     assert '--data.retention=4320h' in services['alertmanager']['command'], \
         'Alertmanager forgets a sent alert after its data retention, so it must cover twice the 2160h split repeat interval'
     postgres = services['postgres']['command']
@@ -474,6 +475,17 @@ def check_once_delivery(base, name, labels, summary):
     assert len(sent()) == 1, f'{name} reached Telegram more than once: {sent()}'
 
 
+def check_alert_separation(base):
+    def sent(text):
+        return [event for event in events('/sendMessage') if text in json.loads(event[2])['text']]
+
+    request(base + '/api/v2/alerts', [alert('CollectionDeadlineMissed', 30, 'tuleva', 'history', 'grouped'),
+                                      alert('CollectionItemsStale', 30, 'tuleva', 'history', 'grouped'),
+                                      alert('RadioScheduleFailed', 30, 'kuku', environment='grouped'),
+                                      alert('RadioScheduleFailed', 30, 'aripaev', environment='grouped')])
+    wait_for(lambda: sent('issues/1936\n\ngrouped ') and sent('items\n\ngrouped RadioScheduleFailed'))
+
+
 def check_delivery():
     Receiver.events = []
     server = ThreadingHTTPServer(('0.0.0.0', 0), Receiver)
@@ -559,6 +571,7 @@ def check_delivery():
             check_once_delivery(base, 'SplitAnnounced',
                                 {'instrument': 'BNKE:PAR:EUR', 'ratio': '1:80', 'effective': '2026-10-27'},
                                 'BNKE:PAR:EUR splits 1:80 on 2026-10-27; record it with the recording-etf-splits skill')
+            check_alert_separation(base)
             stop_alertmanager(container)
             (directory / 'alertmanager.yml').write_text(production_config)
             container, base = start_alertmanager(directory, network)
