@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.exception.RecordingInProgressException
 import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.CutChoice
@@ -63,24 +64,29 @@ class RadioController(
   fun getProgrammes(): List<RadioProgrammeDto> = radioScheduleService.programmes()
 
   @GetMapping("/station")
-  fun getStation(): RadioStation = radioScheduleService.station()
+  fun getStations(): List<RadioStation> = radioScheduleService.stations()
 
   @GetMapping("/live")
-  fun getLive(response: HttpServletResponse) {
+  fun getLive(
+    @RequestParam(defaultValue = "KUKU") station: Station,
+    response: HttpServletResponse,
+  ) {
     response.contentType = "audio/mpeg"
-    radioLiveService.stream(response.outputStream)
+    radioLiveService.stream(response.outputStream, station)
   }
 
   @GetMapping("/schedule")
   fun getSchedule(
     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate?,
-  ): RadioDay = radioDayService.day(date)
+    @RequestParam(required = false) station: Station?,
+  ): RadioDay = radioDayService.day(date, station)
 
   @GetMapping("/search")
   fun getSearch(
     @RequestParam q: String,
     @RequestParam(required = false) after: String?,
-  ): RadioSearch = radioSearchService.search(q, after)
+    @RequestParam(required = false) station: Station?,
+  ): RadioSearch = radioSearchService.search(q, after, station)
 
   @PutMapping("/airings/{id}")
   fun putAiring(

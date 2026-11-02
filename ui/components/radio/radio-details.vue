@@ -26,7 +26,7 @@ import {
   TranscriptState,
 } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
-import { megabytes } from '../../utils/radio'
+import { megabytes, STATIONS } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 import RadioFacts from './radio-facts.vue'
 import RadioIcon from './radio-icon.vue'
@@ -44,10 +44,12 @@ const model = (label: string, version: ModelVersion | null): [string, string, st
 }
 
 const facts = computed<[string, string, string?][]>(() => {
+  const station: [string, string] = ['Station', STATIONS[props.recording.status.station]]
   const models = [model('Speech', props.recording.speech), model('Sounds', props.recording.sounds)]
   const edit = props.recording.editList
-  if (!edit) return models
+  if (!edit) return [station, ...models]
   return [
+    station,
     ['Analysis', edit.outline.model ?? '—'],
     ['Hosts', edit.hosts.join(', ') || '—'],
     ...models,

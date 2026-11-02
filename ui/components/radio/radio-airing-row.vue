@@ -1,23 +1,29 @@
 <template>
   <div
-    class="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:grid-cols-[3.75rem_minmax(0,1fr)_3.5rem_9.5rem_7.5rem] md:px-4"
+    class="relative grid grid-cols-[3.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 px-3 py-3 md:grid-cols-[60px_72px_minmax(0,1fr)_56px_152px_120px] md:px-4"
     :class="{ 'text-ink-soft': airing.state === AiringState.MISSED }"
     data-testid="radio-airing"
   >
     <span class="row-span-3 self-start font-semibold tabular-nums md:row-span-1 md:self-center">
       {{ clock(airing.start, 0) }}
     </span>
+    <span class="hidden text-sm text-ink-soft md:block" data-testid="radio-airing-station">
+      {{ station }}
+    </span>
     <div class="min-w-0">
       <router-link
         v-if="page"
         :to="page"
         :class="[ROW_LINK, 'block hover:underline']"
-        :aria-label="`${airing.name} ${clock(airing.start, 0)}`"
+        :aria-label="`${airing.name} ${clock(airing.start, 0)} · ${station}`"
       >
         {{ airing.name }}
       </router-link>
       <span v-else class="block font-semibold">{{ airing.name }}</span>
-      <span v-if="note" class="block text-sm text-body-secondary">{{ note }}</span>
+      <span class="block text-sm text-body-secondary md:hidden">
+        {{ [station, note].filter(Boolean).join(' · ') }}
+      </span>
+      <span v-if="note" class="hidden text-sm text-body-secondary md:block">{{ note }}</span>
     </div>
     <span class="hidden text-ink-soft tabular-nums md:block">
       {{ airLength(airing.end - airing.start) }}
@@ -41,7 +47,7 @@
           'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"
         :disabled="!action.run"
-        :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)}`"
+        :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)} · ${station}`"
         @click="action.run?.()"
       >
         <radio-icon v-if="action.icon" :name="action.icon" />
@@ -69,6 +75,7 @@ import {
   LINK,
   PLAY,
   ROW_LINK,
+  STATIONS,
 } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
@@ -80,6 +87,7 @@ const queryClient = useQueryClient()
 const router = useRouter()
 const toast = useToast()
 
+const station = computed(() => STATIONS[props.airing.station])
 const note = computed(() => airingNote(props.airing))
 const badge = computed(() => AIRING_STATES[props.airing.state])
 
@@ -132,9 +140,13 @@ const action = computed(() => {
       return { label: 'Listen', run: listen(), quiet: true }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
-      return player.live.value && player.playing.value
+      return player.tuned.value === airing.station && player.playing.value
         ? { label: 'Pause', run: player.toggle, icon: 'pause' as const }
-        : { label: 'Listen live', run: player.listen, icon: 'play' as const }
+        : {
+            label: 'Listen live',
+            run: () => player.listen(airing.station),
+            icon: 'play' as const,
+          }
     case AiringState.OPEN:
       return { label: 'Record', run: record(true) }
     case AiringState.PLANNED:

@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import RadioDetails from './radio-details.vue'
 import { recording } from './radio-fixture'
-import { type RecordingSummary, TranscriptState } from '../../models/generated/domain-models'
+import {
+  type RecordingSummary,
+  Station,
+  TranscriptState,
+} from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: { fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}` },
@@ -69,6 +73,7 @@ describe('RadioDetails', () => {
 
   it('should list the analysis, the hosts and the models behind the speech and sounds', async () => {
     expect((await rows()).map(([label]) => label)).toEqual([
+      'Station',
       'Analysis',
       'Hosts',
       'Speech',
@@ -105,8 +110,9 @@ describe('RadioDetails', () => {
     expect(await rows(item)).toContainEqual(['Sounds', 'In progress'])
   })
 
-  it('should list only the models of a show not analyzed yet', async () => {
+  it('should list only the station and the models of a show not analyzed yet', async () => {
     expect((await rows(recording({ editList: null }))).map(([label]) => label)).toEqual([
+      'Station',
       'Speech',
       'Sounds',
     ])
@@ -114,5 +120,14 @@ describe('RadioDetails', () => {
 
   it('should start folded', () => {
     expect(render().get('button').attributes('aria-expanded')).toBe('false')
+  })
+
+  it('should name the station of the recording', async () => {
+    const status = { ...recording().status, station: Station.ARIPAEV }
+    expect((await opened(recording({ status }))).text()).toContain('StationÄripäev')
+  })
+
+  it('should name the station before the show has been analyzed', async () => {
+    expect((await opened(recording({ editList: null }))).text()).toContain('StationKuku')
   })
 })

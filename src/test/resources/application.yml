@@ -35,6 +35,7 @@ kuku:
 radio:
   recordings: ${java.io.tmpdir}/radio-it
   live: ${java.io.tmpdir}/radio-it-live/stream.m3u8
+  aripaev-live: ${java.io.tmpdir}/radio-it-live/aripaev.mp3
 
 ecb:
   url: http://localhost:${wiremock.server.port}

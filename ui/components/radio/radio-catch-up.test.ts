@@ -4,14 +4,14 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioCatchUp from './radio-catch-up.vue'
 import { airing, radioDay, recording } from './radio-fixture'
-import { AiringState } from '../../models/generated/domain-models'
+import { AiringState, Station } from '../../models/generated/domain-models'
 
 const player = vi.hoisted(() => ({
   load: vi.fn(),
   playFrom: vi.fn(),
   listen: vi.fn(),
   toggle: vi.fn(),
-  live: { value: false },
+  tuned: { value: null as string | null },
   playing: { value: false },
 }))
 
@@ -43,7 +43,7 @@ const button = async (label: string) =>
 describe('RadioCatchUp', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    player.live.value = false
+    player.tuned.value = null
     player.playing.value = false
     vi.mocked(radioService.day).mockResolvedValue(radioDay())
     vi.mocked(radioService.recordings).mockResolvedValue([recording()])
@@ -103,7 +103,7 @@ describe('RadioCatchUp', () => {
     )
     await mount()
     vi.unstubAllGlobals()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19', null)
   })
 
   it('should leave the day buttons to screens wider than a phone', async () => {
@@ -136,7 +136,7 @@ describe('RadioCatchUp', () => {
       .find(b => b.attributes('aria-label') === 'Fri 16.10')!
       .trigger('click')
     await flushPromises()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-16', null)
   })
 
   it('should keep the chosen day in the address', async () => {
@@ -154,7 +154,47 @@ describe('RadioCatchUp', () => {
     const wrapper = await mount()
     await wrapper.vm.$router.replace({ query: { day: '2026-10-14' } })
     await flushPromises()
-    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14')
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-14', null)
+  })
+
+  it('should keep the station in the address when another day is chosen', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find(b => b.attributes('aria-label') === 'Wed 14.10')!
+      .trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.vm.$router.currentRoute.value.query).toEqual({
+        station: 'aripaev',
+        day: '2026-10-14',
+      })
+    )
+  })
+
+  it('should ask for the day of the station in the address', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(radioService.day).toHaveBeenLastCalledWith(null, Station.ARIPAEV)
+  })
+
+  it("should ask for tomorrow's schedule of the station on a phone", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    vi.mocked(radioService.day).mockResolvedValue(
+      radioDay({ date: '2026-10-18', today: '2026-10-18' })
+    )
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    vi.unstubAllGlobals()
+    expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19', Station.ARIPAEV)
   })
 
   it('should say when the recording of an airing was made', async () => {
@@ -170,7 +210,9 @@ describe('RadioCatchUp', () => {
   })
 
   it('should say when the original of a repeat was missed', async () => {
-    expect((await row('21:00Meretund')).text()).toContain('Repeat · Sat 17.10 09:00 not recorded')
+    expect((await row('21:00KukuMeretund')).text()).toContain(
+      'Repeat · Sat 17.10 09:00 not recorded'
+    )
   })
 
   it('should show a repeat whose original is archived', async () => {
@@ -206,13 +248,13 @@ describe('RadioCatchUp', () => {
   })
 
   it('should show the pause icon on the stop button of an airing on air', async () => {
-    player.live.value = true
+    player.tuned.value = Station.KUKU
     player.playing.value = true
     expect((await button('Pause')).find('path').attributes('d')).toBe('M6 4h4v16H6z')
   })
 
   it('should stop the live radio from an airing on air', async () => {
-    player.live.value = true
+    player.tuned.value = Station.KUKU
     player.playing.value = true
     await (await button('Pause')).trigger('click')
     expect(player.toggle).toHaveBeenCalled()
@@ -250,12 +292,12 @@ describe('RadioCatchUp', () => {
   })
 
   it('should open the recording of a recorded airing from its name', async () => {
-    const link = (await mount()).get('a[aria-label="Keskpäevatund 12:00"]')
+    const link = (await mount()).get('a[aria-label="Keskpäevatund 12:00 · Kuku"]')
     expect(link.attributes('href')).toBe('/radio/2026-10-17')
   })
 
   it('should open the original recording of an archived repeat from its name', async () => {
-    const link = (await mount()).get('a[aria-label="Keskpäevatund 18:00"]')
+    const link = (await mount()).get('a[aria-label="Keskpäevatund 18:00 · Kuku"]')
     expect(link.attributes('href')).toBe('/radio/2026-10-17')
   })
 
@@ -294,7 +336,7 @@ describe('RadioCatchUp', () => {
   it('should count the recordings of the day under the Schedule heading on a phone', async () => {
     const summary = (await mount()).get('[data-testid="radio-schedule-summary"]')
     expect([summary.text(), summary.classes('md:hidden')]).toEqual([
-      '· 1 recording · 1 h 10 min',
+      '· 3 recordings · 2 h 30 min',
       true,
     ])
   })
@@ -307,6 +349,107 @@ describe('RadioCatchUp', () => {
   it('should give the play button a fingertip size on a phone', async () => {
     expect((await button('Listen: Keskpäevatund 12:00')).classes()).toEqual(
       expect.arrayContaining(['size-11', 'md:size-9'])
+    )
+  })
+
+  const row2 = (name: string, overrides = {}) =>
+    airing({ id: name.length, name, start: 3600, end: 7200, ...overrides })
+
+  const airings = (...rows: ReturnType<typeof airing>[]) =>
+    vi
+      .mocked(radioService.day)
+      .mockResolvedValue(radioDay({ day: [{ missed: false, airings: rows }], night: [] }))
+
+  it('should draw the airing row on the grid of the board', async () => {
+    expect((await row('Tarkade klubi')).classes()).toContain(
+      'md:grid-cols-[60px_72px_minmax(0,1fr)_56px_152px_120px]'
+    )
+  })
+
+  it('should name the station of an airing in its cell', async () => {
+    airings(row2('Kuum tool', { station: Station.ARIPAEV }))
+    expect((await row('Kuum tool')).get('[data-testid="radio-airing-station"]').text()).toBe(
+      'Äripäev'
+    )
+  })
+
+  it('should show the station cell only beside the wide rows', async () => {
+    const cell = (await row('Tarkade klubi')).get('[data-testid="radio-airing-station"]')
+    expect(cell.classes()).toEqual(expect.arrayContaining(['hidden', 'md:block']))
+  })
+
+  it('should lead the note of an airing on a phone with its station', async () => {
+    airings(row2('Kuum tool', { station: Station.ARIPAEV, episode: 'Madis Toomsalu' }))
+    expect((await row('Kuum tool')).find('.md\\:hidden').text()).toBe('Äripäev · Madis Toomsalu')
+  })
+
+  it('should show the station alone on a phone when an airing has no note', async () => {
+    airings(row2('Kuum tool', { station: Station.ARIPAEV }))
+    expect((await row('Kuum tool')).find('.md\\:hidden').text()).toBe('Äripäev')
+  })
+
+  it('should leave the note of an airing without the station on wide rows', async () => {
+    airings(row2('Kuum tool', { station: Station.ARIPAEV, episode: 'Madis Toomsalu' }))
+    expect((await row('Kuum tool')).find('.md\\:block.text-body-secondary').text()).toBe(
+      'Madis Toomsalu'
+    )
+  })
+
+  it('should tell apart two airings at the same minute by the station in the label', async () => {
+    const live = { state: AiringState.ON_AIR }
+    airings(
+      row2('Sama saade', { id: 1, ...live }),
+      row2('Sama saade', { id: 2, ...live, station: Station.ARIPAEV })
+    )
+    const labels = (await mount())
+      .findAll('button')
+      .map(b => b.attributes('aria-label'))
+      .filter(label => label?.startsWith('Listen live'))
+    expect(labels).toEqual([
+      'Listen live: Sama saade 04:00 · Kuku',
+      'Listen live: Sama saade 04:00 · Äripäev',
+    ])
+  })
+
+  it('should name the station in the link of an airing', async () => {
+    const link = (await mount()).find('a[aria-label="Keskpäevatund 12:00 · Kuku"]')
+    expect(link.exists()).toBe(true)
+  })
+
+  it('should tune to the station of the airing', async () => {
+    airings(row2('Kuum tool', { state: AiringState.ON_AIR, station: Station.ARIPAEV }))
+    await (await button('Listen live')).trigger('click')
+    expect(player.listen).toHaveBeenCalledWith(Station.ARIPAEV)
+  })
+
+  it('should show Pause on the row of the tuned station only', async () => {
+    const live = { state: AiringState.ON_AIR }
+    player.tuned.value = Station.ARIPAEV
+    player.playing.value = true
+    airings(row2('Digitund', live), row2('Kuum tool', { ...live, station: Station.ARIPAEV }))
+    const labels = (await mount())
+      .findAll('[data-testid="radio-airing"] button')
+      .map(b => b.attributes('aria-label'))
+    expect(labels).toEqual([
+      'Listen live: Digitund 04:00 · Kuku',
+      'Pause: Kuum tool 04:00 · Äripäev',
+    ])
+  })
+
+  it('should ask the bar for one track on a chip', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(wrapper.findAll('[data-testid="radio-day-track"]')).toHaveLength(1)
+  })
+
+  it('should keep the old day on the page while a chip loads its own', async () => {
+    const wrapper = await mount()
+    vi.mocked(radioService.day).mockReturnValue(new Promise(() => {}))
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect([wrapper.text().includes('Loading…'), wrapper.text().includes('Tarkade klubi')]).toEqual(
+      [false, true]
     )
   })
 })

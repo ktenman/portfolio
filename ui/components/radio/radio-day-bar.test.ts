@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import RadioDayBar from './radio-day-bar.vue'
 import { radioDay } from './radio-fixture'
+import { Station } from '../../models/generated/domain-models'
 
-const bar = (overrides = {}) =>
+const bar = (overrides = {}, station: Station | null = null) =>
   mount(RadioDayBar, {
-    props: { radioDay: radioDay(overrides) },
+    props: { radioDay: radioDay(overrides), station },
     global: { stubs: { RouterLink: RouterLinkStub } },
   })
 
@@ -17,6 +18,7 @@ const RUNNING = {
   start: DAY.now - 600,
   end: DAY.now,
   recording: true,
+  station: Station.KUKU,
 }
 
 const hours = (overrides = {}) =>
@@ -55,12 +57,18 @@ describe('RadioDayBar', () => {
 
   it('should name the show and its times to a screen reader', () => {
     const link = bar().find('[data-testid="radio-day-link"]')
-    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05 · Kuku')
+  })
+
+  it('should name the station of a show to a screen reader', () => {
+    const recorded = [{ ...FINISHED, station: Station.ARIPAEV }]
+    const link = bar({ recorded }).find('[data-testid="radio-day-link"]')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05 · Äripäev')
   })
 
   it('should tell a screen reader that a show is being recorded now', () => {
     const links = bar({ recorded: [FINISHED, RUNNING] }).findAll('[data-testid="radio-day-link"]')
-    expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now')
+    expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now · Kuku')
   })
 
   it('should title a planned airing with its times', () => {
@@ -83,11 +91,11 @@ describe('RadioDayBar', () => {
     expect([
       day.findAll('[data-testid="radio-day-planned"]').length,
       day.findAllComponents(RouterLinkStub).length,
-    ]).toEqual([1, 0])
+    ]).toEqual([2, 0])
   })
 
   it('should count the recordings and their time', () => {
-    expect(bar().text()).toContain('1 recording · 1 h 10 min')
+    expect(bar().text()).toContain('3 recordings · 2 h 30 min')
   })
 
   it('should count the planned airings and their time on a day with nothing recorded', () => {
@@ -127,7 +135,7 @@ describe('RadioDayBar', () => {
   })
 
   it('should mark midnight stronger than the other ticks', () => {
-    const ticks = bar().findAll('[data-testid="radio-day-tick"]')
+    const ticks = bar({}, Station.KUKU).findAll('[data-testid="radio-day-tick"]')
     expect(ticks.map(tick => tick.classes('bg-ink-faint'))).toEqual([false, false, false, true])
   })
 
@@ -147,5 +155,76 @@ describe('RadioDayBar', () => {
   it('should keep the current time inside the card just before five in the morning', () => {
     const clock = bar({ now: DAY.until - 600 }).find('[data-testid="radio-day-clock"]')
     expect(clock.classes('-translate-x-full')).toBe(true)
+  })
+
+  const tracks = (station?: Station | null, overrides = {}) =>
+    bar(overrides, station).findAll('[data-testid="radio-day-track"]')
+
+  it('should draw one track per station on All', () => {
+    expect(tracks().map(track => track.get('[data-testid="radio-day-station"]').text())).toEqual([
+      'Kuku',
+      'Äripäev',
+    ])
+  })
+
+  it('should draw one track on a chip', () => {
+    expect(
+      tracks(Station.ARIPAEV).map(track => track.get('[data-testid="radio-day-station"]').text())
+    ).toEqual(['Äripäev'])
+  })
+
+  it('should keep the name of a station beside its track', () => {
+    expect(tracks()[0].classes()).toContain('grid-cols-[72px_minmax(0,1fr)]')
+  })
+
+  it('should put each recording on the track of its station', () => {
+    const recorded = [FINISHED, { ...RUNNING, station: Station.ARIPAEV }]
+    const links = tracks(null, { recorded }).map(
+      track => track.findAll('[data-testid="radio-day-link"]').length
+    )
+    expect(links).toEqual([1, 1])
+  })
+
+  it('should put each planned airing on the track of its station', () => {
+    const planned = [{ ...DAY.planned[0], station: Station.ARIPAEV }]
+    const plans = tracks(null, { planned }).map(
+      track => track.findAll('[data-testid="radio-day-planned"]').length
+    )
+    expect(plans).toEqual([0, 1])
+  })
+
+  it('should share one row of hours between the tracks', () => {
+    expect(hours({ now: DAY.until + 60 })).toEqual(['06', '12', '18', '00'])
+  })
+
+  it('should line the hours up with the tracks', () => {
+    const row = bar().get('[data-testid="radio-day-hours"]')
+    expect(row.classes()).toContain('grid-cols-[72px_minmax(0,1fr)]')
+  })
+
+  const room = (recorded: (typeof FINISHED)[], planned: typeof DAY.planned, at: number) => {
+    const { room, tracks } = bar({ recorded, planned }).vm as unknown as {
+      room: (span: { start: number; end: number }, starts: number[]) => string
+      tracks: { station: Station; starts: number[] }[]
+    }
+    return tracks.map(track => room({ start: at, end: at + 600 }, track.starts))
+  }
+
+  it('should not stop a label at a start on the other track', () => {
+    const later = { ...FINISHED, start: FINISHED.start + 900, station: Station.ARIPAEV }
+    const whole = `min(${((DAY.until - FINISHED.start) / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED, later], [], FINISHED.start)[0]).toContain(whole)
+  })
+
+  it('should stop a label at the next start on its own track', () => {
+    const later = { ...FINISHED, start: FINISHED.start + 900 }
+    const short = `min(${(900 / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED, later], [], FINISHED.start)[0]).toContain(short)
+  })
+
+  it('should stop a label at a planned start on its own track', () => {
+    const planned = [{ ...DAY.planned[0], start: FINISHED.start + 900 }]
+    const short = `min(${(900 / (DAY.until - DAY.from)) * 100}cqw`
+    expect(room([FINISHED], planned, FINISHED.start)[0]).toContain(short)
   })
 })

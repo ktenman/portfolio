@@ -77,7 +77,7 @@
       </div>
 
       <!-- Desktop Table View -->
-      <div class="desktop-table-wrapper hidden md:block table-responsive">
+      <div class="desktop-table-wrapper relative hidden md:block table-responsive">
         <table class="table table-striped">
           <thead>
             <tr>

@@ -219,21 +219,21 @@ class RadioDayTest {
     val past = aired(1, sihik, 6)
     val unticked = aired(3, õun, 15)
     val repeat = aired(4, sihik, 22, 2)
-    val day = service("2026-10-29T08:00:00Z", listOf(past, noon, unticked, repeat), sihik, õun).day(THURSDAY)
+    val day = service("2026-10-29T08:00:00Z", listOf(past, noon, unticked, repeat), sihik, õun).day(THURSDAY, null)
     expect(day.planned).toEqual(listOf(PlannedSpan("Sihik", noon.startsAt.epochSecond, noon.endsAt.epochSecond, Station.KUKU)))
   }
 
   @Test
   fun `should sum the time of the airings planned for the day`() {
     val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
-    val day = service("2026-10-29T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY)
+    val day = service("2026-10-29T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY, null)
     expect(day.plannedSeconds).toEqual(7200)
   }
 
   @Test
   fun `should plan no time on a day that has passed`() {
     val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
-    val day = service("2026-10-30T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY)
+    val day = service("2026-10-30T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, sihik, 15)), sihik).day(THURSDAY, null)
     expect(day.plannedSeconds).toEqual(0)
   }
 
@@ -241,7 +241,7 @@ class RadioDayTest {
   fun `should not cover an Äripäev airing with a Kuku take at the same time`() {
     val tool = RadioProgramme(1_000_001, "Kuum tool", "kuum-tool", station = Station.ARIPAEV).apply { id = 2 }
     val airing = aired(1, tool, 12)
-    val day = service("2026-10-29T16:00:00Z", listOf(airing), tool, recordings = listOf(held(airing, Station.KUKU))).day(THURSDAY)
+    val day = service("2026-10-29T16:00:00Z", listOf(airing), tool, recordings = listOf(held(airing, Station.KUKU))).day(THURSDAY, null)
     expect(rows(day).single().state).toEqual(AiringState.MISSED)
   }
 
@@ -249,7 +249,7 @@ class RadioDayTest {
   fun `should cover an Äripäev airing with an Äripäev take`() {
     val tool = RadioProgramme(1_000_001, "Kuum tool", "kuum-tool", station = Station.ARIPAEV).apply { id = 2 }
     val airing = aired(1, tool, 12)
-    val day = service("2026-10-29T16:00:00Z", listOf(airing), tool, recordings = listOf(held(airing, Station.ARIPAEV))).day(THURSDAY)
+    val day = service("2026-10-29T16:00:00Z", listOf(airing), tool, recordings = listOf(held(airing, Station.ARIPAEV))).day(THURSDAY, null)
     expect(rows(day).single().state).toEqual(AiringState.RECORDED)
   }
 
@@ -280,7 +280,7 @@ class RadioDayTest {
     val own = aired(2, tool, 12)
     val other = aired(1, sihik, 12)
     val recordings = listOf(held(own, Station.ARIPAEV), held(other, Station.KUKU))
-    val day = service("2026-10-29T16:00:00Z", listOf(own, other), sihik, tool, recordings = recordings).day(THURSDAY)
+    val day = service("2026-10-29T16:00:00Z", listOf(own, other), sihik, tool, recordings = recordings).day(THURSDAY, null)
     expect(day.seconds).toEqual(7200)
   }
 
@@ -289,14 +289,14 @@ class RadioDayTest {
     val sihik = RadioProgramme(500, "Sihik", "sihik").apply { id = 1 }
     val tool = RadioProgramme(1_000_001, "Kuum tool", "kuum-tool", station = Station.ARIPAEV).apply { id = 2 }
     val airings = listOf(aired(2, tool, 12), aired(1, sihik, 12), aired(3, tool, 15))
-    expect(rows(service("2026-10-29T08:00:00Z", airings, sihik, tool).day(THURSDAY)).map { it.id }).toEqual(listOf(1L, 2L, 3L))
+    expect(rows(service("2026-10-29T08:00:00Z", airings, sihik, tool).day(THURSDAY, null)).map { it.id }).toEqual(listOf(1L, 2L, 3L))
   }
 
   @Test
   fun `should plan the airings of each station apart`() {
     val sihik = RadioProgramme(500, "Sihik", "sihik", recordEvery = true).apply { id = 1 }
     val tool = RadioProgramme(1_000_001, "Kuum tool", "kuum-tool", recordEvery = true, station = Station.ARIPAEV).apply { id = 2 }
-    val day = service("2026-10-29T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, tool, 12)), sihik, tool).day(THURSDAY)
+    val day = service("2026-10-29T08:00:00Z", listOf(aired(1, sihik, 12), aired(2, tool, 12)), sihik, tool).day(THURSDAY, null)
     expect(day.planned.map { it.station }).toEqual(listOf(Station.KUKU, Station.ARIPAEV))
   }
 
@@ -320,12 +320,12 @@ class RadioDayTest {
 
   @Test
   fun `should open on the broadcast day still on air after midnight`() {
-    expect(service("2026-10-27T00:30:00Z").day(null).date).toEqual(LocalDate.of(2026, 10, 26))
+    expect(service("2026-10-27T00:30:00Z").day(null, null).date).toEqual(LocalDate.of(2026, 10, 26))
   }
 
   @Test
   fun `should run the broadcast day across the clock change for 25 hours`() {
-    val day = service("2026-10-24T12:00:00Z").day(LocalDate.of(2026, 10, 24))
+    val day = service("2026-10-24T12:00:00Z").day(LocalDate.of(2026, 10, 24), null)
     expect(day.until - day.from).toEqual(90000)
   }
 

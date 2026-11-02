@@ -161,7 +161,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
   fun `should keep the next airing of Kuku when Äripäev airs sooner`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     replaceAripaev(aripaev(ARIPAEV_AIRING, "09:00", "10:00"))
-    expect(radioScheduleService.station().next?.name).toEqual("Keskpäevatund")
+    expect(radioScheduleService.station(Station.KUKU).next?.name).toEqual("Keskpäevatund")
   }
 
   @Test
@@ -189,13 +189,13 @@ class RadioStationsIT : RadioScheduleTestBase() {
   @Test
   fun `should keep the recordings of Äripäev out of the last recording of Kuku`() {
     aripaevRecording("captured")
-    expect(radioScheduleService.station().last).toEqual(null)
+    expect(radioScheduleService.station(Station.KUKU).last).toEqual(null)
   }
 
   @Test
   fun `should read the heartbeat of the given station`() {
     beat(Station.ARIPAEV)
-    expect(radioScheduleService.station(Station.ARIPAEV).recorder to radioScheduleService.station().recorder)
+    expect(radioScheduleService.station(Station.ARIPAEV).recorder to radioScheduleService.station(Station.KUKU).recorder)
       .toEqual(RecorderState.WAITING to RecorderState.OFF)
   }
 
@@ -204,7 +204,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
     beat(Station.KUKU)
     beat(Station.ARIPAEV)
     aripaevRecording("recording")
-    expect(radioScheduleService.station().recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
+    expect(radioScheduleService.station(Station.KUKU).recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
       .toEqual(RecorderState.WAITING to RecorderState.RECORDING)
   }
 

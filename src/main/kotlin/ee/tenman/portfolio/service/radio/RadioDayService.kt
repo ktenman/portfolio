@@ -20,7 +20,7 @@ class RadioDayService(
 ) {
   fun day(
     date: LocalDate?,
-    station: Station? = null,
+    station: Station?,
   ): RadioDay {
     val today = LocalDateTime.now(clock).minusSeconds(DAY_STARTS.toSecondOfDay().toLong()).toLocalDate()
     val shown = date ?: today

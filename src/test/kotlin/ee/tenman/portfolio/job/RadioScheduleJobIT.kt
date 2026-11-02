@@ -101,7 +101,7 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
   fun `should name the next airing and whether it will be recorded`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), episode(3, 231, "Tarkade klubi", "13:00", "14:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    val next = radioScheduleService.station().next
+    val next = radioScheduleService.station(Station.KUKU).next
     expect(next?.name to next?.recorded).toEqual("Keskpäevatund" to true)
   }
 
@@ -109,30 +109,50 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
   fun `should name the next capture of the recorder`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    expect(radioScheduleService.station().capture?.start).toEqual(at("12:00:10").toEpochSecond())
+    expect(radioScheduleService.station(Station.KUKU).capture?.start).toEqual(at("12:00:10").toEpochSecond())
+  }
+
+  @Test
+  fun `should name the capture after the one already running`() {
+    val now = clock.instant().atZone(tallinn)
+    load(
+      episode(4, 175, "Keskpäevatund", now.minusMinutes(30), now.plusMinutes(30)),
+      episode(5, 175, "Keskpäevatund", now.plusHours(2), now.plusHours(3)),
+    )
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    val capture = radioScheduleService.station(Station.KUKU).capture
+    expect(capture?.slot?.start).toEqual(now.plusHours(2).toEpochSecond())
+  }
+
+  @Test
+  fun `should name no capture while the only one is already running`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusMinutes(30), now.plusMinutes(30)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    expect(radioScheduleService.station(Station.KUKU).capture).toEqual(null)
   }
 
   @Test
   fun `should count the hours the free space holds of MP3 and its PCM`() {
-    val station = radioScheduleService.station()
+    val station = radioScheduleService.station(Station.KUKU)
     expect(station.hours).toEqual(station.freeBytes?.div(230_400_000))
   }
 
   @Test
   fun `should give no free space when the recordings directory is missing`() {
     radioProperties.recordings.toFile().deleteRecursively()
-    expect(radioScheduleService.station().freeBytes).toEqual(null)
+    expect(radioScheduleService.station(Station.KUKU).freeBytes).toEqual(null)
   }
 
   @Test
   fun `should call the recorder off when the worker left no heartbeat`() {
-    expect(radioScheduleService.station().recorder).toEqual(RecorderState.OFF)
+    expect(radioScheduleService.station(Station.KUKU).recorder).toEqual(RecorderState.OFF)
   }
 
   @Test
   fun `should call the recorder waiting while the worker beats`() {
     beat(Station.KUKU)
-    expect(radioScheduleService.station().recorder).toEqual(RecorderState.WAITING)
+    expect(radioScheduleService.station(Station.KUKU).recorder).toEqual(RecorderState.WAITING)
   }
 
   @Test

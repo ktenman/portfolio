@@ -14,6 +14,7 @@ import {
   RecorderState,
   type RecordingSummary,
   RecordingState,
+  Station,
   type TimelineEntry,
   type TranscriptSection,
   TranscriptState,
@@ -31,6 +32,11 @@ export const METHODS: Record<BoundaryMethod, string> = {
   [BoundaryMethod.MANUAL]: 'manual',
   [BoundaryMethod.SOUND]: 'sound analysis',
   [BoundaryMethod.REPEATED_AUDIO]: 'repeated audio',
+}
+
+export const STATIONS: Record<Station, string> = {
+  [Station.KUKU]: 'Kuku',
+  [Station.ARIPAEV]: 'Äripäev',
 }
 
 const DAYS = Object.values(DayOfWeek)
@@ -233,9 +239,9 @@ export const airingNote = (airing: DayAiring): string | null => {
 
 export const missedRun = (airings: DayAiring[]): string => {
   const first = airings[0]
-  const last = airings[airings.length - 1]
+  const end = Math.max(...airings.map(airing => airing.end))
   const count = `${airings.length} ${airings.length === 1 ? 'show' : 'shows'}`
-  return `${range(first.start, 0, last.end - first.start)} · ${count}, not recorded`
+  return `${range(first.start, 0, end - first.start)} · ${count}, not recorded`
 }
 
 export const dateDay = (date: string): string => day(Date.parse(`${date}T12:00:00Z`) / 1000)
