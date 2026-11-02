@@ -19,6 +19,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
     deleteRecording: vi.fn(),
+    savePlayer: () => Promise.resolve(),
     stations: vi.fn().mockResolvedValue([]),
   },
 }))

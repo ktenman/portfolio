@@ -63,19 +63,10 @@
 <script lang="ts" setup>
 import { computed, useTemplateRef } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  StorageSerializers,
-  useDraggable,
-  useElementSize,
-  useLocalStorage,
-  useMediaQuery,
-  useWindowSize,
-  type Position,
-} from '@vueuse/core'
+import { clamp, useDraggable, useElementSize, useMediaQuery, useWindowSize } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRailStations } from '../../composables/use-radio-recordings'
-import { STORAGE_KEYS } from '../../constants/storage-keys'
 import { episodeParts, fullDay, position, rawParts, STATIONS } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
@@ -88,30 +79,47 @@ const ICON =
 
 const route = useRoute()
 const player = useRadioPlayer()
-const { recording } = player
+const { recording, spot } = player
 const stations = useRailStations()
 const decisions = useRadioDecisions(() => recording.value!)
 
 const card = useTemplateRef('card')
 const handle = useTemplateRef('handle')
-const spot = useLocalStorage<Position | null>(STORAGE_KEYS.RADIO_MINI_SPOT, null, {
-  serializer: StorageSerializers.object,
-})
 const phone = useMediaQuery('(max-width: 767px)')
 const { width, height } = useWindowSize({ includeScrollbar: false })
 const size = useElementSize(card, undefined, { box: 'border-box' })
 
-const fit = ({ x, y }: Position) => ({
-  x: Math.max(0, Math.min(x, width.value - size.width.value)),
-  y: Math.max(0, Math.min(y, height.value - size.height.value)),
-})
+const room = computed(() => ({
+  x: Math.max(0, width.value - size.width.value),
+  y: Math.max(0, height.value - size.height.value),
+}))
 
-useDraggable(card, { handle, disabled: phone, onMove: at => (spot.value = fit(at)) })
+const share = (at: number, free: number) => (free ? clamp(at / free, 0, 1) : 0)
+
+let dragged = false
+
+useDraggable(card, {
+  handle,
+  disabled: phone,
+  onMove: ({ x, y }) => {
+    dragged = true
+    spot.value = { x: share(x, room.value.x), y: share(y, room.value.y) }
+  },
+  onEnd: () => {
+    if (dragged && spot.value) player.pin(spot.value)
+    dragged = false
+  },
+})
 
 const place = computed(() => {
   if (phone.value || !spot.value) return undefined
-  const { x, y } = fit(spot.value)
-  return { left: `${x}px`, top: `${y}px`, right: 'auto', bottom: 'auto' }
+  const { x, y } = spot.value
+  return {
+    left: `${x * room.value.x}px`,
+    top: `${y * room.value.y}px`,
+    right: 'auto',
+    bottom: 'auto',
+  }
 })
 
 const lifted = computed(() => route.name === 'Calculator')

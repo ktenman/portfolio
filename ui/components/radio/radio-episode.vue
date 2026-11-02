@@ -22,7 +22,7 @@
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { useElementSize, useTitle } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
-import { useRadioPlayer } from '../../composables/use-radio-player'
+import { edition, useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecording } from '../../composables/use-radio-recordings'
 import { day, episodeTime } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
@@ -52,8 +52,7 @@ watch(
     if (!value) return
     title.value = `${value.programme} · ${day(value.status.startedAt)}`
     const same = player.recording.value?.name === value.name
-    const start = value.editList && value.episodeBytes ? 'episode' : 'raw'
-    player.load(value, same && value.episodeBytes ? player.version.value : start)
+    player.load(value, same && value.episodeBytes ? player.version.value : edition(value))
     if (before || !Number.isFinite(at)) return
     void router.replace({ query: { ...route.query, t: undefined, raw: undefined } })
     const kept =
@@ -65,7 +64,5 @@ watch(
   { immediate: true }
 )
 
-onBeforeUnmount(() => {
-  if (!player.started.value) player.close()
-})
+onBeforeUnmount(player.leave)
 </script>

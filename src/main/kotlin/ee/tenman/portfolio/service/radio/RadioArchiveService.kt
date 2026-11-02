@@ -23,6 +23,8 @@ class RadioArchiveService(
 
   fun recordings(): List<RecordingSummary> = directories(radioProperties.recordings).mapNotNull { readable(it, ::summary) }
 
+  fun recording(name: String): RecordingSummary? = directory(name, STATUS_FILE)?.let { readable(it, ::summary) }
+
   fun statuses(): List<RecordingStatus> = directories(radioProperties.recordings).mapNotNull { readable(it, ::readStatus) }
 
   fun transcript(name: String): List<TranscriptLine>? {

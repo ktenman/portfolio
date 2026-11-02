@@ -56,7 +56,9 @@ const player = useRadioPlayer()
 useLiveUpdates()
 
 onMounted(() => {
-  checkAuth()
+  checkAuth().then(signed => {
+    if (signed) player.recall()
+  })
   loadAll()
   if (audio.value) player.attach(audio.value)
 })

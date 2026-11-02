@@ -78,7 +78,7 @@ import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { edition, useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
@@ -101,7 +101,7 @@ useResizeObserver(card, () => {
   head.value = time.value!.getBoundingClientRect().top - card.value!.getBoundingClientRect().top
 })
 const raw = computed(() => player.version.value === 'raw')
-const cleaned = computed(() => Boolean(props.recording.editList && props.recording.episodeBytes))
+const cleaned = computed(() => edition(props.recording) === 'episode')
 const version = computed({
   get: () => player.version.value,
   set: (value: Version) => player.swap(value),

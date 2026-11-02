@@ -1,5 +1,5 @@
 import { computed, ref, shallowRef, watch } from 'vue'
-import type { RecordingSummary, Station } from '../models/generated/domain-models'
+import type { RadioSpot, RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { episodeTime, recordingTime } from '../utils/radio'
 import { useToast } from './use-toast'
@@ -25,6 +25,7 @@ const volume = ref(1)
 const muted = ref(false)
 const lost = ref(false)
 const started = ref(false)
+const spot = ref<RadioSpot | null>(null)
 const toast = useToast()
 let loaded = ''
 let opened = ''
@@ -247,6 +248,9 @@ const listeners: Record<string, () => void> = {
   play: () => {
     playing.value = true
     started.value = true
+    radioService
+      .savePlayer({ recording: recording.value?.name ?? null, station: tuned.value })
+      .catch(() => undefined)
   },
   pause: () => {
     playing.value = false
@@ -272,7 +276,12 @@ const attach = (audio: HTMLAudioElement) => {
   open()
 }
 
-const close = () => {
+const forget = () =>
+  radioService
+    .savePlayer({ recording: null, station: null })
+    .catch(() => toast.error('Could not save closing the radio card'))
+
+const reset = () => {
   keep()
   hangUp()
   loaded = ''
@@ -288,6 +297,34 @@ const close = () => {
   started.value = false
   plan = null
 }
+
+const close = () => {
+  forget()
+  reset()
+}
+
+const leave = () => {
+  if (!started.value) reset()
+}
+
+const vacant = (name?: string) =>
+  !started.value && !tuned.value && (!recording.value || recording.value.name === name)
+
+export const edition = (target: RecordingSummary): Version =>
+  target.editList && target.episodeBytes ? 'episode' : 'raw'
+
+const recall = async () => {
+  const card = await radioService.player().catch(() => null)
+  if (!card) return
+  spot.value ??= card.spot
+  const kept = card.recording
+  if ((!kept && !card.station) || !vacant(kept?.name)) return
+  if (kept && !recording.value) load(kept, edition(kept))
+  tuned.value = card.station
+  started.value = true
+}
+
+const pin = (at: RadioSpot) => radioService.saveSpot(at).catch(() => undefined)
 
 watch(rate, value => {
   if (element.value && !live.value) speed(element.value, value)
@@ -315,9 +352,13 @@ export const useRadioPlayer = () => ({
   muted,
   lost,
   started,
+  spot,
   rejoin,
   attach,
   close,
+  leave,
+  recall,
+  pin,
   load,
   swap,
   listen,

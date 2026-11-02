@@ -6,6 +6,7 @@ import { type RadioPositionDto, RecordingState, Station } from '../models/genera
 import { deferred } from '../tests/test-utils'
 
 const positions = vi.hoisted(() => ({ find: vi.fn(), save: vi.fn() }))
+const saved = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn() }))
 
 vi.mock('../services/api', () => ({
   radioService: {
@@ -13,8 +14,13 @@ vi.mock('../services/api', () => ({
     liveUrl: '/api/radio/live',
     position: positions.find,
     savePosition: positions.save,
+    player: saved.read,
+    savePlayer: saved.write,
   },
 }))
+
+const NOTHING = { recording: null, station: null, spot: null }
+const NAME = recording().name
 
 const split = () =>
   recording({
@@ -51,6 +57,8 @@ describe('useRadioPlayer', () => {
   beforeEach(async () => {
     positions.find.mockReset().mockResolvedValue({ seconds: 0 })
     positions.save.mockReset().mockResolvedValue(undefined)
+    saved.read.mockReset().mockResolvedValue(NOTHING)
+    saved.write.mockReset().mockResolvedValue(undefined)
     await reload()
   })
 
@@ -556,5 +564,154 @@ describe('useRadioPlayer', () => {
     player.listen(Station.ARIPAEV)
     player.close()
     expect([player.tuned.value, player.live.value]).toEqual([null, false])
+  })
+
+  describe('saved card', () => {
+    const answer = (found: object) => saved.read.mockResolvedValue({ ...NOTHING, ...found })
+
+    const bring = async (found: object) => {
+      answer(found)
+      await player.recall()
+      await flushPromises()
+    }
+
+    it.each([
+      ['recording', () => player.load(recording()), { recording: NAME, station: null }],
+      ['station', () => player.listen(Station.KUKU), { recording: null, station: Station.KUKU }],
+    ])('should save the open %s when it plays', (_, open, choice) => {
+      open()
+      audio.dispatchEvent(new Event('play'))
+      expect(saved.write).toHaveBeenCalledWith(choice)
+    })
+
+    it('should clear the saved card when a played recording closes', () => {
+      player.load(recording())
+      audio.dispatchEvent(new Event('play'))
+      player.close()
+      expect(saved.write).toHaveBeenLastCalledWith({ recording: null, station: null })
+    })
+
+    it.each([
+      ['recording', () => ({ recording: recording() })],
+      ['station', () => ({ station: Station.KUKU })],
+    ])('should clear the saved card when a restored %s closes', async (_, found) => {
+      await bring(found())
+      player.close()
+      expect(saved.write).toHaveBeenCalledExactlyOnceWith({ recording: null, station: null })
+    })
+
+    it('should warn when the saved card cannot be cleared', async () => {
+      await bring({ recording: recording() })
+      saved.write.mockRejectedValue(new Error('Serveri viga'))
+      const { toasts } = await import('./use-toast')
+      player.close()
+      await flushPromises()
+      expect(toasts.value.map(toast => toast.message)).toEqual([
+        'Could not save closing the radio card',
+      ])
+    })
+
+    it('should keep the saved card when an unplayed recording is left', () => {
+      player.load(recording())
+      player.leave()
+      expect([saved.write.mock.calls.length, player.recording.value]).toEqual([0, null])
+    })
+
+    it('should keep a played recording when it is left', () => {
+      player.load(recording())
+      audio.dispatchEvent(new Event('play'))
+      player.leave()
+      expect(player.recording.value?.name).toBe(NAME)
+    })
+
+    it('should bring a saved recording back paused', async () => {
+      await bring({ recording: recording() })
+      expect([
+        player.started.value,
+        player.recording.value?.name,
+        player.playing.value,
+        vi.mocked(audio.play).mock.calls.length,
+      ]).toEqual([true, NAME, false, 0])
+    })
+
+    it('should bring back the saved position', async () => {
+      positions.find.mockResolvedValue({ seconds: 1400 })
+      await bring({ recording: recording() })
+      expect(player.recordingSeconds.value).toBeCloseTo(1400)
+    })
+
+    it.each([
+      ['clean', { episodeBytes: 1000 }, 'episode'],
+      ['raw', { editList: null, episodeBytes: null }, 'raw'],
+    ])('should open the %s version of a saved recording', async (_, fields, version) => {
+      await bring({ recording: recording(fields) })
+      expect(player.version.value).toBe(version)
+    })
+
+    it('should bring a saved station back without tuning in', async () => {
+      await bring({ station: Station.ARIPAEV })
+      expect([
+        player.tuned.value,
+        player.started.value,
+        audio.getAttribute('src'),
+        vi.mocked(audio.play).mock.calls.length,
+      ]).toEqual([Station.ARIPAEV, true, null, 0])
+    })
+
+    it('should tune in when a saved station is played', async () => {
+      await bring({ station: Station.KUKU })
+      player.toggle()
+      expect(audio.src.endsWith('/api/radio/live?station=KUKU')).toBe(true)
+    })
+
+    it('should write nothing while bringing a card back', async () => {
+      await bring({ recording: recording() })
+      expect([saved.write.mock.calls.length, positions.save.mock.calls.length]).toEqual([0, 0])
+    })
+
+    it('should keep the card of a recording loaded before the answer', async () => {
+      const pending = deferred<object>()
+      saved.read.mockReturnValue(pending.promise)
+      const recalled = player.recall()
+      player.load(recording())
+      const src = audio.src
+      pending.resolve({ ...NOTHING, recording: recording() })
+      await recalled
+      expect([player.started.value, audio.src]).toEqual([true, src])
+    })
+
+    it('should keep another recording loaded before the answer', async () => {
+      const other = recording({ name: '2026-10-18-1155-tarkade-klubi' })
+      const pending = deferred<object>()
+      saved.read.mockReturnValue(pending.promise)
+      const recalled = player.recall()
+      player.load(other)
+      pending.resolve({ ...NOTHING, recording: recording() })
+      await recalled
+      expect([player.recording.value?.name, player.started.value]).toEqual([other.name, false])
+    })
+
+    it('should leave the player alone when the saved card cannot be read', async () => {
+      saved.read.mockRejectedValue(new Error('Serveri viga'))
+      await player.recall()
+      expect(player.started.value).toBe(false)
+    })
+
+    it('should fill the spot when nothing is open', async () => {
+      await bring({ spot: { x: 0.25, y: 1 } })
+      expect([player.spot.value, player.started.value]).toEqual([{ x: 0.25, y: 1 }, false])
+    })
+
+    it('should keep a spot dragged before the answer', async () => {
+      player.spot.value = { x: 1, y: 0 }
+      await bring({ spot: { x: 0.25, y: 1 } })
+      expect(player.spot.value).toEqual({ x: 1, y: 0 })
+    })
+
+    it('should keep the spot when closed', async () => {
+      await bring({ recording: recording(), spot: { x: 0.25, y: 1 } })
+      player.close()
+      expect(player.spot.value).toEqual({ x: 0.25, y: 1 })
+    })
   })
 })

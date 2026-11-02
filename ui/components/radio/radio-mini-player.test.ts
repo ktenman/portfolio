@@ -15,6 +15,8 @@ vi.mock('../../services/api', () => ({
     liveUrl: '/api/radio/live',
     position: vi.fn(),
     savePosition: vi.fn(),
+    savePlayer: () => Promise.resolve(),
+    saveSpot: vi.fn(),
     stations: vi.fn(),
   },
 }))
@@ -51,7 +53,11 @@ describe('RadioMiniPlayer', () => {
     player.attach(audio)
   })
 
-  afterEach(() => player.close())
+  afterEach(() => {
+    player.close()
+    player.spot.value = null
+    vi.restoreAllMocks()
+  })
 
   const open = async (
     path = '/',
@@ -204,6 +210,22 @@ describe('RadioMiniPlayer', () => {
     expect(vi.mocked(radioService.savePosition).mock.calls).toEqual([
       ['2026-10-17', { seconds: 604 }],
     ])
+  })
+
+  it.each([
+    ['by its share of the free room', 1000, 800, { x: 0.5, y: 0.25 }, 'left: 500px; top: 200px'],
+    ['at the top left of a window with no free room', 0, 0, { x: 1, y: 1 }, 'left: 0px; top: 0px'],
+  ])('should rest %s', async (_, width, height, spot, style) => {
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(width)
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(height)
+    await play()
+    player.spot.value = spot
+    expect(card(await open()).attributes('style')).toContain(style)
+  })
+
+  it('should stay in its corner without a spot', async () => {
+    await play()
+    expect(card(await open()).attributes('style')).toBeUndefined()
   })
 
   it('should clear the player when closed', async () => {

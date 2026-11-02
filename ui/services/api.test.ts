@@ -214,6 +214,21 @@ describe('api services', () => {
       '/radio/2026-10-17/position',
       { seconds: 2296.5 },
     ],
+    ['radio.player', () => radioService.player(), 'get', '/radio/player', undefined],
+    [
+      'radio.savePlayer',
+      () => radioService.savePlayer({ recording: '2026-10-17', station: null }),
+      'put',
+      '/radio/player',
+      { recording: '2026-10-17', station: null },
+    ],
+    [
+      'radio.saveSpot',
+      () => radioService.saveSpot({ x: 0.25, y: 1 }),
+      'put',
+      '/radio/player/spot',
+      { x: 0.25, y: 1 },
+    ],
     [
       'radio.search',
       () => radioService.search('valimised', '2026-10-17', Station.ARIPAEV),

@@ -288,3 +288,19 @@ fun EditList?.found(): Set<String> =
 data class RadioPositionDto(
   val seconds: Double,
 )
+
+data class RadioSpot(
+  val x: Double,
+  val y: Double,
+)
+
+data class RadioPlayerChoice(
+  val recording: String? = null,
+  val station: Station? = null,
+)
+
+data class RadioPlayerDto(
+  val recording: RecordingSummary?,
+  val station: Station?,
+  val spot: RadioSpot?,
+)

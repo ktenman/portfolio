@@ -22,6 +22,7 @@ import {
   stubRadioOneStationIdle,
   stubRadioPlannedOnly,
   stubRadioPlannedSoon,
+  stubSavedPlayer,
 } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
@@ -525,13 +526,21 @@ async function listenLive(page: Page): Promise<void> {
   await page.locator('.nav-link[href="/"]').click()
 }
 
-async function dragRadioCard(page: Page): Promise<void> {
+async function dragRadioCard(page: Page, by = { x: -40, y: -40 }): Promise<void> {
   const title = page.getByTestId('radio-mini-player').locator('p').first()
   const box = (await title.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
-  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2 - 40, { steps: 4 })
+  await page.mouse.move(box.x + box.width / 2 + by.x, box.y + box.height / 2 + by.y, { steps: 4 })
   await page.mouse.up()
+}
+
+function countSpotSaves(page: Page): () => number {
+  let saves = 0
+  page.on('request', request => {
+    if (request.method() === 'PUT' && request.url().endsWith('/radio/player/spot')) saves += 1
+  })
+  return () => saves
 }
 
 test('the radio mini player floats over the page', async ({ page }, testInfo) => {
@@ -610,11 +619,111 @@ test('a dragged radio mini player stays where it was left after a reload', async
   const card = page.getByTestId('radio-mini-player')
   const { x, y } = (await card.boundingBox())!
   await dragRadioCard(page)
-  await openRoute(page, '/radio/2026-10-17')
-  await page.getByTestId('radio-play').click()
-  await page.locator('.nav-link[href="/"]').click()
+  await page.reload()
   await expect(card).toBeVisible()
-  await expect.poll(() => card.boundingBox()).toMatchObject({ x: x - 40, y: y - 40 })
+  await expect
+    .poll(async () => {
+      const box = (await card.boundingBox())!
+      return [Math.round(box.x), Math.round(box.y)]
+    })
+    .toEqual([Math.round(x - 40), Math.round(y - 40)])
+})
+
+test('phones keep the radio bar wherever the spot was left', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await playRadio(page, '/', async stubbed => {
+    await stubRadio(stubbed)
+    await stubSavedPlayer(stubbed, { x: 0, y: 0 })
+  })
+  const card = (await page.getByTestId('radio-mini-player').boundingBox())!
+  expect(page.viewportSize()!.height - card.y - card.height).toBeCloseTo(10)
+})
+
+test.describe('saved radio mini player', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+  })
+
+  test('comes back paused after a reload', async ({ page }) => {
+    await playRadio(page)
+    await page.reload()
+    await expect(page.getByTestId('radio-mini-player')).toBeVisible()
+    expect(await page.locator('audio').evaluate((audio: HTMLAudioElement) => audio.paused)).toBe(
+      true
+    )
+  })
+
+  test('comes back live after a reload', async ({ page }) => {
+    await listenLive(page)
+    await page.reload()
+    await expect(page.getByTestId('radio-mini-player')).toContainText('Live')
+    await expect(page.locator('audio')).not.toHaveAttribute('src')
+  })
+
+  for (const [when, reloads] of [
+    ['closed', 0],
+    ['closed after a reload', 1],
+  ] as const) {
+    test(`stays away once ${when}`, async ({ page }) => {
+      await playRadio(page)
+      if (reloads) await page.reload()
+      const card = page.getByTestId('radio-mini-player')
+      await card.getByLabel('Stop and close').click()
+      await openRoute(page, '/')
+      await expect(card).toHaveCount(0)
+    })
+  }
+
+  test('stays after a reload on its own episode', async ({ page }) => {
+    await playRadio(page)
+    const card = page.getByTestId('radio-mini-player')
+    await card.getByRole('link', { name: 'Open the episode' }).click()
+    await page.reload()
+    await page.locator('.nav-link[href="/"]').click()
+    await expect(card).toBeVisible()
+  })
+
+  test('shows no card on another episode opened by its link', async ({ page }) => {
+    await playRadio(page)
+    await openRoute(page, '/radio/2026-10-26')
+    await expect(page.getByTestId('radio-mini-player')).toHaveCount(0)
+  })
+
+  test('stays in a corner on a larger window', async ({ page }) => {
+    await playRadio(page)
+    await dragRadioCard(page, { x: 2000, y: 2000 })
+    await page.setViewportSize({ width: 1800, height: 1100 })
+    const card = page.getByTestId('radio-mini-player')
+    await expect
+      .poll(async () => {
+        const box = (await card.boundingBox())!
+        const edges = await page.evaluate(() => [
+          document.documentElement.clientWidth,
+          document.documentElement.clientHeight,
+        ])
+        return [edges[0]! - box.x - box.width, edges[1]! - box.y - box.height].map(Math.round)
+      })
+      .toEqual([0, 0])
+  })
+
+  test('saves its spot once per drag', async ({ page }) => {
+    const saves = countSpotSaves(page)
+    await playRadio(page)
+    await dragRadioCard(page)
+    await expect.poll(saves).toBe(1)
+  })
+
+  test('saves no spot on a click', async ({ page }) => {
+    const saves = countSpotSaves(page)
+    await playRadio(page)
+    const card = page.getByTestId('radio-mini-player')
+    await dragRadioCard(page)
+    await expect.poll(saves).toBe(1)
+    const before = await card.boundingBox()
+    await card.locator('p').first().click()
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+    expect([saves(), await card.boundingBox()]).toEqual([1, before])
+  })
 })
 
 test('a dragged radio mini player comes back into view when the window shrinks', async ({

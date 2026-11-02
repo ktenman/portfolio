@@ -20,6 +20,7 @@ vi.mock('../../services/api', () => ({
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
     position: () => Promise.resolve({ seconds: 0 }),
     savePosition: () => Promise.resolve(),
+    savePlayer: () => Promise.resolve(),
   },
 }))
 

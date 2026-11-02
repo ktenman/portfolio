@@ -334,6 +334,92 @@ class RadioControllerIT {
     mockMvc.perform(mvcGet("/api/radio/2026-10-17/position")).andExpect(status().isInternalServerError)
   }
 
+  @Test
+  fun `should find an empty player for a new listener`() {
+    player("uus.kuulaja@näide.ee")
+      .andExpect(status().isOk)
+      .andExpect(jsonPath("$.recording").doesNotExist())
+      .andExpect(jsonPath("$.station").doesNotExist())
+      .andExpect(jsonPath("$.spot").doesNotExist())
+  }
+
+  @Test
+  fun `should keep the open recording per listener`() {
+    choose("mari.player@näide.ee", """{"recording":"2026-10-17"}""")
+    player("jüri.player@näide.ee").andExpect(jsonPath("$.recording").doesNotExist())
+  }
+
+  @Test
+  fun `should return the summary of the open recording`() {
+    choose("liis.player@näide.ee", """{"recording":"2026-10-17"}""")
+    player("liis.player@näide.ee").andExpect(jsonPath("$.recording.name").value("2026-10-17"))
+  }
+
+  @Test
+  fun `should bring back no recording that has gone`() {
+    choose("peeter.player@näide.ee", """{"recording":"2026-10-17-1155-keskpäev"}""")
+    player("peeter.player@näide.ee").andExpect(status().isOk).andExpect(jsonPath("$.recording").doesNotExist())
+  }
+
+  @Test
+  fun `should swap the recording for a station`() {
+    choose("õie.player@näide.ee", """{"recording":"2026-10-17"}""")
+    choose("õie.player@näide.ee", """{"station":"ARIPAEV"}""")
+    player("õie.player@näide.ee")
+      .andExpect(jsonPath("$.recording").doesNotExist())
+      .andExpect(jsonPath("$.station").value("ARIPAEV"))
+  }
+
+  @Test
+  fun `should clear what is open and keep the spot when closed`() {
+    choose("ülle.player@näide.ee", """{"recording":"2026-10-17"}""")
+    drop("ülle.player@näide.ee", """{"x":0.25,"y":1.0}""")
+    choose("ülle.player@näide.ee", """{"recording":null,"station":null}""")
+    player("ülle.player@näide.ee")
+      .andExpect(jsonPath("$.recording").doesNotExist())
+      .andExpect(jsonPath("$.spot.x").value(0.25))
+  }
+
+  @Test
+  fun `should keep what is open when the spot moves`() {
+    choose("ain.player@näide.ee", """{"station":"KUKU"}""")
+    drop("ain.player@näide.ee", """{"x":0.0,"y":0.5}""")
+    player("ain.player@näide.ee").andExpect(jsonPath("$.station").value("KUKU"))
+  }
+
+  @Test
+  fun `should save a spot before anything was opened`() {
+    drop("eeva.player@näide.ee", """{"x":0.5,"y":0.5}""")
+    player("eeva.player@näide.ee").andExpect(jsonPath("$.spot.y").value(0.5))
+  }
+
+  @Test
+  fun `should refuse a spot outside the free room`() {
+    put("/api/radio/player/spot", "tõnu.player@näide.ee", """{"x":1.5,"y":0.0}""").andExpect(status().is5xxServerError)
+  }
+
+  private fun player(listener: String) = mockMvc.perform(mvcGet("/api/radio/player").header(LISTENER, listener))
+
+  private fun put(
+    path: String,
+    listener: String,
+    body: String,
+  ) = mockMvc.perform(mvcPut(path).header(LISTENER, listener).contentType(APPLICATION_JSON).content(body))
+
+  private fun choose(
+    listener: String,
+    choice: String,
+  ) {
+    put("/api/radio/player", listener, choice).andExpect(status().isNoContent)
+  }
+
+  private fun drop(
+    listener: String,
+    spot: String,
+  ) {
+    put("/api/radio/player/spot", listener, spot).andExpect(status().isNoContent)
+  }
+
   private fun place(listener: String) = mockMvc.perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, listener))
 
   private fun leave(

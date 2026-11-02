@@ -13,12 +13,16 @@ import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RadioDay
 import ee.tenman.portfolio.service.radio.RadioDayService
 import ee.tenman.portfolio.service.radio.RadioLiveService
+import ee.tenman.portfolio.service.radio.RadioPlayerChoice
+import ee.tenman.portfolio.service.radio.RadioPlayerDto
+import ee.tenman.portfolio.service.radio.RadioPlayerService
 import ee.tenman.portfolio.service.radio.RadioPositionDto
 import ee.tenman.portfolio.service.radio.RadioPositionService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioSearch
 import ee.tenman.portfolio.service.radio.RadioSearchService
+import ee.tenman.portfolio.service.radio.RadioSpot
 import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
 import ee.tenman.portfolio.service.radio.TranscriptSection
@@ -55,6 +59,7 @@ class RadioController(
   private val radioLiveService: RadioLiveService,
   private val radioDayService: RadioDayService,
   private val radioPositionService: RadioPositionService,
+  private val radioPlayerService: RadioPlayerService,
   private val radioSearchService: RadioSearchService,
 ) {
   @GetMapping
@@ -99,6 +104,25 @@ class RadioController(
     @PathVariable id: Long,
     @RequestBody choice: ProgrammeChoice,
   ): ResponseEntity<Void> = done(radioScheduleService.choose(id, choice))
+
+  @GetMapping("/player")
+  fun getPlayer(
+    @RequestHeader("X-User-Id") listener: String,
+  ): RadioPlayerDto = radioPlayerService.find(listener)
+
+  @PutMapping("/player")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  fun putPlayer(
+    @RequestHeader("X-User-Id") listener: String,
+    @RequestBody choice: RadioPlayerChoice,
+  ) = radioPlayerService.open(listener, choice)
+
+  @PutMapping("/player/spot")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  fun putSpot(
+    @RequestHeader("X-User-Id") listener: String,
+    @RequestBody spot: RadioSpot,
+  ) = radioPlayerService.place(listener, spot)
 
   @GetMapping("/{name}/transcript")
   fun getTranscript(

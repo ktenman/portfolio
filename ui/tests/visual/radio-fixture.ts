@@ -14,11 +14,13 @@ import {
   DayOfWeek,
   ProgrammeCutState,
   type RadioDay,
+  type RadioSpot,
   RecorderState,
   RecordingState,
   Station,
   TranscriptState,
 } from '../../models/generated/domain-models'
+import type { Page } from '@playwright/test'
 import { apiRoute, type RouteStub } from './stub'
 
 const NAME = '2026-10-17'
@@ -299,7 +301,24 @@ const tuned = (day: RadioDay, station: string | null): RadioDay => {
   }
 }
 
+export const stubSavedPlayer = async (page: Page, spot: RadioSpot | null = null) => {
+  let saved = { recording: null, station: null, spot }
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/player`), route => {
+    if (route.request().method() === 'PUT') {
+      saved = { ...saved, ...route.request().postDataJSON() }
+      return route.fulfill({ status: 204 })
+    }
+    const recording = RECORDINGS.find(({ name }) => name === saved.recording) ?? null
+    return route.fulfill({ json: { ...saved, recording } })
+  })
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/player/spot`), route => {
+    saved = { ...saved, spot: route.request().postDataJSON() }
+    return route.fulfill({ status: 204 })
+  })
+}
+
 export const stubRadio: RouteStub = async page => {
+  await stubSavedPlayer(page)
   await page.route(/\/api\/radio\/[^/]+\/[^/]+\.(mp3|m4a)/, route => route.abort())
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/live`), route => route.abort())
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/[^/]+/position`), route =>

@@ -265,11 +265,11 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    drops: number;
-    span: Slot;
-    topics: TimelineEntry[];
-    transcriptState: TranscriptState;
     cutState: CutState;
+    transcriptState: TranscriptState;
+    drops: number;
+    topics: TimelineEntry[];
+    span: Slot;
 }
 
 export interface TranscriptLine {
@@ -356,6 +356,22 @@ export interface AiringChoice {
 
 export interface RadioPositionDto {
     seconds: number;
+}
+
+export interface RadioSpot {
+    x: number;
+    y: number;
+}
+
+export interface RadioPlayerChoice {
+    recording: string | null;
+    station: Station | null;
+}
+
+export interface RadioPlayerDto {
+    recording: RecordingSummary | null;
+    station: Station | null;
+    spot: RadioSpot | null;
 }
 
 export interface RadioSearch {
@@ -781,17 +797,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
-}
-
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
+}
+
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum Station {

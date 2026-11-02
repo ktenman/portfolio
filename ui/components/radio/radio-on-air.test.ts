@@ -8,7 +8,11 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { RecorderState, Station } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
-  radioService: { stations: vi.fn(), liveUrl: '/api/radio/live' },
+  radioService: {
+    stations: vi.fn(),
+    liveUrl: '/api/radio/live',
+    savePlayer: () => Promise.resolve(),
+  },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')

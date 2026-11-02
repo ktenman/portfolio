@@ -19,6 +19,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     position: () => Promise.resolve({ seconds: 0 }),
     savePosition: () => Promise.resolve(),
+    savePlayer: () => Promise.resolve(),
     transcript: vi.fn(),
     cuts: vi.fn(),
     review: vi.fn(),

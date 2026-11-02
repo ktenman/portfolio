@@ -22,9 +22,12 @@ import {
   type ManualCut,
   type ProgrammeChoice,
   type RadioDay,
+  type RadioPlayerChoice,
+  type RadioPlayerDto,
   type RadioPositionDto,
   type RadioProgrammeDto,
   type RadioSearch,
+  type RadioSpot,
   type RadioStation,
   type Station,
   type RecordingSummary,
@@ -249,6 +252,10 @@ export const radioService = {
     httpClient.get<RadioPositionDto>(`${API_ENDPOINTS.RADIO}/${name}/position`),
   savePosition: (name: string, position: RadioPositionDto) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/position`, position),
+  player: () => httpClient.get<RadioPlayerDto>(`${API_ENDPOINTS.RADIO}/player`),
+  savePlayer: (choice: RadioPlayerChoice) =>
+    httpClient.put<void>(`${API_ENDPOINTS.RADIO}/player`, choice),
+  saveSpot: (spot: RadioSpot) => httpClient.put<void>(`${API_ENDPOINTS.RADIO}/player/spot`, spot),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
   programmes: () => httpClient.get<RadioProgrammeDto[]>(`${API_ENDPOINTS.RADIO}/programmes`),
   stations: () => httpClient.get<RadioStation[]>(`${API_ENDPOINTS.RADIO}/station`),
