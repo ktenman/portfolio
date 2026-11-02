@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
@@ -59,38 +60,35 @@ class RadioScheduleTest {
   }
 
   @Test
-  fun `should record back to back airings as one recording named after both`() {
+  fun `should give back to back airings of two programmes their own recordings`() {
     val airings =
       listOf(
-        airing("Tarkade klubi", "tarkade-klubi", "2026-10-24T13:00", "2026-10-24T14:00"),
-        airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00"),
+        airing("Sihik", "sihik", "2026-11-02T12:00", "2026-11-02T13:00"),
+        airing("Digitund", "digitund", "2026-11-02T11:00", "2026-11-02T12:00"),
       )
     expect(captures(airings, Station.KUKU, tallinn).map { it.name to it.programmes })
-      .toContainExactly("2026-10-24-1200-keskpaevatund-tarkade-klubi" to listOf("Keskpäevatund", "Tarkade klubi"))
+      .toContainExactly("2026-11-02-1100-digitund" to listOf("Digitund"), "2026-11-02-1200-sihik" to listOf("Sihik"))
   }
 
   @Test
-  fun `should record airings ten minutes apart as one recording`() {
+  fun `should give airings ten minutes apart their own recordings`() {
     val airings =
       listOf(
         airing("Digitund", "digitund", "2026-10-26T11:00", "2026-10-26T11:50"),
         airing("Keskpäevatund", "keskpaevatund", "2026-10-26T12:00", "2026-10-26T13:00"),
       )
-    expect(captures(airings, Station.KUKU, tallinn).map { it.name }).toContainExactly("2026-10-26-1100-digitund-keskpaevatund")
+    expect(captures(airings, Station.KUKU, tallinn).map { it.name })
+      .toContainExactly("2026-10-26-1100-digitund", "2026-10-26-1200-keskpaevatund")
   }
 
   @Test
-  fun `should keep airings an hour apart in separate recordings`() {
-    val airings =
-      listOf(
-        airing("Neeme Raud. Siin", "neeme-raud-siin", "2026-10-24T09:00", "2026-10-24T11:00"),
-        airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00"),
-      )
-    expect(captures(airings, Station.KUKU, tallinn)).toHaveSize(2)
+  fun `should plan no recording for a zero length airing`() {
+    val marker = airing("Sihik", "sihik", "2026-10-29T13:07", "2026-10-29T13:07")
+    expect(captures(listOf(marker), Station.KUKU, tallinn)).toBeEmpty()
   }
 
   @Test
-  fun `should name a recording after the minute its first airing starts`() {
+  fun `should name a recording after the minute its airing starts`() {
     val airings = listOf(airing("Naistejutud Kukus", "naistejutud-kukus", "2026-10-25T00:00", "2026-10-25T01:00"))
     val found = captures(airings, Station.KUKU, tallinn)
     expect(found.single().name).toEqual("2026-10-25-0000-naistejutud-kukus")

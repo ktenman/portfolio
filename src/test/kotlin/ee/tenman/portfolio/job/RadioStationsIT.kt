@@ -113,34 +113,6 @@ class RadioStationsIT : RadioScheduleTestBase() {
   }
 
   @Test
-  fun `should keep a joined capture whole in the plan between its airings`() {
-    val now = clock.instant().atZone(tallinn)
-    val first = now.minusHours(1)
-    load(
-      episode(4, 175, "Keskpäevatund", first, now.minusMinutes(5)),
-      episode(5, 231, "Tarkade klubi", now.plusMinutes(5), now.plusHours(1)),
-    )
-    recording("${MINUTE.format(first)}-keskpaevatund-tarkade-klubi", first, 7200)
-    radioScheduleService.choose(175, ProgrammeChoice(true))
-    radioScheduleService.choose(231, ProgrammeChoice(true))
-    expect(plan().map { it.programmes }).toContainExactly(listOf("Keskpäevatund", "Tarkade klubi"))
-  }
-
-  @Test
-  fun `should keep a joined capture whole in the plan during its last airing`() {
-    val now = clock.instant().atZone(tallinn)
-    val first = now.minusHours(2)
-    load(
-      episode(4, 175, "Keskpäevatund", first, now.minusHours(1)),
-      episode(5, 231, "Tarkade klubi", now.minusHours(1), now.plusHours(1)),
-    )
-    recording("${MINUTE.format(first)}-keskpaevatund-tarkade-klubi", first, 10800)
-    radioScheduleService.choose(175, ProgrammeChoice(true))
-    radioScheduleService.choose(231, ProgrammeChoice(true))
-    expect(plan().map { it.slot.start }).toContainExactly(first.toEpochSecond())
-  }
-
-  @Test
   fun `should plan only the next airing when a finished recording holds the first alone`() {
     val now = clock.instant().atZone(tallinn)
     val first = now.minusHours(1)

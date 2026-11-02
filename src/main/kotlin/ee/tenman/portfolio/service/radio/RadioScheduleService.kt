@@ -76,20 +76,8 @@ class RadioScheduleService(
   fun plan() {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return
-    val now = clock.instant()
-    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
-    Station.entries.forEach { save(root.resolve(it.plan), upcoming(root, airings, it, now)) }
-  }
-
-  private fun upcoming(
-    root: Path,
-    airings: List<RadioAiring>,
-    station: Station,
-    now: Instant,
-  ): List<Capture> {
-    val started = planned(airings, station).filter { it.slot.end > now.epochSecond && Files.exists(root.resolve(it.name)) }
-    val unfinished = planned(airings.filter { it.endsAt > now }, station)
-    return (started + unfinished.filter { capture -> started.none { it.slot.end == capture.slot.end } }).sortedBy { it.start }
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())
+    Station.entries.forEach { save(root.resolve(it.plan), planned(airings, it)) }
   }
 
   fun stations(): List<RadioStation> = Station.entries.map(::station)

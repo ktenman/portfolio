@@ -78,6 +78,17 @@ class ScheduleTest {
   }
 
   @Test
+  fun `records the next capture from its own start when the last one ran past it`(
+    @TempDir tmp: Path,
+  ) {
+    val next = saturday.copy(name = "2026-10-24-sihik", start = saturday.end - 20, end = saturday.end + 3600)
+    write(tmp.resolve("plan.json"), listOf(saturday, next))
+    leave(tmp, RecordingState.CAPTURED)
+    val call = follow(tmp, Week(saturday.end + 85.0, 1793444700.0)).second.single()
+    expect(Pair(call.directory, call.started)).toEqual(Pair(next.name, next.start.toDouble()))
+  }
+
+  @Test
   fun `hands the recorder the air slot of the capture`(
     @TempDir tmp: Path,
   ) {

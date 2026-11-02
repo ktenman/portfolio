@@ -16,7 +16,6 @@ val Station.bytesPerHour: Long get() = (bitrate / 8 + RATE * 2L) * 3600
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
 private val PADDING = Duration.ofSeconds(10)
-private val JOIN = Duration.ofMinutes(10)
 private val UNSAFE = Regex("[^0-9a-z]+")
 private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
 
@@ -155,33 +154,20 @@ fun captures(
   airings: List<PlannedAiring>,
   station: Station,
   zone: ZoneId,
-): List<Capture> =
-  airings
-    .sortedBy { it.start }
-    .fold(emptyList<List<PlannedAiring>>()) { groups, airing ->
-      val last = groups.lastOrNull()
-      when {
-        last == null || airing.start > last.maxOf { it.end } + JOIN -> groups + listOf(listOf(airing))
-        else -> groups.dropLast(1) + listOf(last + airing)
-      }
-    }.map { capture(it, station, zone) }
+): List<Capture> = airings.filter { it.end > it.start }.sortedBy { it.start }.map { capture(it, station, zone) }
 
 private fun capture(
-  group: List<PlannedAiring>,
+  airing: PlannedAiring,
   station: Station,
   zone: ZoneId,
-): Capture {
-  val slugs = group.map { safe(it.slug) }.distinct()
-  val start = group.first().start
-  val end = group.maxOf { it.end }
-  return Capture(
-    name = slugs.joinToString("-", prefix = "${MINUTE.format(start.atZone(zone))}-${station.prefix}"),
-    programmes = group.map { it.programme }.distinct(),
-    start = (start + station.lag - PADDING).epochSecond,
-    end = (end + station.lag + PADDING).epochSecond,
-    slot = Slot(start.epochSecond, end.epochSecond),
+): Capture =
+  Capture(
+    name = "${MINUTE.format(airing.start.atZone(zone))}-${station.prefix}${safe(airing.slug)}",
+    programmes = listOf(airing.programme),
+    start = (airing.start + station.lag - PADDING).epochSecond,
+    end = (airing.end + station.lag + PADDING).epochSecond,
+    slot = Slot(airing.start.epochSecond, airing.end.epochSecond),
   )
-}
 
 fun List<Capture>.cover(airing: RadioAiring): Boolean =
   any { it.slot.start <= airing.startsAt.epochSecond && it.slot.end >= airing.endsAt.epochSecond }
