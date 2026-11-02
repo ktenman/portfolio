@@ -4,7 +4,7 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioProgrammes from './radio-programmes.vue'
 import { station } from './radio-fixture'
-import { DayOfWeek } from '../../models/generated/domain-models'
+import { DayOfWeek, Station } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -45,6 +45,7 @@ describe('RadioProgrammes', () => {
           },
         ],
         recordings: 3,
+        station: Station.KUKU,
       },
     ])
   })
@@ -108,6 +109,7 @@ describe('RadioProgrammes', () => {
       recordEvery,
       slots: [{ days: [DayOfWeek.SATURDAY], start: '09:00:00', end: '10:00:00' }],
       recordings: 0,
+      station: Station.KUKU,
     }))
 
   const rows = (wrapper: { findAll: (s: string) => unknown[] }) =>

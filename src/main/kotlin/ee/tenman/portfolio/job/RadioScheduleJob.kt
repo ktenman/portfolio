@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.kuku.KukuScheduleClient
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.RadioScheduleService
@@ -31,8 +32,8 @@ class RadioScheduleJob(
   override fun execute() {
     val from = LocalDate.now(clock).atStartOfDay(clock.zone).toInstant()
     val until = from + Duration.ofDays(DAYS)
-    val episodes = kukuScheduleClient.getSchedule(DOMAIN, from.toString(), until.toString()).flatMap { it.episodes }
-    radioScheduleService.replace(episodes, from, until)
+    val days = kukuScheduleClient.getSchedule(DOMAIN, from.toString(), until.toString())
+    radioScheduleService.replace(Station.KUKU, days.flatMap { it.episodes }.mapNotNull { it.scheduled() }, from, until)
     radioScheduleService.plan()
   }
 

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.Station
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,6 +17,7 @@ class RadioRenderService {
     marks: List<Pair<Double, String>>,
     title: String,
     target: Path,
+    station: Station,
     progress: (Double) -> Unit = {},
   ) {
     val found = pieces(timeline.spans, keep)
@@ -24,7 +26,7 @@ class RadioRenderService {
     val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
     runCatching {
       Files.writeString(chapters, metadata(marks, length))
-      run(command(timeline, found, chapters, title, target), log) { progress(min(1.0, it / length)) }
+      run(command(timeline, found, chapters, title, target, station), log) { progress(min(1.0, it / length)) }
     }.also {
       Files.deleteIfExists(chapters)
       Files.deleteIfExists(log)
@@ -37,6 +39,7 @@ class RadioRenderService {
     chapters: Path,
     title: String,
     target: Path,
+    station: Station,
   ): List<String> {
     val trims =
       found.mapIndexed { n, piece ->
@@ -50,7 +53,7 @@ class RadioRenderService {
     return listOf("ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "error", "-nostats", "-progress", "pipe:1", "-y") + inputs +
       listOf("-i", chapters.toString(), "-filter_complex", graph, "-map", "[out]", "-map_metadata", count, "-map_chapters", count) +
       listOf("-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart") +
-      listOf("-metadata", "title=$title", "-metadata", "artist=Kuku", target.toString())
+      listOf("-metadata", "title=$title", "-metadata", "artist=${station.label}", target.toString())
   }
 
   private fun plain(seconds: Double): String = seconds.toBigDecimal().toPlainString()

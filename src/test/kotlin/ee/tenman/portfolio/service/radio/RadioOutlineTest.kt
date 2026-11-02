@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.Station
 import org.junit.jupiter.api.Test
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -194,6 +195,13 @@ class RadioOutlineTest {
         "The published schedule lists the talk show \"Tarkade klubi\" for 13:00-14:00. The stream lags the broadcast by about 20 s.",
       ),
     )
+  }
+
+  @Test
+  fun `should name the station of the recording in the outline prompt`() {
+    val status = RecordingStatus(RecordingState.CAPTURED, 0.0, 600.0, station = Station.ARIPAEV)
+    val text = describe(status, Show("Kuum tool", null, 0.0, 600.0), emptyList(), emptyList())
+    expect(text.lines().first().substringBefore(",")).toEqual("Recording: Äripäev Raadio live internet stream")
   }
 
   @Test

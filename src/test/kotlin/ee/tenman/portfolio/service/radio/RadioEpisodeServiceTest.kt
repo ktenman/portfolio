@@ -9,6 +9,9 @@ import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.repository.RadioAiringRepository
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.mockk.every
 import io.mockk.mockk
@@ -34,18 +37,15 @@ class RadioEpisodeServiceTest {
 
   private val progress = RadioProgressService(Clock.systemUTC(), updates)
 
-  private val service by lazy {
-    RadioEpisodeService(
-      outlineService,
-      RadioCutService(),
-      RadioRenderService(),
-      progress,
-      airings(),
-      programmes(),
-      RadioProperties(recordings = directory.resolve("arhiiv")),
-      Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC),
-    )
-  }
+  private val service by lazy { service(clock = Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC)) }
+
+  private fun service(
+    airings: RadioAiringRepository = airings(),
+    programmes: RadioProgrammeRepository = programmes(),
+    properties: RadioProperties = RadioProperties(recordings = directory.resolve("arhiiv")),
+    clock: Clock = Clock.systemUTC(),
+  ): RadioEpisodeService =
+    RadioEpisodeService(outlineService, RadioCutService(), RadioRenderService(), progress, airings, programmes, properties, clock)
 
   private fun outline(
     before: Double,
@@ -312,16 +312,7 @@ class RadioEpisodeServiceTest {
     saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0, "Väike paus."))))
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
-    RadioEpisodeService(
-      outlineService,
-      RadioCutService(),
-      RadioRenderService(),
-      progress,
-      airings(),
-      programmes(),
-      properties,
-      Clock.systemUTC(),
-    ).make(directory)
+    service(properties = properties).make(directory)
     expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
   }
 
@@ -389,17 +380,19 @@ class RadioEpisodeServiceTest {
     val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
     val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
     every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
-    val clock = Clock.systemUTC()
-    RadioEpisodeService(
-      outlineService,
-      RadioCutService(),
-      RadioRenderService(),
-      progress,
-      airings(airing),
-      programmes(klubi),
-      RadioProperties(recordings = directory.resolve("arhiiv")),
-      clock,
-    ).make(directory)
+    service(airings(airing), programmes(klubi)).make(directory)
+    verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `should take the air time of a programme from the station of the recording`() {
+    shared()
+    val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
+    val namesake = RadioProgramme(1_000_231, "Tarkade klubi", "tarkade-klubi", station = Station.ARIPAEV).apply { id = 8 }
+    val other = RadioAiring(10, 8, "Tarkade klubi", Instant.ofEpochSecond(30), Instant.ofEpochSecond(50), station = Station.ARIPAEV)
+    val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
+    every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
+    service(airings(other, airing), programmes(klubi, namesake)).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
   }
 }

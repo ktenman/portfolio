@@ -15,6 +15,7 @@ import {
   ProgrammeCutState,
   RecorderState,
   RecordingState,
+  Station,
   TranscriptState,
 } from '../../models/generated/domain-models'
 import { apiRoute, type RouteStub } from './stub'
@@ -29,6 +30,7 @@ const capture = (at: string, programmes: string[], seconds = 4200) => ({
   parts: [{ file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null }],
   lostSeconds: 0,
   slot: null,
+  station: Station.KUKU,
 })
 
 const searching = {

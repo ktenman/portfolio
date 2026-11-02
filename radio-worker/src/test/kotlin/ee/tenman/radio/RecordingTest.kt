@@ -68,6 +68,7 @@ class RecordingTest {
         listOf("Keskpäevatund", "Tarkade klubi"),
         Slot(1792832400, 1792836000),
         99,
+        "ARIPAEV",
       )
     write(tmp.resolve("status.json"), status)
     expect(read<Status>(tmp.resolve("status.json"))).toEqual(status)

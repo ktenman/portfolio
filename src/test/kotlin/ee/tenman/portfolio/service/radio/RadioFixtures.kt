@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.radio
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.RadioAiring
 import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.mockk.every
@@ -102,7 +103,8 @@ fun writeRecording(
   Files.writeString(directory.resolve("status.json"), JsonMapperFactory.instance.writeValueAsString(status))
 }
 
-fun airings(vararg found: RadioAiring): RadioAiringRepository = mockk { every { findOverlapping(any(), any()) } returns found.toList() }
+fun airings(vararg found: RadioAiring): RadioAiringRepository =
+  mockk { every { findOverlapping(any(), any(), any()) } answers { found.filter { it.station == firstArg<Station>() } } }
 
 fun programmes(vararg found: RadioProgramme): RadioProgrammeRepository = mockk { every { findAllById(any()) } returns found.toList() }
 

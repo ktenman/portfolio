@@ -150,10 +150,10 @@ fun describe(
   val inside = { seconds: Double -> seconds in show.from..show.to }
   val header =
     listOf(
-      "Recording: Kuku Raadio live internet stream, ${at(show.from).format(DAY)}, ${show.minutes} minutes, " +
+      "Recording: ${status.station.label} Raadio live internet stream, ${at(show.from).format(DAY)}, ${show.minutes} minutes, " +
         "stream clock ${clock(show.from)}-${clock(show.to)}.",
       "The published schedule lists the talk show \"${show.name}\"${air(show.slot)}. " +
-        "The stream lags the broadcast by about ${LAG.seconds} s.",
+        "The stream lags the broadcast by about ${status.station.lag.seconds} s.",
       "",
       "## Audio events from the loudness analysis",
       "Stretches of digital silence (below -75 dB for at least 30 ms) or quiet (below -50 dB for at least 0.3 s).",

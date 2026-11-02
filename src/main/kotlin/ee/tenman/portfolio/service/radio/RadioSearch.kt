@@ -77,7 +77,7 @@ fun indexed(
       .mapNotNull { entry ->
         entry.title?.let { IndexedTopic(entry.start, it, entry.summary, folded(listOfNotNull(it, entry.summary) + about)) }
       }
-  return IndexedRecording(name, status.title(), status.startedAt, lines, words, topics)
+  return IndexedRecording(name, status.title(), status.startedAt, lines, words, topics, status.station)
 }
 
 fun search(
@@ -199,7 +199,7 @@ private fun group(
 ): LineGroup {
   val shown = hits.sortedWith(compareByDescending(Hit::score).thenBy(Hit::line)).take(SHOWN).sortedBy(Hit::line)
   val lines = shown.map { recording.lines[it.line] }.map { LineHit(it.start, it.kept, snippet(it.text, terms, LINE_ROOM)) }
-  return LineGroup(recording.name, recording.programme, recording.startedAt, lines, hits.size - shown.size)
+  return LineGroup(recording.name, recording.programme, recording.startedAt, lines, hits.size - shown.size, recording.station)
 }
 
 private fun topics(
@@ -231,6 +231,7 @@ private fun topic(
     topic.start,
     marked(topic.title, terms),
     snippet(topic.summary.orEmpty(), terms, SUMMARY_ROOM),
+    recording.station,
   )
 
 private fun suggestions(

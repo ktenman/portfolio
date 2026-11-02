@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Station
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 
@@ -11,10 +12,11 @@ class RadioSearchTest {
     vararg said: Pair<Double, String>,
     edit: EditList? = null,
     startedAt: Double = 1792230900.0,
+    station: Station = Station.KUKU,
   ): IndexedRecording =
     indexed(
       name,
-      RecordingStatus(RecordingState.CAPTURED, startedAt, 4200.0, programmes = listOf(PROGRAMME)),
+      RecordingStatus(RecordingState.CAPTURED, startedAt, 4200.0, programmes = listOf(PROGRAMME), station = station),
       Transcript(said.map { (start, text) -> TranscriptSegment(start, start + 2.0, text) }, emptyList()),
       edit,
     )
@@ -202,6 +204,13 @@ class RadioSearchTest {
     val first = search(daily(1..11), "valimised", null)
     val second = search(daily(1..12), "valimised", first.next)
     expect((first.groups + second.groups).map { it.name }).toEqual((11 downTo 1).map { "2026-10-%02d".format(it) })
+  }
+
+  @Test
+  fun `should carry the station of the recording on its lines and topics`() {
+    val topical = editList(topics = listOf(EpisodeChapter(0.0, "Valimised")))
+    val found = search(listOf(recording("2026-10-17", 12.0 to "Valimised", edit = topical, station = Station.ARIPAEV)), "valimised", null)
+    expect(found.groups.single().station to found.topics.single().station).toEqual(Station.ARIPAEV to Station.ARIPAEV)
   }
 
   @Test

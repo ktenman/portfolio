@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { recording } from '../components/radio/radio-fixture'
-import { type RadioPositionDto, RecordingState } from '../models/generated/domain-models'
+import { type RadioPositionDto, RecordingState, Station } from '../models/generated/domain-models'
 import { deferred } from '../tests/test-utils'
 
 const positions = vi.hoisted(() => ({ find: vi.fn(), save: vi.fn() }))
@@ -24,6 +24,7 @@ const split = () =>
       startedAt: 1792227300,
       lostSeconds: 0,
       slot: null,
+      station: Station.KUKU,
       seconds: 4200,
       parts: [
         { file: 'raw.mp3', offsetSeconds: 0, sha256: null, durationSeconds: null },

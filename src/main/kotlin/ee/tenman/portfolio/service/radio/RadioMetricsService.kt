@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.JobStatus
+import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.JobExecutionRepository
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
@@ -31,7 +32,7 @@ class RadioMetricsService(
   fun refresh() {
     if (!::missed.isInitialized) return
     missed.register(radioScheduleService.missed().map(::row), true)
-    val plan = radioProperties.recordings.resolve(PLAN_FILE)
+    val plan = radioProperties.recordings.resolve(Station.KUKU.plan)
     planned = plan.takeIf(Files::exists)?.let {
       Files
       .getLastModifiedTime(it)

@@ -4,7 +4,12 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
 import { recording } from './radio-fixture'
-import { CutState, RecordingState, TranscriptState } from '../../models/generated/domain-models'
+import {
+  CutState,
+  RecordingState,
+  Station,
+  TranscriptState,
+} from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { toasts } from '../../composables/use-toast'
 
@@ -54,6 +59,7 @@ describe('RadioRecordings', () => {
           startedAt: 1792170142,
           lostSeconds: 0,
           slot: null,
+          station: Station.KUKU,
           seconds: 60,
           parts: [],
         },
