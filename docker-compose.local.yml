@@ -179,6 +179,7 @@ services:
         mkdir -p /recordings/.aripaev &&
         exec ffmpeg -nostdin -loglevel warning
         -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30
+        -rw_timeout 15000000
         -i https://www.aripaev.ee/raadio/stream.mp3
         -map 0:a:0 -c:a copy
         -output_ts_offset $$(( $$(date +%s) % 95443 ))

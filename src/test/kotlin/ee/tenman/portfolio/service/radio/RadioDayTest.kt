@@ -67,7 +67,7 @@ class RadioDayTest {
     RecordingStatus(
       RecordingState.CAPTURED,
       airing.startsAt.epochSecond.toDouble(),
-      3620.0,
+      3600.0 + station.lag.seconds,
       slot = Slot(airing.startsAt.epochSecond, airing.endsAt.epochSecond),
       station = station,
     ),

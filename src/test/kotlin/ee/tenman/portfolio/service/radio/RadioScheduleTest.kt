@@ -51,6 +51,14 @@ class RadioScheduleTest {
   }
 
   @Test
+  fun `should shift an Äripäev capture by that stream's longer lag`() {
+    val found = captures(listOf(airing("Kuum tool", "kuum-tool", "2026-11-09T11:00", "2026-11-09T12:00")), Station.ARIPAEV, tallinn)
+    val slot = Slot(at("2026-11-09T11:00").epochSecond, at("2026-11-09T12:00").epochSecond)
+    val expected = Capture("2026-11-09-1100-aripaev-kuum-tool", listOf("Kuum tool"), slot.start + 20, slot.end + 40, slot)
+    expect(found).toContainExactly(expected)
+  }
+
+  @Test
   fun `should record back to back airings as one recording named after both`() {
     val airings =
       listOf(

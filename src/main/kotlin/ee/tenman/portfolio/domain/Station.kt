@@ -11,5 +11,5 @@ enum class Station(
   val prefix: String,
 ) {
   KUKU("Kuku", 256_000, Duration.ofSeconds(20), "plan.json", "heartbeat.json", ""),
-  ARIPAEV("Äripäev", 128_000, Duration.ofSeconds(20), "plan-aripaev.json", "heartbeat-aripaev.json", "aripaev-"),
+  ARIPAEV("Äripäev", 128_000, Duration.ofSeconds(30), "plan-aripaev.json", "heartbeat-aripaev.json", "aripaev-"),
 }
