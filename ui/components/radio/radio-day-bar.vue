@@ -23,7 +23,7 @@
           data-testid="radio-day-link"
           :style="place(span)"
           :title="`${span.programme} · ${times(span)}`"
-          :aria-label="`${span.programme}, ${times(span)}`"
+          :aria-label="`${span.programme}, ${times(span)} · ${STATIONS[track.station]}`"
         >
           <span
             class="@container pointer-events-none block px-1 pt-px"

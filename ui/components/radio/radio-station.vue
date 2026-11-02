@@ -20,8 +20,12 @@
               {{ RECORDER_STATES[s.recorder].label }}
             </radio-badge>
           </span>
-          <span class="mt-1 block text-sm text-ink-soft">Next {{ upcoming(s) }}</span>
-          <span class="block text-sm text-ink-soft">{{ audioFormat(s.format) }}</span>
+          <span class="mt-1 block text-sm text-ink-soft">
+            {{ s.capture ? `Next ${upcoming(s)}` : 'No show selected' }}
+          </span>
+          <span v-if="s.format" class="block text-sm text-ink-soft">
+            {{ audioFormat(s.format) }}
+          </span>
         </li>
       </ul>
       <radio-facts :rows="facts" />

@@ -57,12 +57,18 @@ describe('RadioDayBar', () => {
 
   it('should name the show and its times to a screen reader', () => {
     const link = bar().find('[data-testid="radio-day-link"]')
-    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05 · Kuku')
+  })
+
+  it('should name the station of a show to a screen reader', () => {
+    const recorded = [{ ...FINISHED, station: Station.ARIPAEV }]
+    const link = bar({ recorded }).find('[data-testid="radio-day-link"]')
+    expect(link.attributes('aria-label')).toBe('Keskpäevatund, 11:55–13:05 · Äripäev')
   })
 
   it('should tell a screen reader that a show is being recorded now', () => {
     const links = bar({ recorded: [FINISHED, RUNNING] }).findAll('[data-testid="radio-day-link"]')
-    expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now')
+    expect(links[1].attributes('aria-label')).toBe('Huvitaja, 13:10–, recording now · Kuku')
   })
 
   it('should title a planned airing with its times', () => {

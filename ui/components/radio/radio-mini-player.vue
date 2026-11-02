@@ -119,8 +119,7 @@ const lifted = computed(() => route.name === 'Calculator')
 const shown = computed(() => {
   if (recording.value) return route.params.name !== recording.value.name
   const onPage = ON_AIR_PAGES.includes(String(route.name)) && !route.query.q
-  const tuned = player.tuned.value
-  return !onPage || !stations.value.some(s => s.onAir && (!tuned || s.station === tuned))
+  return !onPage || !stations.value.some(s => s.onAir && s.station === player.tuned.value)
 })
 
 const parts = computed(() => {

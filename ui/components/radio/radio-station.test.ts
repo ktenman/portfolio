@@ -103,6 +103,15 @@ describe('RadioStation', () => {
     expect(row).toBe('ÄripäevWaitingNext Kuum tool, Sat 24.10 12:00MP3 128 kb/s')
   })
 
+  it('should say no show is selected in the row of a station with no capture', async () => {
+    const [row] = await rows({ ...aripaev, format: { codec: 'mp3', bitRate: 128_000 } })
+    expect(row).toBe('ÄripäevWaitingNo show selectedMP3 128 kb/s')
+  })
+
+  it('should leave the format out of the row of a station with no format', async () => {
+    expect(await rows(aripaev)).toEqual(['ÄripäevWaitingNo show selected'])
+  })
+
   it('should share one Free space and one Room for between the rows', async () => {
     const text = (await all(idle, aripaev)).text()
     expect(text.match(/Free space/g)).toHaveLength(1)

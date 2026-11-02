@@ -15,9 +15,9 @@
           <span class="grid min-w-0 grow gap-0.5">
             <span class="font-semibold">{{ onAir.name }}</span>
             <span class="text-sm text-ink-soft tabular-nums">
-              {{ STATIONS[station] }} · {{ range(onAir.start, 0, onAir.end - onAir.start) }} ·
+              {{ STATIONS[station] }} · {{ range(onAir.start, 0, onAir.end - onAir.start) }}
               <span class="whitespace-nowrap">
-                {{ onAir.recorded ? 'recording' : 'not recorded' }}
+                {{ `· ${onAir.recorded ? 'recording' : 'not recorded'}` }}
               </span>
             </span>
           </span>

@@ -264,6 +264,18 @@ const ARIPAEV = {
   format: { codec: 'mp3', bitRate: 128_000 },
 }
 
+const IDLE_ARIPAEV = {
+  station: Station.ARIPAEV,
+  onAir: null,
+  next: null,
+  capture: null,
+  freeBytes: KUKU.freeBytes,
+  hours: ARIPAEV.hours,
+  recorder: RecorderState.OFF,
+  last: null,
+  format: null,
+}
+
 const seconds = (spans: { start: number; end: number }[]) =>
   spans.reduce((sum, { start, end }) => sum + end - start, 0)
 
@@ -332,6 +344,16 @@ export const stubRadio: RouteStub = async page => {
 export const stubRadioOnAir: RouteStub = async page => {
   await page.clock.setFixedTime((SATURDAY_ONE + 37 * 60) * 1000)
   await stubRadio(page)
+}
+
+export const stubRadioOneStationIdle: RouteStub = async page => {
+  await stubRadioOnAir(page)
+  await page.route(apiRoute(API_ENDPOINTS.RADIO), route =>
+    route.fulfill({ json: RECORDINGS.filter(({ status }) => status.station === Station.KUKU) })
+  )
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
+    route.fulfill({ json: [{ ...KUKU, recorder: RecorderState.RECORDING }, IDLE_ARIPAEV] })
+  )
 }
 
 export const stubRadioStill: RouteStub = async page => {

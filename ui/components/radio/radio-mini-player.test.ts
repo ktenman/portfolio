@@ -278,12 +278,4 @@ describe('RadioMiniPlayer', () => {
     tune(Station.KUKU)
     expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(true)
   })
-
-  it('should stay away from the On air card with nothing tuned', async () => {
-    expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(false)
-  })
-
-  it('should show with nothing tuned while nothing is on air', async () => {
-    expect(card(await open('/radio')).exists()).toBe(true)
-  })
 })

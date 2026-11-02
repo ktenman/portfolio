@@ -223,6 +223,10 @@ describe('RadioOnAir', () => {
     expect((await both()).text()).toContain('Äripäev · 12:00–13:00 · not recorded')
   })
 
+  it('should keep the separator with the recording state when the line wraps', async () => {
+    expect((await both()).find('.whitespace-nowrap').text()).toBe('· not recorded')
+  })
+
   it('should tune to the station of the row', async () => {
     const audio = document.createElement('audio')
     vi.spyOn(audio, 'play').mockResolvedValue()
