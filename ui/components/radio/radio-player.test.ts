@@ -4,6 +4,7 @@ import RadioPlayer from './radio-player.vue'
 import { recording } from './radio-fixture'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { Station } from '../../models/generated/domain-models'
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -187,7 +188,7 @@ describe('RadioPlayer', () => {
 
   it('should keep the phone pad in equal columns on a live stream', async () => {
     const wrapper = render()
-    player.live.value = true
+    player.tuned.value = Station.KUKU
     await wrapper.vm.$nextTick()
     const pad = wrapper.get('[data-testid="radio-play"]').element.parentElement!.parentElement!
     expect([pad.classList.contains('max-md:auto-cols-fr'), wrapper.text()]).toEqual([

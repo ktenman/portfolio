@@ -313,11 +313,13 @@ tests:
               summary: 'Collection inventory is unavailable'
   - interval: 15s
     input_series:
-      - series: 'portfolio_radio_missed_capture{capture="2026-10-24-1155-keskpaevatund",programmes="Keskpäevatund"}'
+      - series: 'portfolio_radio_missed_capture{station="Kuku",capture="2026-10-24-1155-keskpaevatund",programmes="Keskpäevatund"}'
         values: '1+0x20'
-      - series: 'portfolio_radio_missed_capture{capture="2026-10-24-1755-kasi-pulsil",programmes="Käsi pulsil"}'
+      - series: 'portfolio_radio_missed_capture{station="Äripäev",capture="2026-10-24-1755-aripaev-kuum-tool",programmes="Kuum tool"}'
         values: '2+0x20'
-      - series: 'portfolio_radio_schedule_failed'
+      - series: 'portfolio_radio_schedule_failed{station="Kuku"}'
+        values: '0+0x20'
+      - series: 'portfolio_radio_schedule_failed{station="Äripäev"}'
         values: '1+0x20'
     alert_rule_test:
       - eval_time: 1m
@@ -327,25 +329,30 @@ tests:
               capture: 2026-10-24-1155-keskpaevatund
               programmes: Keskpäevatund
               severity: warning
+              station: Kuku
             exp_annotations:
               summary: 'Kuku recording 2026-10-24-1155-keskpaevatund of Keskpäevatund ended without a recording: the recorder has never run here, so RADIO_ENABLED may be off'
           - exp_labels:
-              capture: 2026-10-24-1755-kasi-pulsil
-              programmes: Käsi pulsil
+              capture: 2026-10-24-1755-aripaev-kuum-tool
+              programmes: Kuum tool
               severity: warning
+              station: Äripäev
             exp_annotations:
-              summary: 'Kuku recording 2026-10-24-1755-kasi-pulsil of Käsi pulsil ended without a recording: the recorder is not running'
+              summary: 'Äripäev recording 2026-10-24-1755-aripaev-kuum-tool of Kuum tool ended without a recording: the recorder is not running'
       - eval_time: 1m
         alertname: RadioScheduleFailed
         exp_alerts:
           - exp_labels:
               severity: warning
+              station: Äripäev
             exp_annotations:
-              summary: 'Kuku schedule import failed, so the recording plan is not renewed'
+              summary: 'Äripäev schedule import failed, so the recording plan is not renewed'
   - interval: 15s
     input_series:
-      - series: 'portfolio_radio_plan_timestamp_seconds'
+      - series: 'portfolio_radio_plan_timestamp_seconds{station="Kuku"}'
         values: '0+0x12000'
+      - series: 'portfolio_radio_plan_timestamp_seconds{station="Äripäev"}'
+        values: '0+15x12000'
     alert_rule_test:
       - eval_time: 47h
         alertname: RadioPlanStale
@@ -355,8 +362,42 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: warning
+              station: Kuku
             exp_annotations:
-              summary: 'Kuku recording plan is over two days old, so nothing new is planned'
+              summary: 'Kuku schedule has not been imported for two days, so nothing new is planned'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_radio_bridge_timestamp_seconds'
+        values: '0+15x40 600+0x40 stale'
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: RadioBridgeStale
+        exp_alerts: []
+      - eval_time: 16m
+        alertname: RadioBridgeStale
+        exp_alerts: []
+      - eval_time: 18m
+        alertname: RadioBridgeStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
+      - eval_time: 25m
+        alertname: RadioBridgeStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_radio_bridge_timestamp_seconds'
+        values: 'NaN+0x40'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: RadioBridgeStale
+        exp_alerts: []
   - interval: 15s
     input_series:
       - series: 'portfolio_split_announced{instrument="BNKE:PAR:EUR",ratio="1:80",effective="2026-10-27",source="https://www.investegate.co.uk/announcement/9804833"}'

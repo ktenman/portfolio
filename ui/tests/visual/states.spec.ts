@@ -19,6 +19,7 @@ import {
   stubRadio,
   stubRadioLongNames,
   stubRadioLongText,
+  stubRadioOneStationIdle,
   stubRadioPlannedOnly,
   stubRadioPlannedSoon,
 } from './radio-fixture'
@@ -326,8 +327,18 @@ test('the play button of a radio schedule row stays above the link to its record
   await play.scrollIntoViewIfNeeded()
   const box = (await play.boundingBox())!
   expect(await labelAt(page, box.x + box.width / 2, box.y + box.height / 2)).toBe(
-    'Listen: Keskpäevatund 12:00'
+    'Listen: Keskpäevatund 12:00 · Kuku'
   )
+})
+
+test('the radio recordings table scrolls inside its box', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio')
+  const width = await page.evaluate(() => document.documentElement.scrollWidth)
+  expect(width).toBe(page.viewportSize()!.width)
 })
 
 test('the radio day bar leaves the room after a recording name unlinked', async ({
@@ -357,7 +368,7 @@ test('the radio day bar links a recording name that runs past its block', async 
   const block = (await link.boundingBox())!
   const name = (await link.getByText('Huvitaja').boundingBox())!
   expect(await labelAt(page, block.x + block.width + 10, name.y + name.height / 2)).toBe(
-    'Huvitaja, 13:10–, recording now'
+    'Huvitaja, 13:10–, recording now · Kuku'
   )
 })
 
@@ -386,6 +397,17 @@ test('the radio day bar sums the time planned on a day with nothing recorded', a
   await expect(
     page.getByTestId('radio-day-summary').locator('xpath=ancestor::section[1]')
   ).toHaveScreenshot('radio-day-planned.png')
+})
+
+test('radio recorders with one station idle', async ({ page }) => {
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadioOneStationIdle(page)
+  await openRoute(page, '/radio')
+  await freeze(page)
+  await expect(
+    page.getByRole('complementary', { name: 'Recorders and broadcast' })
+  ).toHaveScreenshot('radio-recorders-idle.png')
 })
 
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
@@ -499,7 +521,7 @@ async function playRadio(page: Page, path = '/', stub = stubRadio): Promise<void
 async function listenLive(page: Page): Promise<void> {
   await stubPlayer(page, stubRadio)
   await openRoute(page, '/radio')
-  await page.getByRole('button', { name: 'Listen live' }).click()
+  await page.getByRole('button', { name: 'Listen live: Kuku' }).click()
   await page.locator('.nav-link[href="/"]').click()
 }
 

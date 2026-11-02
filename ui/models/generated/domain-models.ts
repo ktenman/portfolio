@@ -323,6 +323,7 @@ export interface ProgrammeChoice {
 }
 
 export interface RadioStation {
+    station: Station;
     onAir: StationAiring | null;
     next: StationAiring | null;
     capture: Capture | null;

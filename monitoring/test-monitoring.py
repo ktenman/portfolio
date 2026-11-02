@@ -253,12 +253,14 @@ def check_compose():
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '5m' and list(worker['networks']) == ['radio']
     assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
+    caps = ('profiles', 'cpus', 'cpu_shares', 'mem_limit', 'memswap_limit', 'oom_score_adj', 'stop_grace_period', 'restart', 'networks')
+    assert all(services['radio-worker-aripaev'][cap] == worker[cap] for cap in caps), services['radio-worker-aripaev']
     backup = services['radio-whisper']
     assert backup['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
     assert backup['restart'] == 'unless-stopped', 'a stopped Whisper backup must stay stopped when Docker restarts'
     assert ('radio_model', '/model') in {(volume['source'], volume['target']) for volume in backup['volumes']}, backup['volumes']
     assert '/model' not in {volume['target'] for volume in worker['volumes']}, worker['volumes']
-    shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker')]
+    shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker', 'radio-worker-aripaev', 'radio-bridge')]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
     assert '--rules.alert.resend-delay=15s' in services['prometheus']['command']
@@ -552,7 +554,7 @@ def check_delivery():
             assert not notifications('CollectionInventoryUnavailable', 'firing')
             assert not notifications('CollectionMetricsIncomplete', 'firing')
             check_once_delivery(base, 'RadioCaptureMissed',
-                                {'capture': '2026-10-24-1155-keskpaevatund', 'programmes': 'Keskpäevatund'},
+                                {'station': 'Kuku', 'capture': '2026-10-24-1155-keskpaevatund', 'programmes': 'Keskpäevatund'},
                                 'Kuku recording 2026-10-24-1155-keskpaevatund ended without a recording')
             check_once_delivery(base, 'SplitAnnounced',
                                 {'instrument': 'BNKE:PAR:EUR', 'ratio': '1:80', 'effective': '2026-10-27'},

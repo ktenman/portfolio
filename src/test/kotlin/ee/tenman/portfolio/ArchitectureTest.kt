@@ -66,6 +66,7 @@ class ArchitectureTest {
         "..vanguard..",
         "..tuleva..",
         "..kuku..",
+        "..aripaev..",
       ).layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")

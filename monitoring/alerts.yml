@@ -145,7 +145,7 @@ groups:
           severity: warning
         annotations:
           summary: >-
-            Kuku recording {{ $labels.capture }} of {{ $labels.programmes }} ended without a recording:
+            {{ $labels.station }} recording {{ $labels.capture }} of {{ $labels.programmes }} ended without a recording:
             {{ if eq $value 1.0 }}the recorder has never run here, so RADIO_ENABLED may be off{{ else if eq $value 2.0 }}the recorder is not running{{ else }}the recorder runs but saved nothing, see its log{{ end }}
       - alert: RadioPlanStale
         expr: time() - portfolio_radio_plan_timestamp_seconds > 2 * 86400
@@ -153,13 +153,21 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: 'Kuku recording plan is over two days old, so nothing new is planned'
+          summary: '{{ $labels.station }} schedule has not been imported for two days, so nothing new is planned'
+      - alert: RadioBridgeStale
+        expr: time() - portfolio_radio_bridge_timestamp_seconds > 300
+        for: 2m
+        keep_firing_for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
       - alert: RadioScheduleFailed
         expr: portfolio_radio_schedule_failed == 1
         labels:
           severity: warning
         annotations:
-          summary: 'Kuku schedule import failed, so the recording plan is not renewed'
+          summary: '{{ $labels.station }} schedule import failed, so the recording plan is not renewed'
   - name: portfolio-split
     interval: 15s
     rules:

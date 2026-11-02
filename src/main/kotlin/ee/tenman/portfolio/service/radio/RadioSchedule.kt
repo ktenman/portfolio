@@ -72,6 +72,7 @@ data class Capture(
 )
 
 data class RadioStation(
+  val station: Station,
   val onAir: StationAiring?,
   val next: StationAiring?,
   val capture: Capture?,

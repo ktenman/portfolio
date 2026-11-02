@@ -10,7 +10,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     programmes: vi.fn(),
     choose: vi.fn(),
-    station: vi.fn(),
+    stations: vi.fn(),
   },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -29,7 +29,7 @@ const mount = async () => {
 describe('RadioProgrammes', () => {
   beforeEach(() => {
     vi.mocked(radioService.choose).mockReset()
-    vi.mocked(radioService.station).mockReset().mockResolvedValue(station())
+    vi.mocked(radioService.stations).mockReset().mockResolvedValue([station()])
     vi.mocked(radioService.programmes).mockResolvedValue([
       {
         id: 175,
@@ -56,7 +56,7 @@ describe('RadioProgrammes', () => {
 
   it('should say the schedule is not loaded before the first import', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue([])
-    expect((await mount()).text()).toContain("Kuku's schedule has not been loaded yet.")
+    expect((await mount()).text()).toContain('The schedule has not been loaded yet.')
   })
 
   it('should show the air time of a programme', async () => {
@@ -80,9 +80,9 @@ describe('RadioProgrammes', () => {
       end: noon + 3630,
       slot: { start: noon, end: noon + 3600 },
     }
-    vi.mocked(radioService.station)
-      .mockResolvedValueOnce(station())
-      .mockResolvedValue(station({ capture }))
+    vi.mocked(radioService.stations)
+      .mockResolvedValueOnce([station()])
+      .mockResolvedValue([station({ capture })])
     vi.mocked(radioService.choose).mockResolvedValue()
     const wrapper = await mount()
     await wrapper.find('input[aria-label="Record every time: Keskpäevatund"]').setValue(true)
@@ -117,7 +117,7 @@ describe('RadioProgrammes', () => {
 
   it('should show a programme on a phone as one row with its name and air time', async () => {
     expect((await mount()).find('[data-testid="radio-programme-row"]').text()).toBe(
-      'KeskpäevatundSat 12:00–13:00 · Mon–Wed, Fri 01:00–02:00 Every time'
+      'KeskpäevatundKuku · Sat 12:00–13:00 · Mon–Wed, Fri 01:00–02:00 Every time'
     )
   })
 
@@ -129,5 +129,43 @@ describe('RadioProgrammes', () => {
   it('should offer no link to more programmes', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue(many(10))
     expect((await mount()).text()).not.toContain('shows on the schedule')
+  })
+
+  const show = (name: string, station: Station) => ({
+    id: name.length,
+    name,
+    description: null,
+    recordEvery: false,
+    slots: [{ days: [DayOfWeek.MONDAY], start: '11:00:00', end: '12:00:00' }],
+    recordings: 0,
+    station,
+  })
+
+  it('should keep a Station column right after Show', async () => {
+    const headers = (await mount()).findAll('thead th').map(header => header.text())
+    expect(headers.slice(0, 2)).toEqual(['Show', 'Station'])
+  })
+
+  it('should name the station of a show in its column', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue([show('Kuum tool', Station.ARIPAEV)])
+    expect((await mount()).find('tbody tr').text()).toContain('Äripäev')
+  })
+
+  it('should lead the air times of a show on a phone with its station', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue([show('Kuum tool', Station.ARIPAEV)])
+    expect((await mount()).find('[data-testid="radio-programme-row"]').text()).toContain(
+      'Äripäev · Mon 11:00–12:00'
+    )
+  })
+
+  it('should show only the shows of the chosen station', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue([
+      show('Digitund', Station.KUKU),
+      show('Kuum tool', Station.ARIPAEV),
+    ])
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(wrapper.findAll('tbody tr').map(row => row.text().includes('Kuum tool'))).toEqual([true])
   })
 })

@@ -4,7 +4,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import type { RecordingSummary } from '../../models/generated/domain-models'
-import { RecorderState } from '../../models/generated/domain-models'
+import { RecorderState, Station } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { recording } from './radio-fixture'
 import RadioMiniPlayer from './radio-mini-player.vue'
@@ -15,7 +15,7 @@ vi.mock('../../services/api', () => ({
     liveUrl: '/api/radio/live',
     position: vi.fn(),
     savePosition: vi.fn(),
-    station: vi.fn(),
+    stations: vi.fn(),
   },
 }))
 vi.mock('../../composables/use-auth-state', async () => {
@@ -28,6 +28,7 @@ enableAutoUnmount(afterEach)
 const PAGE = { template: '<p />' }
 const BROADCAST = { name: 'Tarkade klubi', start: 0, end: 3600, recorded: false }
 const SILENT = {
+  station: Station.KUKU,
   next: null,
   capture: null,
   freeBytes: null,
@@ -52,8 +53,15 @@ describe('RadioMiniPlayer', () => {
 
   afterEach(() => player.close())
 
-  const open = async (path = '/', onAir: typeof BROADCAST | null = null) => {
-    vi.mocked(radioService.station).mockResolvedValue({ ...SILENT, onAir })
+  const open = async (
+    path = '/',
+    onAir: typeof BROADCAST | null = null,
+    aripaev: typeof BROADCAST | null = null
+  ) => {
+    vi.mocked(radioService.stations).mockResolvedValue([
+      { ...SILENT, onAir },
+      { ...SILENT, station: Station.ARIPAEV, onAir: aripaev },
+    ])
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -85,7 +93,7 @@ describe('RadioMiniPlayer', () => {
   }
 
   const listen = () => {
-    player.listen()
+    player.listen(Station.KUKU)
     audio.dispatchEvent(new Event('play'))
   }
 
@@ -240,5 +248,34 @@ describe('RadioMiniPlayer', () => {
   it('should stay at the bottom of every other page', async () => {
     await play()
     expect(card(await open()).classes()).not.toContain('max-md:bottom-22')
+  })
+
+  it('should name the tuned station', async () => {
+    player.listen(Station.ARIPAEV)
+    audio.dispatchEvent(new Event('play'))
+    expect(card(await open()).text()).toContain('ÄripäevLive')
+  })
+
+  const tune = (station: Station) => {
+    player.listen(station)
+    audio.dispatchEvent(new Event('play'))
+  }
+
+  it.each(['/radio', '/radio?station=aripaev'])(
+    "should stay away from the tuned station's row at %s",
+    async path => {
+      tune(Station.ARIPAEV)
+      expect(card(await open(path, BROADCAST, BROADCAST)).exists()).toBe(false)
+    }
+  )
+
+  it('should show the tuned station while the chip hides its row', async () => {
+    tune(Station.ARIPAEV)
+    expect(card(await open('/radio?station=kuku', BROADCAST, BROADCAST)).exists()).toBe(true)
+  })
+
+  it('should show the tuned station when it goes off air while the other stays on', async () => {
+    tune(Station.KUKU)
+    expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(true)
   })
 })

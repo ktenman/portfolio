@@ -329,6 +329,18 @@ class MainTest {
   }
 
   @Test
+  fun `planned without a station records Kuku into its own plan and heartbeat`(
+    @TempDir tmp: Path,
+  ) {
+    val start = now().toLong()
+    write(tmp.resolve("plan.json"), listOf(Capture("kuku", listOf("Kuku"), start, start + 30)))
+    val code = runs("planned", "--recordings", "$tmp", "--model", model(tmp), "--tagger", CED_TINY, stop = CountDownLatch(0))
+    val status = status(tmp.resolve("kuku"))
+    val beat = Files.exists(tmp.resolve("heartbeat.json"))
+    expect(listOf(code, status.source, status.station, beat)).toEqual(listOf(130, KUKU, null, true))
+  }
+
+  @Test
   fun `planned for a station refuses to run without its source`(
     @TempDir tmp: Path,
   ) {

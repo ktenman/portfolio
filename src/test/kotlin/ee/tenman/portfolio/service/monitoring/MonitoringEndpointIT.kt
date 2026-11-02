@@ -59,8 +59,9 @@ class MonitoringEndpointIT {
   fun `should expose the radio recorder metrics on the management listener`() {
     radio.refresh()
     expect(get(managementPort, "/actuator/prometheus").body()).toContain(
-      "portfolio_radio_plan_timestamp_seconds",
+      "portfolio_radio_plan_timestamp_seconds{",
       "portfolio_radio_schedule_failed",
+      "portfolio_radio_bridge_timestamp_seconds NaN",
     )
   }
 

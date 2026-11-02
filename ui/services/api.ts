@@ -26,6 +26,7 @@ import {
   type RadioProgrammeDto,
   type RadioSearch,
   type RadioStation,
+  type Station,
   type RecordingSummary,
   type TranscriptSection,
   type IntradaySummaryPointDto,
@@ -250,16 +251,18 @@ export const radioService = {
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/${name}/position`, position),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
   programmes: () => httpClient.get<RadioProgrammeDto[]>(`${API_ENDPOINTS.RADIO}/programmes`),
-  station: () => httpClient.get<RadioStation>(`${API_ENDPOINTS.RADIO}/station`),
+  stations: () => httpClient.get<RadioStation[]>(`${API_ENDPOINTS.RADIO}/station`),
   liveUrl: `/api${API_ENDPOINTS.RADIO}/live`,
   choose: (id: number, choice: ProgrammeChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/programmes/${id}`, choice),
-  day: (date: string | null) =>
-    httpClient.get<RadioDay>(`${API_ENDPOINTS.RADIO}/schedule`, { params: { date } }),
+  day: (date: string | null, station: Station | null) =>
+    httpClient.get<RadioDay>(`${API_ENDPOINTS.RADIO}/schedule`, { params: { date, station } }),
   record: (id: number, choice: AiringChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/airings/${id}`, choice),
-  search: (q: string, after: string | null) =>
-    httpClient.get<RadioSearch>(`${API_ENDPOINTS.RADIO}/search`, { params: { q, after } }),
+  search: (q: string, after: string | null, station: Station | null) =>
+    httpClient.get<RadioSearch>(`${API_ENDPOINTS.RADIO}/search`, {
+      params: { q, after, station },
+    }),
 }
 
 export const liveUpdatesService = {

@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Station
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
 
 @IntegrationTest
@@ -111,6 +113,56 @@ class RadioStationsIT : RadioScheduleTestBase() {
   }
 
   @Test
+  fun `should keep a joined capture whole in the plan between its airings`() {
+    val now = clock.instant().atZone(tallinn)
+    val first = now.minusHours(1)
+    load(
+      episode(4, 175, "Keskpäevatund", first, now.minusMinutes(5)),
+      episode(5, 231, "Tarkade klubi", now.plusMinutes(5), now.plusHours(1)),
+    )
+    recording("${MINUTE.format(first)}-keskpaevatund-tarkade-klubi", first, 7200)
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(231, ProgrammeChoice(true))
+    expect(plan().map { it.programmes }).toContainExactly(listOf("Keskpäevatund", "Tarkade klubi"))
+  }
+
+  @Test
+  fun `should keep a joined capture whole in the plan during its last airing`() {
+    val now = clock.instant().atZone(tallinn)
+    val first = now.minusHours(2)
+    load(
+      episode(4, 175, "Keskpäevatund", first, now.minusHours(1)),
+      episode(5, 231, "Tarkade klubi", now.minusHours(1), now.plusHours(1)),
+    )
+    recording("${MINUTE.format(first)}-keskpaevatund-tarkade-klubi", first, 10800)
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(231, ProgrammeChoice(true))
+    expect(plan().map { it.slot.start }).toContainExactly(first.toEpochSecond())
+  }
+
+  @Test
+  fun `should plan only the next airing when a finished recording holds the first alone`() {
+    val now = clock.instant().atZone(tallinn)
+    val first = now.minusHours(1)
+    load(
+      episode(4, 175, "Keskpäevatund", first, now.minusMinutes(5)),
+      episode(5, 231, "Tarkade klubi", now.plusMinutes(5), now.plusHours(1)),
+    )
+    recording("${MINUTE.format(first)}-keskpaevatund", first, 3300)
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    radioScheduleService.choose(231, ProgrammeChoice(true))
+    expect(plan().map { it.programmes }).toContainExactly(listOf("Tarkade klubi"))
+  }
+
+  @Test
+  fun `should leave a capture out of the plan once its last airing ended`() {
+    val now = clock.instant().atZone(tallinn)
+    load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
+    radioScheduleService.choose(175, ProgrammeChoice(true))
+    expect(plan()).toHaveSize(0)
+  }
+
+  @Test
   fun `should give two stations at the same minute separate captures`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     replaceAripaev(aripaev(ARIPAEV_AIRING, "12:00", "13:00"))
@@ -155,7 +207,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
   fun `should keep the next airing of Kuku when Äripäev airs sooner`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     replaceAripaev(aripaev(ARIPAEV_AIRING, "09:00", "10:00"))
-    expect(radioScheduleService.station().next?.name).toEqual("Keskpäevatund")
+    expect(radioScheduleService.station(Station.KUKU).next?.name).toEqual("Keskpäevatund")
   }
 
   @Test
@@ -183,13 +235,13 @@ class RadioStationsIT : RadioScheduleTestBase() {
   @Test
   fun `should keep the recordings of Äripäev out of the last recording of Kuku`() {
     aripaevRecording("captured")
-    expect(radioScheduleService.station().last).toEqual(null)
+    expect(radioScheduleService.station(Station.KUKU).last).toEqual(null)
   }
 
   @Test
   fun `should read the heartbeat of the given station`() {
     beat(Station.ARIPAEV)
-    expect(radioScheduleService.station(Station.ARIPAEV).recorder to radioScheduleService.station().recorder)
+    expect(radioScheduleService.station(Station.ARIPAEV).recorder to radioScheduleService.station(Station.KUKU).recorder)
       .toEqual(RecorderState.WAITING to RecorderState.OFF)
   }
 
@@ -198,7 +250,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
     beat(Station.KUKU)
     beat(Station.ARIPAEV)
     aripaevRecording("recording")
-    expect(radioScheduleService.station().recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
+    expect(radioScheduleService.station(Station.KUKU).recorder to radioScheduleService.station(Station.ARIPAEV).recorder)
       .toEqual(RecorderState.WAITING to RecorderState.RECORDING)
   }
 
@@ -210,7 +262,8 @@ class RadioStationsIT : RadioScheduleTestBase() {
     radioScheduleService.choose(175, ProgrammeChoice(true))
     radioScheduleService.choose(ARIPAEV_SHOW, ProgrammeChoice(true))
     beat(Station.ARIPAEV)
-    expect(radioScheduleService.missed().map { it.capture.programmes to it.reason }).toContainExactly(
+    val missed = radioScheduleService.missed().values.flatten()
+    expect(missed.map { it.capture.programmes to it.reason }).toContainExactly(
       listOf("Keskpäevatund") to MissedReason.NEVER_RAN,
       listOf("Kuum tool") to MissedReason.SAVED_NOTHING,
     )
@@ -222,7 +275,8 @@ class RadioStationsIT : RadioScheduleTestBase() {
     load(episode(4, 175, "Keskpäevatund", now.minusHours(2), now.minusHours(1)))
     replaceAripaev(aripaev(ARIPAEV_AIRING, now.minusHours(2), now.minusHours(1)))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    expect(radioScheduleService.missed().map { it.capture.programmes }).toContainExactly(listOf("Keskpäevatund"))
+    val missed = radioScheduleService.missed().values.flatten()
+    expect(missed.map { it.capture.programmes }).toContainExactly(listOf("Keskpäevatund"))
   }
 
   @Test
@@ -235,6 +289,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
   }
 
   companion object {
+    private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
     private const val ARIPAEV_SHOW = (1L shl 48) + 1
     private const val ARIPAEV_AIRING = (1L shl 48) + 2
   }

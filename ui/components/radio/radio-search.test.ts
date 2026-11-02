@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { radioService } from '../../services/api'
 import { deferred } from '../../tests/test-utils'
 import RadioSearch from './radio-search.vue'
+import { Station } from '../../models/generated/domain-models'
 import { nothingFound, radioSearch } from './radio-fixture'
 
 vi.mock('../../services/api', () => ({ radioService: { search: vi.fn() } }))
@@ -55,7 +56,7 @@ const open = async (client = new QueryClient()) => {
 
 const staleClient = async () => {
   const client = new QueryClient()
-  client.setQueryData(['radio', 'search', 'valimis'], {
+  client.setQueryData(['radio', 'search', 'valimis', null], {
     pages: [radioSearch({ next: '2026-10-17' })],
     pageParams: [null],
   })
@@ -215,8 +216,8 @@ describe('RadioSearch', () => {
     refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
     ])
   })
 
@@ -236,7 +237,7 @@ describe('RadioSearch', () => {
     observe(true)
     vi.mocked(radioService.search).mockRejectedValue(new Error('Search failed'))
     await open(await staleClient())
-    expect(vi.mocked(radioService.search).mock.calls).toEqual([['valimis', null]])
+    expect(vi.mocked(radioService.search).mock.calls).toEqual([['valimis', null, null]])
   })
 
   it('should refresh every page of a search with its own words when the words change meanwhile', async () => {
@@ -254,11 +255,11 @@ describe('RadioSearch', () => {
     refresh.resolve(radioSearch({ next: '2026-10-17' }))
     await flushPromises()
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
-      ['valimis', null],
-      ['eelarve', null],
-      ['valimis', '2026-10-17'],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
+      ['valimis', null, null],
+      ['eelarve', null, null],
+      ['valimis', '2026-10-17', null],
     ])
   })
 
@@ -292,9 +293,9 @@ describe('RadioSearch', () => {
     await new Promise(resolve => setTimeout(resolve, 20))
     await open(client)
     expect(vi.mocked(radioService.search).mock.calls).toEqual([
-      ['valimis', null],
-      ['valimis', '2026-10-17'],
-      ['valimis', null],
+      ['valimis', null, null],
+      ['valimis', '2026-10-17', null],
+      ['valimis', null, null],
     ])
   })
 
@@ -345,5 +346,28 @@ describe('RadioSearch', () => {
     await wrapper.get('[role="status"] + button').trigger('click')
     await flushPromises()
     expect(wrapper.findAll('[data-testid="radio-search-line"]')).toHaveLength(2)
+  })
+
+  const aripaev = () => {
+    const { topics, groups } = radioSearch()
+    return radioSearch({
+      topics: [{ ...topics[0], station: Station.ARIPAEV }],
+      groups: [{ ...groups[0], station: Station.ARIPAEV }],
+    })
+  }
+
+  it('should lead the line under a topic with its station', async () => {
+    vi.mocked(radioService.search).mockResolvedValue(aripaev())
+    const topic = (await open()).wrapper.get('[data-testid="radio-search-topic"]')
+    expect(topic.text()).toContain('Äripäev · Keskpäevatund · Sat 17.10 · 12:40')
+  })
+
+  it('should lead the line over a recording with its station', async () => {
+    vi.mocked(radioService.search).mockResolvedValue(aripaev())
+    expect((await open()).wrapper.text()).toContain('Äripäev · Keskpäevatund · Sat 17.10')
+  })
+
+  it('should lead every meta line on Kuku too', async () => {
+    expect((await open()).wrapper.text()).toContain('Kuku · Keskpäevatund · Sat 17.10')
   })
 })

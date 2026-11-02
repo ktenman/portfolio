@@ -43,7 +43,7 @@ abstract class RadioScheduleTestBase {
   protected lateinit var radioAiringRepository: RadioAiringRepository
 
   @Resource
-  private lateinit var jobExecutionService: JobExecutionService
+  protected lateinit var jobExecutionService: JobExecutionService
 
   @Resource
   protected lateinit var radioProperties: RadioProperties
@@ -55,7 +55,7 @@ abstract class RadioScheduleTestBase {
   protected lateinit var mockMvc: MockMvc
 
   @InjectWireMock
-  private lateinit var wireMockServer: WireMockServer
+  protected lateinit var wireMockServer: WireMockServer
 
   protected val tallinn: ZoneId = ZoneId.of("Europe/Tallinn")
 

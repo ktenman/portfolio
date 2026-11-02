@@ -354,12 +354,13 @@ Key entities with relationships:
 
 Migrations are in `src/main/resources/db/migration/` using timestamp naming `VYYYYMMDDHHMM__description.sql` (e.g. `V202605261300__lightyear_sells_may25.sql`) — 200+ migrations applied in timestamp order. Name new migrations with the current date/time, not a sequential V-number.
 
-### External Integrations (12 systems)
+### External Integrations (14 systems)
 
 - **Market Data:** FT (stocks/ETFs via HTML scraping), Binance (crypto via JSON API), OpenFIGI (instrument identifier resolution)
 - **Trading Platforms:** Trading212, Lightyear (via Cloudflare Bypass Proxy with curl-impersonate)
 - **AI Services:** OpenRouter (Claude Haiku for ETF sector classification), Google Cloud Vision (OCR)
 - **Vehicle:** Auto24 (Estonian car marketplace valuation), Veego (tax reporting)
+- **Radio:** Kuku (schedule API and live HLS stream), aripaev.ee (Äripäev Raadio schedule via its RSC payload, and its MP3 stream through the `radio-bridge` service)
 - **Other:** Telegram (notifications), MinIO (S3-compatible logo storage)
 - **Infrastructure:** Cloudflare Bypass Proxy (Node.js/TypeScript, curl-impersonate for TLS fingerprint spoofing)
 

@@ -4,7 +4,7 @@
     <router-link
       v-for="view in VIEWS"
       :key="view.to"
-      :to="view.to"
+      :to="{ path: view.to, query: { station: station?.toLowerCase() } }"
       class="relative px-0.5 py-2.5 text-base leading-6 font-medium text-ink-soft transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:transition-colors hover:text-ink hover:after:bg-hairline-strong [&.active]:font-semibold [&.active]:text-ink [&.active]:after:bg-brass"
       v-bind="tab"
       @click.exact="text = ''"
@@ -12,14 +12,28 @@
       {{ view.label }}
     </router-link>
   </nav>
-  <search-input
-    v-model="text"
-    class="mb-6"
-    :active="!!query"
-    placeholder="Search what was said"
-    label="Search what was said"
-    :maxlength="100"
-  />
+  <div class="mb-6 flex items-center gap-x-4 gap-y-3 md-down:flex-col md-down:items-stretch">
+    <search-input
+      v-model="text"
+      :active="!!query"
+      placeholder="Search what was said"
+      label="Search what was said"
+      :maxlength="100"
+    />
+    <div class="flex gap-1.5" role="group" aria-label="Station">
+      <button
+        v-for="chip in CHIPS"
+        :key="chip ?? 'all'"
+        type="button"
+        class="platform-btn relative md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2"
+        :class="{ active: station === chip }"
+        :aria-pressed="station === chip"
+        @click="station = chip"
+      >
+        {{ chip ? STATIONS[chip] : 'All' }}
+      </button>
+    </div>
+  </div>
   <radio-search v-if="query" :query="query" />
   <slot v-else />
 </template>
@@ -28,6 +42,9 @@
 import { computed, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
+import { useStationFilter } from '../../composables/use-radio-recordings'
+import { Station } from '../../models/generated/domain-models'
+import { STATIONS } from '../../utils/radio'
 import SearchInput from '../shared/search-input.vue'
 import RadioSearch from './radio-search.vue'
 
@@ -36,9 +53,11 @@ const VIEWS = [
   { to: '/radio/shows', label: 'Shows' },
   { to: '/radio/catch-up', label: 'Catch-up' },
 ]
+const CHIPS = [null, ...Object.values(Station)]
 
 const route = useRoute()
 const router = useRouter()
+const station = useStationFilter()
 const query = computed(() => (typeof route.query.q === 'string' ? route.query.q.trim() : ''))
 const tab = computed(() =>
   query.value

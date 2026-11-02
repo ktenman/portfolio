@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   ProgrammeCutState,
+  Station,
   TranscriptState,
   type KeptSpan,
 } from '../models/generated/domain-models'
@@ -115,6 +116,13 @@ describe('labels', () => {
 })
 
 describe('missedRun', () => {
+  it('should end a run that mixes stations at its latest end', () => {
+    const { start } = airing()
+    const long = airing({ end: start + 3 * 3600 })
+    const short = airing({ start: start + 3600, station: Station.ARIPAEV })
+    expect(missedRun([long, short])).toBe('14:00–17:00 · 2 shows, not recorded')
+  })
+
   it('should count one missed airing as one show', () => {
     expect(missedRun([airing()])).toBe('14:00–15:00 · 1 show, not recorded')
   })

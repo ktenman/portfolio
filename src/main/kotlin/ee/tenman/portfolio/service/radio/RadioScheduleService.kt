@@ -72,14 +72,29 @@ class RadioScheduleService(
     return true
   }
 
+  @Synchronized
   fun plan() {
     val root = radioProperties.recordings
     if (!Files.isDirectory(root)) return
-    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(clock.instant())
-    Station.entries.forEach { save(root.resolve(it.plan), planned(airings, it)) }
+    val now = clock.instant()
+    val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
+    Station.entries.forEach { save(root.resolve(it.plan), upcoming(root, airings, it, now)) }
   }
 
-  fun station(station: Station = Station.KUKU): RadioStation {
+  private fun upcoming(
+    root: Path,
+    airings: List<RadioAiring>,
+    station: Station,
+    now: Instant,
+  ): List<Capture> {
+    val started = planned(airings, station).filter { it.slot.end > now.epochSecond && Files.exists(root.resolve(it.name)) }
+    val unfinished = planned(airings.filter { it.endsAt > now }, station)
+    return (started + unfinished.filter { capture -> started.none { it.slot.end == capture.slot.end } }).sortedBy { it.start }
+  }
+
+  fun stations(): List<RadioStation> = Station.entries.map(::station)
+
+  fun station(station: Station): RadioStation {
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now).filter { it.station == station }
     val captures = planned(airings, station)
@@ -89,9 +104,10 @@ class RadioScheduleService(
     val recordings = radioArchiveService.recordings().filter { it.status.station == station }
     val last = recordings.firstOrNull { it.status.state != RecordingState.RECORDING }
     return RadioStation(
+      station = station,
       onAir = onAir,
       next = next,
-      capture = captures.firstOrNull(),
+      capture = captures.firstOrNull { it.start > now.epochSecond },
       freeBytes = free,
       hours = free?.div(station.bytesPerHour),
       recorder = recorder(heartbeat(root, station), recordings.any { it.status.state == RecordingState.RECORDING }, now),
@@ -111,13 +127,13 @@ class RadioScheduleService(
     return onAir?.let { live(it, names, captures) } to next?.let { live(it, names, captures) }
   }
 
-  fun missed(): List<MissedCapture> {
+  fun missed(): Map<Station, List<MissedCapture>> {
     val root = radioProperties.recordings
-    if (!Files.isDirectory(root)) return emptyList()
+    if (!Files.isDirectory(root)) return emptyMap()
     val now = clock.instant()
     val airings = radioAiringRepository.findByEndsAtAfterOrderByStartsAt(now - MISSED_FOR)
     val recorded = recorded(root)
-    return Station.entries.flatMap { missed(planned(airings, it), recorded, heartbeat(root, it), now) }
+    return Station.entries.associateWith { missed(planned(airings, it), recorded, heartbeat(root, it), now) }
   }
 
   private fun heartbeat(

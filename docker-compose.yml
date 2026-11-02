@@ -218,6 +218,38 @@ services:
       - radio_model:/model
       - radio_recordings:/recordings
 
+  radio-bridge:
+    logging: *logging
+    container_name: radio-bridge
+    image: jrottenberg/ffmpeg:8-alpine@sha256:3ab1c371ad3e734e7a31a3219e6a75120f1106c776b291db1bfc2d20158cd73e
+    profiles: [radio]
+    user: "1000:1000"
+    entrypoint: ["sh", "-c"]
+    command:
+      - >-
+        mkdir -p /recordings/.aripaev &&
+        exec ffmpeg -nostdin -loglevel warning
+        -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30
+        -i https://www.aripaev.ee/raadio/stream.mp3
+        -map 0:a:0 -c:a copy
+        -output_ts_offset $$(( $$(date +%s) % 95443 ))
+        -f hls -hls_time 6 -hls_list_size 600
+        -hls_flags delete_segments+omit_endlist
+        -hls_segment_filename /recordings/.aripaev/seg_%05d.ts
+        /recordings/.aripaev/stream.m3u8
+    restart: unless-stopped
+    cpus: 0.1
+    mem_limit: 64m
+    networks:
+      - radio
+    volumes:
+      - radio_recordings:/recordings
+
+  radio-worker-aripaev:
+    <<: *radio-worker
+    container_name: radio-worker-aripaev
+    command: ["planned", "--station", "ARIPAEV", "--source", "/recordings/.aripaev/stream.m3u8"]
+
   healthcheck:
     logging: *logging
     container_name: healthcheck

@@ -150,6 +150,20 @@ describe('RadioEpisode', () => {
     ])
   })
 
+  it('should go back to the recordings of the station it was opened from', async () => {
+    expect(await back('/radio?station=aripaev')).toEqual([
+      'Back to Recordings',
+      '/radio?station=aripaev',
+    ])
+  })
+
+  it('should go back to the day of the station it was opened from', async () => {
+    expect(await back('/radio/catch-up?day=2026-10-14&station=aripaev')).toEqual([
+      'Back to Catch-up',
+      '/radio/catch-up?day=2026-10-14&station=aripaev',
+    ])
+  })
+
   it('should go back to the recordings when opened on its own', async () => {
     const link = (await open(recording())).wrapper.get('a')
     expect([link.attributes('aria-label'), link.attributes('href')]).toEqual([

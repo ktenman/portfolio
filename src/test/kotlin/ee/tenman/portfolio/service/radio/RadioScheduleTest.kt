@@ -12,6 +12,7 @@ import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.kuku.KukuEpisode
 import ee.tenman.portfolio.kuku.KukuShow
 import ee.tenman.portfolio.repository.RadioAiringRepository
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -25,6 +26,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class RadioScheduleTest {
   private val tallinn = ZoneId.of("Europe/Tallinn")
@@ -270,5 +274,20 @@ class RadioScheduleTest {
     expect { service.record(7, AiringChoice(true)) }
       .toThrow<IllegalArgumentException>()
       .messageToContain("Äripäev airing 7 began at 1970-01-01T00:00:00Z and can no longer be chosen")
+  }
+
+  @Test
+  fun `should write the plans of two imports that finish at once`(
+    @TempDir directory: Path,
+  ) {
+    val airings = mockk<RadioAiringRepository>()
+    every { airings.findByEndsAtAfterOrderByStartsAt(any()) } returns emptyList()
+    val programmes = mockk<RadioProgrammeRepository>()
+    every { programmes.findAllById(any<Iterable<Long>>()) } returns emptyList()
+    val service = RadioScheduleService(programmes, airings, mockk(), RadioProperties(recordings = directory), Clock.systemUTC())
+    val pool = Executors.newFixedThreadPool(2)
+    val runs = pool.invokeAll(List(500) { Callable { runCatching { service.plan() } } }, 1, TimeUnit.MINUTES)
+    pool.shutdownNow()
+    expect(runs.map { it.get() }.filter { it.isFailure }).toHaveSize(0)
   }
 }
