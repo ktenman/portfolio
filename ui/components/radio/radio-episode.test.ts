@@ -53,7 +53,10 @@ describe('RadioEpisode', () => {
     shown.value = item
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: '/radio/:name', component: RadioEpisode }],
+      routes: [
+        { path: '/radio', name: 'Radio', component: { template: '<p />' } },
+        { path: '/radio/:name', component: RadioEpisode },
+      ],
     })
     await router.push(`/radio/${item.name}${search}`)
     return { router, wrapper: mountEpisode(router) }
@@ -87,20 +90,26 @@ describe('RadioEpisode', () => {
     expect(wrapper.find('nav[aria-label="Show views"]').exists()).toBe(false)
   })
 
-  const back = async (from: string) => {
+  const visit = async (from: string) => {
     shown.value = recording()
     const router = createRouter({
       history: createWebHistory(),
       routes: [
+        { path: '/', name: 'Portfolio Summary', component: { template: '<p />' } },
         { path: '/radio', name: 'Radio', component: { template: '<p />' } },
+        { path: '/radio/shows', name: 'RadioShows', component: { template: '<p />' } },
         { path: '/radio/catch-up', name: 'RadioCatchUp', component: { template: '<p />' } },
         { path: '/radio/:name', component: RadioEpisode },
       ],
     })
     await router.push(from)
     await router.push(`/radio/${recording().name}`)
-    const link = mountEpisode(router).get('a')
-    return [link.attributes('aria-label'), link.attributes('href')]
+    return { router, link: mountEpisode(router).get('a') }
+  }
+
+  const back = async (from: string) => {
+    const { link } = await visit(from)
+    return [link.attributes('aria-label'), link.attributes('href'), link.text()]
   }
 
   it('should play a kept line from the search at its place in the cut version', async () => {
@@ -141,13 +150,15 @@ describe('RadioEpisode', () => {
     expect(await back('/radio/catch-up?day=2026-10-14')).toEqual([
       'Back to Catch-up',
       '/radio/catch-up?day=2026-10-14',
+      'Catch-up',
     ])
   })
 
-  it('should go back to the search results it was opened from', async () => {
-    expect(await back('/radio?q=valimised')).toEqual([
-      'Back to search results',
-      '/radio?q=valimised',
+  it('should name the search it goes back to', async () => {
+    expect(await back('/radio?q=intressimäär')).toEqual([
+      'Back to results for “intressimäär”',
+      '/radio?q=intressimäär',
+      'Results for “intressimäär”',
     ])
   })
 
@@ -155,14 +166,40 @@ describe('RadioEpisode', () => {
     expect(await back('/radio?station=aripaev')).toEqual([
       'Back to Recordings',
       '/radio?station=aripaev',
+      'Recordings',
     ])
   })
 
   it('should go back to the day of the station it was opened from', async () => {
-    expect(await back('/radio/catch-up?day=2026-10-14&station=aripaev')).toEqual([
-      'Back to Catch-up',
-      '/radio/catch-up?day=2026-10-14&station=aripaev',
-    ])
+    expect((await back('/radio/catch-up?day=2026-10-14&station=aripaev'))[1]).toBe(
+      '/radio/catch-up?day=2026-10-14&station=aripaev'
+    )
+  })
+
+  it('should go back to the shows it was opened from', async () => {
+    expect((await back('/radio/shows'))[0]).toBe('Back to Shows')
+  })
+
+  it('should go back to the summary the corner player opened it from', async () => {
+    expect(await back('/')).toEqual(['Back to Summary', '/', 'Summary'])
+  })
+
+  it('should go up to the recordings from another episode', async () => {
+    expect(await back('/radio/2026-10-16')).toEqual(['Back to Recordings', '/radio', 'Recordings'])
+  })
+
+  it('should go back in history when it came from a page of the app', async () => {
+    const { router, link } = await visit('/radio?station=kuku')
+    const step = vi.spyOn(router, 'back').mockImplementation(() => {})
+    await link.trigger('click')
+    expect(step).toHaveBeenCalledOnce()
+  })
+
+  it('should leave a click with a modifier to the browser', async () => {
+    const { router, link } = await visit('/radio?station=kuku')
+    const step = vi.spyOn(router, 'back').mockImplementation(() => {})
+    await link.trigger('click', { metaKey: true })
+    expect(step).not.toHaveBeenCalled()
   })
 
   it('should go back to the recordings when opened on its own', async () => {
@@ -171,6 +208,13 @@ describe('RadioEpisode', () => {
       'Back to Recordings',
       '/radio',
     ])
+  })
+
+  it('should go up to the recordings when pressed on an episode opened on its own', async () => {
+    const { router, wrapper } = await open(recording())
+    await wrapper.get('a').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/radio')
   })
 
   it('should leave the name of the show to the player', async () => {

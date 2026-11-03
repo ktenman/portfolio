@@ -210,6 +210,16 @@ describe('RadioPlayer', () => {
     ])
   })
 
+  it('should put the day right after what leads the date line', () => {
+    const item = recording()
+    player.load(item, 'raw')
+    const wrapper = mount(RadioPlayer, {
+      props: { recording: item },
+      slots: { default: '<a>Kõik</a><span>·</span>' },
+    })
+    expect(wrapper.get('p').element.textContent).toBe('Kõik·Saturday, 17.10')
+  })
+
   it('should measure how far the clock sits below the top of the card', async () => {
     vi.stubGlobal(
       'ResizeObserver',

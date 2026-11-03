@@ -10,11 +10,11 @@
         class="flex items-center gap-6 max-md:grid max-md:grid-cols-[1fr_auto] max-md:gap-x-3 max-md:gap-y-4"
       >
         <div class="min-w-0 grow max-md:col-span-2">
-          <div class="flex items-baseline">
+          <h2 class="mb-0">{{ recording.programme }}</h2>
+          <p class="mb-0 text-sm text-ink-soft">
             <slot />
-            <h2 class="mb-0">{{ recording.programme }}</h2>
-          </div>
-          <p class="mb-0 text-sm text-ink-soft">{{ fullDay(recording.status.startedAt) }}</p>
+            <span>{{ fullDay(recording.status.startedAt) }}</span>
+          </p>
         </div>
         <p ref="time" class="mb-0 text-3xl font-semibold tabular-nums" data-testid="radio-clock">
           {{ position(player.seconds.value) }}

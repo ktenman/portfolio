@@ -4,14 +4,21 @@
     <p v-else-if="!recording" class="text-ink-soft">Recording {{ name }} not found.</p>
     <template v-else>
       <radio-player ref="card" :recording="recording">
-        <router-link
-          :to="origin.to"
-          :aria-label="`Back to ${origin.label}`"
-          :title="`Back to ${origin.label}`"
-          class="relative -ml-2.5 grid self-center rounded-full text-ink-soft after:absolute after:-inset-1.5 after:content-[''] hover:text-ink focus-visible:outline-2 focus-visible:outline-brass-deep [&>svg]:size-8"
+        <a
+          :href="router.resolve(target).href"
+          :aria-label="`Back to ${destination}`"
+          class="relative -ml-1.25 inline-flex items-center gap-0.5 align-top font-medium text-ink-soft underline-offset-[0.2em] after:absolute after:-inset-1.5 after:rounded-container after:content-[''] hover:text-ink hover:underline focus-visible:outline-2 focus-visible:outline-brass-deep max-md:after:-inset-x-2 max-md:after:-inset-y-3"
+          @click.exact.prevent="leave"
         >
           <radio-icon name="left" />
-        </router-link>
+          <span v-if="query" class="flex">
+            <span>Results for “</span>
+            <span class="max-w-[13ch] truncate">{{ query }}</span>
+            <span>”</span>
+          </span>
+          <template v-else>{{ page }}</template>
+        </a>
+        <span aria-hidden="true" class="mx-1.5">·</span>
       </radio-player>
       <radio-text :recording="recording" />
     </template>
@@ -34,11 +41,18 @@ const router = useRouter()
 const name = route.params.name as string
 const { back } = router.options.history.state
 const from = typeof back === 'string' ? router.resolve(back) : null
-const origin = from?.query.q
-  ? { to: from.fullPath, label: 'search results' }
-  : from?.name === 'RadioCatchUp'
-    ? { to: from.fullPath, label: 'Catch-up' }
-    : { to: { path: '/radio', query: { station: from?.query.station } }, label: 'Recordings' }
+const PAGES: Record<string, string> = {
+  Radio: 'Recordings',
+  RadioShows: 'Shows',
+  RadioCatchUp: 'Catch-up',
+  'Portfolio Summary': 'Summary',
+}
+const known = from?.name ? from : null
+const query = typeof known?.query.q === 'string' ? known.query.q : null
+const page = known ? (PAGES[String(known.name)] ?? String(known.name)) : 'Recordings'
+const target = known?.fullPath ?? '/radio'
+const destination = query ? `results for “${query}”` : page
+const leave = () => (known ? router.back() : router.push(target))
 const at = Number.parseFloat(String(route.query.t))
 const raw = 'raw' in route.query
 const { recording, isLoading } = useRadioRecording(name)
