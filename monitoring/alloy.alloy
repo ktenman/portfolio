@@ -4,7 +4,7 @@ discovery.docker "containers" {
 }
 
 discovery.relabel "containers" {
-  targets = []
+  targets = discovery.docker.containers.targets
 
   rule {
     source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
@@ -25,11 +25,9 @@ discovery.relabel "containers" {
 }
 
 loki.source.docker "containers" {
-  host             = "tcp://socket-proxy:2375"
-  targets          = discovery.docker.containers.targets
-  relabel_rules    = discovery.relabel.containers.rules
-  refresh_interval = "10s"
-  forward_to       = [loki.process.containers.receiver]
+  host       = "tcp://socket-proxy:2375"
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.process.containers.receiver]
 }
 
 loki.process "containers" {

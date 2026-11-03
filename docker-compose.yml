@@ -417,6 +417,7 @@ services:
       GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
       GF_AUTH_ANONYMOUS_ENABLED: 'true'
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_VIEWERS_CAN_EDIT: 'true'
       GF_AUTH_DISABLE_LOGIN_FORM: 'true'
       GF_AUTH_BASIC_ENABLED: 'false'
       GF_PLUGINS_PREINSTALL_DISABLED: 'true'
@@ -448,7 +449,7 @@ services:
     environment:
       CONTAINERS: '1'
       NETWORKS: '1'
-      POST: '0'
+      LOG_LEVEL: warning
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     read_only: true

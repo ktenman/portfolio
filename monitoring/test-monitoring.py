@@ -268,11 +268,14 @@ def check_compose():
     listed = re.search(r"MONITORING='([^']+)'", deploy).group(1).split()
     assert sorted(listed) == monitoring, f'the deploy must stop and wait for every monitoring service, lists {listed}'
     proxy = services['socket-proxy']
-    assert {key: proxy['environment'].get(key) for key in ('CONTAINERS', 'NETWORKS', 'POST')} == {'CONTAINERS': '1', 'NETWORKS': '1', 'POST': '0'}, proxy
-    assert [volume['read_only'] for volume in proxy['volumes'] if volume['target'] == '/var/run/docker.sock'] == [True], proxy['volumes']
+    assert proxy['environment'] == {'CONTAINERS': '1', 'NETWORKS': '1', 'LOG_LEVEL': 'warning'}, proxy
     assert services['alloy']['user'] == '473:473', 'Alloy must not run as root'
-    sockets = [name for name, service in services.items() for volume in service.get('volumes', []) if 'docker.sock' in str(volume.get('source'))]
-    assert 'alloy' not in sockets and 'loki' not in sockets, sockets
+    mounts = [(name, Path(volume.get('source', ''))) for name, service in services.items() for volume in service.get('volumes', [])]
+    sockets = sorted(name for name, source in mounts if source.name == 'docker.sock')
+    assert sockets == ['cadvisor', 'healthcheck', 'socket-proxy'], f'only the proxy, cAdvisor and the heartbeat may mount the Docker socket, found {sockets}'
+    configs = sorted(source.name for _, source in mounts if source.parent == ROOT and source.is_file())
+    copied = sorted(re.search(r'scp ((?:monitoring/\S+ )+)githubuser@fov.ee:~/monitoring/', deploy).group(1).replace('monitoring/', '').split())
+    assert copied == configs, f'the deploy must copy every config file a service mounts from monitoring/, copies {copied}'
     grafana = services['grafana']
     assert grafana['read_only'] and grafana['cap_drop'] == ['ALL'] and 'ports' not in grafana, grafana
     assert {key: grafana['environment'][key] for key in ('GF_AUTH_DISABLE_LOGIN_FORM', 'GF_AUTH_BASIC_ENABLED', 'GF_AUTH_ANONYMOUS_ORG_ROLE')} == \
@@ -347,9 +350,13 @@ def check_exporters():
 
 
 def check_logs():
-    line = f'hello-ä {uuid.uuid4().hex}'
+    line, other = f'hello-ä (x) {uuid.uuid4().hex}', f'ERROR {uuid.uuid4().hex}'
     board = json.loads((ROOT / 'grafana/dashboards/logs.json').read_text())
-    every = {variable['name']: variable['allValue'] for variable in board['templating']['list']}
+    every = {variable['name']: variable.get('allValue', '') for variable in board['templating']['list']} | {'__auto': '1m'}
+
+    def expand(expr, **values):
+        return re.sub(r'\$\{(\w+)(?::\w+)?\}|\$(\w+)', lambda match: (every | values)[match.group(1) or match.group(2)], expr)
+
     with compose_project('socket-proxy', 'loki', 'alloy') as project:
         shipped, hidden = project + '-shipped', project + '-hidden'
 
@@ -357,23 +364,29 @@ def check_logs():
             url = 'http://loki:3100/loki/api/v1/query_range?' + urllib.parse.urlencode({'query': expr, 'limit': 10})
             return run('docker', 'exec', f'{project}-socket-proxy-1', 'wget', '-qO-', url, check=check).stdout
 
-        def stored(container, text=line, level=''):
-            found = query('{container="' + container + '"' + (f', level="{level}"' if level else '') + '}')
-            return text in [entry[1] for stream in (json.loads(found)['data']['result'] if found else []) for entry in stream['values']]
+        def stored():
+            found = query('{service_name=~".+"} |= "' + line + '"')
+            streams = json.loads(found)['data']['result'] if found else []
+            return sorted((stream['stream'].get('container', ''), stream['stream'].get('level', ''), entry[1]) for stream in streams for entry in stream['values'])
 
+        expected = [(shipped, '', line), (shipped, 'error', f'ERROR {line}')]
         try:
             run('docker', 'run', '-d', '--name', hidden, '--label', 'com.docker.compose.service=auth', 'alpine:3.22', 'sh', '-c', f'echo "{line}"; sleep 15')
-            script = f'echo "{line}"; echo "clientSecret={line}"; echo "ERROR {line}"; sleep 15'
+            script = f'echo "{line}"; echo "clientSecret={line}"; echo "ERROR {line}"; echo "{other}"; sleep 15'
             run('docker', 'run', '-d', '--name', shipped, 'alpine:3.22', 'sh', '-c', script)
-            wait_for(lambda: stored(shipped) and stored(shipped, f'ERROR {line}', 'error'), timeout=60)
-            leaked = stored(hidden) or stored(shipped, f'clientSecret={line}')
-            panels = [re.sub(r'\$(\w+)', lambda match: every[match.group(1)], panel['targets'][0]['expr']) for panel in board['panels']]
-            answers = {expr: json.loads(query(expr, check=True))['status'] for expr in panels}
+            wait_for(lambda: set(expected) <= set(stored()), timeout=60)
+            entries = stored()
+            for panel in board['panels']:
+                query(expand(panel['targets'][0]['expr']), check=True)
+            search = next(panel['targets'][0]['expr'] for panel in board['panels'] if panel['type'] == 'logs')
+            wait_for(lambda: other in query('{container="' + shipped + '"}'), timeout=30)
+            found = json.loads(query(expand(search, level='error', search=re.escape(line.upper())), check=True))
         finally:
             run('docker', 'rm', '-f', shipped, hidden, check=False)
-    assert not leaked, 'Alloy must not ship auth logs or #2012 secrets'
-    assert set(answers.values()) == {'success'}, answers
-    print('Alloy ships container logs to Loki, leaves auth out, and the Logs dashboard queries run')
+    assert entries == expected, f'Alloy must ship container logs with their level, and nothing from auth or #2012 secrets, stored {entries}'
+    searched = [entry[1] for stream in found['data']['result'] for entry in stream['values']]
+    assert searched == [f'ERROR {line}'], f'the Logs search must match case-insensitively within the chosen level, found {searched}'
+    print('Alloy ships container logs to Loki, leaves auth out, and the Logs dashboard searches them')
 
 
 def datasource_uids(node):
@@ -400,12 +413,14 @@ def check_grafana():
         wait_for(lambda: len(json.loads(api('/api/search?type=dash-db') or '[]')) >= len(dashboards), timeout=90)
         titles = sorted(item['title'] for item in json.loads(api('/api/search?type=dash-db')))
         sources = {source['uid'] for source in json.loads(api('/api/datasources'))}
+        permissions = json.loads(api('/api/access-control/user/permissions') or '{}')
         logs = run('docker', 'logs', container)
     assert titles == sorted(dashboard['title'] for dashboard in dashboards), titles
+    assert 'datasources:explore' in permissions, f'the logged-in viewer must be able to search the logs in Explore, has {sorted(permissions)}'
     assert sources == {'prometheus', 'loki'}, sources
     errors = [line for line in (logs.stderr + logs.stdout).splitlines() if 'level=error' in line and 'provisioning' in line]
     assert not errors, errors
-    print('Grafana provisions every dashboard against the provisioned datasources')
+    print('Grafana provisions every dashboard against the provisioned datasources and opens Explore to the viewer')
 
 
 def check_caddy_routes():
@@ -511,9 +526,6 @@ def check_host_gates():
     assert deploy.index('docker rm -f netdata') < deploy.index('docker compose up -d'), 'Netdata must go before the new stack starts'
     assert deploy.index('docker compose restart grafana loki') < deploy.index('docker compose kill -s HUP prometheus alertmanager alloy'), \
         'Grafana and Loki read their configuration only at startup'
-    copied = re.search(r'scp (monitoring/\S+ )+githubuser@fov.ee:~/monitoring/', deploy).group(0)
-    for name in ('alerts.yml', 'prometheus.yml', 'alertmanager.yml', 'loki.yml', 'alloy.alloy'):
-        assert f'monitoring/{name} ' in copied, f'the deploy does not copy {name}'
     assert 'scp -r monitoring/grafana' in deploy, 'the deploy must copy the Grafana provisioning and dashboards'
     assert 'rm -rf ~/monitoring/grafana' not in deploy, 'a running Grafana keeps its bind mount on the deleted directory'
     guard = "if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi"

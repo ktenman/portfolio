@@ -15,15 +15,17 @@
   "templating": {
     "list": [
       {
+        "name": "search",
+        "label": "Search",
+        "type": "textbox",
+        "query": ""
+      },
+      {
         "name": "container",
         "label": "Container",
         "includeAll": true,
         "allValue": ".+",
         "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
         "type": "query",
         "datasource": {
           "type": "loki",
@@ -43,10 +45,6 @@
         "includeAll": true,
         "allValue": ".*",
         "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
         "type": "custom",
         "query": "error,warn,warning,info,debug,trace,fatal"
       }
@@ -70,6 +68,68 @@
   },
   "panels": [
     {
+      "type": "timeseries",
+      "title": "Log volume",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (level) (count_over_time({container=~\"$container\", level=~\"$level\"} |~ `(?i)${search:regex}` [$__auto]))",
+          "legendFormat": "{{level}}",
+          "refId": "A"
+        }
+      ],
+      "links": [],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1
+    },
+    {
       "type": "logs",
       "title": "Logs",
       "datasource": {
@@ -82,54 +142,21 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{container=~\"$container\", level=~\"$level\"}",
+          "expr": "{container=~\"$container\", level=~\"$level\"} |~ `(?i)${search:regex}`",
           "refId": "A"
         }
       ],
       "options": {
         "showTime": true,
-        "wrapLogMessage": true,
-        "sortOrder": "Descending",
-        "enableLogDetails": true
+        "wrapLogMessage": true
       },
-      "id": 1,
       "gridPos": {
         "h": 20,
-        "w": 12,
+        "w": 24,
         "x": 0,
-        "y": 0
-      }
-    },
-    {
-      "type": "logs",
-      "title": "Errors",
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
+        "y": 6
       },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "loki"
-          },
-          "expr": "{container=~\"$container\", level=\"error\"}",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "showTime": true,
-        "wrapLogMessage": true,
-        "sortOrder": "Descending",
-        "enableLogDetails": true
-      },
-      "id": 2,
-      "gridPos": {
-        "h": 20,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      }
+      "id": 2
     }
   ]
 }
