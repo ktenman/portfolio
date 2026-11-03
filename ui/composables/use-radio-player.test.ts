@@ -634,6 +634,12 @@ describe('useRadioPlayer', () => {
       ]).toEqual([true, NAME, false, 0])
     })
 
+    it('should bring a saved recording back as not live when the answer leaves out its station', async () => {
+      saved.read.mockResolvedValue({ recording: recording() })
+      await player.recall()
+      expect(player.live.value).toBe(false)
+    })
+
     it('should bring back the saved position', async () => {
       positions.find.mockResolvedValue({ seconds: 1400 })
       await bring({ recording: recording() })

@@ -320,7 +320,7 @@ const recall = async () => {
   const kept = card.recording
   if ((!kept && !card.station) || !vacant(kept?.name)) return
   if (kept && !recording.value) load(kept, edition(kept))
-  tuned.value = card.station
+  tuned.value = card.station ?? null
   started.value = true
 }
 
