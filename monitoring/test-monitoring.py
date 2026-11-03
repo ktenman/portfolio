@@ -455,7 +455,7 @@ def datasource_uids(node):
 def check_grafana():
     directory = ROOT / 'grafana'
     dashboards = [json.loads(path.read_text()) for path in sorted((directory / 'dashboards').glob('*.json'))]
-    unknown = datasource_uids(dashboards) - {'prometheus', 'loki', 'grafana', '-- Grafana --'}
+    unknown = datasource_uids(dashboards) - {'prometheus', 'loki', 'tempo', 'grafana', '-- Grafana --'}
     assert not unknown, f'dashboards must use the provisioned datasources, found {unknown}'
     with compose_project('grafana') as project:
         container = f'{project}-grafana-1'
@@ -470,10 +470,59 @@ def check_grafana():
         logs = run('docker', 'logs', container)
     assert titles == sorted(dashboard['title'] for dashboard in dashboards), titles
     assert 'datasources:explore' in permissions, f'the logged-in viewer must be able to search the logs in Explore, has {sorted(permissions)}'
-    assert sources == {'prometheus', 'loki'}, sources
+    assert sources == {'prometheus', 'loki', 'tempo'}, sources
     errors = [line for line in (logs.stderr + logs.stdout).splitlines() if 'level=error' in line and 'provisioning' in line]
     assert not errors, errors
     print('Grafana provisions every dashboard against the provisioned datasources and opens Explore to the viewer')
+
+
+def check_traces():
+    trace, poll, start = secrets.token_hex(16), secrets.token_hex(16), time.time_ns()
+
+    def span(trace_id, name, kind, nanoseconds):
+        return {'traceId': trace_id, 'spanId': secrets.token_hex(8), 'name': name, 'kind': kind,
+                'startTimeUnixNano': str(start), 'endTimeUnixNano': str(start + nanoseconds)}
+
+    spans = {'resourceSpans': [{'resource': {'attributes': [{'key': 'service.name', 'value': {'stringValue': 'backend'}}]},
+                                'scopeSpans': [{'spans': [span(trace, 'GET /api/instruments', 2, 6 * 10 ** 8), span(poll, 'POST', 3, 50 * 10 ** 9)]}]}]}
+    pattern = re.search(r"console: '(.+)'", (ROOT.parent / 'src/main/resources/application.yml').read_text()).group(1)
+    board = json.loads((ROOT / 'grafana/dashboards/overview.json').read_text())
+    panel = next(panel for panel in board['panels'] if panel['title'] == 'Slow requests')
+    listing = {'queries': panel['targets'], 'from': str(start // 10 ** 6 - 60000), 'to': str(start // 10 ** 6 + 60000)}
+    fields = {'d': '2026-11-03 21:20:00.000', 'thread': 'scheduled-1', 'level': 'INFO', 'logger': 'e.t.p.j.FtDataRetrievalJob',
+              'trace_id': trace, 'msg': f'Hinnad uuendatud ä {uuid.uuid4().hex}'}
+    line = re.sub(r'%(-?\d+)?(\w+)(?:\{([^}]*)\})?',
+                  lambda match: fields.get(match.group(3) if match.group(2) == 'X' else match.group(2), '').ljust(abs(int(match.group(1) or 0))), pattern)
+    with compose_project('tempo', 'loki', 'grafana') as project:
+        container = f'{project}-grafana-1'
+
+        def fetch(url, body=None):
+            post = ['--header', 'Content-Type: application/json', '--post-data', json.dumps(body)] if body else []
+            return run('docker', 'exec', container, 'wget', '-qO-', *post, url, check=False).stdout
+
+        def grafana(path):
+            return json.loads(fetch(f'http://127.0.0.1:3000/grafana{path}') or '{}')
+
+        def logged(search):
+            fetch('http://loki:3100/loki/api/v1/push', {'streams': [{'stream': {'container': 'backend'}, 'values': [[str(start), line]]}]})
+            found = fetch('http://loki:3100/loki/api/v1/query_range?' + urllib.parse.urlencode({'query': search}))
+            return [entry[1] for stream in json.loads(found or '{"data":{"result":[]}}')['data']['result'] for entry in stream['values']]
+
+        wait_for(lambda: grafana('/api/datasources/uid/tempo/health').get('status') == 'OK', timeout=90)
+        wait_for(lambda: 'partialSuccess' in fetch('http://tempo:4318/v1/traces', spans), timeout=60)
+        wait_for(lambda: all(name in fetch(f'http://tempo:3200/api/v2/traces/{trace_id}') for trace_id, name in ((trace, 'GET /api/instruments'), (poll, 'POST'))), timeout=60)
+        wait_for(lambda: trace.lstrip('0') in fetch('http://127.0.0.1:3000/grafana/api/ds/query', listing), timeout=60)
+        listed = fetch('http://127.0.0.1:3000/grafana/api/ds/query', listing)
+        links = {uid: grafana(f'/api/datasources/uid/{uid}')['jsonData'] for uid in ('tempo', 'loki')}
+        search = links['tempo']['tracesToLogsV2']['query'].replace('${__trace.traceId}', trace)
+        wait_for(lambda: logged(search), timeout=90)
+        found = logged(search)
+    field = links['loki']['derivedFields'][0]
+    matched = re.search(field['matcherRegex'], line)
+    assert found == [line], f'a trace must open the backend log lines that carry its id, found {found} for {search}'
+    assert field['datasourceUid'] == 'tempo' and matched and matched.group(1) == trace, f'Loki must link the trace id in {line!r} to Tempo'
+    assert poll.lstrip('0') not in listed, f'Slow requests must leave out the Telegram bot long polling, found {poll} in {listed}'
+    print('Tempo stores OTLP spans, the overview lists slow requests, and Grafana links a trace to its backend log lines and back')
 
 
 def check_caddy_routes():
@@ -825,6 +874,7 @@ if __name__ == '__main__':
     check_postgres()
     check_grafana()
     check_logs()
+    check_traces()
     check_caddy_routes()
     check_host_gates()
     check_production_permissions()

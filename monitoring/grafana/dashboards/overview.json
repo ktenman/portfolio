@@ -775,6 +775,42 @@
         "x": 0,
         "y": 40
       }
+    },
+    {
+      "type": "table",
+      "title": "Slow requests",
+      "description": "HTTP requests that took over 500 ms. Open one to see which SQL statements, Redis calls and outgoing HTTP calls took the time",
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "query": "{ kind = server && duration > 500ms }",
+          "limit": 20,
+          "tableType": "traces",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      }
     }
   ]
 }

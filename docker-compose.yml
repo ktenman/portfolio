@@ -95,6 +95,11 @@ services:
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
       TRADING212_API_KEY_ID: ${TRADING212_API_KEY_ID}
       TRADING212_API_KEY_SECRET: ${TRADING212_API_KEY_SECRET}
+      OTEL_JAVAAGENT_ENABLED: "true"
+      OTEL_SERVICE_NAME: backend
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
     image: ktenman/portfolio-be:latest
     depends_on:
       postgres:
@@ -473,6 +478,21 @@ services:
     mem_limit: 256m
     restart: unless-stopped
 
+  tempo:
+    logging: *logging
+    image: grafana/tempo:3.1.1@sha256:64e2fbd56d9c2b3412a4b430a58ea59e91a670b1e75f920a0c702213ad145044
+    profiles: [monitoring]
+    command: [-config.file=/etc/tempo.yml]
+    environment:
+      GOMEMLIMIT: 100MiB
+    volumes:
+      - ./monitoring/tempo.yml:/etc/tempo.yml:ro
+      - tempo_data:/var/tempo
+    read_only: true
+    cap_drop: [ALL]
+    mem_limit: 160m
+    restart: unless-stopped
+
   alloy:
     logging: *logging
     image: grafana/alloy:v1.21.3@sha256:8ab871206bd2d8f89277f53abffee5f452a293980788d52f85fa183a87a505a4
@@ -501,6 +521,7 @@ volumes:
   alertmanager_data:
   grafana_data:
   loki_data:
+  tempo_data:
   alloy_data:
   radio_model:
   radio_recordings:

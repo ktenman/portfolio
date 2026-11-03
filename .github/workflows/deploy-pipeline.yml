@@ -144,7 +144,7 @@ jobs:
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.py githubuser@fov.ee:~/
           ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
-          scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml monitoring/loki.yml monitoring/alloy.alloy githubuser@fov.ee:~/monitoring/
+          scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml monitoring/loki.yml monitoring/tempo.yml monitoring/alloy.alloy githubuser@fov.ee:~/monitoring/
           ssh githubuser@fov.ee 'find ~/monitoring/grafana -type f -delete 2>/dev/null || true'
           scp -r monitoring/grafana githubuser@fov.ee:~/monitoring/
           if [ "$MONITORING_ENABLED" = true ]; then
@@ -159,7 +159,7 @@ jobs:
           ssh githubuser@fov.ee "\
             set -eu; \
             export COMPOSE_FILE=docker-compose.yml; \
-            MONITORING='prometheus alertmanager node-exporter cadvisor redis-exporter postgres-exporter grafana socket-proxy loki alloy'; \
+            MONITORING='prometheus alertmanager node-exporter cadvisor redis-exporter postgres-exporter grafana socket-proxy loki tempo alloy'; \
             PROFILES=''; \
             if [ '$MONITORING_ENABLED' = true ]; then PROFILES=monitoring; else docker compose --profile monitoring stop \$MONITORING; fi; \
             if [ '$RADIO_ENABLED' = true ]; then PROFILES=\${PROFILES:+\$PROFILES,}radio; else docker compose --profile radio stop radio-worker radio-worker-aripaev radio-bridge; fi; \
@@ -190,7 +190,7 @@ jobs:
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \
-            if [ '$MONITORING_ENABLED' = true ]; then docker compose restart grafana loki && docker compose up -d --wait --wait-timeout 60 \$MONITORING && docker compose kill -s HUP prometheus alertmanager alloy; fi && \
+            if [ '$MONITORING_ENABLED' = true ]; then docker compose restart grafana loki tempo && docker compose up -d --wait --wait-timeout 60 \$MONITORING && docker compose kill -s HUP prometheus alertmanager alloy; fi && \
             docker ps --format 'table {{.Names}}\t{{.Status}}'"
       - name: Cleanup on runner
         if: always()
