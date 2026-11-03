@@ -349,6 +349,59 @@ def check_exporters():
     print('cAdvisor names containers and node-exporter reports memory, swap and the root filesystem')
 
 
+def check_postgres():
+    services = json.loads(run('docker', 'compose', '-f', str(ROOT.parent / 'docker-compose.yml'), '--profile', 'monitoring',
+                              'config', '--no-interpolate', '--format', 'json').stdout)['services']
+    migrations = ROOT.parent / 'src/main/resources/db/migration'
+    password = secrets.token_hex(24)
+    statements = [(migrations / 'V202609231610__add_pg_stat_statements_extension.sql').read_text(),
+                  (migrations / 'V202611031538__create_monitoring_role.sql').read_text(),
+                  (migrations / 'afterMigrate.sql').read_text().replace('${monitoring_password}', password),
+                  'SELECT pg_sleep(0.3)']
+    board = json.loads((ROOT / 'grafana/dashboards/postgres.json').read_text())
+    wanted = {name for panel in board['panels'] for target in panel.get('targets', []) for name in re.findall(r'\bpg_\w+', target['expr'])}
+    slowest = [panel for panel in board['panels'] if panel['title'] == 'Slowest queries']
+    network = 'monitoring-postgres-' + uuid.uuid4().hex[:12]
+    database, exporter, prometheus = (f'{network}-{name}' for name in ('postgres', 'exporter', 'prometheus'))
+    environment = {**services['postgres-exporter']['environment'], 'DATA_SOURCE_PASS': password}
+    psql = ['docker', 'exec', database, 'psql', '-v', 'ON_ERROR_STOP=1', '-U', 'portfolio', '-d', 'portfolio', '-c']
+
+    def query(expr):
+        values = {'db': '.*', 'instance': '.*', '__range': '1m'}
+        url = 'http://127.0.0.1:9090/api/v1/query?' + urllib.parse.urlencode({'query': re.sub(r'\$(\w+)', lambda match: values[match.group(1)], expr)})
+        found = run('docker', 'exec', prometheus, 'wget', '-qO-', url, check=False).stdout
+        return json.loads(found)['data']['result'] if found else []
+
+    def slept(expr):
+        return [float(series['value'][1]) for series in query(expr) if 'pg_sleep' in series['metric'].get('query', '')]
+
+    run('docker', 'network', 'create', network)
+    try:
+        run('docker', 'run', '-d', '--name', database, '--network', network, '--network-alias', 'postgres', '-e', 'POSTGRES_DB=portfolio',
+            '-e', 'POSTGRES_USER=portfolio', '-e', f'POSTGRES_PASSWORD={secrets.token_hex(8)}', services['postgres']['image'], *services['postgres']['command'].split())
+        wait_for(lambda: run(*psql, 'SELECT 1', check=False).returncode == 0, timeout=60)
+        for statement in statements:
+            run(*psql, statement)
+        run('docker', 'run', '-d', '--name', exporter, '--network', network, '--network-alias', 'postgres-exporter',
+            *[flag for name, value in environment.items() for flag in ('-e', f'{name}={value}')],
+            services['postgres-exporter']['image'], *services['postgres-exporter'].get('command', []))
+        run('docker', 'run', '-d', '--name', prometheus, '--network', network, '-v', f'{ROOT}:/etc/prometheus:ro', PROMETHEUS)
+        wait_for(lambda: slept('pg_stat_statements_query_id'), timeout=60)
+        run(*psql, 'SELECT pg_sleep(0.3)')
+        wait_for(lambda: slowest and all(slept(target['expr']) for target in slowest[0]['targets']), timeout=60)
+        mean, calls, total = (slept(target['expr'])[0] for target in slowest[0]['targets'])
+        scraped = run('docker', 'exec', exporter, 'wget', '-qO-', 'http://127.0.0.1:9187/metrics').stdout
+        stored = json.dumps(query('{job="postgres"}'))
+    finally:
+        run('docker', 'rm', '-f', prometheus, exporter, database, check=False)
+        run('docker', 'network', 'rm', network, check=False)
+    exported = {line.split('{')[0].split(' ')[0] for line in scraped.splitlines() if line and not line.startswith('#')}
+    assert wanted <= exported, f'the Postgres dashboard reads metrics the exporter does not expose: {sorted(wanted - exported)}'
+    assert 0.29 < mean < 5 and calls > 0 and total > 0.29, f'Slowest queries must show seconds per call, calls and total time, got {mean}, {calls}, {total}'
+    assert password in scraped and password not in stored, 'Prometheus must drop the statement that sets the monitoring password'
+    print('The Postgres dashboard lists the slowest queries and reads only exported metrics, and Prometheus drops passwords')
+
+
 def check_logs():
     line, other = f'hello-ä (x) {uuid.uuid4().hex}', f'ERROR {uuid.uuid4().hex}'
     board = json.loads((ROOT / 'grafana/dashboards/logs.json').read_text())
@@ -769,6 +822,7 @@ if __name__ == '__main__':
     check_configurations()
     check_compose()
     check_exporters()
+    check_postgres()
     check_grafana()
     check_logs()
     check_caddy_routes()

@@ -398,6 +398,7 @@ services:
     logging: *logging
     image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
     profiles: [monitoring]
+    command: [--collector.stat_statements, --collector.stat_statements.include_query, --collector.stat_statements.query_length=1000]
     environment:
       DATA_SOURCE_URI: postgres:5432/portfolio?sslmode=disable
       DATA_SOURCE_USER: monitoring

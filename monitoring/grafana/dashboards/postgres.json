@@ -1148,6 +1148,135 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Statements from pg_stat_statements that ran in the selected time range. Click a column to sort, or a query to read it whole",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "inspect": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Per call"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Calls"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 14,
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Per call"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=~\"$db\",instance=~\"$instance\"}[$__range])) / (sum by (queryid) (increase(pg_stat_statements_calls_total{datname=~\"$db\",instance=~\"$instance\"}[$__range])) > 0)) * on (queryid) group_left (query) topk by (queryid) (1, last_over_time(pg_stat_statements_query_id{instance=~\"$instance\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum by (queryid) (increase(pg_stat_statements_calls_total{datname=~\"$db\",instance=~\"$instance\"}[$__range])) > 0) * on (queryid) group_left (query) topk by (queryid) (1, last_over_time(pg_stat_statements_query_id{instance=~\"$instance\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=~\"$db\",instance=~\"$instance\"}[$__range])) > 0) * on (queryid) group_left (query) topk by (queryid) (1, last_over_time(pg_stat_statements_query_id{instance=~\"$instance\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Slowest queries",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "queryid": true
+            },
+            "indexByName": {
+              "query": 0,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3
+            },
+            "renameByName": {
+              "query": "Query",
+              "Value #A": "Per call",
+              "Value #B": "Calls",
+              "Value #C": "Total"
+            }
+          }
+        }
+      ],
+      "type": "table"
     }
   ],
   "refresh": "1m",
