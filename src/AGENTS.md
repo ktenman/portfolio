@@ -317,7 +317,7 @@ PlantUML diagrams in `docs/architecture/`:
 
 Additional diagrams in `screenshots/architecture.puml` (full system deployment with auth flow).
 
-Generate with `./scripts/generate-diagrams.sh`. Edit `.puml` source files, not `.svg` outputs.
+Generate with `./scripts/generate-diagrams.py`. Edit `.puml` source files, not `.svg` outputs.
 
 ### Key Architectural Patterns
 

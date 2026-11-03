@@ -23,7 +23,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts' && chmod +x fix-coverage.sh && ./fix-coverage.sh",
+    "test:coverage:intellij": "vitest run --coverage --exclude='**/confirm-dialog.test.ts'",
     "test:all": "npm run test:unit && npm run test:e2e",
     "test:unit": "./gradlew test && npm run --silent test:summary && npm run test:run && npm run test:proxy && npm run test:whisper",
     "test:proxy": "cd cloudflare-bypass-proxy && npm test",

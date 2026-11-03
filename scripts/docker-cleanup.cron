@@ -1,1 +1,1 @@
-30 4 * * * /usr/local/bin/docker-cleanup.sh
+30 4 * * * /usr/local/bin/docker-cleanup.py

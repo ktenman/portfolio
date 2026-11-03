@@ -86,7 +86,35 @@ jobs:
         run: npm run check-unused
       - name: Check README links
         if: matrix.lint-type == 'frontend'
-        run: .github/workflows/check-readme-links.sh
+        run: |
+          python3 -u - <<'PY'
+          import os
+          import re
+
+          link = re.compile(r'(?<=\]\()[^)]*(?=\))|(?<=src=")[^"]*(?=")')
+
+
+          def targets(path):
+              fenced = False
+              for line in open(path, encoding='utf-8'):
+                  if re.match(' *```', line):
+                      fenced = not fenced
+                  elif not fenced:
+                      yield from link.findall(line)
+
+
+          for top, directories, files in os.walk('.'):
+              if top == '.' and 'node_modules' in directories:
+                  directories.remove('node_modules')
+              for path in [os.path.join(top, name) for name in files if name.endswith('.md')]:
+                  print(f'Checking {path}')
+                  for target in targets(path):
+                      if target.startswith('http') or '`' in target or '$' in target:
+                          continue
+                      for part in target.split():
+                          if not os.path.exists(f'{top}/{part}'):
+                              raise SystemExit(f"{top}/{part} doesn't exist")
+          PY
 
   test:
     name: 🧪 ${{ matrix.name }}

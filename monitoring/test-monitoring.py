@@ -7,6 +7,7 @@ import socket
 import struct
 import subprocess
 import tempfile
+import textwrap
 import threading
 import time
 import urllib.error
@@ -16,6 +17,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from runpy import run_path
 
 
 ROOT = Path(__file__).resolve().parent
@@ -456,36 +458,55 @@ def check_caddy_routes():
     print('Caddy serves Prometheus, Alertmanager and Grafana behind the app login')
 
 
+def workflow_step(workflow, name):
+    step = workflow.split(f'      - name: {name}\n', 1)[1].split('\n      - ', 1)[0]
+    return textwrap.dedent(step.split('run: |\n', 1)[1])
+
+
 def check_host_gates():
     root = ROOT.parent
-    with tempfile.TemporaryDirectory() as directory:
-        meminfo = Path(directory) / 'meminfo'
-        meminfo.write_text('SwapTotal: 4000 kB\nSwapFree: 1000 kB\n')
-        cases = {
-            'disk_percent() { echo 10; }; redis_saves() { true; }': 'swap 75% used',
-            'disk_percent() { echo 91; }; redis_saves() { true; }': 'disk 91% used',
-            'disk_percent() { echo 10; }; swap_percent() { echo 74; }; redis_saves() { true; }': '',
-            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { false; }': 'Redis cannot save',
-            'disk_percent() { echo 10; }; swap_percent() { echo 3; }; redis_saves() { true; }': '',
-        }
-        for stubs, expected in cases.items():
-            command = f'HEALTHCHECK_LIB=1 MEMINFO={meminfo}; . {root}/healthcheck.sh; {stubs}; host_problem'
-            assert run('sh', '-c', command).stdout.strip() == expected, stubs
-        refusal = run('env', f'MEMINFO={meminfo}', 'DISK_LIMIT=0', 'sh', str(root / 'deploy-check.sh'), 'preflight', check=False)
-        assert refusal.returncode == 1 and 'limits are disk 0% and swap 75%' in refusal.stdout, refusal
-        docker = Path(directory) / 'docker'
-        docker.write_text('#!/bin/sh\ncase "$*" in *Health.Status*) echo healthy ;; *) echo "$HEARTBEAT" ;; esac\n')
-        docker.chmod(0o755)
-        for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
-            command = f'PATH={directory}:$PATH HEARTBEAT="{heartbeat}" sh {root}/deploy-check.sh healthy'
-            assert run('sh', '-c', command, check=False).returncode == code, heartbeat
-    for script in ('healthcheck.sh', 'deploy-check.sh', 'scripts/docker-cleanup.sh'):
-        run('sh', '-n', str(root / script))
-    assert 'container prune -f --filter until=1h' in (root / 'scripts/docker-cleanup.sh').read_text()
+    healthcheck = run_path(str(root / 'healthcheck.py'))
+    assert healthcheck['swap_percent']('SwapTotal: 4000 kB\nSwapFree: 1000 kB\n') == 75
+    cases = {
+        (10, 75, True): 'swap 75% used',
+        (91, 75, True): 'disk 91% used',
+        (10, 74, True): '',
+        (10, 3, False): 'Redis cannot save',
+        (10, 3, True): '',
+    }
+    for (disk, swap, saves), expected in cases.items():
+        assert healthcheck['host_problem'](disk, swap, lambda: saves) == expected, (disk, swap, saves)
     deploy = (root / '.github/workflows/deploy-pipeline.yml').read_text()
-    for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
-        assert step in deploy, f'deploy does not run {step}'
-    assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
+    with tempfile.TemporaryDirectory() as directory:
+        fakes = {
+            'ssh': 'shift\nexec sh -c "$*"\n',
+            'df': 'echo Filesystem\necho "/dev/root 100 $DISK 0 $DISK% /"\n',
+            'docker': 'case "$*" in *Health.Status*) echo healthy ;; *) echo "$HEARTBEAT" ;; esac\n',
+            'sleep': '',
+        }
+        for name, body in fakes.items():
+            fake = Path(directory) / name
+            fake.write_text('#!/bin/sh\n' + body)
+            fake.chmod(0o755)
+        environment = f'export PATH="{directory}:$PATH" HOME="{directory}"\n'
+        meminfo = Path(directory) / 'meminfo'
+        preflight = workflow_step(deploy, 'Check host before deploy').replace('/proc/meminfo', str(meminfo))
+        for disk, swap, code in ((90, 74, 1), (89, 75, 1), (89, 74, 0)):
+            meminfo.write_text(f'SwapTotal: 100 kB\nSwapFree: {100 - swap} kB\n')
+            result = run('bash', '-eo', 'pipefail', '-c', f'{environment}export DISK={disk}\n{preflight}', check=False)
+            assert result.returncode == code and f'Disk {disk}% used, swap {swap}% used' in result.stdout, result
+            assert ('Refusing to deploy: limits are disk 90% and swap 75%' in result.stdout) == bool(code), result
+        services = ('postgres', 'redis', 'seaweedfs', 'backend', 'frontend', 'auth', 'app', 'cloudflare-bypass-proxy')
+        logs = sorted(path.name for path in (Path(directory) / 'deploy-logs').iterdir())
+        assert logs == sorted(f'{service}.log' for service in services), logs
+        step = workflow_step(deploy, 'Deploy with Docker Compose')
+        for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
+            command = f'{environment}export HEARTBEAT="{heartbeat}"\n{step}'
+            assert run('bash', '-eo', 'pipefail', '-c', command, check=False).returncode == code, heartbeat
+    cleanup = (root / 'scripts/docker-cleanup.py').read_text()
+    compile(cleanup, 'docker-cleanup.py', 'exec')
+    assert 'container prune -f --filter until=1h' in cleanup
+    assert deploy.index('- name: Check host before deploy') < deploy.index('scp .env'), 'deploy copies files before the preflight'
     assert 'docker compose --profile monitoring stop \\$MONITORING' in deploy, 'a deploy with monitoring off must stop every monitoring service'
     assert deploy.index('docker rm -f netdata') < deploy.index('docker compose up -d'), 'Netdata must go before the new stack starts'
     assert deploy.index('docker compose restart grafana loki') < deploy.index('docker compose kill -s HUP prometheus alertmanager alloy'), \

@@ -255,7 +255,7 @@ services:
   healthcheck:
     logging: *logging
     container_name: healthcheck
-    image: alpine:latest
+    image: python:3.14-alpine@sha256:eb2c62658b8d51bff0acc408504b76521d02030de56a8a3c1e830083e89b89d2
     depends_on:
       postgres:
         condition: service_healthy
@@ -276,9 +276,9 @@ services:
     environment:
       - HEALTHCHECK_URL=${HEALTHCHECK_URL}
     volumes:
-      - ./healthcheck.sh:/usr/local/bin/healthcheck.sh
+      - ./healthcheck.py:/usr/local/bin/healthcheck.py
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: /usr/local/bin/healthcheck.sh
+    command: python3 /usr/local/bin/healthcheck.py
     restart: always
 
   alertmanager:

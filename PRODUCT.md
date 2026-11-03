@@ -74,7 +74,7 @@ Architecture is fixed: Vue 3 SPA over a Spring Boot REST API. No server-rendered
 ## Evidence on Hand
 
 - `screenshots/app.png`, `screenshots/app-v2024.png` — real screenshots of the running app, used in the README.
-- `docs/architecture/*.puml` — seven C4 and sequence diagrams, generated to SVG by `scripts/generate-diagrams.sh`.
+- `docs/architecture/*.puml` — seven C4 and sequence diagrams, generated to SVG by `scripts/generate-diagrams.py`.
 - `docs/aviva/` — real pension statements, already reconciled against recorded transactions.
 - 200+ Flyway migrations carrying the owner's actual broker transaction history. The app runs on real money, not fixtures.
 

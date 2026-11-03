@@ -105,6 +105,8 @@ NEVER commit anything under `docs/superpowers/` (specs, plans, SDD ledgers) — 
 
 Prefer editing an existing file to creating a new one; create files only when the goal requires it. Never write `*.md` or README files unless explicitly asked.
 
+Never add a shell script: no `*.sh` files and no files with a shell shebang. Automation goes in a Python 3 script that uses only the standard library, or inline in the workflow step, npm script or Compose entry that runs it. The Gradle wrapper `gradlew` is the only exception.
+
 ## Clean Code Standards
 
 ### No Comments

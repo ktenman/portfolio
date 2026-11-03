@@ -127,11 +127,22 @@ jobs:
           PY
       - name: Check host before deploy
         run: |
-          scp healthcheck.sh deploy-check.sh githubuser@fov.ee:~/
-          ssh githubuser@fov.ee 'sh ./deploy-check.sh preflight'
+          ssh githubuser@fov.ee sh -eu <<'HOST'
+          disk=$(df -P / | awk 'NR==2 {sub("%", "", $5); print $5}')
+          swap=$(awk '/^SwapTotal/ {total=$2} /^SwapFree/ {free=$2} END {print total ? int((total - free) * 100 / total) : 0}' /proc/meminfo)
+          echo "Disk ${disk}% used, swap ${swap}% used"
+          if [ "$disk" -ge 90 ] || [ "$swap" -ge 75 ]; then
+            echo 'Refusing to deploy: limits are disk 90% and swap 75%'
+            exit 1
+          fi
+          mkdir -p "$HOME/deploy-logs"
+          for service in postgres redis seaweedfs backend frontend auth app cloudflare-bypass-proxy; do
+            docker logs --tail 5000 "$service" > "$HOME/deploy-logs/$service.log" 2>&1 || true
+          done
+          HOST
       - name: Copy files to server
         run: |
-          scp .env docker-compose.yml Caddyfile githubuser@fov.ee:~/
+          scp .env docker-compose.yml Caddyfile healthcheck.py githubuser@fov.ee:~/
           ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
           scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml monitoring/loki.yml monitoring/alloy.alloy githubuser@fov.ee:~/monitoring/
           ssh githubuser@fov.ee 'find ~/monitoring/grafana -type f -delete 2>/dev/null || true'
@@ -170,11 +181,12 @@ jobs:
               sleep 10; \
             done && \
             docker compose up -d --no-deps --force-recreate app healthcheck && \
+            healthy() { for service in postgres redis seaweedfs backend frontend auth app cloudflare-bypass-proxy; do health=\$(docker inspect -f '{{.State.Health.Status}}' \"\$service\" 2>/dev/null || true); [ \"\$health\" = healthy ] || { echo \"\$service is \${health:-missing}\"; return 1; }; done; [ \"\$(docker inspect -f '{{.State.Status}} {{.RestartCount}}' healthcheck 2>/dev/null)\" = 'running 0' ] || { echo 'healthcheck is not running'; return 1; }; } && \
             echo 'Waiting for all services to become healthy...' && \
             OK=0 && \
             for i in \$(seq 1 40); do \
               echo \"Health check \$i/40\"; \
-              if sh ./deploy-check.sh healthy; then OK=1; echo 'All services healthy and running!'; break; fi; \
+              if healthy; then OK=1; echo 'All services healthy and running!'; break; fi; \
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \

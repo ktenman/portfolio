@@ -140,7 +140,7 @@ In the deployed application, the browser sends session cookies to Caddy. Caddy a
 Additional PlantUML reference diagrams are in [docs/architecture](docs/architecture). Their SVGs can be regenerated with:
 
 ```bash
-./scripts/generate-diagrams.sh
+./scripts/generate-diagrams.py
 ```
 
 ### Project layout
