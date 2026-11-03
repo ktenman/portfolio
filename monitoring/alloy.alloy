@@ -1,0 +1,60 @@
+discovery.docker "containers" {
+  host             = "tcp://socket-proxy:2375"
+  refresh_interval = "10s"
+}
+
+discovery.relabel "containers" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "auth"
+    action        = "drop"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "containers" {
+  host             = "tcp://socket-proxy:2375"
+  targets          = discovery.docker.containers.targets
+  relabel_rules    = discovery.relabel.containers.rules
+  refresh_interval = "10s"
+  forward_to       = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+  forward_to = [loki.write.loki.receiver]
+
+  stage.drop {
+    expression = "(?i)(client.secret|clientSecret|ALLOWED_EMAILS|principal)"
+  }
+
+  stage.regex {
+    expression = "(?i)\\b(?P<level>trace|debug|info|warn|warning|error|fatal)\\b"
+  }
+
+  stage.template {
+    source   = "level"
+    template = "{{ ToLower .Value }}"
+  }
+
+  stage.labels {
+    values = { level = "" }
+  }
+}
+
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

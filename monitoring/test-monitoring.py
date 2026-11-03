@@ -10,6 +10,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -264,6 +265,12 @@ def check_compose():
     deploy = (ROOT.parent / '.github/workflows/deploy-pipeline.yml').read_text()
     listed = re.search(r"MONITORING='([^']+)'", deploy).group(1).split()
     assert sorted(listed) == monitoring, f'the deploy must stop and wait for every monitoring service, lists {listed}'
+    proxy = services['socket-proxy']
+    assert {key: proxy['environment'].get(key) for key in ('CONTAINERS', 'NETWORKS', 'POST')} == {'CONTAINERS': '1', 'NETWORKS': '1', 'POST': '0'}, proxy
+    assert [volume['read_only'] for volume in proxy['volumes'] if volume['target'] == '/var/run/docker.sock'] == [True], proxy['volumes']
+    assert services['alloy']['user'] == '473:473', 'Alloy must not run as root'
+    sockets = [name for name, service in services.items() for volume in service.get('volumes', []) if 'docker.sock' in str(volume.get('source'))]
+    assert 'alloy' not in sockets and 'loki' not in sockets, sockets
     grafana = services['grafana']
     assert grafana['read_only'] and grafana['cap_drop'] == ['ALL'] and 'ports' not in grafana, grafana
     assert {key: grafana['environment'][key] for key in ('GF_AUTH_DISABLE_LOGIN_FORM', 'GF_AUTH_BASIC_ENABLED', 'GF_AUTH_ANONYMOUS_ORG_ROLE')} == \
@@ -337,6 +344,36 @@ def check_exporters():
     print('cAdvisor names containers and node-exporter reports memory, swap and the root filesystem')
 
 
+def check_logs():
+    line = f'hello-ä {uuid.uuid4().hex}'
+    board = json.loads((ROOT / 'grafana/dashboards/logs.json').read_text())
+    every = {variable['name']: variable['allValue'] for variable in board['templating']['list']}
+    with compose_project('socket-proxy', 'loki', 'alloy') as project:
+        shipped, hidden = project + '-shipped', project + '-hidden'
+
+        def query(expr, check=False):
+            url = 'http://loki:3100/loki/api/v1/query_range?' + urllib.parse.urlencode({'query': expr, 'limit': 10})
+            return run('docker', 'exec', f'{project}-socket-proxy-1', 'wget', '-qO-', url, check=check).stdout
+
+        def stored(container, text=line, level=''):
+            found = query('{container="' + container + '"' + (f', level="{level}"' if level else '') + '}')
+            return text in [entry[1] for stream in (json.loads(found)['data']['result'] if found else []) for entry in stream['values']]
+
+        try:
+            run('docker', 'run', '-d', '--name', hidden, '--label', 'com.docker.compose.service=auth', 'alpine:3.22', 'sh', '-c', f'echo "{line}"; sleep 15')
+            script = f'echo "{line}"; echo "clientSecret={line}"; echo "ERROR {line}"; sleep 15'
+            run('docker', 'run', '-d', '--name', shipped, 'alpine:3.22', 'sh', '-c', script)
+            wait_for(lambda: stored(shipped) and stored(shipped, f'ERROR {line}', 'error'), timeout=60)
+            leaked = stored(hidden) or stored(shipped, f'clientSecret={line}')
+            panels = [re.sub(r'\$(\w+)', lambda match: every[match.group(1)], panel['targets'][0]['expr']) for panel in board['panels']]
+            answers = {expr: json.loads(query(expr, check=True))['status'] for expr in panels}
+        finally:
+            run('docker', 'rm', '-f', shipped, hidden, check=False)
+    assert not leaked, 'Alloy must not ship auth logs or #2012 secrets'
+    assert set(answers.values()) == {'success'}, answers
+    print('Alloy ships container logs to Loki, leaves auth out, and the Logs dashboard queries run')
+
+
 def datasource_uids(node):
     if isinstance(node, list):
         return {uid for item in node for uid in datasource_uids(item)}
@@ -363,7 +400,7 @@ def check_grafana():
         sources = {source['uid'] for source in json.loads(api('/api/datasources'))}
         logs = run('docker', 'logs', container)
     assert titles == sorted(dashboard['title'] for dashboard in dashboards), titles
-    assert sources >= {'prometheus'}, sources
+    assert sources == {'prometheus', 'loki'}, sources
     errors = [line for line in (logs.stderr + logs.stdout).splitlines() if 'level=error' in line and 'provisioning' in line]
     assert not errors, errors
     print('Grafana provisions every dashboard against the provisioned datasources')
@@ -451,8 +488,11 @@ def check_host_gates():
     assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
     assert 'docker compose --profile monitoring stop \\$MONITORING' in deploy, 'a deploy with monitoring off must stop every monitoring service'
     assert deploy.index('docker rm -f netdata') < deploy.index('docker compose up -d'), 'Netdata must go before the new stack starts'
-    assert deploy.index('docker compose restart grafana') < deploy.index('docker compose kill -s HUP prometheus alertmanager'), \
-        'Grafana reads its provisioning only at startup'
+    assert deploy.index('docker compose restart grafana loki') < deploy.index('docker compose kill -s HUP prometheus alertmanager alloy'), \
+        'Grafana and Loki read their configuration only at startup'
+    copied = re.search(r'scp (monitoring/\S+ )+githubuser@fov.ee:~/monitoring/', deploy).group(0)
+    for name in ('alerts.yml', 'prometheus.yml', 'alertmanager.yml', 'loki.yml', 'alloy.alloy'):
+        assert f'monitoring/{name} ' in copied, f'the deploy does not copy {name}'
     assert 'scp -r monitoring/grafana' in deploy, 'the deploy must copy the Grafana provisioning and dashboards'
     assert 'rm -rf ~/monitoring/grafana' not in deploy, 'a running Grafana keeps its bind mount on the deleted directory'
     guard = "if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi"
@@ -697,6 +737,7 @@ if __name__ == '__main__':
     check_compose()
     check_exporters()
     check_grafana()
+    check_logs()
     check_caddy_routes()
     check_host_gates()
     check_production_permissions()

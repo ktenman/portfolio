@@ -654,6 +654,69 @@
     },
     {
       "type": "timeseries",
+      "title": "Error logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (container) (count_over_time({level=\"error\"}[$__auto]))",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "Logs",
+          "url": "/grafana/d/logs?var-level=error"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      }
+    },
+    {
+      "type": "timeseries",
       "title": "Telegram messages in the last 24 hours",
       "datasource": {
         "type": "prometheus",
@@ -705,12 +768,12 @@
           "mode": "multi"
         }
       },
-      "id": 10,
+      "id": 11,
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 32
+        "x": 0,
+        "y": 40
       }
     }
   ]

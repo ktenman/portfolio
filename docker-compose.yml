@@ -441,6 +441,52 @@ services:
       timeout: 3s
       retries: 3
       start_period: 60s
+  socket-proxy:
+    logging: *logging
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    profiles: [monitoring]
+    environment:
+      CONTAINERS: '1'
+      NETWORKS: '1'
+      POST: '0'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs: [/run, /tmp]
+    mem_limit: 32m
+    restart: unless-stopped
+
+  loki:
+    logging: *logging
+    image: grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28
+    profiles: [monitoring]
+    command: [-config.file=/etc/loki/loki.yml]
+    environment:
+      GOMEMLIMIT: 180MiB
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    read_only: true
+    cap_drop: [ALL]
+    mem_limit: 256m
+    restart: unless-stopped
+
+  alloy:
+    logging: *logging
+    image: grafana/alloy:v1.21.3@sha256:8ab871206bd2d8f89277f53abffee5f452a293980788d52f85fa183a87a505a4
+    profiles: [monitoring]
+    user: '473:473'
+    command: [run, --storage.path=/var/lib/alloy/data, --disable-reporting, /etc/alloy/config.alloy]
+    environment:
+      GOMEMLIMIT: 100MiB
+    volumes:
+      - ./monitoring/alloy.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    mem_limit: 128m
+    restart: unless-stopped
 
 volumes:
   postgres_data:
@@ -452,6 +498,8 @@ volumes:
   prometheus_data:
   alertmanager_data:
   grafana_data:
+  loki_data:
+  alloy_data:
   radio_model:
   radio_recordings:
 
