@@ -43,6 +43,8 @@ on:
         required: false
       MONITORING_HEARTBEAT_URL:
         required: false
+      MONITORING_POSTGRES_PASSWORD:
+        required: false
   workflow_dispatch:
     inputs:
       deploy:
@@ -84,6 +86,7 @@ jobs:
           echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
           echo "TRADING212_API_KEY_ID=${{ secrets.TRADING212_API_KEY_ID }}" >> .env
           echo "TRADING212_API_KEY_SECRET=${{ secrets.TRADING212_API_KEY_SECRET }}" >> .env
+          echo "MONITORING_POSTGRES_PASSWORD=${{ secrets.MONITORING_POSTGRES_PASSWORD }}" >> .env
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
       - name: Prepare monitoring secrets
@@ -131,6 +134,8 @@ jobs:
           scp .env docker-compose.yml Caddyfile githubuser@fov.ee:~/
           ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
           scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml githubuser@fov.ee:~/monitoring/
+          ssh githubuser@fov.ee 'find ~/monitoring/grafana -type f -delete 2>/dev/null || true'
+          scp -r monitoring/grafana githubuser@fov.ee:~/monitoring/
           if [ "$MONITORING_ENABLED" = true ]; then
             ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring/secrets'
             scp -p monitoring/secrets/bot_token monitoring/secrets/chat_id monitoring/secrets/heartbeat_url githubuser@fov.ee:~/monitoring/secrets/
@@ -143,8 +148,9 @@ jobs:
           ssh githubuser@fov.ee "\
             set -eu; \
             export COMPOSE_FILE=docker-compose.yml; \
+            MONITORING='prometheus alertmanager node-exporter cadvisor redis-exporter postgres-exporter grafana'; \
             PROFILES=''; \
-            if [ '$MONITORING_ENABLED' = true ]; then PROFILES=monitoring; else docker compose --profile monitoring stop prometheus alertmanager; fi; \
+            if [ '$MONITORING_ENABLED' = true ]; then PROFILES=monitoring; else docker compose --profile monitoring stop \$MONITORING; fi; \
             if [ '$RADIO_ENABLED' = true ]; then PROFILES=\${PROFILES:+\$PROFILES,}radio; else docker compose --profile radio stop radio-worker radio-worker-aripaev radio-bridge; fi; \
             export COMPOSE_PROFILES=\$PROFILES; \
             docker volume inspect portfolio_seaweedfs_data >/dev/null; \
@@ -154,6 +160,8 @@ jobs:
               docker compose pull && break || { [ \"\$i\" -lt 3 ] || exit 1; echo \"Pull attempt \$i failed, retrying in 15s...\"; sleep 15; }; \
             done && \
             if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi && \
+            { docker rm -f netdata docker-socket-proxy 2>/dev/null || true; } && \
+            docker volume ls -q | grep -E '_netdata_(lib|cache)\$' | xargs -r docker volume rm && \
             echo 'Starting containers...' && \
             for i in 1 2 3; do \
               docker compose up -d && break; \
@@ -170,7 +178,7 @@ jobs:
               sleep 10; \
             done && \
             if [ \"\$OK\" -ne 1 ]; then echo 'Services failed to become healthy after 40 checks'; docker ps; exit 1; fi && \
-            if [ '$MONITORING_ENABLED' = true ]; then MONITORING_HEALTHY=0; for i in \$(seq 1 20); do READY=0; for service in prometheus alertmanager; do CID=\$(docker compose ps -q \$service); if [ -n \"\$CID\" ] && [ \"\$(docker inspect -f '{{.State.Health.Status}}' \$CID)\" = healthy ]; then READY=\$((READY + 1)); fi; done; if [ \"\$READY\" -eq 2 ]; then MONITORING_HEALTHY=1; break; fi; sleep 3; done; test \"\$MONITORING_HEALTHY\" -eq 1 && docker compose exec -T alertmanager kill -HUP 1 && docker compose exec -T prometheus kill -HUP 1; fi && \
+            if [ '$MONITORING_ENABLED' = true ]; then docker compose restart grafana && docker compose up -d --wait --wait-timeout 60 \$MONITORING && docker compose kill -s HUP prometheus alertmanager; fi && \
             docker ps --format 'table {{.Names}}\t{{.Status}}'"
       - name: Cleanup on runner
         if: always()

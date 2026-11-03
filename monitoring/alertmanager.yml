@@ -29,6 +29,11 @@ route:
         - alertname="LogoCollectionFailed"
       group_by: [environment, alertname]
       repeat_interval: 168h
+    - receiver: host
+      matchers:
+        - alertname=~"Host.+|MonitoringTargetDown"
+      group_by: [environment, alertname, job]
+      repeat_interval: 24h
 receivers:
   - name: telegram
     telegram_configs:
@@ -44,6 +49,13 @@ receivers:
         send_resolved: false
         parse_mode: ''
         message: '{{ range $index, $alert := .Alerts }}{{ if $index }}{{ "\n\n" }}{{ end }}{{ .Labels.environment }} {{ .Labels.alertname }}: {{ .Annotations.summary }}{{ end }}'
+  - name: host
+    telegram_configs:
+      - bot_token_file: /run/monitoring-secrets/bot_token
+        chat_id_file: /run/monitoring-secrets/chat_id
+        send_resolved: true
+        parse_mode: ''
+        message: '{{ range $index, $alert := .Alerts }}{{ if $index }}{{ "\n\n" }}{{ end }}{{ .Labels.environment }} {{ .Status }} {{ .Labels.alertname }}: {{ .Annotations.summary }}{{ end }}'
   - name: watchdog
     webhook_configs:
       - url_file: /run/monitoring-secrets/heartbeat_url

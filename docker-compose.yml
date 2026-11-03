@@ -79,6 +79,7 @@ services:
       SPRING_PROFILES_ACTIVE: default
       MANAGEMENT_SERVER_PORT: 9090
       SPRING_FLYWAY_ENABLED: "true"
+      MONITORING_POSTGRES_PASSWORD: ${MONITORING_POSTGRES_PASSWORD:-}
       SPRINGDOC_APIDOCS_ENABLED: "false"
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_ENABLED: true
@@ -339,6 +340,108 @@ services:
       retries: 3
       start_period: 20s
 
+  node-exporter:
+    logging: *logging
+    image: prom/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+    profiles: [monitoring]
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+)($|/)
+      - --no-collector.netdev
+      - --no-collector.netstat
+      - --no-collector.sockstat
+      - --no-collector.arp
+      - --no-collector.netclass
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    read_only: true
+    cap_drop: [ALL]
+    mem_limit: 48m
+    restart: unless-stopped
+
+  cadvisor:
+    logging: *logging
+    image: ghcr.io/google/cadvisor:v0.60.6@sha256:b8e7d1093144fd088f425ff003d75a4aa405de075db78dae3bc563730b1bd07a
+    profiles: [monitoring]
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --enable_metrics=cpu,memory
+    environment:
+      GOMEMLIMIT: 100MiB
+    volumes:
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+    mem_limit: 128m
+    restart: unless-stopped
+
+  redis-exporter:
+    logging: *logging
+    image: oliver006/redis_exporter:v1.96.0@sha256:3d57b9eb142a62ffc600063606a41cd471cd53d81bed10be5b56b3a8918f2c26
+    profiles: [monitoring]
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    read_only: true
+    cap_drop: [ALL]
+    mem_limit: 32m
+    restart: unless-stopped
+
+  postgres-exporter:
+    logging: *logging
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
+    profiles: [monitoring]
+    environment:
+      DATA_SOURCE_URI: postgres:5432/portfolio?sslmode=disable
+      DATA_SOURCE_USER: monitoring
+      DATA_SOURCE_PASS: ${MONITORING_POSTGRES_PASSWORD:-}
+      GOMEMLIMIT: 48MiB
+    read_only: true
+    cap_drop: [ALL]
+    mem_limit: 64m
+    restart: unless-stopped
+
+  grafana:
+    logging: *logging
+    image: grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205
+    profiles: [monitoring]
+    environment:
+      GF_SERVER_ROOT_URL: https://fov.ee/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+      GF_AUTH_BASIC_ENABLED: 'false'
+      GF_PLUGINS_PREINSTALL_DISABLED: 'true'
+      GF_UNIFIED_ALERTING_ENABLED: 'false'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_NEWS_NEWS_FEED_ENABLED: 'false'
+      GOMEMLIMIT: 180MiB
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    mem_limit: 320m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
 volumes:
   postgres_data:
   redis_data:
@@ -348,6 +451,7 @@ volumes:
     name: portfolio_seaweedfs_data
   prometheus_data:
   alertmanager_data:
+  grafana_data:
   radio_model:
   radio_recordings:
 

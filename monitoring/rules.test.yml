@@ -535,3 +535,103 @@ tests:
               severity: warning
             exp_annotations:
               summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'
+  - interval: 1m
+    input_series:
+      - series: 'node_memory_SwapTotal_bytes{job="node"}'
+        values: '1000x40'
+      - series: 'node_memory_SwapFree_bytes{job="node"}'
+        values: '350x40'
+      - series: 'node_filesystem_size_bytes{job="node",mountpoint="/"}'
+        values: '100x40'
+      - series: 'node_filesystem_avail_bytes{job="node",mountpoint="/"}'
+        values: '19x40'
+      - series: 'node_memory_MemAvailable_bytes{job="node"}'
+        values: '157286400x40'
+      - series: 'up{job="node"}'
+        values: '0x40'
+      - series: 'pg_up{job="postgres"}'
+        values: '0x40'
+      - series: 'up{job="portfolio-backend"}'
+        values: '0x40'
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: HostSwapHigh
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: HostSwapHigh
+        exp_alerts:
+          - exp_labels:
+              job: node
+              severity: warning
+            exp_annotations:
+              summary: 'Swap is 65% used; deploys stop at 75%'
+      - eval_time: 29m
+        alertname: HostDiskHigh
+        exp_alerts: []
+      - eval_time: 31m
+        alertname: HostDiskHigh
+        exp_alerts:
+          - exp_labels:
+              job: node
+              mountpoint: /
+              severity: warning
+            exp_annotations:
+              summary: 'Root disk is 81% used; deploys stop at 90%'
+      - eval_time: 9m
+        alertname: HostMemoryLow
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: HostMemoryLow
+        exp_alerts:
+          - exp_labels:
+              job: node
+              severity: warning
+            exp_annotations:
+              summary: 'Only 150 MiB of RAM is available'
+      - eval_time: 9m
+        alertname: MonitoringTargetDown
+        exp_alerts: []
+      - eval_time: 11m
+        alertname: MonitoringTargetDown
+        exp_alerts:
+          - exp_labels:
+              job: node
+              severity: warning
+            exp_annotations:
+              summary: 'node metrics have been unavailable for 10 minutes'
+          - exp_labels:
+              job: postgres
+              severity: warning
+            exp_annotations:
+              summary: 'postgres metrics have been unavailable for 10 minutes'
+  - interval: 1m
+    input_series:
+      - series: 'node_memory_SwapTotal_bytes{job="node"}'
+        values: '1000x40'
+      - series: 'node_memory_SwapFree_bytes{job="node"}'
+        values: '450x40'
+      - series: 'node_filesystem_size_bytes{job="node",mountpoint="/"}'
+        values: '100x40'
+      - series: 'node_filesystem_avail_bytes{job="node",mountpoint="/"}'
+        values: '21x40'
+      - series: 'node_memory_MemAvailable_bytes{job="node"}'
+        values: '262144000x40'
+      - series: 'up{job="node"}'
+        values: '1x40'
+      - series: 'pg_up{job="postgres"}'
+        values: '1x40'
+      - series: 'redis_up{job="redis"}'
+        values: '1x40'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: HostSwapHigh
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: HostDiskHigh
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: HostMemoryLow
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: MonitoringTargetDown
+        exp_alerts: []

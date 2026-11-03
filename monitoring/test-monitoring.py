@@ -1,5 +1,8 @@
+import contextlib
 import json
+import os
 import re
+import secrets
 import socket
 import struct
 import subprocess
@@ -231,6 +234,10 @@ def check_configurations():
     run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro',
         '--entrypoint', 'amtool', ALERTMANAGER,
         'check-config', '/etc/alertmanager/alertmanager.yml')
+    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown'):
+        route = run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro', '--entrypoint', 'amtool', ALERTMANAGER,
+                    'config', 'routes', 'test', '--config.file=/etc/alertmanager/alertmanager.yml', f'alertname={name}').stdout.strip()
+        assert route == 'host', f'{name} must reach the host receiver, which repeats daily and sends resolved, not {route}'
     print('Prometheus config, rule tests, and Alertmanager config passed')
 
 
@@ -248,7 +255,25 @@ def check_compose():
         command = services[name]['command']
         assert f'--web.external-url=https://fov.ee/{name}/' in command and '--web.route-prefix=/' in command, \
             f'{name} must link under its Caddy path and keep its own routes, healthcheck included, at /'
+    monitoring = sorted(name for name, service in services.items() if service.get('profiles') == ['monitoring'])
+    for name in ('node-exporter', 'cadvisor', 'redis-exporter', 'postgres-exporter'):
+        assert name in monitoring, f'{name} must run in the monitoring profile, found {monitoring}'
+    for name in monitoring:
+        assert services[name].get('mem_limit'), f'{name} has no memory limit'
+        assert 'backend' not in services[name].get('depends_on', {}), f'a deploy must not restart {name} with the backend'
+    deploy = (ROOT.parent / '.github/workflows/deploy-pipeline.yml').read_text()
+    listed = re.search(r"MONITORING='([^']+)'", deploy).group(1).split()
+    assert sorted(listed) == monitoring, f'the deploy must stop and wait for every monitoring service, lists {listed}'
+    grafana = services['grafana']
+    assert grafana['read_only'] and grafana['cap_drop'] == ['ALL'] and 'ports' not in grafana, grafana
+    assert {key: grafana['environment'][key] for key in ('GF_AUTH_DISABLE_LOGIN_FORM', 'GF_AUTH_BASIC_ENABLED', 'GF_AUTH_ANONYMOUS_ORG_ROLE')} == \
+        {'GF_AUTH_DISABLE_LOGIN_FORM': 'true', 'GF_AUTH_BASIC_ENABLED': 'false', 'GF_AUTH_ANONYMOUS_ORG_ROLE': 'Viewer'}, \
+        'logged-in users must stay anonymous Viewers, and the default admin must not log in with basic auth'
+    jobs = sorted(re.findall(r'job_name: (\S+)', (ROOT / 'prometheus.yml').read_text()))
+    assert jobs == ['alertmanager', 'cadvisor', 'node', 'portfolio-backend', 'postgres', 'prometheus', 'redis'], jobs
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
+    assert services['backend']['environment']['MONITORING_POSTGRES_PASSWORD'] == services['postgres-exporter']['environment']['DATA_SOURCE_PASS'], \
+        'the backend must set the monitoring role password that postgres-exporter logs in with'
     worker = services['radio-worker']
     assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '5m' and list(worker['networks']) == ['radio']
@@ -281,11 +306,75 @@ def check_compose():
     print('Optional Compose profile, internal ports, and healthchecks passed')
 
 
+@contextlib.contextmanager
+def compose_project(*services):
+    project = 'monitoring-' + uuid.uuid4().hex[:12]
+    compose = ['docker', 'compose', '-f', str(ROOT.parent / 'docker-compose.yml'), '-p', project, '--profile', 'monitoring']
+    environment = {**os.environ, 'MINIO_ROOT_USER': secrets.token_hex(8), 'MINIO_ROOT_PASSWORD': secrets.token_hex(16)}
+    try:
+        subprocess.run([*compose, 'up', '-d', '--no-deps', *services], env=environment, capture_output=True, text=True, check=True)
+        yield project
+    finally:
+        subprocess.run([*compose, 'down', '-v'], env=environment, capture_output=True, check=False)
+
+
+def check_exporters():
+    desktop = run('docker', 'info', '--format', '{{.OperatingSystem}}').stdout.strip() == 'Docker Desktop'
+    with compose_project('node-exporter', 'cadvisor') as project:
+        probe = project + '-probe'
+
+        def metrics(service, port):
+            return run('docker', 'exec', f'{project}-{service}-1', 'wget', '-qO-', f'http://127.0.0.1:{port}/metrics', check=False).stdout
+
+        try:
+            run('docker', 'run', '-d', '--name', probe, 'alpine:3.22', 'sleep', '120')
+            wait_for(lambda: f'name="{probe}"' in metrics('cadvisor', 8080), timeout=90)
+            node = metrics('node-exporter', 9100)
+        finally:
+            run('docker', 'rm', '-f', probe, check=False)
+    assert 'node_memory_SwapTotal_bytes' in node and 'node_memory_MemAvailable_bytes' in node, node[:500]
+    assert desktop or 'mountpoint="/"' in node, 'node-exporter must report the root filesystem the disk alert reads'
+    print('cAdvisor names containers and node-exporter reports memory, swap and the root filesystem')
+
+
+def datasource_uids(node):
+    if isinstance(node, list):
+        return {uid for item in node for uid in datasource_uids(item)}
+    if not isinstance(node, dict):
+        return set()
+    own = node.get('datasource')
+    uids = {own if isinstance(own, str) else own.get('uid')} if isinstance(own, (str, dict)) else set()
+    return uids | {uid for value in node.values() for uid in datasource_uids(value)}
+
+
+def check_grafana():
+    directory = ROOT / 'grafana'
+    dashboards = [json.loads(path.read_text()) for path in sorted((directory / 'dashboards').glob('*.json'))]
+    unknown = datasource_uids(dashboards) - {'prometheus', 'loki', 'grafana', '-- Grafana --'}
+    assert not unknown, f'dashboards must use the provisioned datasources, found {unknown}'
+    with compose_project('grafana') as project:
+        container = f'{project}-grafana-1'
+
+        def api(path):
+            return run('docker', 'exec', container, 'wget', '-qO-', f'http://127.0.0.1:3000/grafana{path}', check=False).stdout
+
+        wait_for(lambda: len(json.loads(api('/api/search?type=dash-db') or '[]')) >= len(dashboards), timeout=90)
+        titles = sorted(item['title'] for item in json.loads(api('/api/search?type=dash-db')))
+        sources = {source['uid'] for source in json.loads(api('/api/datasources'))}
+        logs = run('docker', 'logs', container)
+    assert titles == sorted(dashboard['title'] for dashboard in dashboards), titles
+    assert sources >= {'prometheus'}, sources
+    errors = [line for line in (logs.stderr + logs.stdout).splitlines() if 'level=error' in line and 'provisioning' in line]
+    assert not errors, errors
+    print('Grafana provisions every dashboard against the provisioned datasources')
+
+
 def check_caddy_routes():
     stubs = (':80 {\n\trespond "frontend {uri}"\n}\n'
              ':8083 {\n\t@guest not header Cookie user=1\n\tredir @guest /login?redirect={header.X-Forwarded-Uri}\n\trespond 200\n}\n'
              ':9090 {\n\trespond "prometheus {uri}"\n}\n'
-             ':9093 {\n\trespond "alertmanager {uri}"\n}\n')
+             ':9093 {\n\trespond "alertmanager {uri}"\n}\n'
+             ':3000 {\n\trespond "grafana {uri}"\n}\n')
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         directory.chmod(0o755)
@@ -296,7 +385,7 @@ def check_caddy_routes():
         run('docker', 'network', 'create', network)
         containers = []
         try:
-            for aliases, config in ((('frontend', 'auth', 'prometheus', 'alertmanager'), 'stubs'), ((), 'Caddyfile')):
+            for aliases, config in ((('frontend', 'auth', 'prometheus', 'alertmanager', 'grafana'), 'stubs'), ((), 'Caddyfile')):
                 flags = [flag for alias in aliases for flag in ('--network-alias', alias)]
                 containers.append(run('docker', 'run', '-d', '--network', network, *flags, '-v', f'{directory}:/test:ro',
                                       CADDY, 'caddy', 'run', '--config', f'/test/{config}', '--adapter', 'caddyfile')
@@ -318,12 +407,16 @@ def check_caddy_routes():
                 'the monitoring routes must stay above the calculator routes, which send every *.js to the frontend'
             assert fetch('/alertmanager/api/v2/silences', 'user=1') == 'alertmanager /api/v2/silences|200|'
             assert fetch('/alertmanager') == '|302|https://fov.ee/alertmanager/'
+            assert fetch('/grafana/') == '|302|https://fov.ee/login?redirect=/grafana/'
+            assert fetch('/grafana/public/build/app.js', 'user=1') == 'grafana /grafana/public/build/app.js|200|', \
+                'Grafana serves from its sub-path, so Caddy must keep the prefix and stay above the calculator routes'
+            assert fetch('/grafana') == '|302|https://fov.ee/grafana/'
             assert fetch('/', 'user=1') == 'frontend /|200|'
         finally:
             for container in containers:
                 run('docker', 'rm', '-f', container, check=False)
             run('docker', 'network', 'rm', network, check=False)
-    print('Caddy serves Prometheus and Alertmanager behind the app login')
+    print('Caddy serves Prometheus, Alertmanager and Grafana behind the app login')
 
 
 def check_host_gates():
@@ -356,6 +449,12 @@ def check_host_gates():
     for step in ('deploy-check.sh preflight', 'deploy-check.sh healthy'):
         assert step in deploy, f'deploy does not run {step}'
     assert deploy.index('deploy-check.sh preflight') < deploy.index('scp .env'), 'deploy copies files before the preflight'
+    assert 'docker compose --profile monitoring stop \\$MONITORING' in deploy, 'a deploy with monitoring off must stop every monitoring service'
+    assert deploy.index('docker rm -f netdata') < deploy.index('docker compose up -d'), 'Netdata must go before the new stack starts'
+    assert deploy.index('docker compose restart grafana') < deploy.index('docker compose kill -s HUP prometheus alertmanager'), \
+        'Grafana reads its provisioning only at startup'
+    assert 'scp -r monitoring/grafana' in deploy, 'the deploy must copy the Grafana provisioning and dashboards'
+    assert 'rm -rf ~/monitoring/grafana' not in deploy, 'a running Grafana keeps its bind mount on the deleted directory'
     guard = "if [ '$RADIO_ENABLED' = true ]; then docker compose --profile whisper stop radio-whisper; fi"
     assert deploy.index(guard) < deploy.index('docker compose up -d'), 'the deploy must stop the Whisper backup before it starts the radio worker'
     print('Heartbeat and deploy host gates passed')
@@ -596,6 +695,8 @@ def check_delivery():
 if __name__ == '__main__':
     check_configurations()
     check_compose()
+    check_exporters()
+    check_grafana()
     check_caddy_routes()
     check_host_gates()
     check_production_permissions()

@@ -14,3 +14,28 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: [backend:9090]
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+  - job_name: alertmanager
+    static_configs:
+      - targets: [alertmanager:9093]
+  - job_name: node
+    static_configs:
+      - targets: [node-exporter:9100]
+    metric_relabel_configs:
+      - {source_labels: [__name__], regex: 'node_scrape_collector_.*', action: drop}
+  - job_name: cadvisor
+    scrape_interval: 30s
+    static_configs:
+      - targets: [cadvisor:8080]
+    metric_relabel_configs:
+      - {source_labels: [__name__], regex: 'container_(cpu_usage_seconds_total|memory_working_set_bytes|memory_rss|memory_swap|spec_memory_limit_bytes|last_seen)', action: keep}
+      - {source_labels: [name], regex: '', action: drop}
+      - {regex: 'id|image', action: labeldrop}
+  - job_name: redis
+    static_configs:
+      - targets: [redis-exporter:9121]
+  - job_name: postgres
+    static_configs:
+      - targets: [postgres-exporter:9187]

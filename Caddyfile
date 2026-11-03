@@ -108,7 +108,7 @@ fov.ee {
     }
     redir @http https://fov.ee{uri}
 
-    # Prometheus and Alertmanager behind the app login, kept above the calculator routes that catch every *.js
+    # Prometheus, Alertmanager and Grafana behind the app login, kept above the calculator routes that catch every *.js
     redir /prometheus /prometheus/
     redir /alertmanager /alertmanager/
     handle /prometheus/* {
@@ -123,6 +123,13 @@ fov.ee {
             import login
             uri strip_prefix /alertmanager
             reverse_proxy alertmanager:9093
+        }
+    }
+    redir /grafana /grafana/
+    handle /grafana/* {
+        route {
+            import login
+            reverse_proxy grafana:3000
         }
     }
 

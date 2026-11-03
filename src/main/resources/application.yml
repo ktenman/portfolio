@@ -66,6 +66,8 @@ spring:
     password: ${spring.datasource.password}
     enabled: true
     baseline-on-migrate: true
+    placeholders:
+      "[monitoring_password]": ${MONITORING_POSTGRES_PASSWORD:}
 
   data:
     redis:

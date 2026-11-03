@@ -8,6 +8,9 @@ spring:
     active: test
   jackson:
     default-property-inclusion: non_null
+  flyway:
+    placeholders:
+      "[monitoring_password]": ''
 
 server:
   servlet:

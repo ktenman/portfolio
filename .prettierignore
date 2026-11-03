@@ -1,6 +1,7 @@
 # Auto-generated files
 .github/security-reports/container-scan-report.md
 ui/models/generated/domain-models.ts
+monitoring/grafana/dashboards/
 
 # Build outputs
 build/
