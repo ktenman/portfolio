@@ -411,7 +411,7 @@ def check_logs():
         return re.sub(r'\$\{(\w+)(?::\w+)?\}|\$(\w+)', lambda match: (every | values)[match.group(1) or match.group(2)], expr)
 
     with compose_project('socket-proxy', 'loki', 'alloy') as project:
-        shipped, hidden = project + '-shipped', project + '-hidden'
+        shipped, hidden, loki = project + '-shipped', project + '-hidden', project + '-loki'
 
         def query(expr, check=False):
             url = 'http://loki:3100/loki/api/v1/query_range?' + urllib.parse.urlencode({'query': expr, 'limit': 10})
@@ -422,10 +422,12 @@ def check_logs():
             streams = json.loads(found)['data']['result'] if found else []
             return sorted((stream['stream'].get('container', ''), stream['stream'].get('level', ''), entry[1]) for stream in streams for entry in stream['values'])
 
-        expected = [(shipped, '', line), (shipped, 'error', f'ERROR {line}')]
+        expected = [(loki, '', f'{line} loki'), (shipped, '', line), (shipped, 'error', f'ERROR {line}')]
         try:
             run('docker', 'run', '-d', '--name', hidden, '--label', 'com.docker.compose.service=auth', 'alpine:3.22', 'sh', '-c', f'echo "{line}"; sleep 15')
-            script = f'echo "{line}"; echo "clientSecret={line}"; echo "ERROR {line}"; echo "{other}"; sleep 15'
+            noise = f'echo "level=error msg=error notifying scheduler err=EOF {line}"; echo "level=error err=context canceled {line}"'
+            run('docker', 'run', '-d', '--name', loki, '--label', 'com.docker.compose.service=loki', 'alpine:3.22', 'sh', '-c', f'{noise}; echo "{line} loki"; sleep 15')
+            script = f'echo "{line}"; echo "clientSecret={line}"; echo "level=error msg=error calling scheduler err=no jobs found {line}"; echo "ERROR {line}"; echo "{other}"; sleep 15'
             run('docker', 'run', '-d', '--name', shipped, 'alpine:3.22', 'sh', '-c', script)
             wait_for(lambda: set(expected) <= set(stored()), timeout=60)
             entries = stored()
@@ -435,8 +437,8 @@ def check_logs():
             wait_for(lambda: other in query('{container="' + shipped + '"}'), timeout=30)
             found = json.loads(query(expand(search, level='error', search=re.escape(line.upper())), check=True))
         finally:
-            run('docker', 'rm', '-f', shipped, hidden, check=False)
-    assert entries == expected, f'Alloy must ship container logs with their level, and nothing from auth or #2012 secrets, stored {entries}'
+            run('docker', 'rm', '-f', shipped, hidden, loki, check=False)
+    assert entries == expected, f'Alloy must ship container logs with their level, and nothing from auth, #2012 secrets or known noise, stored {entries}'
     searched = [entry[1] for stream in found['data']['result'] for entry in stream['values']]
     assert searched == [f'ERROR {line}'], f'the Logs search must match case-insensitively within the chosen level, found {searched}'
     print('Alloy ships container logs to Loki, leaves auth out, and the Logs dashboard searches them')

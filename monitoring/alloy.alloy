@@ -34,7 +34,23 @@ loki.process "containers" {
   forward_to = [loki.write.loki.receiver]
 
   stage.drop {
+    older_than = "168h"
+  }
+
+  stage.drop {
     expression = "(?i)(client.secret|clientSecret|ALLOWED_EMAILS|principal)"
+  }
+
+  stage.drop {
+    expression = "error calling scheduler.*no jobs found"
+  }
+
+  stage.match {
+    selector = "{service=~\"loki|grafana\"}"
+
+    stage.drop {
+      expression = "context canceled|err=EOF"
+    }
   }
 
   stage.regex {
