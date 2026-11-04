@@ -425,7 +425,7 @@ def check_logs():
         expected = [(loki, '', f'{line} loki'), (shipped, '', line), (shipped, 'error', f'ERROR {line}')]
         try:
             run('docker', 'run', '-d', '--name', hidden, '--label', 'com.docker.compose.service=auth', 'alpine:3.22', 'sh', '-c', f'echo "{line}"; sleep 15')
-            noise = f'echo "level=error msg=error notifying scheduler err=EOF {line}"; echo "level=error err=context canceled {line}"'
+            noise = f'echo "level=error msg=error notifying scheduler err=EOF {line}"; echo "level=error err=context canceled {line}"; echo "level=error msg=Request Completed path=/apis/quotas.grafana.app/v0alpha1/namespaces/default/usage status=501 {line}"'
             run('docker', 'run', '-d', '--name', loki, '--label', 'com.docker.compose.service=loki', 'alpine:3.22', 'sh', '-c', f'{noise}; echo "{line} loki"; sleep 15')
             script = f'echo "{line}"; echo "clientSecret={line}"; echo "level=error msg=error calling scheduler err=no jobs found {line}"; echo "ERROR {line}"; echo "{other}"; sleep 15'
             run('docker', 'run', '-d', '--name', shipped, 'alpine:3.22', 'sh', '-c', script)

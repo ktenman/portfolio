@@ -49,7 +49,7 @@ loki.process "containers" {
     selector = "{service=~\"loki|grafana\"}"
 
     stage.drop {
-      expression = "context canceled|err=EOF"
+      expression = "context canceled|err=EOF|quotas.grafana.app.*status=501"
     }
   }
 
