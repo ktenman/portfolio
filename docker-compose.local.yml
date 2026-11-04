@@ -123,6 +123,7 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     volumes:
       - radio_recordings:/recordings
+      - ./trades:/app/trades:ro
     depends_on:
       - postgres
       - redis

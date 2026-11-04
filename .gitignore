@@ -51,6 +51,7 @@ ui/.vitest/
 
 ### Radio archive: model and recordings ###
 radio-data/
+/trades/
 
 ### Environment Variables ###
 .env

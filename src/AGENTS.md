@@ -352,7 +352,7 @@ Key entities with relationships:
 - `DiversificationConfig` - Persisted configuration for the diversification calculator
 - `JobExecution` - Background job execution tracking with status and error handling
 
-Migrations are in `src/main/resources/db/migration/` using timestamp naming `VYYYYMMDDHHMM__description.sql` (e.g. `V202605261300__lightyear_sells_may25.sql`) — 200+ migrations applied in timestamp order. Name new migrations with the current date/time, not a sequential V-number.
+Migrations are in `src/main/resources/db/migration/` using timestamp naming `VYYYYMMDDHHMM__description.sql` (e.g. `V202609141300__earnings_per_day_from_trailing_profit.sql`) — 200+ migrations applied in timestamp order. Name new migrations with the current date/time, not a sequential V-number. Migrations that write `portfolio_transaction` live in the private `ktenman/portfolio-trades`, cloned into the gitignored `trades/`, which the backend reads as a second Flyway location relative to its working directory; the deploy copies it to the server. Never commit trades here.
 
 ### External Integrations (14 systems)
 

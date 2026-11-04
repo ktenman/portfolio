@@ -45,6 +45,8 @@ on:
         required: false
       MONITORING_POSTGRES_PASSWORD:
         required: false
+      TRADES_DEPLOY_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       deploy:
@@ -62,6 +64,13 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
+      - name: Checkout trades
+        uses: actions/checkout@v7
+        with:
+          repository: ktenman/portfolio-trades
+          ssh-key: ${{ secrets.TRADES_DEPLOY_KEY }}
+          persist-credentials: false
+          path: trades
       - name: Install SSH key
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -143,6 +152,7 @@ jobs:
       - name: Copy files to server
         run: |
           scp .env docker-compose.yml Caddyfile healthcheck.py githubuser@fov.ee:~/
+          rsync -a --delete --exclude .git trades/ githubuser@fov.ee:~/trades/
           ssh githubuser@fov.ee 'install -d -m 700 ~/monitoring'
           scp monitoring/alerts.yml monitoring/prometheus.yml monitoring/alertmanager.yml monitoring/loki.yml monitoring/tempo.yml monitoring/alloy.alloy githubuser@fov.ee:~/monitoring/
           ssh githubuser@fov.ee 'find ~/monitoring/grafana -type f -delete 2>/dev/null || true'

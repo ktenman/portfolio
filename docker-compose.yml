@@ -112,6 +112,7 @@ services:
         condition: service_healthy
     volumes:
       - radio_recordings:/recordings
+      - ./trades:/app/trades:ro
     restart: always
     mem_limit: 2048m
     healthcheck:

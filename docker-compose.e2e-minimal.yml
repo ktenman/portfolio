@@ -74,6 +74,8 @@ services:
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-portfolio-logos}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - GOOGLE_VISION_API_KEY=${GOOGLE_VISION_API_KEY:-}
+    volumes:
+      - ./src/test/resources/fixtures/trades:/app/trades:ro
     depends_on:
       postgres:
         condition: service_healthy

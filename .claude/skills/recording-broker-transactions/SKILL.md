@@ -15,9 +15,9 @@ Transcribe broker-app screenshots into one Flyway data migration. Mechanical job
    docker exec portfolio-postgres-dev-1 psql -U postgres -d portfolio -c \
      "SELECT symbol, name FROM instrument ORDER BY symbol;"
    ```
-   Symbol format `TICKER:EXCHANGE:CUR` (`AIFS:GER:EUR`); cash is `EUR`. Names truncate in the app — `iShares MSCI Global Semico…` is `SEC0`, not the obvious guess. No match → a separate `add_<ticker>_instrument` migration must land first (needs `provider_external_id`, the Lightyear UUID) — ask.
+   Symbol format `TICKER:EXCHANGE:CUR` (`AIFS:GER:EUR`); cash is `EUR`. Names truncate in the app — `iShares MSCI Global Semico…` is `SEC0`, not the obvious guess. No match → a separate `add_<ticker>_instrument` migration must land first in this repository, through a PR (needs `provider_external_id`, the Lightyear UUID) — ask.
 3. **Pick the platform.** `LIGHTYEAR`, `LIGHTYEAR_BUSINESS`, `LHV`, `TRADING212`, `SWEDBANK`, `BINANCE`, `AVIVA`. Personal vs business Lightyear is invisible in a screenshot: disambiguate with an unrelated row in the same list (an older trade whose amount matches exactly one existing migration), or ask.
-4. **Write the migration**, `src/main/resources/db/migration/V<YYYYMMDDHHMM>__<platform>_<buys|sells>_<mon><dd>.sql`:
+4. **Write the migration**, `trades/V<YYYYMMDDHHMM>__<platform>_<buys|sells>_<mon><dd>.sql`. `trades/` is the gitignored clone of the private `ktenman/portfolio-trades` (`git clone git@github.com:ktenman/portfolio-trades.git trades`):
    ```sql
    INSERT INTO portfolio_transaction (instrument_id, transaction_type, quantity, price, transaction_date, platform, commission)
    VALUES
@@ -27,7 +27,7 @@ Transcribe broker-app screenshots into one Flyway data migration. Mechanical job
 5. **Dry-run before claiming done** — apply and roll back against dev Postgres:
    ```bash
    { echo 'BEGIN;'
-     cat src/main/resources/db/migration/V<version>__*.sql
+     cat trades/V<version>__*.sql
      echo "SELECT i.symbol, ROUND(t.price, 2) AS unit, ROUND(t.quantity * t.price, 2) AS proceeds
              FROM portfolio_transaction t JOIN instrument i ON i.id = t.instrument_id
              WHERE t.transaction_date = '<date>' ORDER BY proceeds;
@@ -40,7 +40,7 @@ Transcribe broker-app screenshots into one Flyway data migration. Mechanical job
    } | docker exec -i portfolio-postgres-dev-1 psql -U postgres -d portfolio -v ON_ERROR_STOP=1
    ```
    Green = every `proceeds` matches the screenshot amount **and** every `unit` matches its shown unit price, and the second query returns no rows. Each row appears twice once the dev backend has already applied the file — expected, not a duplicate insert. Both halves matter: `price` is derived from `quantity`, so `proceeds` reconstructs even from a misread quantity — only `unit` catches that. Flyway applies the file for real on app start; never commit the insert manually.
-6. **Branch, commit, PR** per the git conventions in AGENTS.md. No issue exists for these — sibling branches are named `feature/lightyear-sells-jun29`.
+6. **Commit and deploy.** In `trades/`, commit to `main` per the commit conventions in AGENTS.md and push, then run `gh workflow run deploy-pipeline.yml -R ktenman/portfolio`. The private repository has no CI, so the dry run is the only check before production applies the file.
 
 ## Rules
 

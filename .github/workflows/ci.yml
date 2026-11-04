@@ -606,6 +606,7 @@ jobs:
       MONITORING_TELEGRAM_CHAT_ID: ${{ secrets.MONITORING_TELEGRAM_CHAT_ID }}
       MONITORING_HEARTBEAT_URL: ${{ secrets.MONITORING_HEARTBEAT_URL }}
       MONITORING_POSTGRES_PASSWORD: ${{ secrets.MONITORING_POSTGRES_PASSWORD }}
+      TRADES_DEPLOY_KEY: ${{ secrets.TRADES_DEPLOY_KEY }}
 
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot

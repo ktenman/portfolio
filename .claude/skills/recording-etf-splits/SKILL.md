@@ -18,7 +18,7 @@ Read prod with SELECTs only: `ssh root@fov.ee "docker exec postgres psql -U fov.
    - `price_snapshot`: the first `snapshot_hour` holding the new price
    - `instrument_minute_price`: the first `captured_at` holding the new price
    - `portfolio_intraday_summary`: the first `captured_at` whose total dropped, for `platform_key` `''` and every platform holding the instrument
-4. **Write `V<date "+%Y%m%d%H%M">__<ticker>_split_1_to_<n>.sql`**, shaped like #2297:
+4. **Write `trades/V<date "+%Y%m%d%H%M">__<ticker>_split_1_to_<n>.sql`**, in the clone of the private `ktenman/portfolio-trades` because it rewrites `portfolio_transaction`, shaped like #2297:
    ```sql
    UPDATE portfolio_transaction SET quantity = quantity * 80, price = price / 80
    WHERE instrument_id = (SELECT id FROM instrument WHERE symbol = 'BNKE:PAR:EUR') AND transaction_date < '2026-10-27';
@@ -36,7 +36,7 @@ Read prod with SELECTs only: `ssh root@fov.ee "docker exec postgres psql -U fov.
    WHERE platform_key IN ('', 'LHV') AND captured_at >= '2026-10-27 07:17:00+00';
    ```
 5. **Dry-run on dev** inside `BEGIN … ROLLBACK` (`docker exec -i portfolio-postgres-dev-1 psql -U postgres -d portfolio -v ON_ERROR_STOP=1`). Green = the held quantity is n times larger, `SUM(quantity * price)` is unchanged, and no row is left on the wrong side of a cut-off. Check the same cut-offs on prod with SELECTs.
-6. **Ship through a PR** on `fix/<ticker>-split-1-to-<n>`. After the deploy, the share count matches the broker app.
+6. **Commit to `trades/` and push**, then run `gh workflow run deploy-pipeline.yml -R ktenman/portfolio`. After the deploy, the share count matches the broker app.
 
 ## Provider history
 
