@@ -177,6 +177,17 @@ describe('DailyProfitCalendar', () => {
     ])
   })
 
+  it('should select and announce the day of a phone Worst day row', async () => {
+    const wrapper = createWrapper()
+
+    await wrapper.findAll('button.compact-row')[1].trigger('click')
+
+    expect([wrapper.find('.compact-day .day-label').text(), announced(wrapper)]).toEqual([
+      'Wed 3 Dec 2025',
+      'Wed 3 Dec 2025, −€600.00, −0.60%',
+    ])
+  })
+
   it('should keep the selected day when a refresh makes another day the best', async () => {
     const wrapper = createWrapper(createCalendarRows().slice(0, 7))
     await clickDay(wrapper, DAY.dec2)
