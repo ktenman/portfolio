@@ -52,7 +52,7 @@
         </div>
       </div>
     </div>
-    <div class="skeleton h-101 md:hidden"></div>
+    <div class="skeleton h-123 md:hidden"></div>
   </div>
   <alert-message v-else-if="error" variant="warning">
     Could not load the daily profit calendar: {{ error }}

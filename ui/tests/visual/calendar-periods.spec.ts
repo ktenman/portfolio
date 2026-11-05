@@ -15,6 +15,7 @@ const TWO_YEAR_DATES = '28 Nov 2025 – 28 May 2026'
 
 const dates = (page: Page) => page.locator('.period-dates').filter({ visible: true })
 const arrow = (page: Page, name: string) => page.getByRole('button', { name })
+const phoneDay = (page: Page) => page.locator('.compact-day')
 
 async function openEarlierPeriod(page: Page): Promise<void> {
   await openRoute(page, '/')
@@ -53,6 +54,10 @@ const phoneLayout = (page: Page) =>
     datesText.selectNodeContents(document.querySelector('.compact-period .period-dates')!)
     const dates = datesText.getBoundingClientRect()
     const lineWidths = Array.from(datesText.getClientRects(), line => line.width)
+    const boxes = (selector: string) =>
+      Array.from(document.querySelectorAll(selector), node => node.getBoundingClientRect())
+    const dayButtons = boxes('.compact-day button')
+    const extremeRows = boxes('button.compact-row')
     return {
       scrollsSideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       headingLines: Math.round(
@@ -68,6 +73,9 @@ const phoneLayout = (page: Page) =>
         Math.abs(earlier.left - box('.daily-profit-calendar').left - card.clientLeft) <= subpixel &&
         Math.abs(box('.daily-profit-calendar').right - card.clientLeft - later.right) <= subpixel,
       arrowsReach44: Math.min(earlier.width, earlier.height, later.width, later.height) >= 44,
+      dayButtonsReach44:
+        dayButtons.length === 2 && dayButtons.every(box => Math.min(box.width, box.height) >= 44),
+      extremeRowsReach44: extremeRows.length === 2 && extremeRows.every(box => box.height >= 44),
       fitsScreen: box('.daily-profit-calendar').height <= window.innerHeight,
     }
   }, SUBPIXEL_PX)
@@ -100,7 +108,7 @@ test('changing the platform filter keeps the picked day and period', async ({ pa
   await page.locator('.platform-buttons .platform-btn:text-is("LHV")').click()
 
   await expect(dates(page)).toHaveText(EARLIER_DATES)
-  await expect(page.locator('.day-label')).toHaveText('Sat 28 Jun 2025')
+  await expect(page.locator('.day-label').filter({ visible: true })).toHaveText('Sat 28 Jun 2025')
 })
 
 test('reloading keeps the earlier period and requests history once', async ({ page }) => {
@@ -159,8 +167,41 @@ test.describe('phone layout', () => {
       datesBetweenArrows: true,
       arrowsAtCardEdges: true,
       arrowsReach44: true,
+      dayButtonsReach44: true,
+      extremeRowsReach44: true,
       fitsScreen: true,
     })
+  })
+
+  test('a tap between two dots on a 375 by 667 phone shows the closer day', async ({ page }) => {
+    await page.setViewportSize(PHONE)
+    await openRoute(page, '/')
+    await page.locator('.calendar-grid.compact').scrollIntoViewIfNeeded()
+    const dot = (await page
+      .locator('.calendar-grid.compact [aria-label^="Mon 1 Dec 2025,"]')
+      .boundingBox())!
+    const scrollY = await page.evaluate(() => window.scrollY)
+
+    await page.mouse.click(dot.x + dot.width + SUBPIXEL_PX, dot.y + dot.height / 2)
+
+    await expect(phoneDay(page).locator('.day-label')).toHaveText('Mon 1 Dec 2025')
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollY)
+  })
+
+  test('a tap on a day without a daily summary shows the day after it', async ({ page }) => {
+    await page.setViewportSize(PHONE)
+    await openRoute(page, '/')
+    await arrow(page, 'Previous day').click()
+    await expect(phoneDay(page).locator('.day-label')).toHaveText('Mon 29 Dec 2025')
+
+    await page
+      .locator('.calendar-grid.compact [aria-label="Tue 30 Dec 2025, no daily summary"]')
+      .click()
+
+    await expect(phoneDay(page).locator('.day-label')).toHaveText('Wed 31 Dec 2025')
+    await expect(phoneDay(page).locator('.day-note')).toHaveText(
+      'Covers 2 days, no daily summary for 30 Dec'
+    )
   })
 
   test('the earlier period keeps the cell size of the latest period', async ({ page }) => {

@@ -912,7 +912,7 @@ test.describe('desktop states', () => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
     const lhv = page.locator('.platform-buttons .platform-btn:text-is("LHV")')
-    const selectedDay = page.locator('.calendar-grid .selected')
+    const selectedDay = page.locator('.calendar-grid .selected').filter({ visible: true })
     await lhv.click()
     await lhv.click()
     await page.getByRole('button', { name: 'Previous day', exact: true }).click()
@@ -926,7 +926,7 @@ test.describe('desktop states', () => {
   test('the calendar grid draws its keyboard focus on the selected day', async ({ page }) => {
     await stubPortfolioSummary(page)
     await openRoute(page, '/')
-    const grid = page.locator('.calendar-grid[role="application"]')
+    const grid = page.locator('.calendar-grid[role="application"]').filter({ visible: true })
 
     await grid.focus()
     await page.keyboard.press('ArrowUp')
