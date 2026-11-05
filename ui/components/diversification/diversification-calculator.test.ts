@@ -248,7 +248,7 @@ describe('DiversificationCalculator', () => {
       selectedPlatforms: ['LHV', 'SWEDBANK'],
     })
 
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
 
     const history = wrapper.findComponent({ name: 'PurchaseWeightsHistory' })
@@ -273,7 +273,7 @@ describe('DiversificationCalculator', () => {
       selectedPlatforms: ['LHV'],
     })
     toasts.value = []
-    const wrapper = mount(DiversificationCalculator)
+    const wrapper = mount(DiversificationCalculator, withoutPanel)
     await flushPromises()
     wrapper
       .findComponent({ name: 'PurchaseWeightsHistory' })
