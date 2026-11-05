@@ -30,14 +30,9 @@ const AIFS: Instrument = [1, 'AIFS:GER:EUR']
 const LSMC: Instrument = [3, 'LSMC:GER:EUR']
 const VVSM: Instrument = [4, 'VVSM:GER:EUR']
 const EUR: Instrument = [14, 'EUR']
-const USD: Instrument = [15, 'USD']
 const GOOGL: Instrument = [99, 'GOOGL:NSQ:USD']
 
-const etf = (
-  instrumentId: number,
-  symbol: string,
-  constituentSymbols: string[] = []
-): EtfDetailDto => ({
+const etf = (instrumentId: number, symbol: string): EtfDetailDto => ({
   instrumentId,
   symbol,
   name: `Fond ${symbol} õ`,
@@ -46,10 +41,9 @@ const etf = (
   annualReturn: null,
   currentPrice: null,
   fundCurrency: null,
-  constituentSymbols,
 })
 
-const ETFS = [etf(...AIFS), etf(2, 'CASH', ['EUR', 'USD']), etf(...LSMC), etf(...VVSM)]
+const ETFS = [etf(...AIFS), etf(...EUR), etf(...LSMC), etf(...VVSM)]
 
 const trades = (...rows: Trade[]): TransactionResponseDto[] =>
   rows.map(
@@ -214,18 +208,6 @@ describe('purchase-weights-history', () => {
       ['2026-07-16', AIFS, SELL, 10, 200, LHV]
     )
     expect(printed(weights.rows[0].invested)).toEqual(['80.0', '75.0'])
-  })
-
-  it('adds the constituents of a synthetic fund into its row', () => {
-    const weights = build(
-      ['2026-10-01', EUR, BUY, 600, 1],
-      ['2026-10-01', USD, BUY, 200, 1],
-      ['2026-10-01', AIFS, BUY, 2, 100]
-    )
-    expect(weights.rows.map(row => [row.symbol, printed(row.invested)])).toEqual([
-      ['AIFS:GER:EUR', ['20.0']],
-      ['CASH', ['80.0']],
-    ])
   })
 
   it('prints nothing for a share below 0.05', () => {

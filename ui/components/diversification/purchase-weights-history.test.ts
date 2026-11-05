@@ -26,7 +26,6 @@ const etf = (instrumentId: number, symbol: string): EtfDetailDto => ({
   annualReturn: null,
   currentPrice: null,
   fundCurrency: null,
-  constituentSymbols: [],
 })
 
 const ETFS = [etf(1, 'AIFS:GER:EUR'), etf(3, 'LSMC:GER:EUR'), etf(4, 'VVSM:GER:EUR')]

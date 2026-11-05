@@ -55,7 +55,7 @@ interface Snapshot {
 
 export const KIND_LABELS = { buy: 'Buy', swap: 'Swap or rebalance', cash: 'Cash' }
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const CASH_SYMBOL = 'CASH'
+const CASH_SYMBOL = 'EUR'
 const DARKEST_SHARE = 40
 const DARKEST_TINT = 55
 const SMALLEST_SHARE = 0.05
@@ -73,16 +73,6 @@ const totalsByOwner = (entries: Array<[number, number]>): Map<number, number> =>
     new Map<number, number>()
   )
 
-const ownerLookup = (etfs: EtfDetailDto[]) => {
-  const plain = etfs.filter(etf => etf.constituentSymbols.length === 0)
-  const byId = new Map(plain.map(etf => [etf.instrumentId, etf] as const))
-  const bySymbol = new Map(
-    etfs.flatMap(etf => etf.constituentSymbols.map(symbol => [symbol, etf] as const))
-  )
-  return (transaction: TransactionResponseDto): EtfDetailDto | undefined =>
-    byId.get(transaction.instrumentId) ?? bySymbol.get(transaction.symbol)
-}
-
 const toTrade = (transaction: TransactionResponseDto, owner: EtfDetailDto): Trade => ({
   owner: owner.instrumentId,
   cash: owner.symbol === CASH_SYMBOL,
@@ -95,10 +85,10 @@ const toTrade = (transaction: TransactionResponseDto, owner: EtfDetailDto): Trad
 })
 
 const toTrades = (etfs: EtfDetailDto[], transactions: TransactionResponseDto[]): Trade[] => {
-  const ownerOf = ownerLookup(etfs)
+  const owners = new Map(etfs.map(etf => [etf.instrumentId, etf] as const))
   return transactions
     .flatMap(transaction => {
-      const owner = ownerOf(transaction)
+      const owner = owners.get(transaction.instrumentId)
       return owner ? [toTrade(transaction, owner)] : []
     })
     .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)

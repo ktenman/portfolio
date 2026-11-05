@@ -147,15 +147,14 @@ const AVAILABLE_ETFS: EtfDetailDto[] = [
     fundCurrency: Currency.EUR,
   },
   {
-    instrumentId: 116,
-    symbol: 'CASH',
+    instrumentId: 114,
+    symbol: 'EUR',
     name: 'Test Cash Holdings',
     allocation: 0,
     ter: null,
     annualReturn: null,
     currentPrice: 1,
     fundCurrency: Currency.EUR,
-    constituentSymbols: ['TSTEUR'],
   },
 ]
 
