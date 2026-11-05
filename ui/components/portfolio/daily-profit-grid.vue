@@ -101,14 +101,10 @@ const cellAttributes = (day: CalendarDay) => {
   return { role: 'img', 'aria-label': day.name, title: day.name, ...current }
 }
 
-const pick = (date: string | null) => {
-  if (!date) return
-  grid.value?.focus({ preventScroll: true })
-  emit('select', date)
-}
-
 const onClick = (day: CalendarDay) => {
-  if (isSelectable(day)) pick(day.date)
+  if (!isSelectable(day)) return
+  grid.value?.focus()
+  emit('select', day.date)
 }
 
 const gapTo = (box: DOMRect, x: number, y: number) =>
@@ -120,7 +116,8 @@ const onTap = (event: MouseEvent) => {
     gapTo(cell.getBoundingClientRect(), event.clientX, event.clientY)
   )
   const day = props.calendar.days[gaps.indexOf(Math.min(...gaps))]
-  if (day) pick(day.kind === 'missing' ? moveDay(props.calendar, day.date, 1) : day.date)
+  const date = day && (day.kind === 'missing' ? moveDay(props.calendar, day.date, 1) : day.date)
+  if (date) emit('select', date)
 }
 
 const onEnter = (day: CalendarDay, event: PointerEvent) => {

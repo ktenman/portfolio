@@ -369,7 +369,17 @@ describe('DailyProfitGrid', () => {
       await wrapper.trigger('click', { clientX: 5, clientY: 22.5 })
 
       expect(wrapper.emitted('select')).toEqual([['2025-12-02']])
-      expect(document.activeElement).toBe(wrapper.element)
+    })
+
+    it('should leave the focus where it was when a tap selects a day', async () => {
+      const wrapper = createGrid({ compact: true })
+      layOut(wrapper)
+      const button = document.body.appendChild(document.createElement('button'))
+      button.focus()
+
+      await cellsOf(wrapper)[7].trigger('click', { clientX: 17, clientY: 5 })
+
+      expect(document.activeElement).toBe(button)
     })
 
     it('should select the day after a dashed day that is tapped', async () => {
