@@ -101,5 +101,4 @@ __pycache__/
 ### Working docs (keep architecture diagrams) ###
 docs/*
 !docs/architecture/
-.env.sync
 /monitoring/secrets/

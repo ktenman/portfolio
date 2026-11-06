@@ -15,8 +15,6 @@ MOUNT = '{{ range .Mounts }}{{ if eq .Destination "/recordings" }}{{ .Source }}{
 
 def main():
     os.chdir(Path(__file__).resolve().parent.parent)
-    if not Path('.env.sync').is_file():
-        sys.exit('Missing .env.sync (copy .env.sync.example)')
     settings = dict(line.split('=', 1) for line in Path('.env.sync').read_text().splitlines() if '=' in line)
     prod = f"root@{settings['SYNC_SSH'].split('@', 1)[-1]}"
     remote = subprocess.run(['ssh', prod, f"docker inspect backend -f '{MOUNT}'"],
