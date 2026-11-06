@@ -199,9 +199,6 @@ test.describe('phone layout', () => {
       .click()
 
     await expect(phoneDay(page).locator('.day-label')).toHaveText('Wed 31 Dec 2025')
-    await expect(phoneDay(page).locator('.day-note')).toHaveText(
-      'Covers 2 days, no daily summary for 30 Dec'
-    )
   })
 
   test('the earlier period keeps the cell size of the latest period', async ({ page }) => {

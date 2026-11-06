@@ -72,6 +72,19 @@ describe('DailyProfitCompact', () => {
     ]).toEqual(['Tue 9 Dec 2025', '2025-12-08', null])
   })
 
+  it('should leave the gap note out of the day card', () => {
+    const props = propsFor([
+      createCalendarRow('2025-12-01', 1000),
+      createCalendarRow('2025-12-03', 1300),
+    ])
+    const wrapper = mount(DailyProfitCompact, { props })
+
+    expect([props.day.note, wrapper.find('.compact-day .day-note').exists()]).toEqual([
+      'Covers 2 days, no daily summary for 2 Dec',
+      false,
+    ])
+  })
+
   it('should pass a tap on the grid and the day buttons on as a selection', async () => {
     const wrapper = createWrapper()
 
@@ -100,12 +113,12 @@ describe('DailyProfitCompact', () => {
     expect(wrapper.emitted('select')).toEqual([['2025-12-09'], ['2025-12-03']])
   })
 
-  it('should mark the best and the worst day button with the darkest gain and loss', () => {
+  it('should leave the swatch off the best and the worst day buttons', () => {
     const swatches = createWrapper()
       .findAll('button.compact-row')
-      .map(button => button.findComponent(DailyProfitCell).props('variant'))
+      .map(button => button.findComponent(DailyProfitCell).exists())
 
-    expect(swatches).toEqual(['gain-4', 'loss-4'])
+    expect(swatches).toEqual([false, false])
   })
 
   it('should print the cents of the average, the best and the worst amount on their own so they can be set smaller', () => {

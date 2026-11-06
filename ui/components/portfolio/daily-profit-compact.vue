@@ -17,6 +17,7 @@
     <div class="compact-day">
       <daily-profit-panel
         :day="day"
+        compact
         :previous="moveDay(calendar, day.date, -1)"
         :next="moveDay(calendar, day.date, 1)"
         @select="emit('select', $event)"
@@ -43,11 +44,8 @@
       class="compact-row compact-pick"
       @click="emit('select', extreme.day.date)"
     >
-      <span class="compact-pick-label">
-        <daily-profit-cell :variant="extreme.variant" class="compact-swatch" />
-        <span class="compact-label">
-          {{ extreme.label }} · {{ formatWeekdayDate(extreme.day.date) }}
-        </span>
+      <span class="compact-label">
+        {{ extreme.label }} · {{ formatWeekdayDate(extreme.day.date) }}
       </span>
       <span class="compact-value" :class="getGainLossClass(extreme.day.change)">
         <span>{{ extreme.amount[0] }}</span>
@@ -68,7 +66,6 @@ import {
 } from '../../services/daily-profit-calendar'
 import { formatCurrencyChange, getGainLossClass, splitCents } from '../../utils/formatters'
 import { formatWeekdayDate } from '../../utils/iso-dates'
-import DailyProfitCell from './daily-profit-cell.vue'
 import DailyProfitGrid from './daily-profit-grid.vue'
 import DailyProfitPanel from './daily-profit-panel.vue'
 
@@ -126,16 +123,5 @@ const extremes = computed(() =>
 
 .compact-pick:active {
   background: var(--color-surface-sunken);
-}
-
-.compact-pick-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.compact-swatch {
-  flex: none;
-  width: 9px;
 }
 </style>
