@@ -27,7 +27,13 @@
         <daily-profit-figures class="calendar-period" :calendar="calendar" @select="select" />
       </div>
     </div>
-    <daily-profit-compact class="md:hidden" :calendar="calendar" :busy="period.busy">
+    <daily-profit-compact
+      class="md:hidden"
+      :calendar="calendar"
+      :day="day"
+      :busy="period.busy"
+      @select="select"
+    >
       <daily-profit-period v-bind="period" @earlier="earlier" @later="later" />
     </daily-profit-compact>
     <p class="sr-only" role="status">{{ announcement }}</p>
@@ -46,7 +52,7 @@
         </div>
       </div>
     </div>
-    <div class="skeleton h-101 md:hidden"></div>
+    <div class="skeleton h-123 md:hidden"></div>
   </div>
   <alert-message v-else-if="error" variant="warning">
     Could not load the daily profit calendar: {{ error }}

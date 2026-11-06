@@ -4,7 +4,11 @@
     class="calendar-grid"
     :class="{ compact }"
     :style="{ '--weeks': calendar.weeks, '--columns': Math.max(calendar.weeks, MIN_COLUMNS) }"
-    v-bind="gridAttributes"
+    role="application"
+    aria-label="Daily profit calendar"
+    tabindex="0"
+    :aria-describedby="selectedId"
+    @click="onTap"
     @keydown="onKeydown"
     @pointerleave="emit('preview', null)"
   >
@@ -82,17 +86,6 @@ const selectedId = useId()
 
 const firstWeekColumn = computed(() => (props.compact ? 1 : 2))
 
-const gridAttributes = computed(() =>
-  props.compact
-    ? { 'aria-hidden': 'true' as const }
-    : {
-        role: 'application',
-        'aria-label': 'Daily profit calendar',
-        tabindex: 0,
-        'aria-describedby': selectedId,
-      }
-)
-
 const placeOf = (index: number) => {
   const position = index + props.calendar.offset
   return {
@@ -104,7 +97,6 @@ const placeOf = (index: number) => {
 const isSelectable = (day: CalendarDay) => !props.compact && day.kind !== 'missing'
 
 const cellAttributes = (day: CalendarDay) => {
-  if (props.compact) return {}
   const current = day.date === props.selected ? { id: selectedId, 'aria-current': 'true' } : {}
   return { role: 'img', 'aria-label': day.name, title: day.name, ...current }
 }
@@ -113,6 +105,19 @@ const onClick = (day: CalendarDay) => {
   if (!isSelectable(day)) return
   grid.value?.focus()
   emit('select', day.date)
+}
+
+const gapTo = (box: DOMRect, x: number, y: number) =>
+  Math.max(box.left - x, 0, x - box.right) ** 2 + Math.max(box.top - y, 0, y - box.bottom) ** 2
+
+const onTap = (event: MouseEvent) => {
+  if (!props.compact || props.busy || !grid.value) return
+  const gaps = Array.from(grid.value.querySelectorAll('[role="img"]'), cell =>
+    gapTo(cell.getBoundingClientRect(), event.clientX, event.clientY)
+  )
+  const day = props.calendar.days[gaps.indexOf(Math.min(...gaps))]
+  const date = day && (day.kind === 'missing' ? moveDay(props.calendar, day.date, 1) : day.date)
+  if (date) emit('select', date)
 }
 
 const onEnter = (day: CalendarDay, event: PointerEvent) => {
@@ -152,6 +157,8 @@ const onKeydown = (event: KeyboardEvent) => {
   gap: 2px;
   max-width: calc(var(--columns) * 20px - 2px);
   margin-inline: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .month-label,

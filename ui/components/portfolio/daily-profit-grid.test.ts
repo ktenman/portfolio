@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import DailyProfitCell from './daily-profit-cell.vue'
 import DailyProfitGrid from './daily-profit-grid.vue'
@@ -29,6 +29,13 @@ const createGrid = (
 
 const cellsOf = (wrapper: ReturnType<typeof createGrid>) =>
   wrapper.findAllComponents(DailyProfitCell)
+
+const layOut = (wrapper: ReturnType<typeof createGrid>) =>
+  cellsOf(wrapper).forEach((cell, index) =>
+    vi
+      .spyOn(cell.element, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(Math.floor(index / 7) * 12, (index % 7) * 12, 10, 10))
+  )
 
 const pressKey = (wrapper: ReturnType<typeof createGrid>, init: KeyboardEventInit) => {
   const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init })
@@ -259,6 +266,15 @@ describe('DailyProfitGrid', () => {
     expect(wrapper.emitted('select')).toBeUndefined()
   })
 
+  it('should select nothing when a click on the wide grid lands between the dots', async () => {
+    const wrapper = createGrid()
+    layOut(wrapper)
+
+    await wrapper.trigger('click', { clientX: 5, clientY: 22.5 })
+
+    expect(wrapper.emitted('select')).toBeUndefined()
+  })
+
   it('should preview the day under the mouse until the pointer leaves the map', async () => {
     const wrapper = createGrid()
 
@@ -330,24 +346,74 @@ describe('DailyProfitGrid', () => {
       expect(cellsOf(wrapper)[7].attributes('style')).toBe('grid-column: 2; grid-row: 2;')
     })
 
-    it('should be hidden from assistive technology with nothing to focus, name or select', async () => {
-      const wrapper = createGrid({ compact: true, selected: undefined })
-      const cell = cellsOf(wrapper)[6]
+    it('should give the compact grid the Tab stop, name and description of the wide grid', () => {
+      const wrapper = createGrid({ compact: true })
 
-      await cell.trigger('click')
+      expect(wrapper.attributes()).toMatchObject({
+        role: 'application',
+        'aria-label': 'Daily profit calendar',
+        tabindex: '0',
+        'aria-describedby': wrapper.find('.selected').attributes('id'),
+      })
+      expect([
+        wrapper.attributes('aria-hidden'),
+        wrapper.find('.selected').attributes('aria-label'),
+        cellsOf(wrapper).filter(cell => cell.attributes('role') === 'img').length,
+      ]).toEqual([undefined, 'Tue 9 Dec 2025, +€700.00, +0.70%', 9])
+    })
 
-      expect(wrapper.attributes()).toMatchObject({ 'aria-hidden': 'true' })
-      expect(['role', 'tabindex', 'aria-label'].map(name => wrapper.attributes(name))).toEqual([
-        undefined,
-        undefined,
-        undefined,
-      ])
-      expect(['role', 'aria-label', 'title'].map(name => cell.attributes(name))).toEqual([
-        undefined,
-        undefined,
-        undefined,
-      ])
+    it('should select the day of the dot closest to a tap that misses every dot', async () => {
+      const wrapper = createGrid({ compact: true })
+      layOut(wrapper)
+
+      await wrapper.trigger('click', { clientX: 5, clientY: 22.5 })
+
+      expect(wrapper.emitted('select')).toEqual([['2025-12-02']])
+    })
+
+    it('should leave the focus where it was when a tap selects a day', async () => {
+      const wrapper = createGrid({ compact: true })
+      layOut(wrapper)
+      const button = document.body.appendChild(document.createElement('button'))
+      button.focus()
+
+      await cellsOf(wrapper)[7].trigger('click', { clientX: 17, clientY: 5 })
+
+      expect(document.activeElement).toBe(button)
+    })
+
+    it('should select the day after a dashed day that is tapped', async () => {
+      const wrapper = createGrid({ compact: true })
+      layOut(wrapper)
+
+      await wrapper.trigger('click', { clientX: 5, clientY: 53 })
+
+      expect(wrapper.emitted('select')).toEqual([['2025-12-06']])
+    })
+
+    it('should select nothing on a tap while the veil covers the grid', async () => {
+      const wrapper = createGrid({ compact: true, busy: true })
+      layOut(wrapper)
+
+      await wrapper.trigger('click', { clientX: 5, clientY: 22.5 })
+
       expect(wrapper.emitted('select')).toBeUndefined()
+    })
+
+    it('should move a day with the arrow keys on the compact grid', () => {
+      const wrapper = createGrid({ compact: true })
+
+      pressKey(wrapper, { key: 'ArrowUp' })
+
+      expect(wrapper.emitted('select')).toEqual([['2025-12-08']])
+    })
+
+    it('should not preview the day under the mouse on the compact grid', async () => {
+      const wrapper = createGrid({ compact: true })
+
+      await cellsOf(wrapper)[6].trigger('pointerenter', { pointerType: 'mouse' })
+
+      expect(wrapper.emitted('preview')).toBeUndefined()
     })
   })
 })

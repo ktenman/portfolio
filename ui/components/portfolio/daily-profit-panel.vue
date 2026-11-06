@@ -14,7 +14,7 @@
     </p>
     <div class="day-texts">
       <p class="day-detail">{{ day.detail }}</p>
-      <p v-if="day.note" class="day-note">{{ day.note }}</p>
+      <p v-if="day.note && !compact" class="day-note">{{ day.note }}</p>
     </div>
     <div class="day-buttons">
       <daily-profit-arrow
@@ -45,6 +45,7 @@ const props = defineProps<{
   day: CalendarDay
   previous: string | null
   next: string | null
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{ select: [date: string] }>()

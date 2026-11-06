@@ -94,32 +94,25 @@ describe('earlier period of the visual fixture', () => {
     ])
   })
 
-  it('counts three days up and none down or flat', () => {
-    expect([
-      calendar.upDays,
-      calendar.downDays,
-      calendar.flatDays,
-      calendar.averageDay,
-      calendar.worst,
-    ]).toEqual([3, 0, 0, 151.79, null])
+  it('counts two days up, one down and none flat', () => {
+    expect([calendar.upDays, calendar.downDays, calendar.flatDays, calendar.averageDay]).toEqual([
+      2, 1, 0, 151.79,
+    ])
   })
 
   it('ranks the three days of the earlier period', () => {
     expect(days.slice(1).map(day => [day.name, day.detail])).toEqual([
-      ['Sat 28 Jun 2025, +€251.29, +0.25%', 'Best of 3 days · closed at €102,483.46 · XIRR 10.40%'],
-      [
-        'Sun 29 Jun 2025, +€137.07, +0.13%',
-        '2nd best of 3 days · closed at €102,792.42 · XIRR 10.54%',
-      ],
+      ['Sat 28 Jun 2025, +€459.72, +0.45%', 'Best of 3 days · closed at €102,483.46 · XIRR 10.40%'],
+      ['Sun 29 Jun 2025, −€71.36, −0.07%', 'Worst of 3 days · closed at €102,792.42 · XIRR 10.54%'],
       [
         'Mon 30 Jun 2025, +€67.01, +0.07%',
-        '3rd best of 3 days · closed at €103,031.33 · XIRR 10.68%',
+        '2nd best of 3 days · closed at €103,031.33 · XIRR 10.68%',
       ],
     ])
   })
 
-  it('names 28 Jun the best day', () => {
-    expect(calendar.best?.date).toBe('2025-06-28')
+  it('names 28 Jun the best day and 29 Jun the worst', () => {
+    expect([calendar.best?.date, calendar.worst?.date]).toEqual(['2025-06-28', '2025-06-29'])
   })
 })
 
