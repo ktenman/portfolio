@@ -1,17 +1,43 @@
 <template>
-  <div class="chart-container md:w-[80.8%]" data-testid="summary-chart" v-if="chartData">
+  <div
+    ref="root"
+    class="chart-container relative md:w-[80.8%]"
+    :class="{ 'touch-pan-y touch-pinch-zoom select-none [-webkit-touch-callout:none]': selectable }"
+    :style="{ cursor }"
+    data-testid="summary-chart"
+    v-if="chartData"
+  >
     <canvas ref="canvas"></canvas>
+    <chart-period-layer
+      v-if="selectable && frame"
+      v-model:period="period"
+      :frame="frame"
+      :drag="drag"
+      :ring="ring"
+      :today="today ?? frameBounds(frame).to"
+      :back-to="backLabel ?? null"
+      :compact="isCompact"
+      @zoom="emit('zoom')"
+      @back="emit('back')"
+      @legend="legendHidden = $event"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useLocalStorage, useMediaQuery } from '@vueuse/core'
-import { Chart, type ChartOptions } from 'chart.js'
+import { Chart, type ChartOptions, type LegendItem } from 'chart.js'
 import { formatDate, formatDateTime, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
 import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
+import { usePeriodGesture } from '../../composables/use-period-gesture'
+import { frameBounds, type ChartFrame } from '../../services/chart-frame'
+import { MIN_PERIOD_DAYS, type ChartPeriod } from '../../services/chart-period'
+import { daysBetween } from '../../utils/iso-dates'
+import { createPeriodVeil } from '../../plugins/period-veil'
+import ChartPeriodLayer from './chart-period-layer.vue'
 import {
   crosshair,
   rangeExtremes,
@@ -25,9 +51,16 @@ import {
 
 interface Props {
   data: ChartDataPoint | PerformanceChartData | null
+  today?: string
+  backLabel?: string | null
 }
 
 const props = defineProps<Props>()
+const period = defineModel<ChartPeriod | null>('period', { default: null })
+const emit = defineEmits<{
+  zoom: []
+  back: []
+}>()
 
 const isPerformance = computed(() => props.data !== null && 'benchmarks' in props.data)
 
@@ -64,9 +97,52 @@ const performanceDataset = (
 })
 
 const canvas = ref<HTMLCanvasElement | null>(null)
+const root = ref<HTMLElement | null>(null)
 const isCompact = useMediaQuery('(max-width: 768px)')
 
 let chart: Chart<'line'> | null = null
+
+const dates = computed(() => props.data?.labels ?? [])
+
+const selectable = computed(() => {
+  const labels = dates.value
+  if (labels.length < 2 || labels.some(label => label.includes('T'))) return false
+  return daysBetween(labels[0], labels[labels.length - 1]) >= MIN_PERIOD_DAYS
+})
+
+const shownPeriod = computed(() => (selectable.value ? period.value : null))
+const hasPeriod = computed(() => shownPeriod.value !== null)
+const frame = ref<ChartFrame | null>(null)
+const legendHidden = ref(false)
+const legendVeiled = computed(() => selectable.value && legendHidden.value)
+
+const { drag, ring, inside, cursor } = usePeriodGesture({
+  root,
+  frame,
+  period,
+  enabled: selectable,
+  zoom: () => emit('zoom'),
+})
+
+const periodVeil = createPeriodVeil({
+  drawing: () => ({
+    period: shownPeriod.value,
+    dragging: drag.value !== null,
+    inside: inside.value,
+  }),
+  dates: () => dates.value,
+  onFrame: next => {
+    frame.value = next
+  },
+})
+
+const veiledLabels = (target: Chart): LegendItem[] =>
+  Chart.defaults.plugins.legend.labels.generateLabels(target).map(item => ({
+    ...item,
+    fontColor: 'transparent',
+    fillStyle: 'transparent',
+    strokeStyle: 'transparent',
+  }))
 
 const chartData = computed(() => {
   if (!props.data) return null
@@ -99,7 +175,7 @@ const chartData = computed(() => {
         pointHoverBackgroundColor: CHART_COLORS[0],
         fill: true,
         data: props.data.totalValues,
-        rangeExtremes: props.data.extremes,
+        rangeExtremes: hasPeriod.value ? null : props.data.extremes,
         yAxisID: 'y',
       },
       {
@@ -110,7 +186,7 @@ const chartData = computed(() => {
         backgroundColor: CHART_COLORS[1],
         pointHoverBackgroundColor: CHART_COLORS[1],
         data: props.data.profitValues,
-        rangeExtremes: props.data.profitExtremes,
+        rangeExtremes: hasPeriod.value ? null : props.data.profitExtremes,
         yAxisID: 'y',
       },
       {
@@ -182,7 +258,9 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
     legend: {
       position: 'bottom' as const,
       align: 'start' as const,
-      onClick: (_event, item) => toggleSeries(item.datasetIndex),
+      onClick: (_event, item) => {
+        if (!legendVeiled.value) toggleSeries(item.datasetIndex)
+      },
       labels: {
         usePointStyle: true,
         pointStyle: 'circle' as const,
@@ -191,6 +269,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         padding: 16,
         color: labelColor,
         font: tickFont,
+        ...(legendVeiled.value && { generateLabels: veiledLabels }),
       },
     },
   },
@@ -200,7 +279,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       grid: { display: false, tickLength: isPerformance.value ? 8 : 25 },
       ticks: {
         maxTicksLimit: 5,
-        color: labelColor,
+        color: hasPeriod.value ? 'transparent' : labelColor,
         font: tickFont,
       },
     },
@@ -237,11 +316,9 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
 }))
 
-watchEffect(
-  () => {
-    const data = chartData.value
-    const options = chartOptions.value
-    const element = canvas.value
+watch(
+  [chartData, chartOptions, canvas],
+  ([data, options, element]) => {
     if (!element || !data) {
       chart?.destroy()
       chart = null
@@ -253,10 +330,17 @@ watchEffect(
       chart.update('none')
       return
     }
-    chart = new Chart(element, { type: 'line', data, options, plugins: [crosshair, rangeExtremes] })
+    chart = new Chart(element, {
+      type: 'line',
+      data,
+      options,
+      plugins: [crosshair, rangeExtremes, periodVeil],
+    })
   },
   { flush: 'post' }
 )
+
+watch([shownPeriod, drag, inside], () => chart?.draw())
 
 onBeforeUnmount(() => chart?.destroy())
 </script>

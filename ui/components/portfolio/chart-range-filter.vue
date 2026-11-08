@@ -5,8 +5,8 @@
         v-for="range in SHORTLIST"
         :key="range"
         :class="[PERIOD_CELL, ROW_CELL]"
-        :data-active="range === selected || undefined"
-        :aria-pressed="range === selected"
+        :data-active="pressed(range) || undefined"
+        :aria-pressed="pressed(range)"
         type="button"
         @click="pick(range)"
       >
@@ -15,13 +15,13 @@
       <button
         ref="more"
         :class="[PERIOD_CELL, ROW_CELL, 'inline-flex items-center justify-center gap-1']"
-        :data-active="!listed || undefined"
+        :data-active="!!zoomLabel || !listed || undefined"
         :aria-expanded="open"
         aria-controls="period-picker"
         type="button"
         @click="toggle"
       >
-        {{ listed ? 'More' : selected }}
+        {{ moreLabel }}
         <svg
           aria-hidden="true"
           class="size-3 shrink-0"
@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { PERIOD_CELL, SHORTLIST, usePeriodPopover } from '../../composables/use-time-range'
 import type { TimeRange } from '../../models/generated/domain-models'
 import PeriodPopover from './period-popover.vue'
@@ -56,6 +57,7 @@ const ROW_CELL = 'md-down:min-w-fit md-down:flex-1 md-down:px-1'
 
 const props = defineProps<{
   selected: TimeRange
+  zoomLabel?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -66,7 +68,16 @@ const root = useTemplateRef('root')
 const moreButton = useTemplateRef('more')
 const { open, close, toggle } = usePeriodPopover(root, moreButton)
 
+const isCompact = useMediaQuery('(max-width: 768px)')
+
 const listed = computed(() => SHORTLIST.includes(props.selected))
+
+const moreLabel = computed(() => {
+  if (props.zoomLabel) return isCompact.value ? 'Custom' : props.zoomLabel
+  return listed.value ? 'More' : props.selected
+})
+
+const pressed = (range: TimeRange) => !props.zoomLabel && range === props.selected
 
 const pick = (range: TimeRange) => {
   emit('select', range)

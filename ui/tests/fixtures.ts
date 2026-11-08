@@ -1,3 +1,4 @@
+import type { Chart } from 'chart.js'
 import {
   DiversificationHoldingDto,
   InstrumentDto,
@@ -212,3 +213,27 @@ export class FakeEventSource extends EventTarget {
     this.readyState = FakeEventSource.CLOSED
   }
 }
+
+export const fakeChart = (overrides: Record<string, unknown> = {}) =>
+  ({
+    width: 400,
+    height: 300,
+    chartArea: { left: 40, right: 360, top: 20, bottom: 220 },
+    scales: {
+      x: {
+        top: 220,
+        options: {
+          grid: { drawTicks: true, tickLength: 25 },
+          ticks: { padding: 3, font: { size: 11 } },
+        },
+        getPixelForValue: (index: number) => 40 + index * 160,
+      },
+    },
+    legend: {
+      legendHitBoxes: [
+        { left: 50, top: 270, width: 60, height: 12 },
+        { left: 126, top: 270, width: 70, height: 12 },
+      ],
+    },
+    ...overrides,
+  }) as unknown as Chart<'line'>

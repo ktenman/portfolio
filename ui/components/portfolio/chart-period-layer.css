@@ -1,0 +1,251 @@
+.period-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.period-chip {
+  position: absolute;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--color-brass-deep);
+  background: var(--color-brass-wash);
+  border: 1px solid var(--color-brass);
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+}
+
+.period-chip[data-side='left'] {
+  transform: translate(calc(-100% + 8px), -50%);
+}
+
+.period-chip[data-side='right'] {
+  transform: translate(-8px, -50%);
+}
+
+.edge-hit {
+  position: absolute;
+  width: 12px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.grip {
+  position: absolute;
+  width: 10px;
+  height: 28px;
+  margin: -14px 0 0 -5px;
+  background: var(--color-brass);
+  border-radius: var(--radius-control);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-ink) 22%, transparent);
+  cursor: ew-resize;
+  touch-action: none;
+  pointer-events: auto;
+  transition: background-color 0.15s;
+}
+
+.grip::before {
+  position: absolute;
+  inset: -8px -6px;
+  content: '';
+}
+
+.grip::after {
+  position: absolute;
+  top: 9px;
+  left: 3px;
+  width: 4px;
+  height: 10px;
+  border-inline: 1px solid color-mix(in srgb, var(--color-surface) 80%, transparent);
+  content: '';
+}
+
+.grip:hover,
+.grip[data-active] {
+  background: var(--color-brass-deep);
+}
+
+.grip:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+}
+
+.ring {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 2px solid var(--color-brass);
+  border-radius: 50%;
+  animation: hold 0.35s linear forwards;
+}
+
+@keyframes hold {
+  from {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(0.55);
+  }
+}
+
+.aside {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transform: translateY(-50%);
+}
+
+.aside.unfit {
+  visibility: hidden;
+}
+
+.aside button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 0.15s;
+}
+
+.aside svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--color-ink-soft);
+}
+
+.hint svg {
+  width: 13px;
+  height: 13px;
+}
+
+.hint.drawing {
+  font-weight: 600;
+  color: var(--color-brass-deep);
+}
+
+.days {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 4px 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-brass-deep);
+  background: var(--color-brass-wash);
+  border: 1px solid var(--color-brass);
+  border-radius: var(--radius-container);
+}
+
+.clear {
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-control);
+}
+
+.clear:hover {
+  background: color-mix(in oklch, var(--color-brass) 14%, transparent);
+}
+
+.zoom,
+.back {
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-container);
+}
+
+.zoom:hover,
+.back:hover {
+  background: var(--color-surface-hover);
+}
+
+.compact .period-chip {
+  padding: 2px 6px;
+}
+
+.compact .edge-hit {
+  width: 44px;
+  margin-left: -22px;
+}
+
+.compact .grip {
+  height: 26px;
+  margin-top: -13px;
+}
+
+.compact .grip::after {
+  top: 8px;
+}
+
+.compact .aside {
+  gap: 14px;
+}
+
+.compact .aside.spread {
+  justify-content: space-between;
+}
+
+.compact .days,
+.compact .aside button {
+  font-size: 11px;
+}
+
+.compact .days {
+  padding-left: 9px;
+}
+
+.compact .zoom,
+.compact .back {
+  gap: 4px;
+  padding: 0 8px 0 6px;
+}
+
+.compact .aside svg {
+  width: 11px;
+  height: 11px;
+}
+
+.compact .aside button::before {
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 44px;
+  content: '';
+  transform: translateY(-50%);
+}
+
+.compact .aside .clear::before {
+  inset: 50% auto auto 50%;
+  width: 44px;
+  transform: translate(-50%, -50%);
+}

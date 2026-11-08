@@ -1,6 +1,16 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const DEDICATED_SPECS = ['**/holdings-search.spec.ts', '**/monthly-calendar.spec.ts']
+const DEDICATED = [
+  { name: 'holdings-mobile', spec: 'holdings-search', viewport: { width: 390, height: 844 } },
+  { name: 'holdings-desktop', spec: 'holdings-search', viewport: { width: 1440, height: 900 } },
+  { name: 'monthly-mobile', spec: 'monthly-calendar', viewport: { width: 390, height: 844 } },
+  { name: 'monthly-tablet', spec: 'monthly-calendar', viewport: { width: 768, height: 1024 } },
+  { name: 'monthly-desktop', spec: 'monthly-calendar', viewport: { width: 1440, height: 900 } },
+  { name: 'period-mobile', spec: 'chart-period', viewport: { width: 390, height: 844 } },
+  { name: 'period-desktop', spec: 'chart-period', viewport: { width: 1440, height: 900 } },
+]
+
+const DEDICATED_SPECS = DEDICATED.map(({ spec }) => `**/${spec}.spec.ts`)
 
 export default defineConfig({
   testDir: './ui/tests/visual',
@@ -46,13 +56,7 @@ export default defineConfig({
       testIgnore: DEDICATED_SPECS,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
-    ...[
-      { name: 'holdings-mobile', spec: 'holdings-search', viewport: { width: 390, height: 844 } },
-      { name: 'holdings-desktop', spec: 'holdings-search', viewport: { width: 1440, height: 900 } },
-      { name: 'monthly-mobile', spec: 'monthly-calendar', viewport: { width: 390, height: 844 } },
-      { name: 'monthly-tablet', spec: 'monthly-calendar', viewport: { width: 768, height: 1024 } },
-      { name: 'monthly-desktop', spec: 'monthly-calendar', viewport: { width: 1440, height: 900 } },
-    ].map(({ name, spec, viewport }) => ({
+    ...DEDICATED.map(({ name, spec, viewport }) => ({
       name,
       testMatch: `**/${spec}.spec.ts`,
       snapshotPathTemplate: 'ui/tests/visual/baselines/{arg}-{projectName}{ext}',

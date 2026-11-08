@@ -59,16 +59,25 @@
           <range-change-header
             v-if="rangeChange"
             :key="`${rangeChange.range}:${rangeChange.platforms}`"
-            :amount="rangeChange.changeAmount"
-            :percent="rangeChange.changePercent"
+            :amount="periodChange?.amount ?? rangeChange.changeAmount"
+            :percent="periodChange?.percent ?? rangeChange.changePercent"
             :range="rangeChange.range"
+            :phrase="periodChange?.phrase"
           />
           <span v-if="staleAsOf" class="headline-asof">as of {{ staleAsOf }}</span>
         </div>
       </header>
 
       <div class="chart-frame">
-        <portfolio-chart :key="chartKey" :data="activeChartData" />
+        <portfolio-chart
+          :key="chartKey"
+          v-model:period="chartPeriod"
+          :data="activeChartData"
+          :today="latestDay"
+          :back-label="backLabel"
+          @zoom="zoomIn"
+          @back="zoomOut"
+        />
         <loading-veil v-if="isRangeLoading" message="Loading chart" />
       </div>
 
@@ -80,7 +89,7 @@
         class="mt-3 mb-6 flex flex-wrap items-center justify-between gap-3 md:mb-10 md:w-[80.8%]"
         data-testid="chart-controls"
       >
-        <chart-range-filter :selected="selectedRange" @select="selectedRange = $event" />
+        <chart-range-filter :selected="selectedRange" :zoom-label="zoomLabel" @select="pickRange" />
         <chart-mode-toggle :selected="selectedBenchmarks" @select="selectBenchmark" />
       </div>
 
@@ -141,6 +150,7 @@ import {
 import { useConfirm } from '../composables/use-confirm'
 import { usePlatformFilter } from '../composables/use-platform-filter'
 import { useChartRange } from '../composables/use-time-range'
+import { useChartPeriod } from '../composables/use-chart-period'
 import { useAuthState } from '../composables/use-auth-state'
 import { formatDateToString } from '../composables/use-quick-dates'
 import { useNumberTransition } from '../composables/use-number-transition'
@@ -239,7 +249,20 @@ const {
   hasMoreData,
 } = usePortfolioSummaryQuery(selectedPlatforms, selectedRange, isMonthly)
 
-const { processedChartData } = usePortfolioChart(chartSummaries)
+const {
+  period: chartPeriod,
+  today: latestDay,
+  chartSummaries: zoomedChartSummaries,
+  performanceSummaries: zoomedPerformanceSummaries,
+  change: periodChange,
+  zoomLabel,
+  backLabel,
+  zoomIn,
+  back: zoomOut,
+  pick: pickRange,
+} = useChartPeriod(selectedRange, chartSummaries, performanceSummaries)
+
+const { processedChartData } = usePortfolioChart(zoomedChartSummaries)
 
 const selectedBenchmarks = useBenchmarkSelection()
 
@@ -249,7 +272,7 @@ const activeBenchmarks = computed<ChartBenchmark[]>(() =>
   )
 )
 
-const { performanceChartData } = usePerformanceChart(performanceSummaries, activeBenchmarks)
+const { performanceChartData } = usePerformanceChart(zoomedPerformanceSummaries, activeBenchmarks)
 
 const activeChartData = computed(() => performanceChartData.value ?? processedChartData.value)
 

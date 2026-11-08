@@ -296,13 +296,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - viewport: mobile
-            projects: --project=mobile --project=holdings-mobile --project=monthly-mobile
-          - viewport: tablet
-            projects: --project=tablet --project=monthly-tablet
-          - viewport: desktop
-            projects: --project=desktop --project=holdings-desktop --project=monthly-desktop
+        viewport: [mobile, tablet, desktop]
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
@@ -318,7 +312,7 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Run visual regression tests
-        run: npx playwright test ${{ matrix.projects }}
+        run: npx playwright test --project='*${{ matrix.viewport }}'
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
