@@ -67,6 +67,14 @@
             {{ item.programme }}
           </router-link>
         </template>
+        <template #cell-length="{ item }">
+          <span
+            data-testid="radio-length"
+            :class="{ 'text-ink-soft': !live(item) && !item.editList }"
+          >
+            {{ live(item) ? length(item.status.seconds) : cleaned(item) }}
+          </span>
+        </template>
         <template #cell-text="{ item }">
           <span data-testid="radio-transcript">{{ textState(item) }}</span>
         </template>
@@ -176,12 +184,7 @@ const columns: ColumnDefinition[] = [
     class: 'whitespace-nowrap',
     formatter: (_, item: RecordingSummary) => `${day(item.status.startedAt)} · ${span(item)}`,
   },
-  {
-    key: 'length',
-    label: 'Length',
-    class: 'whitespace-nowrap',
-    formatter: (_, item: RecordingSummary) => length(item.status.seconds),
-  },
+  { key: 'length', label: 'Length', class: 'whitespace-nowrap' },
   { key: 'text', label: 'Transcript' },
   { key: 'state', label: 'Status' },
   { key: 'actions', label: 'Actions', class: 'text-right' },

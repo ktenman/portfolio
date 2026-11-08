@@ -166,6 +166,33 @@ describe('RadioRecordings', () => {
     expect(rows[1]!.text()).toContain('recording')
   })
 
+  const LENGTH = '[data-testid="radio-length"]'
+
+  it('should give a desktop row the cleaned episode length', async () => {
+    expect((await mount()).get(LENGTH).text()).toBe('42 min')
+  })
+
+  it('should give a desktop row still being recorded its length so far', async () => {
+    expect((await mount()).findAll(LENGTH)[1]!.text()).toBe('1 min')
+  })
+
+  it('should call a desktop row without an edit list not cleaned', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([recording({ editList: null })])
+    expect((await mount()).get(LENGTH).text()).toBe('not cleaned')
+  })
+
+  it('should soften a desktop row that is not cleaned', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([recording({ editList: null })])
+    expect((await mount()).get(LENGTH).classes()).toContain('text-ink-soft')
+  })
+
+  it('should give a partial desktop row its cleaned length', async () => {
+    vi.mocked(radioService.recordings).mockResolvedValue([
+      recording({ status: { ...recording().status, state: RecordingState.PARTIAL } }),
+    ])
+    expect((await mount()).get(LENGTH).text()).toBe('42 min')
+  })
+
   it('should leave the actions empty for a recording still being recorded', async () => {
     const cells = (await mount()).findAll('tbody tr')[1]!.findAll('td')
     expect(cells[cells.length - 1]!.text()).toBe('')
