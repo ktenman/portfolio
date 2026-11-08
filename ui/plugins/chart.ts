@@ -36,6 +36,7 @@ const inkColor = rootStyles.getPropertyValue('--color-ink').trim()
 export const gridColor = rootStyles.getPropertyValue('--color-hairline').trim()
 export const labelColor = rootStyles.getPropertyValue('--color-ink-soft').trim()
 export const surfaceColor = rootStyles.getPropertyValue('--color-surface').trim()
+export const brassColor = rootStyles.getPropertyValue('--color-brass').trim()
 
 export const compactAmount = new Intl.NumberFormat('en-US', {
   notation: 'compact',
@@ -144,7 +145,11 @@ const drawTick = (ctx: CanvasRenderingContext2D, { x, y, direction }: ExtremeMar
   strokeVerticalLine(ctx, x, y + direction * TICK_START, y + direction * TICK_END)
 }
 
-const drawDot = (ctx: CanvasRenderingContext2D, { x, y }: ExtremeMarker, color: string) => {
+export const drawDot = (
+  ctx: CanvasRenderingContext2D,
+  { x, y }: Pick<ExtremeMarker, 'x' | 'y'>,
+  color: string
+) => {
   ctx.lineWidth = 2
   ctx.fillStyle = surfaceColor
   ctx.strokeStyle = color

@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ChartRangeFilter from './chart-range-filter.vue'
@@ -6,8 +6,18 @@ import { TimeRange } from '../../models/generated/domain-models'
 
 enableAutoUnmount(beforeEach)
 
-const createWrapper = (selected: TimeRange = TimeRange.ONE_MONTH) =>
-  mount(ChartRangeFilter, { props: { selected }, attachTo: document.body })
+const createWrapper = (
+  selected: TimeRange = TimeRange.ONE_MONTH,
+  zoomLabel: string | null = null
+) => mount(ChartRangeFilter, { props: { selected, zoomLabel }, attachTo: document.body })
+
+const onPhone = () =>
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
 
 const group = (wrapper: VueWrapper, label: string) =>
   wrapper.find(`[role="group"][aria-label="${label}"]`)
@@ -218,5 +228,25 @@ describe('ChartRangeFilter', () => {
     await button(wrapper, 'Chart period', '1Y').trigger('click')
 
     expect(isOpen(wrapper)).toBe(false)
+  })
+
+  it('should name a zoom on the More cell and mark it active', () => {
+    const cell = more(createWrapper(TimeRange.ONE_YEAR, '6 Jan – 16 Jan'))
+
+    expect([cell.text(), cell.attributes('data-active')]).toEqual(['6 Jan – 16 Jan', 'true'])
+  })
+
+  it('should press no preset while zoomed', () => {
+    const wrapper = createWrapper(TimeRange.ONE_YEAR, '6 Jan – 16 Jan')
+
+    expect(wrapper.findAll('[aria-pressed="true"]')).toHaveLength(0)
+  })
+
+  it('should call a zoom Custom on a phone', () => {
+    onPhone()
+    const cell = more(createWrapper(TimeRange.ONE_YEAR, '6 Jan – 16 Jan'))
+    vi.unstubAllGlobals()
+
+    expect(cell.text()).toBe('Custom')
   })
 })

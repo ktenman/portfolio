@@ -26,19 +26,20 @@ const props = defineProps<{
   amount: number
   percent: number
   range: TimeRange
+  phrase?: string
 }>()
 
-const { amount, percent } = toRefs(props)
+const { amount, percent, phrase } = toRefs(props)
 
-const animatedAmount = useNumberTransition(amount)
-const animatedPercent = useNumberTransition(percent)
-const flashClass = useFlashOnChange(amount)
+const animatedAmount = useNumberTransition(amount, phrase)
+const animatedPercent = useNumberTransition(percent, phrase)
+const flashClass = useFlashOnChange(amount, phrase)
 
 const parts = computed(() => splitCents(formatSignedCurrency(animatedAmount.value, 'EUR')))
 
 const rate = computed(() => ` (${formatSignedPercent(animatedPercent.value)})`)
 
-const period = computed(() => ` ${describeRange(props.range)}`)
+const period = computed(() => ` ${props.phrase ?? describeRange(props.range)}`)
 
 const changeClass = computed(() => getGainLossClass(amount.value))
 </script>

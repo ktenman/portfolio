@@ -79,4 +79,38 @@ describe('RangeChangeHeader', () => {
 
     expect(wrapper.find('.range-period').text()).toBe('in the past 6 years')
   })
+
+  it('should name a drawn period in place of the range', () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: {
+        amount: 60,
+        percent: 5,
+        range: TimeRange.ONE_YEAR,
+        phrase: 'from 6 January to 16 January',
+      },
+    })
+
+    expect(wrapper.find('.range-period').text()).toBe('from 6 January to 16 January')
+  })
+
+  it('should snap to the change of a newly drawn period without counting up', async () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: 100, percent: 1, range: TimeRange.ONE_YEAR },
+    })
+
+    await wrapper.setProps({ amount: 60, percent: 5, phrase: 'from 6 January to 16 January' })
+
+    expect(wrapper.find('.range-change').text()).toBe('€60.00 (5.00%)')
+  })
+
+  it('should not flash the change of a newly drawn period', async () => {
+    const wrapper = mount(RangeChangeHeader, {
+      props: { amount: 100, percent: 1, range: TimeRange.ONE_YEAR },
+    })
+
+    await wrapper.setProps({ amount: 200, percent: 2, phrase: 'from 6 January to 16 January' })
+    await nextTick()
+
+    expect(wrapper.find('.range-change').classes()).not.toContain('value-increase')
+  })
 })
