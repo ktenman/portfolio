@@ -46,7 +46,7 @@ uv run radio-worker run --duration 600 --programme Kuku --out ../radio-data/reco
 uv run radio-worker run --source ~/keskpaevatund.mp3 --start 2026-10-17T11:55 --programme Keskpäevatund --out ../radio-data/recordings/2026-10-17-1155-keskpaevatund --model ../radio-data/model/ct2
 ```
 
-The directory name is the recording's name in the Raadio tab: lowercase letters, digits and hyphens. `--start` is the time the recording went on air, in Tallinn time; without it, the start is now. A file is read to its end as fast as FFmpeg can; Kuku live takes `--duration`. Cuts and topics also need `OPENROUTER_API_KEY` in the backend; the transcript shows without it.
+The directory name is the recording's name in the Raadio tab: lowercase letters, digits and hyphens. `--start` is the time the recording went on air, in Tallinn time; without it, the start is now. A file is read to its end as fast as FFmpeg can; Kuku live takes `--duration`. Cuts and topics also need the backend's scheduled jobs, `SCHEDULING_ENABLED=true npm run dev`, and `OPENROUTER_API_KEY`; the transcript shows without them.
 
 ## Production
 

@@ -66,10 +66,10 @@ In another terminal:
 npm run dev:ui
 ```
 
-To start the backend without scheduled imports and price updates:
+The backend starts with its scheduled jobs off: imports, price updates, and the AI enrichment that spends OpenRouter credit on a fresh database. To run them:
 
 ```bash
-SCHEDULING_ENABLED=false npm run dev:backend
+SCHEDULING_ENABLED=true npm run dev:backend
 ```
 
 ### Radio archive

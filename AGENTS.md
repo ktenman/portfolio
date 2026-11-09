@@ -42,7 +42,7 @@ If CI fails on main, reset main to the last good commit, move the failing change
 
 ```bash
 # Dev
-npm run dev                 # Start both backend (8081) and frontend (61234)
+npm run dev                 # Start both backend (8081) and frontend (61234), scheduled jobs off unless SCHEDULING_ENABLED=true
 npm run dev:ui              # Frontend only (Vite)
 npm run dev:backend         # Backend only (Gradle bootRun)
 
