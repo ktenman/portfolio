@@ -110,7 +110,7 @@ class OpenRouterLogoSelectionService(
       val mediaType = logoValidationService.detectMediaType(result.imageData)
       val label = "Image ${index + 1}"
       contentParts.add(
-        ImageContent(imageUrl = ImageContent.ImageUrl(url = "data:$mediaType;base64,$base64")),
+        ImageContent(imageUrl = ImageContent.ImageUrl(url = "data:$mediaType;base64,$base64", detail = IMAGE_DETAIL)),
       )
       contentParts.add(TextContent(text = if (candidate.title.isBlank()) label else "$label: ${candidate.title}"))
     }
@@ -161,5 +161,6 @@ class OpenRouterLogoSelectionService(
 
   companion object {
     private const val MAX_LLM_CANDIDATES = 5
+    private const val IMAGE_DETAIL = "low"
   }
 }

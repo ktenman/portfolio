@@ -96,8 +96,10 @@ data class OpenRouterVisionRequest(
     @JsonProperty("image_url")
     val imageUrl: ImageUrl,
   ) : ContentPart() {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     data class ImageUrl(
       val url: String,
+      val detail: String? = null,
     )
   }
 

@@ -68,6 +68,13 @@ class AiModelTest {
   }
 
   @Test
+  fun `should pick logos with the cheap Flash Lite model`() {
+    val model = OpenRouterProperties().visionModel
+
+    expect(model).toEqual("google/gemini-3.5-flash-lite")
+  }
+
+  @Test
   fun `should rate limit every model in a cascade`() {
     val unlimited = AiModel.entries.filter { it.sectorFallbackTier >= 0 && it.rateLimitPerMinute <= 0 }
 
@@ -77,6 +84,6 @@ class AiModelTest {
   private fun rankedBy(tier: (AiModel) -> Int): List<AiModel> = AiModel.entries.filter { tier(it) >= 0 }.sortedBy(tier)
 
   companion object {
-    private val OFF_CASCADE = emptySet<String>()
+    private val OFF_CASCADE = setOf("GEMINI_3_5_FLASH_LITE")
   }
 }
