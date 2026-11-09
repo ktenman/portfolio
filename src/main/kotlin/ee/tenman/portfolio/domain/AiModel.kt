@@ -10,6 +10,7 @@ enum class AiModel(
   CLAUDE_OPUS_5_5("anthropic/claude-opus-5.5", 240, sectorFallbackTier = 1, countryFallbackTier = 1),
   GPT_6_LUNA("openai/gpt-6-luna", 240, sectorFallbackTier = 2, countryFallbackTier = 2),
   DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 3, countryFallbackTier = 3),
+  GEMINI_3_5_FLASH_LITE("google/gemini-3.5-flash-lite", 400),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }

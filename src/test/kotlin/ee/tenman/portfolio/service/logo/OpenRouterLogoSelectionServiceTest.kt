@@ -269,6 +269,16 @@ class OpenRouterLogoSelectionServiceTest {
     }
 
     @Test
+    fun `should send every image at low detail`() {
+      val request = slot<OpenRouterVisionRequest>()
+      llmAnswers("1", request)
+
+      service.selectBestLogo("Põhja Pank", twoCandidates())
+
+      expect(request.parts().filterIsInstance<ImageContent>().map { it.imageUrl.detail }).toContainExactly("low", "low")
+    }
+
+    @Test
     fun `should tell the LLM it may answer zero`() {
       val request = slot<OpenRouterVisionRequest>()
       llmAnswers("1", request)
