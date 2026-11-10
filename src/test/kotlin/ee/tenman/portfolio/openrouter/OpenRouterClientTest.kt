@@ -24,7 +24,7 @@ class OpenRouterClientTest {
 
   @BeforeEach
   fun setup() {
-    client = OpenRouterClient(feignClient, properties, circuitBreaker, OpenRouterUsageMetrics(registry))
+    client = OpenRouterClient(feignClient, properties, circuitBreaker, OpenRouterUsageMetrics(registry, mockk(relaxed = true)))
     every { circuitBreaker.tryAcquireForModel(any()) } returns true
     every { circuitBreaker.recordSuccess() } just runs
   }
@@ -60,7 +60,13 @@ class OpenRouterClientTest {
 
   @Test
   fun `returns null when api key blank`() {
-    val blankKeyClient = OpenRouterClient(feignClient, OpenRouterProperties(apiKey = ""), circuitBreaker, OpenRouterUsageMetrics(registry))
+    val blankKeyClient =
+      OpenRouterClient(
+        feignClient,
+        OpenRouterProperties(apiKey = ""),
+        circuitBreaker,
+        OpenRouterUsageMetrics(registry, mockk(relaxed = true)),
+      )
 
     val result = blankKeyClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 

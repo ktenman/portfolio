@@ -9,6 +9,8 @@ import feign.Request
 import feign.Response
 import feign.RetryableException
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.readValue
 
@@ -17,11 +19,16 @@ class OpenRouterUsageMetricsTest {
 
   private fun parsed(json: String): OpenRouterResponse = JsonMapperFactory.instance.readValue(json)
 
-  private fun recorded(json: String): SimpleMeterRegistry =
-    SimpleMeterRegistry().also { OpenRouterUsageMetrics(it).measure(AiPurpose.RADIO_OUTLINE, model) { parsed(json) } }
+  private fun recorded(
+    json: String,
+    spend: OpenRouterSpendService = mockk(relaxed = true),
+  ): SimpleMeterRegistry =
+    SimpleMeterRegistry().also { OpenRouterUsageMetrics(it, spend).measure(AiPurpose.RADIO_OUTLINE, model) { parsed(json) } }
+
+  private fun metrics(registry: SimpleMeterRegistry): OpenRouterUsageMetrics = OpenRouterUsageMetrics(registry, mockk(relaxed = true))
 
   private fun failed(error: Throwable): SimpleMeterRegistry =
-    SimpleMeterRegistry().also { runCatching { OpenRouterUsageMetrics(it).measure(AiPurpose.SECTOR, model) { throw error } } }
+    SimpleMeterRegistry().also { runCatching { metrics(it).measure(AiPurpose.SECTOR, model) { throw error } } }
 
   private fun cost(registry: SimpleMeterRegistry): Double? = registry.find("portfolio.openrouter.cost.dollars").counter()?.count()
 
@@ -61,6 +68,20 @@ class OpenRouterUsageMetricsTest {
   }
 
   @Test
+  fun `hands the cost of a call to the spend history`() {
+    val spend = mockk<OpenRouterSpendService>(relaxed = true)
+    recorded("""{"choices":[{"message":{"content":"Jah"}}],"usage":{"cost":0.0123}}""", spend)
+    verify { spend.record(AiPurpose.RADIO_OUTLINE, model, 0.0123) }
+  }
+
+  @Test
+  fun `hands nothing to the spend history for a call without cost`() {
+    val spend = mockk<OpenRouterSpendService>(relaxed = true)
+    recorded("""{"choices":[{"message":{"content":"Tehnoloogia"}}]}""", spend)
+    verify(exactly = 0) { spend.record(any(), any(), any()) }
+  }
+
+  @Test
   fun `splits tokens into prompt, completion without reasoning, and reasoning`() {
     val registry =
       recorded(
@@ -96,7 +117,7 @@ class OpenRouterUsageMetricsTest {
   fun `publishes the cost, tokens and successful calls at zero while the call is running`() {
     val registry = SimpleMeterRegistry()
     lateinit var running: List<Double?>
-    OpenRouterUsageMetrics(registry).measure(AiPurpose.SPLIT_CHECK, model) {
+    metrics(registry).measure(AiPurpose.SPLIT_CHECK, model) {
       running =
         listOf(cost(registry), calls(registry, "success")) + listOf("prompt", "completion", "reasoning").map { tokens(registry, it) }
       parsed("""{"choices":[{"message":{"content":"Ei jagune"}}],"usage":{"cost":0.5}}""")
@@ -114,7 +135,7 @@ class OpenRouterUsageMetricsTest {
           request: OpenRouterVisionRequest,
         ): OpenRouterResponse = parsed("""{"choices":[{"message":{"content":"123 ÄÖÜ"}}]}""")
       }
-    OpenRouterVisionService(client, OpenRouterProperties(apiKey = "võti"), OpenRouterUsageMetrics(registry))
+    OpenRouterVisionService(client, OpenRouterProperties(apiKey = "võti"), metrics(registry))
       .extractText(AiPurpose.LICENSE_PLATE, OpenRouterVisionRequest(model, emptyList()))
     expect(
       registry
@@ -128,7 +149,7 @@ class OpenRouterUsageMetricsTest {
   @Test
   fun `passes the failure of a call on after counting it`() {
     val error = IllegalStateException("Ühendus katkes")
-    val thrown = runCatching { OpenRouterUsageMetrics(SimpleMeterRegistry()).measure(AiPurpose.SECTOR, model) { throw error } }
+    val thrown = runCatching { metrics(SimpleMeterRegistry()).measure(AiPurpose.SECTOR, model) { throw error } }
     expect(thrown.exceptionOrNull()).toEqual(error)
   }
 

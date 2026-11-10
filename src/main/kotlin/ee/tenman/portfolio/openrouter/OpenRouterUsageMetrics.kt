@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class OpenRouterUsageMetrics(
   private val registry: MeterRegistry,
+  private val spend: OpenRouterSpendService,
 ) {
   fun measure(
     purpose: AiPurpose,
@@ -40,7 +41,10 @@ class OpenRouterUsageMetrics(
     count(purpose, model, if (response.extractContent() == null) "empty" else "success")
     val usage = response.usage ?: return
     val reasoning = usage.completionTokensDetails?.reasoningTokens
-    usage.cost?.let { registry.counter(COST, tags(purpose, model)).increment(it) }
+    usage.cost?.let {
+      registry.counter(COST, tags(purpose, model)).increment(it)
+      spend.record(purpose, model, it)
+    }
     usage.promptTokens?.let { tokens(purpose, model, "prompt", it) }
     usage.completionTokens?.let { tokens(purpose, model, "completion", (it - (reasoning ?: 0)).coerceAtLeast(0)) }
     reasoning?.let { tokens(purpose, model, "reasoning", it) }

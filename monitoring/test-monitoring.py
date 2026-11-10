@@ -754,6 +754,14 @@ def check_openrouter_days():
     print('OpenRouter daily bars show the day that starts at them, the running one up to now')
 
 
+def check_openrouter_latest():
+    board = json.loads((ROOT / 'grafana/dashboards/openrouter.json').read_text())
+    latest = [target for panel in board['panels'] if panel['type'] != 'timeseries' for target in panel['targets']]
+    assert latest and all(target['instant'] and not target['range'] for target in latest), \
+        'a panel of the latest value must read it now, a range query shows N/A until a step point falls after the first sample'
+    print('The OpenRouter balance and monthly spend show the latest reading')
+
+
 def check_once_delivery(base, name, labels, summary):
     def incident(ends_after):
         firing = alert(name, ends_after)
@@ -905,6 +913,7 @@ if __name__ == '__main__':
     check_production_permissions()
     check_metric_coverage()
     check_openrouter_days()
+    check_openrouter_latest()
     check_readiness_recovery()
     check_failed_startup_logs()
     check_delivery()
