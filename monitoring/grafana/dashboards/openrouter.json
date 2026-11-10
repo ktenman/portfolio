@@ -125,7 +125,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (purpose) (increase(portfolio_openrouter_cost_dollars_total[1d]))",
+          "expr": "sum by (purpose) (increase(portfolio_openrouter_cost_dollars_total[1d] offset -1d))",
           "legendFormat": "{{purpose}}",
           "refId": "A",
           "instant": false,
@@ -191,7 +191,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (model) (increase(portfolio_openrouter_cost_dollars_total[1d]))",
+          "expr": "sum by (model) (increase(portfolio_openrouter_cost_dollars_total[1d] offset -1d))",
           "legendFormat": "{{model}}",
           "refId": "A",
           "instant": false,
@@ -257,7 +257,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "delta(portfolio_openrouter_account_usage_dollars[1d])",
+          "expr": "delta(portfolio_openrouter_account_usage_dollars[1d] offset -1d)",
           "legendFormat": "account",
           "refId": "A",
           "instant": false,
@@ -269,7 +269,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "delta(portfolio_openrouter_key_usage_dollars[1d])",
+          "expr": "delta(portfolio_openrouter_key_usage_dollars[1d] offset -1d)",
           "legendFormat": "this key",
           "refId": "B",
           "instant": false,
@@ -281,7 +281,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(portfolio_openrouter_cost_dollars_total[1d]))",
+          "expr": "sum(increase(portfolio_openrouter_cost_dollars_total[1d] offset -1d))",
           "legendFormat": "recorded",
           "refId": "C",
           "instant": false,
@@ -347,7 +347,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (purpose) (increase(portfolio_openrouter_cost_dollars_total[1d])) / sum by (purpose) (increase(portfolio_openrouter_calls_total{outcome=\"success\"}[1d]))",
+          "expr": "sum by (purpose) (increase(portfolio_openrouter_cost_dollars_total[1d] offset -1d)) / sum by (purpose) (increase(portfolio_openrouter_calls_total{outcome=~\"success|empty\"}[1d] offset -1d))",
           "legendFormat": "{{purpose}}",
           "refId": "A",
           "instant": false,
@@ -409,7 +409,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (type) (increase(portfolio_openrouter_tokens_total[1d]))",
+          "expr": "sum by (type) (increase(portfolio_openrouter_tokens_total[1d] offset -1d))",
           "legendFormat": "{{type}}",
           "refId": "A",
           "instant": false,
@@ -475,7 +475,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (model, outcome) (increase(portfolio_openrouter_calls_total[1d]))",
+          "expr": "sum by (model, outcome) (increase(portfolio_openrouter_calls_total[1d] offset -1d))",
           "legendFormat": "{{model}} {{outcome}}",
           "refId": "A",
           "instant": false,

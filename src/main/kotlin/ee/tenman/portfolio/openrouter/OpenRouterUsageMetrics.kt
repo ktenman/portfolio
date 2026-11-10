@@ -14,11 +14,23 @@ class OpenRouterUsageMetrics(
     purpose: AiPurpose,
     model: String,
     call: () -> OpenRouterResponse,
-  ): OpenRouterResponse =
-    runCatching(call)
+  ): OpenRouterResponse {
+    seed(purpose, model)
+    return runCatching(call)
       .onSuccess { record(purpose, model, it) }
       .onFailure { fail(purpose, model, it) }
       .getOrThrow()
+  }
+
+  private fun seed(
+    purpose: AiPurpose,
+    model: String,
+  ) {
+    val tags = tags(purpose, model)
+    registry.counter(COST, tags)
+    registry.counter(CALLS, tags.and("outcome", "success"))
+    listOf("prompt", "completion", "reasoning").forEach { registry.counter(TOKENS, tags.and("type", it)) }
+  }
 
   private fun record(
     purpose: AiPurpose,

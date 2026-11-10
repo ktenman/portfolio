@@ -128,12 +128,6 @@ openfigi:
 auth:
   url: http://auth:8083
 
-feign:
-  client:
-    config:
-      default:
-        loggerLevel: FULL
-
 historicalPrices:
   url: https://markets.ft.com
 

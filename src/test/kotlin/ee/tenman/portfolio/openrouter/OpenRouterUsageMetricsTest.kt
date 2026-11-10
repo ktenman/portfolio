@@ -23,6 +23,8 @@ class OpenRouterUsageMetricsTest {
   private fun failed(error: Throwable): SimpleMeterRegistry =
     SimpleMeterRegistry().also { runCatching { OpenRouterUsageMetrics(it).measure(AiPurpose.SECTOR, model) { throw error } } }
 
+  private fun cost(registry: SimpleMeterRegistry): Double? = registry.find("portfolio.openrouter.cost.dollars").counter()?.count()
+
   private fun tokens(
     registry: SimpleMeterRegistry,
     type: String,
@@ -71,7 +73,7 @@ class OpenRouterUsageMetricsTest {
   @Test
   fun `publishes the whole completion when reasoning is not reported`() {
     val registry = recorded("""{"choices":[{"message":{"content":"Jah"}}],"usage":{"prompt_tokens":10,"completion_tokens":300}}""")
-    expect(listOf(tokens(registry, "completion"), tokens(registry, "reasoning"))).toEqual(listOf(300.0, null))
+    expect(listOf(tokens(registry, "completion"), tokens(registry, "reasoning"))).toEqual(listOf(300.0, 0.0))
   }
 
   @Test
@@ -87,7 +89,40 @@ class OpenRouterUsageMetricsTest {
   @Test
   fun `records no cost for a call without usage`() {
     val registry = recorded("""{"choices":[{"message":{"content":"Tehnoloogia"}}]}""")
-    expect(registry.find("portfolio.openrouter.cost.dollars").counter()).toEqual(null)
+    expect(cost(registry)).toEqual(0.0)
+  }
+
+  @Test
+  fun `publishes the cost, tokens and successful calls at zero while the call is running`() {
+    val registry = SimpleMeterRegistry()
+    lateinit var running: List<Double?>
+    OpenRouterUsageMetrics(registry).measure(AiPurpose.SPLIT_CHECK, model) {
+      running =
+        listOf(cost(registry), calls(registry, "success")) + listOf("prompt", "completion", "reasoning").map { tokens(registry, it) }
+      parsed("""{"choices":[{"message":{"content":"Ei jagune"}}],"usage":{"cost":0.5}}""")
+    }
+    expect(running).toEqual(listOf(0.0, 0.0, 0.0, 0.0, 0.0))
+  }
+
+  @Test
+  fun `records a vision call under the purpose it is given`() {
+    val registry = SimpleMeterRegistry()
+    val client =
+      object : OpenRouterVisionClient {
+        override fun chatCompletion(
+          authorization: String,
+          request: OpenRouterVisionRequest,
+        ): OpenRouterResponse = parsed("""{"choices":[{"message":{"content":"123 ÄÖÜ"}}]}""")
+      }
+    OpenRouterVisionService(client, OpenRouterProperties(apiKey = "võti"), OpenRouterUsageMetrics(registry))
+      .extractText(AiPurpose.LICENSE_PLATE, OpenRouterVisionRequest(model, emptyList()))
+    expect(
+      registry
+        .find("portfolio.openrouter.calls")
+        .tags("purpose", "license_plate", "model", model, "outcome", "success")
+        .counter()
+        ?.count(),
+    ).toEqual(1.0)
   }
 
   @Test
