@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service
 import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterVisionService
@@ -43,7 +44,7 @@ class LicensePlateDetectionServiceTest {
   fun `should return plate when OpenRouter succeeds`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns "123ABC"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "123ABC"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -61,14 +62,14 @@ class LicensePlateDetectionServiceTest {
 
     expect(result.plateNumber).toEqual("678WKS")
     expect(result.provider).toEqual(VisionModel.GOOGLE_VISION)
-    verify(exactly = 0) { openRouterVisionService.extractText(any()) }
+    verify(exactly = 0) { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) }
   }
 
   @Test
   fun `should return no plate when all providers fail`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns null
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns null
     every { googleVisionService.extractText(any()) } returns null
 
     val result = service.detectPlateNumber(base64Image, uuid)
@@ -81,7 +82,7 @@ class LicensePlateDetectionServiceTest {
   fun `should extract plate number from response with spaces`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns "678 WKS"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "678 WKS"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -105,7 +106,7 @@ class LicensePlateDetectionServiceTest {
   fun `should handle lowercase plate response`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns "123abc"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "123abc"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -116,9 +117,10 @@ class LicensePlateDetectionServiceTest {
   fun `should continue with other providers when one throws exception`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(match { it.model == VisionModel.LLAMA_4_SCOUT.modelId }) } throws
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, match { it.model == VisionModel.LLAMA_4_SCOUT.modelId }) } throws
       RuntimeException("API error")
-    every { openRouterVisionService.extractText(match { it.model == VisionModel.NOVA_LITE.modelId }) } returns "333CCC"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, match { it.model == VisionModel.NOVA_LITE.modelId }) } returns
+      "333CCC"
 
     val result = service.detectPlateNumber(base64Image, uuid)
 
@@ -129,7 +131,7 @@ class LicensePlateDetectionServiceTest {
   fun `should return null when response does not match plate pattern`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns "No plate visible"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "No plate visible"
     every { googleVisionService.extractText(any()) } returns "No plate visible"
 
     val result = service.detectPlateNumber(base64Image, uuid)
@@ -149,7 +151,7 @@ class LicensePlateDetectionServiceTest {
       }
       null
     }
-    every { openRouterVisionService.extractText(any()) } returns "471 GWJ"
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "471 GWJ"
 
     val elapsedMs =
       kotlin.system.measureTimeMillis {
@@ -166,7 +168,7 @@ class LicensePlateDetectionServiceTest {
     tempFile.writeBytes(byteArrayOf(1, 2, 3, 4))
     try {
       every { imageProcessingService.resizeForPlateDetection(any()) } returns byteArrayOf(9, 8, 7)
-      every { openRouterVisionService.extractText(any()) } returns "123ABC"
+      every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns "123ABC"
 
       val result = service.detectPlateNumber(tempFile)
 
@@ -181,11 +183,11 @@ class LicensePlateDetectionServiceTest {
   fun `should run all OpenRouter models in parallel`() {
     val base64Image = "dGVzdA=="
     val uuid = UUID.randomUUID()
-    every { openRouterVisionService.extractText(any()) } returns null
+    every { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) } returns null
 
     service.detectPlateNumber(base64Image, uuid)
 
-    verify(exactly = VisionModel.entries.count { it.isOpenRouter }) { openRouterVisionService.extractText(any()) }
+    verify(exactly = VisionModel.entries.count { it.isOpenRouter }) { openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, any()) }
     verify(exactly = 1) { googleVisionService.extractText(any()) }
   }
 }

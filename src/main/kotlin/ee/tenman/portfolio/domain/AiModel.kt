@@ -25,3 +25,19 @@ enum class AiModel(
     fun primaryCountryModel(): AiModel = entries.first { it.countryFallbackTier == 0 }
   }
 }
+
+enum class AiPurpose {
+  RADIO_OUTLINE,
+  SECTOR,
+  INDUSTRY,
+  COUNTRY,
+  HOLDING_IDENTITY,
+  LOGO_SELECTION,
+  LOGO_VALIDATION,
+  LICENSE_PLATE,
+  SPLIT_CHECK,
+  FUND_CURRENCY,
+  ;
+
+  val tag: String get() = name.lowercase()
+}

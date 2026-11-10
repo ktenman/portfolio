@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
@@ -23,7 +24,9 @@ class HoldingIdentityCacheService(
   fun resolve(pair: IdentityPair): Boolean? {
     val (existingName, candidateName) = pair
     val prompt = buildPrompt(pair)
-    val content = openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel())?.content ?: return null
+    val content =
+      openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, prompt, AiModel.primarySectorModel())?.content
+        ?: return null
     val verdict = parseVerdict(content)
     if (verdict == null) {
       log.warn(

@@ -10,9 +10,11 @@ import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterResponse
+import ee.tenman.portfolio.openrouter.OpenRouterUsageMetrics
 import ee.tenman.portfolio.openrouter.OpenRouterVisionClient
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.testing.fixture.ImageFixtures
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -43,6 +45,8 @@ class BatchLogoValidationServiceTest {
     .addModule(KotlinModule.Builder().build())
     .build()
 
+  private val registry = SimpleMeterRegistry()
+
   private lateinit var service: BatchLogoValidationService
 
   @BeforeEach
@@ -56,6 +60,7 @@ class BatchLogoValidationServiceTest {
       imageDownloadService,
       logoValidationService,
       objectMapper,
+      OpenRouterUsageMetrics(registry),
     )
   }
 
@@ -80,6 +85,7 @@ class BatchLogoValidationServiceTest {
         imageDownloadService,
         logoValidationService,
         objectMapper,
+        OpenRouterUsageMetrics(registry),
       )
       val holdings = listOf(createHolding("Apple Inc", "AAPL"))
 
@@ -109,14 +115,12 @@ class BatchLogoValidationServiceTest {
         title = "Apple Logo",
         index = 0,
       )
-      val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
       every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns """{"1": [1]}"""
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("""{"1": [1]}""")
 
       val result = service.validateBatch(listOf(holding))
 
@@ -124,6 +128,32 @@ class BatchLogoValidationServiceTest {
       expect(result[0].companyName).toEqual("Apple Inc")
       expect(result[0].ticker).toEqual("AAPL")
       expect(result[0].validCandidateIndices).toContainExactly(0)
+    }
+
+    @Test
+    fun `should record the vision call under logo validation`() {
+      val imageData = ImageFixtures.createPngHeader()
+      val candidate =
+        LogoCandidate(
+          imageUrl = "https://example.com/pank.png",
+          thumbnailUrl = "https://example.com/t.png",
+          title = "Põhja Pank",
+          index = 0,
+        )
+      every { openRouterProperties.apiKey } returns "test-api-key"
+      every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
+      every { imageDownloadService.downloadOrNull(any()) } returns imageData
+      every { logoValidationService.isValidLogo(imageData) } returns true
+      every { logoValidationService.detectMediaType(imageData) } returns "image/png"
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("""{"1": [1]}""")
+      service.validateBatch(listOf(createHolding("Põhja Pank", "PP")))
+      expect(
+        registry
+          .get("portfolio.openrouter.calls")
+          .tags("purpose", "logo_validation", "model", AiModel.GEMINI_4_ARGON.modelId, "outcome", "success")
+          .counter()
+          .count(),
+      ).toEqual(1.0)
     }
 
     @Test
@@ -137,14 +167,12 @@ class BatchLogoValidationServiceTest {
         title = "Some Image",
         index = 0,
       )
-      val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates(any(), any()) } returns listOf(candidate)
       every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns """{"1": []}"""
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("""{"1": []}""")
 
       val result = service.validateBatch(listOf(holding))
 
@@ -210,15 +238,13 @@ class BatchLogoValidationServiceTest {
         title = "Microsoft Logo",
         index = 0,
       )
-      val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { imageSearchLogoService.searchLogoCandidates("AAPL Apple Inc", any()) } returns listOf(candidate1)
       every { imageSearchLogoService.searchLogoCandidates("MSFT Microsoft Corp", any()) } returns listOf(candidate2)
       every { imageDownloadService.downloadOrNull(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(imageData) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns """{"1": [1], "2": [1]}"""
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("""{"1": [1], "2": [1]}""")
 
       val result = service.validateBatch(holdings)
 
@@ -229,6 +255,8 @@ class BatchLogoValidationServiceTest {
       expect(result[1].validCandidateIndices).toContainExactly(0)
     }
   }
+
+  private fun reply(content: String) = OpenRouterResponse(listOf(OpenRouterResponse.Choice(OpenRouterResponse.Message(content = content))))
 
   private fun createHolding(
     name: String,

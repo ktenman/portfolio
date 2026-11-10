@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.openrouter
 
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import feign.Request
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -11,28 +12,33 @@ class OpenRouterClient(
   private val openRouterFeignClient: OpenRouterFeignClient,
   private val openRouterProperties: OpenRouterProperties,
   private val circuitBreaker: OpenRouterCircuitBreaker,
+  private val usageMetrics: OpenRouterUsageMetrics,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
   fun classify(
+    purpose: AiPurpose,
     prompt: String,
     maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
-  ): String? = classifyWithModel(prompt, maxTokens, temperature)?.content
+  ): String? = classifyWithModel(purpose, prompt, maxTokens, temperature)?.content
 
   fun classifyWithModel(
+    purpose: AiPurpose,
     prompt: String,
     maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
-  ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectModel(), prompt, maxTokens, temperature)
+  ): OpenRouterClassificationResult? = executeWithSelection(purpose, circuitBreaker.selectModel(), prompt, maxTokens, temperature)
 
   fun classifyWithFallback(
+    purpose: AiPurpose,
     prompt: String,
     maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.1,
-  ): OpenRouterClassificationResult? = executeWithSelection(circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
+  ): OpenRouterClassificationResult? = executeWithSelection(purpose, circuitBreaker.selectFallbackModel(), prompt, maxTokens, temperature)
 
   fun classifyWithCascadingFallback(
+    purpose: AiPurpose,
     prompt: String,
     startingModel: AiModel,
     maxTokens: Int = DEFAULT_MAX_TOKENS,
@@ -45,7 +51,7 @@ class OpenRouterClient(
     var currentModel: AiModel? = startingModel
     while (currentModel != null) {
       val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.sectorFallbackTier)
-      val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
+      val result = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
       if (result != null) return result
       val nextModel = currentModel.nextSectorFallbackModel()
       if (nextModel != null) {
@@ -58,6 +64,7 @@ class OpenRouterClient(
   }
 
   fun classifyWithCountryFallback(
+    purpose: AiPurpose,
     prompt: String,
     maxTokens: Int = DEFAULT_MAX_TOKENS,
     temperature: Double = 0.0,
@@ -69,7 +76,7 @@ class OpenRouterClient(
     var currentModel: AiModel? = AiModel.primaryCountryModel()
     while (currentModel != null) {
       val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.countryFallbackTier)
-      val result = executeWithSelectionForCascade(selection, prompt, maxTokens, temperature)
+      val result = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
       if (result != null) return result
       val nextModel = currentModel.nextCountryFallbackModel()
       if (nextModel != null) {
@@ -82,6 +89,7 @@ class OpenRouterClient(
   }
 
   private fun executeWithSelection(
+    purpose: AiPurpose,
     selection: ModelSelection,
     prompt: String,
     maxTokens: Int,
@@ -96,10 +104,11 @@ class OpenRouterClient(
       log.warn("Rate limit exceeded for $modelType model, skipping request")
       return null
     }
-    return executeRequest(selection, prompt, maxTokens, temperature)
+    return executeRequest(purpose, selection, prompt, maxTokens, temperature)
   }
 
   private fun executeWithSelectionForCascade(
+    purpose: AiPurpose,
     selection: ModelSelection,
     prompt: String,
     maxTokens: Int,
@@ -112,7 +121,7 @@ class OpenRouterClient(
         Thread.sleep(waitTimeMs + RATE_LIMIT_BUFFER_MS)
       }
       if (circuitBreaker.tryAcquireForModel(selection.model)) {
-        return executeRequest(selection, prompt, maxTokens, temperature)
+        return executeRequest(purpose, selection, prompt, maxTokens, temperature)
       }
       Thread.sleep(RATE_LIMIT_BUFFER_MS)
     }
@@ -121,12 +130,14 @@ class OpenRouterClient(
   }
 
   fun classifyWithOnlineSearch(
+    purpose: AiPurpose,
     model: AiModel,
     prompt: String,
     maxTokens: Int = 1500,
     temperature: Double = 0.1,
   ): String? =
     send(
+      purpose,
       model,
       OpenRouterRequest(
         model = "${model.modelId}:online",
@@ -137,12 +148,14 @@ class OpenRouterClient(
     )
 
   fun complete(
+    purpose: AiPurpose,
     model: AiModel,
     system: String,
     user: String,
     schema: Map<String, Any>,
   ): String? =
     send(
+      purpose,
       model,
       OpenRouterRequest(
         model = model.modelId,
@@ -155,10 +168,12 @@ class OpenRouterClient(
     )
 
   fun search(
+    purpose: AiPurpose,
     model: AiModel,
     prompt: String,
   ): String? =
     send(
+      purpose,
       model,
       OpenRouterRequest(
         model = model.modelId,
@@ -172,6 +187,7 @@ class OpenRouterClient(
     )
 
   private fun send(
+    purpose: AiPurpose,
     model: AiModel,
     request: OpenRouterRequest,
     options: Request.Options? = null,
@@ -186,12 +202,15 @@ class OpenRouterClient(
     }
     return runCatching {
       log.info("Calling OpenRouter with model: ${request.model}")
-      val content = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request, options).extractContent()
+      val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request, options)
+      usageMetrics.record(purpose, request.model, response)
+      val content = response.extractContent()
       log.debug("OpenRouter response: '$content'")
       circuitBreaker.recordSuccess()
       content
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter with model ${request.model}: ${throwable.message}", throwable)
+      usageMetrics.fail(purpose, request.model, throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }
@@ -207,6 +226,7 @@ class OpenRouterClient(
   }
 
   private fun executeRequest(
+    purpose: AiPurpose,
     selection: ModelSelection,
     prompt: String,
     maxTokens: Int,
@@ -222,6 +242,7 @@ class OpenRouterClient(
     return runCatching {
       log.info("Calling OpenRouter API with model: ${selection.modelId} (tier: ${selection.fallbackTier})")
       val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+      usageMetrics.record(purpose, request.model, response)
       val content = response.extractContent()
       circuitBreaker.recordSuccess()
       if (content == null) {
@@ -232,6 +253,7 @@ class OpenRouterClient(
       OpenRouterClassificationResult(content = content, model = AiModel.fromModelId(selection.modelId))
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter API with model ${selection.modelId}: ${throwable.message}", throwable)
+      usageMetrics.fail(purpose, request.model, throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }

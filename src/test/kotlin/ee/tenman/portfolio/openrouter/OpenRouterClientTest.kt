@@ -3,7 +3,11 @@ package ee.tenman.portfolio.openrouter
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
+import feign.FeignException
 import feign.Request
+import feign.Response
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -17,11 +21,12 @@ class OpenRouterClientTest {
   private val feignClient = mockk<OpenRouterFeignClient>()
   private val circuitBreaker = mockk<OpenRouterCircuitBreaker>(relaxed = true)
   private val properties = OpenRouterProperties(apiKey = "test-key")
+  private val registry = SimpleMeterRegistry()
   private lateinit var client: OpenRouterClient
 
   @BeforeEach
   fun setup() {
-    client = OpenRouterClient(feignClient, properties, circuitBreaker)
+    client = OpenRouterClient(feignClient, properties, circuitBreaker, OpenRouterUsageMetrics(registry))
     every { circuitBreaker.tryAcquireForModel(any()) } returns true
     every { circuitBreaker.recordSuccess() } just runs
   }
@@ -31,7 +36,7 @@ class OpenRouterClientTest {
     val captured = slot<OpenRouterRequest>()
     every { feignClient.chatCompletion(any(), capture(captured)) } returns okResponse("{\"currency\":\"EUR\"}")
 
-    client.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
+    client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 
     expect(captured.captured.model).toEqual("openai/gpt-6-luna:online")
   }
@@ -40,7 +45,7 @@ class OpenRouterClientTest {
   fun `returns content from response`() {
     every { feignClient.chatCompletion(any(), any()) } returns okResponse("{\"currency\":\"USD\"}")
 
-    val result = client.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
+    val result = client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 
     expect(result).toEqual("{\"currency\":\"USD\"}")
   }
@@ -50,16 +55,16 @@ class OpenRouterClientTest {
     val options = slot<Request.Options>()
     every { feignClient.chatCompletion(any(), any(), capture(options)) } returns okResponse("[]")
 
-    client.search(AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")
+    client.search(AiPurpose.SPLIT_CHECK, AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")
 
     expect(options.captured.readTimeoutMillis()).toEqual(600000)
   }
 
   @Test
   fun `returns null when api key blank`() {
-    val blankKeyClient = OpenRouterClient(feignClient, OpenRouterProperties(apiKey = ""), circuitBreaker)
+    val blankKeyClient = OpenRouterClient(feignClient, OpenRouterProperties(apiKey = ""), circuitBreaker, OpenRouterUsageMetrics(registry))
 
-    val result = blankKeyClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
+    val result = blankKeyClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 
     expect(result).toEqual(null)
     verify(exactly = 0) { feignClient.chatCompletion(any(), any()) }
@@ -69,7 +74,7 @@ class OpenRouterClientTest {
   fun `returns null when rate limit denied`() {
     every { circuitBreaker.tryAcquireForModel(any()) } returns false
 
-    val result = client.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
+    val result = client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 
     expect(result).toEqual(null)
     verify(exactly = 0) { feignClient.chatCompletion(any(), any()) }
@@ -79,7 +84,7 @@ class OpenRouterClientTest {
   fun `should cascade to next model when response content is blank`() {
     every { feignClient.chatCompletion(any(), any()) } returnsMany listOf(okResponse(""), okResponse("Finance"))
 
-    val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
+    val result = client.classifyWithCascadingFallback(AiPurpose.SECTOR, "prompt", AiModel.primarySectorModel())
 
     expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
   }
@@ -88,7 +93,7 @@ class OpenRouterClientTest {
   fun `cannot produce result when every model responds with blank content`() {
     every { feignClient.chatCompletion(any(), any()) } returns okResponse("")
 
-    val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
+    val result = client.classifyWithCascadingFallback(AiPurpose.SECTOR, "prompt", AiModel.primarySectorModel())
 
     expect(result).toEqual(null)
   }
@@ -98,7 +103,7 @@ class OpenRouterClientTest {
     every { feignClient.chatCompletion(any(), any()) } returnsMany
       listOf(reasoningResponse("Hmm, Äpfel AG makes hardware so maybe"), okResponse("Finance"))
 
-    val result = client.classifyWithCascadingFallback("prompt", AiModel.primarySectorModel())
+    val result = client.classifyWithCascadingFallback(AiPurpose.SECTOR, "prompt", AiModel.primarySectorModel())
 
     expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
   }
@@ -108,10 +113,60 @@ class OpenRouterClientTest {
     every { feignClient.chatCompletion(any(), any()) } throws RuntimeException("boom")
     every { circuitBreaker.recordFailure(any()) } just runs
 
-    val result = client.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, "prompt")
+    val result = client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
 
     expect(result).toEqual(null)
     verify { circuitBreaker.recordFailure(any()) }
+  }
+
+  @Test
+  fun `records a search call under the split check purpose`() {
+    every { feignClient.chatCompletion(any(), any(), any()) } returns okResponse("[]")
+    client.search(AiPurpose.SPLIT_CHECK, AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")
+    expect(calls("purpose", "split_check", "model", AiModel.GEMINI_4_ARGON.modelId, "outcome", "success")).toEqual(1.0)
+  }
+
+  @Test
+  fun `records a cascading call under its purpose`() {
+    every { feignClient.chatCompletion(any(), any()) } returns okResponse("Finance")
+    client.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, "Põhja Pank", AiModel.primarySectorModel())
+    expect(calls("purpose", "holding_identity", "outcome", "success")).toEqual(1.0)
+  }
+
+  @Test
+  fun `records a rejected call under its HTTP status`() {
+    every { feignClient.chatCompletion(any(), any()) } throws insufficientCredits()
+    every { circuitBreaker.recordFailure(any()) } just runs
+    client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
+    expect(calls("purpose", "fund_currency", "outcome", "402")).toEqual(1.0)
+  }
+
+  @Test
+  fun `records nothing when the rate limit skips the call`() {
+    every { circuitBreaker.tryAcquireForModel(any()) } returns false
+    client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
+    expect(registry.find("portfolio.openrouter.calls").counter()).toEqual(null)
+  }
+
+  private fun calls(vararg tags: String): Double? =
+    registry
+      .find("portfolio.openrouter.calls")
+      .tags(*tags)
+      .counter()
+      ?.count()
+
+  private fun insufficientCredits(): FeignException {
+    val request = Request.create(Request.HttpMethod.POST, "https://openrouter.ai/api/v1/chat/completions", emptyMap(), null, null, null)
+    val response =
+      Response
+        .builder()
+        .status(402)
+        .reason("Payment Required")
+        .request(request)
+        .headers(emptyMap())
+        .body("""{"error":{"message":"Insufficient credits"}}""", Charsets.UTF_8)
+        .build()
+    return FeignException.errorStatus("chatCompletion", response)
   }
 
   private fun okResponse(content: String) =

@@ -13,12 +13,14 @@ import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.exception.LogoSelectionFailedException
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
 import ee.tenman.portfolio.openrouter.OpenRouterResponse
+import ee.tenman.portfolio.openrouter.OpenRouterUsageMetrics
 import ee.tenman.portfolio.openrouter.OpenRouterVisionClient
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.ImageContent
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.TextContent
 import ee.tenman.portfolio.service.infrastructure.ImageDownloadService
 import ee.tenman.portfolio.testing.fixture.ImageFixtures
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
@@ -33,6 +35,7 @@ class OpenRouterLogoSelectionServiceTest {
   private val openRouterProperties = mockk<OpenRouterProperties>()
   private val imageDownloadService = mockk<ImageDownloadService>()
   private val logoValidationService = mockk<LogoValidationService>()
+  private val registry = SimpleMeterRegistry()
   private lateinit var service: OpenRouterLogoSelectionService
 
   @BeforeEach
@@ -43,6 +46,7 @@ class OpenRouterLogoSelectionServiceTest {
         openRouterProperties,
         imageDownloadService,
         logoValidationService,
+        OpenRouterUsageMetrics(registry),
       )
   }
 
@@ -103,15 +107,13 @@ class OpenRouterLogoSelectionServiceTest {
           createCandidate(0, "Company A"),
           createCandidate(1, "Company B"),
         )
-      val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { openRouterProperties.visionModel } returns "test-model"
       every { openRouterProperties.apiTimeoutMs } returns 30000L
       every { imageDownloadService.download(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(any()) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns "2"
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("2")
 
       val result = service.selectBestLogo("Apple", candidates)
 
@@ -193,21 +195,32 @@ class OpenRouterLogoSelectionServiceTest {
           createCandidate(0, "Company A"),
           createCandidate(1, "Company B"),
         )
-      val visionResponse = mockk<OpenRouterResponse>()
       every { openRouterProperties.apiKey } returns "test-api-key"
       every { openRouterProperties.visionModel } returns "test-model"
       every { openRouterProperties.apiTimeoutMs } returns 30000L
       every { imageDownloadService.download(any()) } returns imageData
       every { logoValidationService.isValidLogo(imageData) } returns true
       every { logoValidationService.detectMediaType(any()) } returns "image/png"
-      every { openRouterVisionClient.chatCompletion(any(), any()) } returns visionResponse
-      every { visionResponse.extractContent() } returns "Image 1 is the best"
+      every { openRouterVisionClient.chatCompletion(any(), any()) } returns reply("Image 1 is the best")
 
       val result = service.selectBestLogo("Apple", candidates)
 
       expect(result).notToEqualNull()
       expect(result?.source).toEqual(LogoSource.LLM_SELECTED)
       expect(result?.selectedIndex).toEqual(0)
+    }
+
+    @Test
+    fun `should record the vision call under logo selection`() {
+      llmAnswers("1")
+      service.selectBestLogo("Põhja Pank", twoCandidates())
+      expect(
+        registry
+          .get("portfolio.openrouter.calls")
+          .tags("purpose", "logo_selection", "model", "test-model", "outcome", "success")
+          .counter()
+          .count(),
+      ).toEqual(1.0)
     }
 
     @Test
@@ -333,6 +346,8 @@ class OpenRouterLogoSelectionServiceTest {
   private fun CapturingSlot<OpenRouterVisionRequest>.parts() = captured.messages.single().content
 
   private fun CapturingSlot<OpenRouterVisionRequest>.texts() = parts().filterIsInstance<TextContent>().map { it.text }
+
+  private fun reply(content: String) = OpenRouterResponse(listOf(OpenRouterResponse.Choice(OpenRouterResponse.Message(content = content))))
 
   private fun twoCandidates() = listOf(createCandidate(0, "Company A"), createCandidate(1, "Company B"))
 

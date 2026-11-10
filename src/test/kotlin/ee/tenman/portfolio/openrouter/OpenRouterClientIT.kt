@@ -14,6 +14,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -50,7 +51,7 @@ class OpenRouterClientIT {
     val responseBody = createSuccessResponse("Technology")
     stubOpenRouterSuccess(responseBody)
 
-    val result = openRouterClient.classifyWithModel("Classify Apple Inc")
+    val result = openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify Apple Inc")
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Technology")
@@ -64,7 +65,7 @@ class OpenRouterClientIT {
 
     repeat(3) {
       circuitBreaker.resetRateLimits()
-      openRouterClient.classifyWithModel("Classify company")
+      openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify company")
     }
 
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.OPEN)
@@ -75,7 +76,7 @@ class OpenRouterClientIT {
   fun `should handle server error and record failure`() {
     stubOpenRouterError()
 
-    val result = openRouterClient.classifyWithModel("Test prompt")
+    val result = openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Test prompt")
 
     expect(result).toEqual(null)
     wireMockServer.verify(1, postRequestedFor(urlEqualTo("/chat/completions")))
@@ -86,7 +87,7 @@ class OpenRouterClientIT {
     stubOpenRouterError()
     repeat(3) {
       circuitBreaker.resetRateLimits()
-      openRouterClient.classifyWithModel("Classify company")
+      openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify company")
     }
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.OPEN)
 
@@ -97,7 +98,7 @@ class OpenRouterClientIT {
     stubOpenRouterSuccess(createSuccessResponse("Finance"))
     circuitBreaker.resetRateLimits()
 
-    val result = openRouterClient.classifyWithModel("Classify bank")
+    val result = openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify bank")
 
     expect(result).notToEqualNull()
     expect(circuitBreaker.getState()).toEqual(CircuitBreaker.State.CLOSED)
@@ -108,7 +109,7 @@ class OpenRouterClientIT {
     stubOpenRouterError()
     repeat(3) {
       circuitBreaker.resetRateLimits()
-      openRouterClient.classifyWithModel("Classify company")
+      openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify company")
     }
     expect(circuitBreaker.isUsingFallback()).toEqual(true)
 
@@ -116,7 +117,7 @@ class OpenRouterClientIT {
     stubOpenRouterSuccess(createSuccessResponse("Healthcare"))
     circuitBreaker.resetRateLimits()
 
-    val result = openRouterClient.classifyWithModel("Classify hospital")
+    val result = openRouterClient.classifyWithModel(AiPurpose.SECTOR, "Classify hospital")
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Healthcare")
@@ -135,7 +136,14 @@ class OpenRouterClientIT {
         .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("google-ai-studio/flex")))
         .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
     )
-    val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade algab 11:59.", mapOf("type" to "object"))
+    val result =
+      openRouterClient.complete(
+        AiPurpose.RADIO_OUTLINE,
+        AiModel.GEMINI_4_ARGON,
+        "Leia saade.",
+        "Saade algab 11:59.",
+        mapOf("type" to "object"),
+      )
     expect(result).toEqual("{\"hosts\":[]}")
   }
 
@@ -152,13 +160,20 @@ class OpenRouterClientIT {
         .withRequestBody(matchingJsonPath("$.max_tokens", equalTo("32000")))
         .willReturn(okJson(createSuccessResponse("[]"))),
     )
-    expect(openRouterClient.search(AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")).toEqual("[]")
+    expect(openRouterClient.search(AiPurpose.SPLIT_CHECK, AiModel.GEMINI_4_ARGON, "Kas BNKE jaguneb?")).toEqual("[]")
   }
 
   @Test
   fun `should return null when completion answers with an error body`() {
     stubOpenRouterSuccess("{\"error\":{\"message\":\"upstream\"}}")
-    val result = openRouterClient.complete(AiModel.GEMINI_4_ARGON, "Leia saade.", "Saade.", mapOf("type" to "object"))
+    val result =
+      openRouterClient.complete(
+        AiPurpose.RADIO_OUTLINE,
+        AiModel.GEMINI_4_ARGON,
+        "Leia saade.",
+        "Saade.",
+        mapOf("type" to "object"),
+      )
     expect(result).toEqual(null)
   }
 
@@ -170,7 +185,7 @@ class OpenRouterClientIT {
         .withRequestBody(notContaining("provider"))
         .willReturn(okJson(createSuccessResponse("Technology"))),
     )
-    val result = openRouterClient.classify("Classify Apple Inc")
+    val result = openRouterClient.classify(AiPurpose.SECTOR, "Classify Apple Inc")
     expect(result).toEqual("Technology")
   }
 

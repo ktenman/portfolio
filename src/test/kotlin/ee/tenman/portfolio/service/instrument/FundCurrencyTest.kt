@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.FundCurrencyOverridesProperties
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.dto.EtfDetailDto
@@ -129,7 +130,7 @@ class FundCurrencyLlmLookupServiceTest {
 
   @Test
   fun `returns valid allowlist currency from clean json response`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"EUR\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"EUR\"}"
 
     val result = service.lookup(instrument())
 
@@ -138,35 +139,35 @@ class FundCurrencyLlmLookupServiceTest {
 
   @Test
   fun `returns null when llm returns explicit null`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":null}"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":null}"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null for non-allowlist currency`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"XYZ\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"XYZ\"}"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null when json is malformed`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns "not json at all"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns "not json at all"
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `returns null when llm call returns null`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns null
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns null
 
     expect(service.lookup(instrument())).toEqual(null)
   }
 
   @Test
   fun `normalizes lowercase code to uppercase`() {
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"usd\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, any()) } returns "{\"currency\":\"usd\"}"
 
     expect(service.lookup(instrument())).toEqual(Currency.USD)
   }
@@ -174,7 +175,8 @@ class FundCurrencyLlmLookupServiceTest {
   @Test
   fun `prompt includes symbol and name`() {
     val captured = slot<String>()
-    every { openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, capture(captured)) } returns "{\"currency\":\"EUR\"}"
+    every { openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, capture(captured)) } returns
+      "{\"currency\":\"EUR\"}"
 
     service.lookup(instrument(symbol = "VWCE:GER:EUR", name = "Vanguard FTSE All-World"))
 

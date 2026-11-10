@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import io.mockk.every
@@ -282,13 +283,13 @@ class CountryClassificationServiceTest {
     expect(result[1L]?.countryCode).toEqual("US")
     expect(result[2L]?.countryCode).toEqual("US")
     expect(result[1L]?.model).toEqual(null)
-    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(any()) }
+    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) }
   }
 
   @Test
   fun `should classify batch with LLM when not auto-assignable`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns
       OpenRouterClassificationResult("1. DE\n2. FR", AiModel.GEMINI_4_ARGON)
     val companies =
       listOf(
@@ -305,11 +306,11 @@ class CountryClassificationServiceTest {
   @Test
   fun `should request 8000 max tokens for country batch classification`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns
       OpenRouterClassificationResult("1. DE", AiModel.GEMINI_4_ARGON)
     val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
     service.classifyBatch(companies)
-    verify { openRouterClient.classifyWithCountryFallback(any(), 8000, any()) }
+    verify { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any(), 8000, any()) }
   }
 
   @Test
@@ -321,13 +322,13 @@ class CountryClassificationServiceTest {
       )
     val result = service.classifyBatch(companies).results
     expect(result).toEqual(emptyMap())
-    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(any()) }
+    verify(exactly = 0) { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) }
   }
 
   @Test
   fun `should combine auto-assigned and LLM classified in batch`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns
       OpenRouterClassificationResult("1. JP", AiModel.GEMINI_4_ARGON)
     val companies =
       listOf(
@@ -345,7 +346,7 @@ class CountryClassificationServiceTest {
   @Test
   fun `should report model gave no answer when country cascade fails`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns null
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns null
     val companies = listOf(CompanyClassificationInput(1L, "Škoda Auto", "SKODA", emptyList()))
 
     val outcome = service.classifyBatch(companies)
@@ -365,7 +366,7 @@ class CountryClassificationServiceTest {
   @Test
   fun `should report model answered when country batch lines parse`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns
       OpenRouterClassificationResult("1. DE", AiModel.GEMINI_4_ARGON)
     val companies = listOf(CompanyClassificationInput(1L, "SAP SE", "SAP", emptyList()))
 
@@ -377,7 +378,7 @@ class CountryClassificationServiceTest {
   @Test
   fun `should report model answered when country batch response parses no lines`() {
     every { properties.enabled } returns true
-    every { openRouterClient.classifyWithCountryFallback(any()) } returns
+    every { openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, any()) } returns
       OpenRouterClassificationResult("Töötlemata vastus ilma koodideta", AiModel.GEMINI_4_ARGON)
     val companies = listOf(CompanyClassificationInput(1L, "Škoda Auto", "SKODA", emptyList()))
 

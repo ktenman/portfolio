@@ -237,7 +237,7 @@ def check_configurations():
     run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro',
         '--entrypoint', 'amtool', ALERTMANAGER,
         'check-config', '/etc/alertmanager/alertmanager.yml')
-    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown'):
+    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown', 'OpenRouterBalanceLow', 'OpenRouterBalanceUnreadable'):
         route = run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro', '--entrypoint', 'amtool', ALERTMANAGER,
                     'config', 'routes', 'test', '--config.file=/etc/alertmanager/alertmanager.yml', f'alertname={name}').stdout.strip()
         assert route == 'host', f'{name} must reach the host receiver, which repeats daily and sends resolved, not {route}'
