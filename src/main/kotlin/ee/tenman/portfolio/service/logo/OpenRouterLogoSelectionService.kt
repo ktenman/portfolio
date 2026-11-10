@@ -83,10 +83,10 @@ class OpenRouterLogoSelectionService(
       runBlocking {
         withTimeoutOrNull(openRouterProperties.apiTimeoutMs) {
           runCatching {
-            openRouterVisionClient
-              .chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
-              .also { usageMetrics.record(AiPurpose.LOGO_SELECTION, request.model, it) }
-          }.onFailure { usageMetrics.fail(AiPurpose.LOGO_SELECTION, request.model, it) }
+            usageMetrics.measure(AiPurpose.LOGO_SELECTION, request.model) {
+              openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+            }
+          }
         }
       } ?: throw LogoSelectionFailedException(
         "Vision API call timed out after ${openRouterProperties.apiTimeoutMs}ms for $companyName",

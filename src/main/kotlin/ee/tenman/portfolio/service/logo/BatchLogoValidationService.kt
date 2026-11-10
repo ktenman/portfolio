@@ -113,14 +113,11 @@ class BatchLogoValidationService(
         runCatching {
           log.info("Sending batch validation request for ${holdingData.size} companies")
           val response =
-            openRouterVisionClient.chatCompletion(
-              "Bearer ${openRouterProperties.apiKey}",
-              request,
-            )
-          usageMetrics.record(AiPurpose.LOGO_VALIDATION, request.model, response)
+            usageMetrics.measure(AiPurpose.LOGO_VALIDATION, request.model) {
+              openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+            }
           parseValidationResponse(response.extractContent(), holdingData)
         }.onFailure {
-          usageMetrics.fail(AiPurpose.LOGO_VALIDATION, request.model, it)
           log.warn("Batch validation API call failed: ${it.message}")
         }.getOrDefault(emptyMap())
       } ?: run {

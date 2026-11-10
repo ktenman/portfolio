@@ -202,15 +202,16 @@ class OpenRouterClient(
     }
     return runCatching {
       log.info("Calling OpenRouter with model: ${request.model}")
-      val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request, options)
-      usageMetrics.record(purpose, request.model, response)
+      val response =
+        usageMetrics.measure(purpose, request.model) {
+          openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request, options)
+        }
       val content = response.extractContent()
       log.debug("OpenRouter response: '$content'")
       circuitBreaker.recordSuccess()
       content
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter with model ${request.model}: ${throwable.message}", throwable)
-      usageMetrics.fail(purpose, request.model, throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }
@@ -241,8 +242,10 @@ class OpenRouterClient(
       )
     return runCatching {
       log.info("Calling OpenRouter API with model: ${selection.modelId} (tier: ${selection.fallbackTier})")
-      val response = openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
-      usageMetrics.record(purpose, request.model, response)
+      val response =
+        usageMetrics.measure(purpose, request.model) {
+          openRouterFeignClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+        }
       val content = response.extractContent()
       circuitBreaker.recordSuccess()
       if (content == null) {
@@ -253,7 +256,6 @@ class OpenRouterClient(
       OpenRouterClassificationResult(content = content, model = AiModel.fromModelId(selection.modelId))
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter API with model ${selection.modelId}: ${throwable.message}", throwable)
-      usageMetrics.fail(purpose, request.model, throwable)
       circuitBreaker.recordFailure(throwable)
     }.getOrNull()
   }

@@ -10,7 +10,17 @@ import org.springframework.stereotype.Component
 class OpenRouterUsageMetrics(
   private val registry: MeterRegistry,
 ) {
-  fun record(
+  fun measure(
+    purpose: AiPurpose,
+    model: String,
+    call: () -> OpenRouterResponse,
+  ): OpenRouterResponse =
+    runCatching(call)
+      .onSuccess { record(purpose, model, it) }
+      .onFailure { fail(purpose, model, it) }
+      .getOrThrow()
+
+  private fun record(
     purpose: AiPurpose,
     model: String,
     response: OpenRouterResponse,
@@ -24,7 +34,7 @@ class OpenRouterUsageMetrics(
     reasoning?.let { tokens(purpose, model, "reasoning", it) }
   }
 
-  fun fail(
+  private fun fail(
     purpose: AiPurpose,
     model: String,
     error: Throwable,
@@ -52,7 +62,7 @@ class OpenRouterUsageMetrics(
   private fun tags(
     purpose: AiPurpose,
     model: String,
-  ): Tags = Tags.of("purpose", purpose.tag, "model", model)
+  ): Tags = Tags.of("purpose", purpose.name.lowercase(), "model", model)
 
   companion object {
     private const val COST = "portfolio.openrouter.cost.dollars"

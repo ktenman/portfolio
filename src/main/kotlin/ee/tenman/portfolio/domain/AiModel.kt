@@ -37,7 +37,4 @@ enum class AiPurpose {
   LICENSE_PLATE,
   SPLIT_CHECK,
   FUND_CURRENCY,
-  ;
-
-  val tag: String get() = name.lowercase()
 }

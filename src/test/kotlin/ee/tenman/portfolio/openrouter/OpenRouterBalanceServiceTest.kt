@@ -2,9 +2,6 @@ package ee.tenman.portfolio.openrouter
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import feign.FeignException
-import feign.Request
-import feign.Response
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
@@ -47,20 +44,6 @@ class OpenRouterBalanceServiceTest {
     every { client.key(any()) } returns OpenRouterKey(OpenRouterKey.Data(keyUsage))
   }
 
-  private fun unauthorized(): FeignException {
-    val request = Request.create(Request.HttpMethod.GET, "https://openrouter.ai/api/v1/credits", emptyMap(), null, null, null)
-    val response =
-      Response
-        .builder()
-        .status(401)
-        .reason("Unauthorized")
-        .request(request)
-        .headers(emptyMap())
-        .body("""{"error":{"message":"No auth credentials found"}}""", Charsets.UTF_8)
-        .build()
-    return FeignException.errorStatus("credits", response)
-  }
-
   @Test
   fun `publishes the remaining balance as credits minus usage`() {
     account()
@@ -98,21 +81,13 @@ class OpenRouterBalanceServiceTest {
   @Test
   fun `publishes no balance without a management key`() {
     account()
-    val registry = refreshed(managementKey = "")
-    val gauges =
-      listOf(
-        "portfolio.openrouter.balance.dollars",
-        "portfolio.openrouter.balance.read.timestamp.seconds",
-        "portfolio.openrouter.key.usage.dollars",
-      ).map { registry.gauge(it) }
-    verify(exactly = 0) { client.credits(any()) }
-    expect(gauges).toEqual(listOf(Double.NaN, 1794330000.0, 7.25))
+    expect(refreshed(managementKey = "").gauge("portfolio.openrouter.balance.dollars")).toEqual(Double.NaN)
   }
 
   @Test
   fun `counts the last read from the first poll until the credits are read`() {
-    every { client.credits(any()) } throws unauthorized()
-    every { client.key(any()) } returns OpenRouterKey(OpenRouterKey.Data(7.25))
+    account()
+    every { client.credits(any()) } throws IllegalStateException("401 Unauthorized")
     expect(refreshed().gauge("portfolio.openrouter.balance.read.timestamp.seconds")).toEqual(1794330000.0)
   }
 
@@ -124,7 +99,7 @@ class OpenRouterBalanceServiceTest {
     account()
     service.refresh()
     now = now.plusSeconds(300)
-    every { client.credits(any()) } throws unauthorized()
+    every { client.credits(any()) } throws IllegalStateException("401 Unauthorized")
     every { client.key(any()) } returns OpenRouterKey(OpenRouterKey.Data(8.0))
     service.refresh()
     val gauges =

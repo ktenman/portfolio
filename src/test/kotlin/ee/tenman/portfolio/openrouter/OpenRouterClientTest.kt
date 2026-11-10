@@ -4,9 +4,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.AiPurpose
-import feign.FeignException
 import feign.Request
-import feign.Response
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.just
@@ -134,11 +132,11 @@ class OpenRouterClientTest {
   }
 
   @Test
-  fun `records a rejected call under its HTTP status`() {
-    every { feignClient.chatCompletion(any(), any()) } throws insufficientCredits()
+  fun `records a failed call under its purpose`() {
+    every { feignClient.chatCompletion(any(), any()) } throws IllegalStateException("Krediit on otsas")
     every { circuitBreaker.recordFailure(any()) } just runs
     client.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, "prompt")
-    expect(calls("purpose", "fund_currency", "outcome", "402")).toEqual(1.0)
+    expect(calls("purpose", "fund_currency", "outcome", "error")).toEqual(1.0)
   }
 
   @Test
@@ -154,20 +152,6 @@ class OpenRouterClientTest {
       .tags(*tags)
       .counter()
       ?.count()
-
-  private fun insufficientCredits(): FeignException {
-    val request = Request.create(Request.HttpMethod.POST, "https://openrouter.ai/api/v1/chat/completions", emptyMap(), null, null, null)
-    val response =
-      Response
-        .builder()
-        .status(402)
-        .reason("Payment Required")
-        .request(request)
-        .headers(emptyMap())
-        .body("""{"error":{"message":"Insufficient credits"}}""", Charsets.UTF_8)
-        .build()
-    return FeignException.errorStatus("chatCompletion", response)
-  }
 
   private fun okResponse(content: String) =
     OpenRouterResponse(

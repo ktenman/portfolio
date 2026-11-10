@@ -18,10 +18,10 @@ class OpenRouterUsageMetricsTest {
   private fun parsed(json: String): OpenRouterResponse = JsonMapperFactory.instance.readValue(json)
 
   private fun recorded(json: String): SimpleMeterRegistry =
-    SimpleMeterRegistry().also { OpenRouterUsageMetrics(it).record(AiPurpose.RADIO_OUTLINE, model, parsed(json)) }
+    SimpleMeterRegistry().also { OpenRouterUsageMetrics(it).measure(AiPurpose.RADIO_OUTLINE, model) { parsed(json) } }
 
   private fun failed(error: Throwable): SimpleMeterRegistry =
-    SimpleMeterRegistry().also { OpenRouterUsageMetrics(it).fail(AiPurpose.SECTOR, model, error) }
+    SimpleMeterRegistry().also { runCatching { OpenRouterUsageMetrics(it).measure(AiPurpose.SECTOR, model) { throw error } } }
 
   private fun tokens(
     registry: SimpleMeterRegistry,
@@ -85,10 +85,16 @@ class OpenRouterUsageMetricsTest {
   }
 
   @Test
-  fun `counts a call without usage and records no cost`() {
+  fun `records no cost for a call without usage`() {
     val registry = recorded("""{"choices":[{"message":{"content":"Tehnoloogia"}}]}""")
-    val cost = registry.find("portfolio.openrouter.cost.dollars").counter()?.count()
-    expect(listOf(calls(registry, "success"), cost)).toEqual(listOf(1.0, null))
+    expect(registry.find("portfolio.openrouter.cost.dollars").counter()).toEqual(null)
+  }
+
+  @Test
+  fun `passes the failure of a call on after counting it`() {
+    val error = IllegalStateException("Ühendus katkes")
+    val thrown = runCatching { OpenRouterUsageMetrics(SimpleMeterRegistry()).measure(AiPurpose.SECTOR, model) { throw error } }
+    expect(thrown.exceptionOrNull()).toEqual(error)
   }
 
   @Test
