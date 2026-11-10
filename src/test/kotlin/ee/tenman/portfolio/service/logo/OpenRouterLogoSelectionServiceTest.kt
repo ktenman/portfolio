@@ -46,7 +46,7 @@ class OpenRouterLogoSelectionServiceTest {
         openRouterProperties,
         imageDownloadService,
         logoValidationService,
-        OpenRouterUsageMetrics(registry),
+        OpenRouterUsageMetrics(registry, mockk(relaxed = true)),
       )
   }
 

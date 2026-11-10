@@ -60,7 +60,7 @@ class BatchLogoValidationServiceTest {
       imageDownloadService,
       logoValidationService,
       objectMapper,
-      OpenRouterUsageMetrics(registry),
+      OpenRouterUsageMetrics(registry, mockk(relaxed = true)),
     )
   }
 
@@ -85,7 +85,7 @@ class BatchLogoValidationServiceTest {
         imageDownloadService,
         logoValidationService,
         objectMapper,
-        OpenRouterUsageMetrics(registry),
+        OpenRouterUsageMetrics(registry, mockk(relaxed = true)),
       )
       val holdings = listOf(createHolding("Apple Inc", "AAPL"))
 
