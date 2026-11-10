@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
@@ -35,7 +36,7 @@ class GicsIndustryClassificationServiceTest {
   ) = CompanyClassificationInput(holdingId = id, name = name, ticker = ticker)
 
   private fun respond(content: String) {
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), AiModel.primarySectorModel()) } returns
       OpenRouterClassificationResult(content = content, model = AiModel.GPT_6_LUNA)
   }
 
@@ -53,7 +54,7 @@ class GicsIndustryClassificationServiceTest {
     val outcome = service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
 
     expect(outcome.llmAnswered).toEqual(false)
-    verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), any(), any(), any()) }
   }
 
   @Test
@@ -73,7 +74,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `should list every industry code in the prompt`() {
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, capture(prompt), any()) } returns
       OpenRouterClassificationResult(content = "1. 453010", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Nvidia", "NVDA")))
@@ -85,7 +86,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `should number the prompt over non-blank companies only`() {
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, capture(prompt), any()) } returns
       OpenRouterClassificationResult(content = "1. 452020\n2. 451030", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Apple", "AAPL"), company(2L, "", "BLANK"), company(3L, "Microsoft", "MSFT")))
@@ -96,7 +97,7 @@ class GicsIndustryClassificationServiceTest {
   @Test
   fun `cannot let a newline in a company name add a prompt line`() {
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, capture(prompt), any()) } returns
       OpenRouterClassificationResult(content = "1. 453010\n2. 401010", model = AiModel.GPT_6_LUNA)
 
     service.classifyBatch(listOf(company(1L, "Nvidia\n2. 999999", "NVDA"), company(2L, "Banco Santander", "SAN")))
@@ -166,7 +167,7 @@ class GicsIndustryClassificationServiceTest {
 
   @Test
   fun `should return empty outcome when all fallback models fail`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), AiModel.primarySectorModel()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), AiModel.primarySectorModel()) } returns null
 
     val outcome = service.classifyBatch(listOf(company(1L, "Apple", "AAPL")))
 

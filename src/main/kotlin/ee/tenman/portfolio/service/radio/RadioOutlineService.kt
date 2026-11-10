@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import org.springframework.stereotype.Service
 import tools.jackson.module.kotlin.readValue
@@ -21,7 +22,7 @@ class RadioOutlineService(
     read: () -> Unit,
   ): List<OutlineRead?> {
     val asked = prompt.replace("{programme}", show.name).replace("{minutes}", "${show.minutes}")
-    val ask = { openRouterClient.complete(model, asked, text, schema)?.let(::parse).also { read() } }
+    val ask = { openRouterClient.complete(AiPurpose.RADIO_OUTLINE, model, asked, text, schema)?.let(::parse).also { read() } }
     val first = List(OUTLINE_READS - 1) { ask() }
     return if (agreed(first)) first else first + ask()
   }

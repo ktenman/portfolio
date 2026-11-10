@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
 import org.slf4j.LoggerFactory
@@ -73,7 +74,7 @@ class CountryClassificationService(
       return BatchClassificationOutcome(emptyMap(), false)
     }
     val prompt = buildBatchPrompt(companies)
-    val response = openRouterClient.classifyWithCountryFallback(prompt)
+    val response = openRouterClient.classifyWithCountryFallback(AiPurpose.COUNTRY, prompt)
     if (response == null) {
       log.warn("Batch country classification failed for ${companies.size} companies")
       return BatchClassificationOutcome(emptyMap(), false)

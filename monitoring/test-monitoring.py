@@ -237,7 +237,7 @@ def check_configurations():
     run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro',
         '--entrypoint', 'amtool', ALERTMANAGER,
         'check-config', '/etc/alertmanager/alertmanager.yml')
-    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown'):
+    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown', 'OpenRouterBalanceLow', 'OpenRouterBalanceUnreadable'):
         route = run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro', '--entrypoint', 'amtool', ALERTMANAGER,
                     'config', 'routes', 'test', '--config.file=/etc/alertmanager/alertmanager.yml', f'alertname={name}').stdout.strip()
         assert route == 'host', f'{name} must reach the host receiver, which repeats daily and sends resolved, not {route}'
@@ -731,6 +731,29 @@ def check_metric_coverage():
     print(f'{len(operations)}-operation and per-item metric coverage passed')
 
 
+def check_openrouter_days():
+    board = json.loads((ROOT / 'grafana/dashboards/openrouter.json').read_text())
+    daily = [target['expr'] for panel in board['panels'] if panel.get('interval') == '1d' for target in panel['targets']]
+    assert daily, 'the OpenRouter dashboard has no daily panel'
+    labels = 'purpose="sector",model="google/gemini-4-argon",type="prompt",outcome="success"'
+    flat_day_then_six_hours_of_spend = '7+0x5760 8+1x1439'
+    spent_since_midnight = [{'expr': f'count(0 < ({expr}) <= 1441)', 'eval_time': '1d', 'exp_samples': [{'labels': '{}', 'value': 1}]}
+                            for expr in daily]
+    loads_the_samples_after_midnight = {'expr': 'vector(1)', 'eval_time': '2d', 'exp_samples': [{'labels': '{}', 'value': 1}]}
+    document = json.dumps({'evaluation_interval': '15s', 'tests': [{
+        'interval': '15s',
+        'input_series': [{'series': f'{metric}{{{labels}}}', 'values': flat_day_then_six_hours_of_spend}
+                         for metric in sorted(set(re.findall(r'portfolio_openrouter_\w+', ' '.join(daily))))],
+        'promql_expr_test': spent_since_midnight + [loads_the_samples_after_midnight],
+    }]})
+    with tempfile.TemporaryDirectory() as temporary:
+        Path(temporary).chmod(0o755)
+        (Path(temporary) / 'days.test.yml').write_text(document)
+        run('docker', 'run', '--rm', '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
+            'test', 'rules', '/test/days.test.yml')
+    print('OpenRouter daily bars show the day that starts at them, the running one up to now')
+
+
 def check_once_delivery(base, name, labels, summary):
     def incident(ends_after):
         firing = alert(name, ends_after)
@@ -881,6 +904,7 @@ if __name__ == '__main__':
     check_host_gates()
     check_production_permissions()
     check_metric_coverage()
+    check_openrouter_days()
     check_readiness_recovery()
     check_failed_startup_logs()
     check_delivery()

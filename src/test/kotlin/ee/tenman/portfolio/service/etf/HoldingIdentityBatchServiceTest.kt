@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
@@ -25,7 +26,7 @@ class HoldingIdentityBatchServiceTest {
   private val zalgiris = IdentityPair("Žalgiris Bankas", "Žalgiris Bankas AB", null)
 
   private fun answer(content: String?) {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       content?.let { OpenRouterClassificationResult(content = it, model = AiModel.DEEPSEEK_V4_PRO) }
   }
 
@@ -86,13 +87,13 @@ class HoldingIdentityBatchServiceTest {
   fun `should send a lone pair through the single check`() {
     every { cacheService.resolve(alibaba) } returns true
     service.resolve(listOf(alibaba))
-    verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 0) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
   }
 
   @Test
   fun `should number each pair with its names and shared ticker in the prompt`() {
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, capture(prompt), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "1: YES\n2: YES", model = AiModel.DEEPSEEK_V4_PRO)
     service.resolve(listOf(alibaba, zalgiris))
     expect(prompt.captured).toContain(
@@ -104,7 +105,7 @@ class HoldingIdentityBatchServiceTest {
   @Test
   fun `should show both tickers instead of a shared ticker when they differ`() {
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, capture(prompt), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "1: NO\n2: NO", model = AiModel.DEEPSEEK_V4_PRO)
     service.resolve(listOf(IdentityPair("PTC", "PTC Therapeutics Inc", "PTCT", null, null, "PTC"), zalgiris))
     expect(prompt.captured).toContain("1. Name 1: PTC (ticker: PTC) | Name 2: PTC Therapeutics Inc (ticker: PTCT)\n")

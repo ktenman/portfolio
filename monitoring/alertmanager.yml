@@ -31,7 +31,7 @@ route:
       repeat_interval: 168h
     - receiver: host
       matchers:
-        - alertname=~"Host.+|MonitoringTargetDown"
+        - alertname=~"Host.+|MonitoringTargetDown|OpenRouter.+"
       group_by: [environment, alertname, job]
       repeat_interval: 24h
 receivers:

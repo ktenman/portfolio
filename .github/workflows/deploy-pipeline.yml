@@ -33,6 +33,8 @@ on:
         required: false
       OPENROUTER_API_KEY:
         required: true
+      OPENROUTER_MANAGEMENT_KEY:
+        required: true
       TRADING212_API_KEY_ID:
         required: true
       TRADING212_API_KEY_SECRET:
@@ -93,6 +95,7 @@ jobs:
           echo "MINIO_ROOT_PASSWORD=${{ secrets.MINIO_ROOT_PASSWORD }}" >> .env
           echo "MINIO_BUCKET_NAME=${{ secrets.MINIO_BUCKET_NAME || 'portfolio-logos' }}" >> .env
           echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> .env
+          echo "OPENROUTER_MANAGEMENT_KEY=${{ secrets.OPENROUTER_MANAGEMENT_KEY }}" >> .env
           echo "TRADING212_API_KEY_ID=${{ secrets.TRADING212_API_KEY_ID }}" >> .env
           echo "TRADING212_API_KEY_SECRET=${{ secrets.TRADING212_API_KEY_SECRET }}" >> .env
           echo "MONITORING_POSTGRES_PASSWORD=${{ secrets.MONITORING_POSTGRES_PASSWORD }}" >> .env

@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.instrument
 
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.openrouter.OpenRouterClient
@@ -17,7 +18,7 @@ class FundCurrencyLlmLookupService(
 
   fun lookup(instrument: Instrument): Currency? {
     val prompt = buildPrompt(instrument)
-    val raw = openRouterClient.classifyWithOnlineSearch(AiModel.GPT_6_LUNA, prompt) ?: return null
+    val raw = openRouterClient.classifyWithOnlineSearch(AiPurpose.FUND_CURRENCY, AiModel.GPT_6_LUNA, prompt) ?: return null
     return parseAndValidate(raw, instrument.symbol)
   }
 

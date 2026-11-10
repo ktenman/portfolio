@@ -635,3 +635,60 @@ tests:
       - eval_time: 40m
         alertname: MonitoringTargetDown
         exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_openrouter_balance_dollars'
+        values: '9.5+0x80'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: OpenRouterBalanceLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'OpenRouter balance is $9.50, under $10 or three days of spend; top up before calls fail with 402'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_openrouter_balance_dollars'
+        values: '50+0x80'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: OpenRouterBalanceLow
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_openrouter_balance_dollars'
+        values: '15+0x6000'
+      - series: 'portfolio_openrouter_account_usage_dollars'
+        values: '0+0.001x6000'
+    alert_rule_test:
+      - eval_time: 24h10m
+        alertname: OpenRouterBalanceLow
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'OpenRouter balance is $15.00, under $10 or three days of spend; top up before calls fail with 402'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_openrouter_balance_read_timestamp_seconds'
+        values: '0+15x160 0+0x4 2490+15x40'
+    alert_rule_test:
+      - eval_time: 46m
+        alertname: OpenRouterBalanceUnreadable
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_openrouter_balance_read_timestamp_seconds'
+        values: '0+0x200'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: OpenRouterBalanceUnreadable
+        exp_alerts: []
+      - eval_time: 36m
+        alertname: OpenRouterBalanceUnreadable
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'OpenRouter balance has not been read for 30 minutes, so a low balance goes unannounced; check OPENROUTER_MANAGEMENT_KEY'

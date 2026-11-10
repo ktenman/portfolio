@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
@@ -34,7 +35,7 @@ class IndustryClassificationService(
     sanitizedName: String,
   ): SectorClassificationResult? {
     val response =
-      openRouterClient.classifyWithModel(prompt) ?: run {
+      openRouterClient.classifyWithModel(AiPurpose.SECTOR, prompt) ?: run {
         log.warn("No response from OpenRouter for company: $sanitizedName")
         return retryWithCascadingFallback(prompt, sanitizedName)
       }
@@ -49,7 +50,7 @@ class IndustryClassificationService(
     val model = resolveRetryModel(failedModel) ?: return null
     log.info("Retrying classification with cascading fallback starting from ${model.modelId} for: $sanitizedName")
     val response =
-      openRouterClient.classifyWithCascadingFallback(prompt, model) ?: run {
+      openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, prompt, model) ?: run {
         log.warn("All fallback models exhausted for company: $sanitizedName")
         return null
       }
@@ -95,7 +96,7 @@ class IndustryClassificationService(
     }
     val prompt = buildBatchPrompt(validCompanies)
     val response =
-      openRouterClient.classifyWithCascadingFallback(prompt, AiModel.primarySectorModel()) ?: run {
+      openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, prompt, AiModel.primarySectorModel()) ?: run {
         log.warn("Batch sector classification failed for ${validCompanies.size} companies")
         return BatchClassificationOutcome(emptyMap(), false)
       }

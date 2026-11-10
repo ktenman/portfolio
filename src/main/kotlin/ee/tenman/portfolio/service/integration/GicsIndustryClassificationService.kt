@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.integration
 
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.GicsIndustry
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import org.slf4j.LoggerFactory
@@ -19,7 +20,7 @@ class GicsIndustryClassificationService(
     if (!properties.enabled) log.warn("Industry classification disabled, skipping batch of ${companies.size}")
     if (validCompanies.isEmpty() || !properties.enabled) return UNANSWERED
     val response =
-      openRouterClient.classifyWithCascadingFallback(buildPrompt(validCompanies), AiModel.primarySectorModel()) ?: run {
+      openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, buildPrompt(validCompanies), AiModel.primarySectorModel()) ?: run {
         log.warn("Batch industry classification failed for ${validCompanies.size} companies")
         return UNANSWERED
       }

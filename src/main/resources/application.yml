@@ -128,12 +128,6 @@ openfigi:
 auth:
   url: http://auth:8083
 
-feign:
-  client:
-    config:
-      default:
-        loggerLevel: FULL
-
 historicalPrices:
   url: https://markets.ft.com
 
@@ -268,6 +262,7 @@ trading212-scraping:
 
 openrouter:
   api-key: ${OPENROUTER_API_KEY}
+  management-key: ${OPENROUTER_MANAGEMENT_KEY:}
   circuit-breaker:
     failure-threshold: 3
     recovery-timeout-seconds: 60

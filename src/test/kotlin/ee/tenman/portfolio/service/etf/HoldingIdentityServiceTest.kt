@@ -9,6 +9,7 @@ import ee.tenman.portfolio.configuration.HoldingIdentityCacheTestConfiguration
 import ee.tenman.portfolio.configuration.IndustryClassificationProperties
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.openrouter.OpenRouterClassificationResult
 import ee.tenman.portfolio.openrouter.OpenRouterClient
@@ -47,7 +48,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should confirm same company when model answers yes`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "YES", model = AiModel.GEMINI_4_ARGON)
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Alibaba", "ALIBABA GROUP HOLDING", "BABA"))).values.single()
@@ -58,7 +59,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should reject different companies when model answers no`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_4_ARGON)
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck & Co.", "Merck KGaA", "MRK"))).values.single()
@@ -69,7 +70,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should treat affirmative answer with surrounding whitespace and lowercase as yes`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "  yes, identical entity\n", model = AiModel.GEMINI_4_ARGON)
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Amazon", "Amazon.com Inc", "AMZN"))).values.single()
@@ -80,7 +81,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should return no verdict when answer is not a clear yes or no`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "Well, they might be the same entity", model = AiModel.GEMINI_4_ARGON)
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("ASML Holding", "ASML Hōldings NV", "ASML"))).values.single()
@@ -91,7 +92,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should return no verdict when model returns no response`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns null
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Micron", "Micron Technology Inc", "MU"))).values.single()
 
@@ -136,7 +137,7 @@ class HoldingIdentityServiceTest {
   fun `should ask model instead of legal form shortcut when same ticker names come from different countries`() {
     val openRouterClient = mockk<OpenRouterClient>()
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, capture(prompt), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_4_ARGON)
 
     serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE")))
@@ -147,7 +148,7 @@ class HoldingIdentityServiceTest {
   @Test
   fun `should reject same ticker names from different countries when model answers no`() {
     val openRouterClient = mockk<OpenRouterClient>()
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_4_ARGON)
 
     val result = serviceFor(openRouterClient).resolveAll(listOf(IdentityPair("Merck & Co.", "MERCK", "MRK", "US", "DE"))).values.single()
@@ -212,7 +213,7 @@ class HoldingIdentityServiceTest {
   fun `should build prompt without source indentation when ticker is present`() {
     val openRouterClient = mockk<OpenRouterClient>()
     val prompt = slot<String>()
-    every { openRouterClient.classifyWithCascadingFallback(capture(prompt), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, capture(prompt), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.GEMINI_4_ARGON)
 
     serviceFor(
@@ -247,29 +248,29 @@ class HoldingIdentityServiceCacheTest {
 
   @Test
   fun `should cache negative verdict and not invoke model again`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "NO", model = AiModel.DEEPSEEK_V4_PRO)
 
     holdingIdentityService.resolveAll(listOf(IdentityPair("Merck & Co.", "Merck KGaA", "MRK")))
     holdingIdentityService.resolveAll(listOf(IdentityPair("Merck & Co.", "Merck KGaA", "MRK")))
 
-    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
   }
 
   @Test
   fun `should cache positive verdict and not invoke model again`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "YES", model = AiModel.DEEPSEEK_V4_PRO)
 
     holdingIdentityService.resolveAll(listOf(IdentityPair("Alibaba", "ALIBABA GROUP HOLDING", "BABA")))
     holdingIdentityService.resolveAll(listOf(IdentityPair("Alibaba", "ALIBABA GROUP HOLDING", "BABA")))
 
-    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
   }
 
   @Test
   fun `cannot reuse cached verdict across different name splits with same concatenation`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returnsMany
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returnsMany
       listOf(
         OpenRouterClassificationResult(content = "YES", model = AiModel.DEEPSEEK_V4_PRO),
         OpenRouterClassificationResult(content = "NO", model = AiModel.DEEPSEEK_V4_PRO),
@@ -283,12 +284,12 @@ class HoldingIdentityServiceCacheTest {
 
   @Test
   fun `should not cache missing verdict and invoke model again`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns null
 
     holdingIdentityService.resolveAll(listOf(IdentityPair("Micron", "Micron Technology Inc", "MU")))
     holdingIdentityService.resolveAll(listOf(IdentityPair("Micron", "Micron Technology Inc", "MU")))
 
-    verify(exactly = 2) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 2) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
   }
 
   @Test
@@ -300,24 +301,24 @@ class HoldingIdentityServiceCacheTest {
 
   @Test
   fun `should reuse a batch verdict in a later single check`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "1: YES\n2: NO", model = AiModel.DEEPSEEK_V4_PRO)
     holdingIdentityService.resolveAll(
       listOf(IdentityPair("Alibaba", "ALIBABA GROUP HOLDING", "BABA"), IdentityPair("Merck & Co.", "Merck KGaA", "MRK")),
     )
     holdingIdentityService.resolveAll(listOf(IdentityPair("Merck & Co.", "Merck KGaA", "MRK")))
-    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
   }
 
   @Test
   fun `should serve a batch verdict from the cacheable single check`() {
-    every { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) } returns
       OpenRouterClassificationResult(content = "1: YES\n2: NO", model = AiModel.DEEPSEEK_V4_PRO)
     holdingIdentityService.resolveAll(
       listOf(IdentityPair("Alibaba", "ALIBABA GROUP HOLDING", "BABA"), IdentityPair("Merck & Co.", "Merck KGaA", "MRK")),
     )
     val verdict = holdingIdentityCacheService.resolve(IdentityPair("Merck & Co.", "Merck KGaA", "MRK"))
-    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(any(), any(), any(), any()) }
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, any(), any(), any(), any()) }
     expect(verdict).toEqual(false)
   }
 }

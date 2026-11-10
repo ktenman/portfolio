@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.split
 
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentSplit
 import ee.tenman.portfolio.domain.ProviderName
@@ -34,7 +35,9 @@ class SplitCheckService(
     val today = LocalDate.now(clock)
     val held = held().associateBy { it.symbol }
     val answer =
-      checkNotNull(openRouterClient.search(AiModel.GEMINI_4_ARGON, question(held.values, today))) { "OpenRouter gave no split answer" }
+      checkNotNull(openRouterClient.search(AiPurpose.SPLIT_CHECK, AiModel.GEMINI_4_ARGON, question(held.values, today))) {
+        "OpenRouter gave no split answer"
+      }
     val pending = instrumentSplitRepository.findPending(today).map { it.instrument.symbol }.toSet()
     val fresh = parseSplits(answer, held.keys, pending, today)
     fresh.forEach { store(held.getValue(it.symbol), it) }

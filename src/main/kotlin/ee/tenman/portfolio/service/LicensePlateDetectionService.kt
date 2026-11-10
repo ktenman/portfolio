@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service
 
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.VisionModel
 import ee.tenman.portfolio.dto.DetectionResult
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
@@ -89,7 +90,7 @@ class LicensePlateDetectionService(
     base64Image: String,
   ): String? {
     val request = OpenRouterVisionRequest.forLicensePlateExtraction(model.modelId, base64Image)
-    return openRouterVisionService.extractText(request)
+    return openRouterVisionService.extractText(AiPurpose.LICENSE_PLATE, request)
   }
 
   private suspend fun runProvider(

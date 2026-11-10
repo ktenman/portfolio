@@ -51,7 +51,25 @@ data class OpenRouterRequest(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class OpenRouterResponse(
   val choices: List<Choice>? = null,
+  val usage: Usage? = null,
 ) {
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  data class Usage(
+    @JsonProperty("prompt_tokens")
+    val promptTokens: Long? = null,
+    @JsonProperty("completion_tokens")
+    val completionTokens: Long? = null,
+    val cost: Double? = null,
+    @JsonProperty("completion_tokens_details")
+    val completionTokensDetails: CompletionTokensDetails? = null,
+  )
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  data class CompletionTokensDetails(
+    @JsonProperty("reasoning_tokens")
+    val reasoningTokens: Long? = null,
+  )
+
   @JsonIgnoreProperties(ignoreUnknown = true)
   data class Choice(
     val message: Message? = null,
@@ -127,6 +145,29 @@ data class OpenRouterVisionRequest(
         temperature = 0.1,
       )
   }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class OpenRouterCredits(
+  val data: Data,
+) {
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  data class Data(
+    @JsonProperty("total_credits")
+    val totalCredits: Double,
+    @JsonProperty("total_usage")
+    val totalUsage: Double,
+  )
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class OpenRouterKey(
+  val data: Data,
+) {
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  data class Data(
+    val usage: Double,
+  )
 }
 
 data class OpenRouterClassificationResult(

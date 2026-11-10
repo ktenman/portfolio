@@ -168,6 +168,25 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.station }} schedule import failed, so the recording plan is not renewed'
+  - name: portfolio-openrouter
+    interval: 15s
+    rules:
+      - alert: OpenRouterBalanceLow
+        expr: portfolio_openrouter_balance_dollars < 10 or portfolio_openrouter_balance_dollars < 3 * delta(portfolio_openrouter_account_usage_dollars[1d])
+        for: 15m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'OpenRouter balance is ${{ printf "%.2f" $value }}, under $10 or three days of spend; top up before calls fail with 402'
+      - alert: OpenRouterBalanceUnreadable
+        expr: time() - portfolio_openrouter_balance_read_timestamp_seconds > 1800
+        for: 5m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'OpenRouter balance has not been read for 30 minutes, so a low balance goes unannounced; check OPENROUTER_MANAGEMENT_KEY'
   - name: portfolio-split
     interval: 15s
     rules:

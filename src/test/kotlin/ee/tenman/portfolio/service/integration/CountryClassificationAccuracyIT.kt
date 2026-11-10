@@ -5,6 +5,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Disabled
@@ -157,7 +158,7 @@ class CountryClassificationAccuracyIT {
     model: AiModel,
   ): String? {
     val prompt = buildPrompt(company)
-    val response = openRouterClient.classifyWithCascadingFallback(prompt, model) ?: return null
+    val response = openRouterClient.classifyWithCascadingFallback(AiPurpose.COUNTRY, prompt, model) ?: return null
     val content = response.content ?: return null
     return parseCountryCode(content)
   }

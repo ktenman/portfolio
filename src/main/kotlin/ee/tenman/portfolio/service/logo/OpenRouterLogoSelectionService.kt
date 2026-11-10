@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.service.logo
 
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.LogoSource
 import ee.tenman.portfolio.exception.LogoSelectionFailedException
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
+import ee.tenman.portfolio.openrouter.OpenRouterUsageMetrics
 import ee.tenman.portfolio.openrouter.OpenRouterVisionClient
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.ImageContent
@@ -21,6 +23,7 @@ class OpenRouterLogoSelectionService(
   private val openRouterProperties: OpenRouterProperties,
   private val imageDownloadService: ImageDownloadService,
   private val logoValidationService: LogoValidationService,
+  private val usageMetrics: OpenRouterUsageMetrics,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -79,7 +82,11 @@ class OpenRouterLogoSelectionService(
     val outcome =
       runBlocking {
         withTimeoutOrNull(openRouterProperties.apiTimeoutMs) {
-          runCatching { openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request) }
+          runCatching {
+            usageMetrics.measure(AiPurpose.LOGO_SELECTION, request.model) {
+              openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+            }
+          }
         }
       } ?: throw LogoSelectionFailedException(
         "Vision API call timed out after ${openRouterProperties.apiTimeoutMs}ms for $companyName",

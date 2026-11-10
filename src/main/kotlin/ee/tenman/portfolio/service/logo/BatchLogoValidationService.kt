@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.service.logo
 
 import ee.tenman.portfolio.configuration.BatchLogoValidationProperties
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.domain.EtfHolding
 import ee.tenman.portfolio.openrouter.OpenRouterProperties
+import ee.tenman.portfolio.openrouter.OpenRouterUsageMetrics
 import ee.tenman.portfolio.openrouter.OpenRouterVisionClient
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest
 import ee.tenman.portfolio.openrouter.OpenRouterVisionRequest.ImageContent
@@ -30,6 +32,7 @@ class BatchLogoValidationService(
   private val imageDownloadService: ImageDownloadService,
   private val logoValidationService: LogoValidationService,
   private val objectMapper: ObjectMapper,
+  private val usageMetrics: OpenRouterUsageMetrics,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -110,13 +113,13 @@ class BatchLogoValidationService(
         runCatching {
           log.info("Sending batch validation request for ${holdingData.size} companies")
           val response =
-            openRouterVisionClient.chatCompletion(
-              "Bearer ${openRouterProperties.apiKey}",
-              request,
-            )
+            usageMetrics.measure(AiPurpose.LOGO_VALIDATION, request.model) {
+              openRouterVisionClient.chatCompletion("Bearer ${openRouterProperties.apiKey}", request)
+            }
           parseValidationResponse(response.extractContent(), holdingData)
-        }.onFailure { log.warn("Batch validation API call failed: ${it.message}") }
-          .getOrDefault(emptyMap())
+        }.onFailure {
+          log.warn("Batch validation API call failed: ${it.message}")
+        }.getOrDefault(emptyMap())
       } ?: run {
         log.warn("Batch validation API call timed out after ${batchProperties.apiTimeoutMs}ms")
         emptyMap()

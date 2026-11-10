@@ -2,6 +2,7 @@ package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.HOLDING_IDENTITY_CACHE
 import ee.tenman.portfolio.domain.AiModel
+import ee.tenman.portfolio.domain.AiPurpose
 import ee.tenman.portfolio.dto.IdentityPair
 import ee.tenman.portfolio.openrouter.OpenRouterClient
 import ee.tenman.portfolio.util.LogSanitizerUtil
@@ -22,7 +23,10 @@ class HoldingIdentityBatchService(
 
   fun resolve(pairs: List<IdentityPair>): Map<IdentityPair, Boolean?> {
     if (pairs.size == 1) return pairs.associateWith { single(it) }
-    val content = openRouterClient.classifyWithCascadingFallback(buildPrompt(pairs), AiModel.primarySectorModel())?.content
+    val content =
+      openRouterClient
+        .classifyWithCascadingFallback(AiPurpose.HOLDING_IDENTITY, buildPrompt(pairs), AiModel.primarySectorModel())
+        ?.content
     val answers = content?.let { parseAnswers(it, pairs.size) }.orEmpty()
     answers.forEach { (index, verdict) -> cache().put(pairs[index].cacheKey, verdict) }
     log.info("Holding identity batch of ${pairs.size} pairs answered ${answers.size}, falling back for ${pairs.size - answers.size}")
