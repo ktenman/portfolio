@@ -32,8 +32,8 @@ class OpenRouterSpendService(
     model: String,
     cost: Double,
   ) {
-    runCatching { repository.save(OpenRouterCall(LocalDate.now(clock), purpose.name.lowercase(), model, BigDecimal.valueOf(cost))) }
-      .onFailure { log.warn("Failed to save the OpenRouter cost of $purpose on $model: ${it.message}") }
+    runCatching { repository.save(OpenRouterCall(LocalDate.now(clock), purpose.label, model, BigDecimal.valueOf(cost))) }
+      .onFailure { log.warn("Failed to save the OpenRouter cost $cost of $purpose on $model: ${it.message}") }
   }
 
   fun refresh() {

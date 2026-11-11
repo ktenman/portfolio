@@ -49,6 +49,8 @@ class OpenRouterSpendServiceIT {
       listOf(
         OpenRouterCall(LocalDate.of(2026, 9, 3), "sector", argon, BigDecimal("0.5")),
         OpenRouterCall(LocalDate.of(2026, 9, 30), "sector", argon, BigDecimal("0.00000012")),
+        OpenRouterCall(LocalDate.of(2026, 9, 12), "country", argon, BigDecimal("3")),
+        OpenRouterCall(LocalDate.of(2026, 9, 12), "sector", "google/gemini-3.5-flash-lite", BigDecimal("2")),
         OpenRouterCall(LocalDate.of(2026, 10, 2), "sector", argon, BigDecimal("7")),
       ),
     )

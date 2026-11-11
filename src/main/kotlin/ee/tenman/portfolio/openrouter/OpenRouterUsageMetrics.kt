@@ -78,7 +78,7 @@ class OpenRouterUsageMetrics(
   private fun tags(
     purpose: AiPurpose,
     model: String,
-  ): Tags = Tags.of("purpose", purpose.name.lowercase(), "model", model)
+  ): Tags = Tags.of("purpose", purpose.label, "model", model)
 
   companion object {
     private const val COST = "portfolio.openrouter.cost.dollars"

@@ -37,4 +37,7 @@ enum class AiPurpose {
   LICENSE_PLATE,
   SPLIT_CHECK,
   FUND_CURRENCY,
+  ;
+
+  val label = name.lowercase()
 }
