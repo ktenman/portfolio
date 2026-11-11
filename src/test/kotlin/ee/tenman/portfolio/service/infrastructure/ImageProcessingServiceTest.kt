@@ -25,6 +25,12 @@ class ImageProcessingServiceTest {
   }
 
   @Test
+  fun `should resize a still to the given width keeping its ratio`() {
+    val result = service.resizeToWidth(createTestImage(1920, 1080), 640)
+    expect(getImageDimensions(result)).toEqual(Pair(640, 360))
+  }
+
+  @Test
   fun `should pad a wide image to a 256 pixel square`() {
     val result = service.resizeToMaxDimension(createTestImage(400, 100))
     expect(getImageDimensions(result)).toEqual(Pair(256, 256))

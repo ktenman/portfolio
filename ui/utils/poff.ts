@@ -14,6 +14,9 @@ export interface TimetableRow {
   screening: PoffScreening
 }
 
+export const CHIP =
+  'platform-btn platform-btn-outline relative md-down:h-9 md-down:text-2xs md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
+
 const ZONE = 'Europe/Tallinn'
 const DAY = new Intl.DateTimeFormat('sv-SE', {
   timeZone: ZONE,
@@ -51,7 +54,7 @@ export const defaultDay = (days: string[], today: string): string => {
 const keeps = (row: TimetableRow, day: string, filters: TimetableFilters): boolean =>
   tallinnDay(row.screening.start) === day &&
   row.screening.city === filters.city &&
-  (!filters.rated || (row.film.imdb?.rating ?? 0) >= 7) &&
+  (!filters.rated || ratedSeven(row.film)) &&
   (!filters.available || !row.screening.soldOut)
 
 export const timetable = (
@@ -107,6 +110,8 @@ export const filmLine = (film: PoffFilm): string =>
   [film.englishTitle === film.title ? '' : film.englishTitle, film.genres.join(', ')]
     .filter(Boolean)
     .join(' · ')
+
+export const ratedSeven = (film: PoffFilm): boolean => (film.imdb?.rating ?? 0) >= 7
 
 export const strongRating = (imdb?: ImdbRating | null): boolean =>
   imdb?.rating != null && (imdb.votes ?? 0) >= 100

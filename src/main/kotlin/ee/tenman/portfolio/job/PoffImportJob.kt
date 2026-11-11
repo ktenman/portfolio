@@ -7,6 +7,7 @@ import ee.tenman.portfolio.service.poff.ImdbRatingService
 import ee.tenman.portfolio.service.poff.PoffCatalogueService
 import ee.tenman.portfolio.service.poff.PoffImportService
 import ee.tenman.portfolio.service.poff.PoffListing
+import ee.tenman.portfolio.service.poff.PoffStillService
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.MeterBinder
@@ -24,6 +25,7 @@ class PoffImportJob(
   private val poffCatalogueService: PoffCatalogueService,
   private val imdbMatchService: ImdbMatchService,
   private val imdbRatingService: ImdbRatingService,
+  private val poffStillService: PoffStillService,
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
   private val clock: Clock,
@@ -79,5 +81,6 @@ class PoffImportJob(
     val catalogue = poffImportService.fetch(listing)
     poffCatalogueService.store(catalogue)
     if (imdbMatchService.match(catalogue.films) > 0) unrated.set(true)
+    poffStillService.store(catalogue.films)
   }
 }

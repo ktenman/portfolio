@@ -44,6 +44,16 @@ class ImageProcessingService {
     return encodeJpeg(resized, PLATE_JPEG_QUALITY)
   }
 
+  fun resizeToWidth(
+    imageData: ByteArray,
+    width: Int,
+  ): ByteArray {
+    val source = requireNotNull(ImageIO.read(ByteArrayInputStream(imageData))) { "Unreadable image of ${imageData.size} bytes" }
+    val target = minOf(width, source.width)
+    val height = (source.height.toDouble() * target / source.width).roundToInt().coerceAtLeast(1)
+    return encodeJpeg(renderResized(source, target, height, BufferedImage.TYPE_INT_RGB), STILL_JPEG_QUALITY)
+  }
+
   private fun renderResized(
     source: BufferedImage,
     newWidth: Int,
@@ -103,5 +113,6 @@ class ImageProcessingService {
     const val MIN_DIMENSION = 250
     const val PLATE_MAX_DIMENSION = 800
     const val PLATE_JPEG_QUALITY = 0.75f
+    const val STILL_JPEG_QUALITY = 0.8f
   }
 }

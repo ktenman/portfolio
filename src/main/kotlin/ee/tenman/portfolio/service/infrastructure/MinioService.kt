@@ -36,6 +36,15 @@ class MinioService(
   @Cacheable(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun downloadLogo(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
+  fun uploadPoffStill(
+    name: String,
+    data: ByteArray,
+  ) = uploadObject("$STILLS/$name.jpg", data, MediaType.IMAGE_JPEG_VALUE)
+
+  fun downloadPoffStill(name: String): ByteArray? = downloadObject("$STILLS/$name.jpg")
+
+  fun poffStillNames(): Set<String> = objectNames("$STILLS/").map { it.removePrefix("$STILLS/").removeSuffix(".jpg") }.toSet()
+
   fun uploadFundReport(
     isin: String,
     asOfDate: LocalDate,
@@ -47,16 +56,17 @@ class MinioService(
     asOfDate: LocalDate,
   ): ByteArray? = downloadObject(reportName(isin, asOfDate))
 
-  fun fundReportDates(isin: String): Set<LocalDate> =
+  fun fundReportDates(isin: String): Set<LocalDate> = objectNames("$REPORTS/$isin/").map(::reportDate).toSet()
+
+  private fun objectNames(prefix: String): List<String> =
     minioClient
       .listObjects(
         ListObjectsArgs
           .builder()
           .bucket(minioProperties.bucketName)
-          .prefix("$REPORTS/$isin/")
+          .prefix(prefix)
           .build(),
-      ).map { reportDate(it.get().objectName()) }
-      .toSet()
+      ).map { it.get().objectName() }
 
   private fun reportName(
     isin: String,
@@ -106,5 +116,6 @@ class MinioService(
   companion object {
     private const val NO_SUCH_KEY = "NoSuchKey"
     private const val REPORTS = "fund-reports"
+    private const val STILLS = "poff-stills"
   }
 }

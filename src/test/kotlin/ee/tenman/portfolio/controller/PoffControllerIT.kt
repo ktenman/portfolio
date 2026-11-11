@@ -6,12 +6,15 @@ import ee.tenman.portfolio.domain.PoffImdb
 import ee.tenman.portfolio.domain.PoffSnapshot
 import ee.tenman.portfolio.repository.PoffImdbRepository
 import ee.tenman.portfolio.repository.PoffSnapshotRepository
+import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.service.poff.poffFilm
+import ee.tenman.portfolio.service.poff.stillKey
 import jakarta.annotation.Resource
 import org.hamcrest.Matchers.contains
 import org.junit.jupiter.api.Test
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.math.BigDecimal
@@ -32,12 +35,39 @@ class PoffControllerIT {
   @Resource
   private lateinit var jdbcTemplate: JdbcTemplate
 
+  @Resource
+  private lateinit var minioService: MinioService
+
   private val synced = Instant.parse("2026-11-10T15:32:00Z")
 
   private fun store() {
     poffSnapshotRepository.save(PoffSnapshot(PoffCatalogue(listOf(poffFilm(8810, title = "Armastatu"), poffFilm(9107))), synced))
     poffImdbRepository.save(PoffImdb(8810, "tt27714581", 9, BigDecimal("7.2"), 4184, synced))
     poffImdbRepository.save(PoffImdb(9107, null, null, null, null, synced))
+  }
+
+  @Test
+  fun `returns stills as the keys they are served under`() {
+    val still = "https://assets.poff.ee/img/Kõlakamber_big_16_9.jpeg"
+    poffSnapshotRepository.save(PoffSnapshot(PoffCatalogue(listOf(poffFilm(8810, stills = listOf(still)))), synced))
+    mockMvc.perform(mvcGet("/api/poff/catalogue")).andExpect(jsonPath("$.films[0].stills[0]").value(stillKey(still)))
+  }
+
+  @Test
+  fun `serves a stored still at the asked width`() {
+    minioService.uploadPoffStill("0123456789abcdef0123-1280", byteArrayOf(1, 2, 3))
+    mockMvc.perform(mvcGet("/api/poff/stills/0123456789abcdef0123?width=1280")).andExpect(content().bytes(byteArrayOf(1, 2, 3)))
+  }
+
+  @Test
+  fun `answers not found for a still that is not stored`() {
+    mockMvc.perform(mvcGet("/api/poff/stills/ffffffffffffffffffff")).andExpect(status().isNotFound)
+  }
+
+  @Test
+  fun `answers not found for a still width that is not made`() {
+    minioService.uploadPoffStill("0123456789abcdef0124-640", byteArrayOf(1))
+    mockMvc.perform(mvcGet("/api/poff/stills/0123456789abcdef0124?width=99")).andExpect(status().isNotFound)
   }
 
   @Test
