@@ -55,6 +55,22 @@ const choose = async (wrapper: Awaited<ReturnType<typeof mount>>, label: string)
   await flushPromises()
 }
 
+const wide = () =>
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
+
+const panel = async () => {
+  wide()
+  const wrapper = await attached()
+  await wrapper.findAll('[data-testid="poff-row"]')[2]?.trigger('click')
+  await flushPromises()
+  return wrapper
+}
+
 describe('PoffTimetable', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -63,7 +79,68 @@ describe('PoffTimetable', () => {
     vi.mocked(poffService.catalogue).mockReset().mockResolvedValue(poffCatalogue)
   })
 
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('opens the film of a row in the panel on a wide screen', async () => {
+    expect((await panel()).find('[data-testid="poff-panel"] h2').text()).toBe('Armastatu')
+  })
+
+  it('leaves the panel closed when tickets are opened', async () => {
+    wide()
+    const wrapper = await attached()
+    await wrapper.find('a[href$="#screening_15"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.$route.query).toEqual({})
+  })
+
+  it('marks the row of the film in the panel', async () => {
+    const row = (await panel()).findAll('[data-testid="poff-row"]')[2]
+    expect(row?.attributes('aria-current')).toBe('true')
+  })
+
+  it('opens the panel from a title on a wide screen', async () => {
+    wide()
+    const wrapper = await attached()
+    await wrapper.findAll('[data-testid="poff-title"]')[2]?.trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.$route.query).toEqual({ film: 'the-beloved' })
+  })
+
+  it('moves focus into the open panel when its row is chosen again', async () => {
+    const wrapper = await panel()
+    ;(document.querySelector('[data-testid="poff-title"]') as HTMLElement).focus()
+    await wrapper.findAll('[data-testid="poff-row"]')[2]?.trigger('click')
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Close the film')
+  })
+
+  it('closes the panel on Escape', async () => {
+    const wrapper = await panel()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    expect(wrapper.find('[data-testid="poff-panel"]').exists()).toBe(false)
+  })
+
+  it('closes the panel from its close button', async () => {
+    const wrapper = await panel()
+    await wrapper.find('[aria-label="Close the film"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.$route.query).toEqual({})
+  })
+
+  it('moves focus into the panel it opens', async () => {
+    await panel()
+    expect(document.activeElement?.getAttribute('aria-label')).toBe('Close the film')
+  })
+
+  it('returns focus to the title of the film after closing its panel', async () => {
+    const wrapper = await panel()
+    await wrapper.find('[aria-label="Close the film"]').trigger('click')
+    await flushPromises()
+    expect(document.activeElement?.textContent?.trim()).toBe('Armastatu')
+  })
 
   it('opens the page of a film from its title', async () => {
     const title = (await mount()).find('[data-testid="poff-title"]')
@@ -112,6 +189,32 @@ describe('PoffTimetable', () => {
     await choose(wrapper, 'Tartu')
     await choose(wrapper, 'Monday, 9 November 2026')
     expect(wrapper.text()).toContain('No screenings in Tartu on Mon 9 Nov')
+  })
+
+  it('says when the filters hide every screening of a day', async () => {
+    const wrapper = await mount()
+    await choose(wrapper, 'Tartu')
+    await choose(wrapper, 'IMDb 7+')
+    expect(wrapper.text()).toContain('No screenings in Tartu on Tue 10 Nov match the filters')
+  })
+
+  it('counts a single started screening in the singular', async () => {
+    vi.setSystemTime(new Date('2026-11-10T15:50:00Z'))
+    expect((await mount()).find('[data-testid="poff-earlier"]').text()).toBe(
+      'Earlier today · 1 screening'
+    )
+  })
+
+  it('counts no screenings while the programme loads', () => {
+    vi.mocked(poffService.catalogue).mockReturnValue(new Promise(() => {}))
+    expect(renderWithProviders(PoffTimetable).find('[data-testid="poff-band"]').text()).toBe('')
+  })
+
+  it('keeps the place of the festival days while the programme loads', () => {
+    vi.mocked(poffService.catalogue).mockReturnValue(new Promise(() => {}))
+    expect(
+      renderWithProviders(PoffTimetable).find('[data-testid="poff-day-loading"]').exists()
+    ).toBe(true)
   })
 
   it('moves focus to earlier today when the focused screening starts', async () => {

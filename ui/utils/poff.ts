@@ -1,4 +1,5 @@
 import type { ImdbRating, PoffFilm, PoffScreening } from '../models/generated/domain-models'
+import { count } from './formatters'
 import { addDays, daysBetween, formatDayMonth, formatWeekdayDate, monthName } from './iso-dates'
 
 export type City = 'Tallinn' | 'Tartu'
@@ -16,8 +17,18 @@ export interface TimetableRow {
 
 export const HEADING = 'mb-2 text-xl font-semibold'
 
+export const OUTLINED =
+  'rounded-control border border-control-border font-medium shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep'
+
 export const CHIP =
   'platform-btn platform-btn-outline relative md-down:h-9 md-down:text-2xs md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
+
+const PREMIERES = [
+  'World premiere',
+  'International premiere',
+  'Baltic premiere',
+  'Estonian premiere',
+]
 
 const ZONE = 'Europe/Tallinn'
 const DAY = new Intl.DateTimeFormat('sv-SE', {
@@ -81,6 +92,9 @@ export const splitStarted = (rows: TimetableRow[], now: Date) => ({
 export const shortCinema = (cinema: string): string =>
   cinema.replace(/^(Apollo )?Kino /, '').replace(' Kontserdimaja', '')
 
+export const premiere = (film: PoffFilm): string | null =>
+  film.premiere && PREMIERES.includes(film.premiere) ? film.premiere : null
+
 export const fullDate = (day: string): string => FULL.format(new Date(`${day}T00:00:00Z`))
 
 export const clock = (instant: string): string => TIME.format(new Date(instant))
@@ -103,8 +117,8 @@ export const festivalSummary = (films: PoffFilm[]): string => {
   return [
     'Black Nights Film Festival',
     ...dates,
-    `${films.length} films`,
-    `${screenings} screenings`,
+    count(films.length, 'film'),
+    count(screenings, 'screening'),
   ].join(' · ')
 }
 

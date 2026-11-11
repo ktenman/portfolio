@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { film, poffCatalogue, screening } from '../components/poff/poff-fixture'
-import { filmCount, filterFilms, genres, nextLine, sortFilms, type FilmFilters } from './poff-films'
+import { filterFilms, genres, nextLine, sortFilms, type FilmFilters } from './poff-films'
 
 const now = new Date('2026-11-10T15:00:00Z')
 const none: FilmFilters = {
@@ -119,10 +119,6 @@ describe('poff films', () => {
   it('says no screenings are left after the last one has started', () => {
     const shown = film(1, 'A', 'A', [screening(1, '2026-11-10T14:00:00Z')])
     expect(nextLine(shown, now)).toBe('No screenings left')
-  })
-
-  it('counts a single film in the singular', () => {
-    expect([filmCount(1), filmCount(271)]).toEqual(['1 film', '271 films'])
   })
 
   it('lists every genre once in alphabetical order', () => {

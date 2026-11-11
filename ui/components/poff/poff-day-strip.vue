@@ -1,5 +1,11 @@
 <template>
-  <div ref="strip" class="mb-3 flex gap-1.5 overflow-x-auto" role="group" aria-label="Festival day">
+  <div
+    ref="strip"
+    class="mb-3 flex gap-1.5 overflow-x-auto md-down:-mr-3 md-down:pr-3 md-down:[scrollbar-width:none]"
+    role="group"
+    aria-label="Festival day"
+    :aria-busy="!days.length || undefined"
+  >
     <button
       v-for="day in days"
       :key="day"
@@ -25,22 +31,32 @@
         {{ Number(day.slice(8)) }}
       </span>
     </button>
+    <template v-if="!days.length">
+      <span
+        v-for="i in 17"
+        :key="i"
+        class="skeleton h-14 min-w-13 flex-1 rounded-container"
+        data-testid="poff-day-loading"
+      />
+    </template>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, useTemplateRef } from 'vue'
+import { onMounted, useTemplateRef, watch } from 'vue'
 import { mondayIndex, WEEKDAYS } from '../../utils/iso-dates'
 import { fullDate } from '../../utils/poff'
 
-defineProps<{ days: string[]; today: string }>()
+const props = defineProps<{ days: string[]; today: string }>()
 
 const model = defineModel<string>({ required: true })
 const strip = useTemplateRef<HTMLElement>('strip')
 
-onMounted(() =>
+const center = () =>
   strip.value
     ?.querySelector('[aria-pressed="true"]')
     ?.scrollIntoView({ block: 'nearest', inline: 'center' })
-)
+
+onMounted(center)
+watch(() => props.days.length > 0, center, { flush: 'post' })
 </script>

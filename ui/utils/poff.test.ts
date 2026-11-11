@@ -7,6 +7,7 @@ import {
   festivalSummary,
   filmLine,
   fullDate,
+  premiere,
   ratingLabel,
   ratingName,
   synced,
@@ -95,6 +96,23 @@ describe('poff', () => {
     expect(shortCinema('Alexela Kontserdimaja')).toBe('Alexela')
   })
 
+  it('keeps cinemas without a Kino prefix whole', () => {
+    const whole = ['Electric Cinema', 'Alexela Concert Hall', 'Film Museum']
+    expect(whole.map(shortCinema)).toEqual(whole)
+  })
+
+  it('badges a world premiere', () => {
+    expect(premiere(film(1, 'Ööbik', 'Nightingale', [], { premiere: 'World premiere' }))).toBe(
+      'World premiere'
+    )
+  })
+
+  it('does not badge a film in post-production', () => {
+    expect(
+      premiere(film(1, 'Ööbik', 'Nightingale', [], { premiere: 'Post-production' }))
+    ).toBeNull()
+  })
+
   it('spells out a day for screen readers', () => {
     expect(fullDate('2026-11-10')).toBe('Tuesday, 10 November 2026')
   })
@@ -119,7 +137,7 @@ describe('poff', () => {
       ]),
     ]
     expect(festivalSummary(late)).toBe(
-      'Black Nights Film Festival · 30 Oct–2 Nov 2026 · 1 films · 2 screenings'
+      'Black Nights Film Festival · 30 Oct–2 Nov 2026 · 1 film · 2 screenings'
     )
   })
 

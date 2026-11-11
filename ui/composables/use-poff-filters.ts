@@ -29,6 +29,7 @@ export const usePoffFilters = () => {
   const remembered = useLocalStorage<City>('poff-city', 'Tallinn')
   return {
     day: text('day'),
+    film: text('film'),
     city: computed({
       get: (): City =>
         CITIES.find(c => c.toLowerCase() === route.query.city) ??

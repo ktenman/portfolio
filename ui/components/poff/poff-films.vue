@@ -29,7 +29,7 @@
       </div>
       <div class="flex items-center justify-between gap-4 md:ml-auto md:shrink-0">
         <span class="text-ink-soft" data-testid="poff-count">
-          <strong class="font-semibold text-ink">{{ filmCount(list.length) }}</strong>
+          <strong class="font-semibold text-ink">{{ count(list.length, 'film') }}</strong>
           {{ filters.showing ? 'still showing' : '' }}
         </span>
         <select
@@ -73,15 +73,9 @@ import { computed, reactive, ref } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
 import { usePoffFilmFilters } from '../../composables/use-poff-filters'
+import { count } from '../../utils/formatters'
 import { CHIP } from '../../utils/poff'
-import {
-  SORTS,
-  TOP_GENRES,
-  filmCount,
-  filterFilms,
-  genres,
-  sortFilms,
-} from '../../utils/poff-films'
+import { SORTS, TOP_GENRES, filterFilms, genres, sortFilms } from '../../utils/poff-films'
 import RadioIcon from '../radio/radio-icon.vue'
 import PoffFilmCard from './poff-film-card.vue'
 import PoffLoadError from './poff-load-error.vue'

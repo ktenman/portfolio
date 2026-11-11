@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  count,
   formatCurrencyWithSymbol,
   formatCurrency,
   formatCurrencyWithSign,
@@ -415,5 +416,12 @@ describe('formatPriceChange', () => {
 
   it('should return a dash when the change is unknown', () => {
     expect(formatPriceChange({ ...item, priceChangeAmount: null })).toBe('-')
+  })
+
+  it('counts a single screening in the singular', () => {
+    expect([count(1, 'screening'), count(32, 'screening')]).toEqual([
+      '1 screening',
+      '32 screenings',
+    ])
   })
 })

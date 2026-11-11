@@ -88,7 +88,5 @@ export const nextLine = (film: PoffFilm, now: Date): string => {
   return [`${when} ${clock(first.start)}`, shortCinema(first.cinema), ...more].join(' · ')
 }
 
-export const filmCount = (count: number): string => `${count} ${count === 1 ? 'film' : 'films'}`
-
 export const genres = (films: PoffFilm[]): string[] =>
   [...new Set(films.flatMap(f => f.genres))].sort((a, b) => a.localeCompare(b, 'en'))

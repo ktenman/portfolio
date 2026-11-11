@@ -115,6 +115,7 @@ import { useIntersectionObserver } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import type { TextPart } from '../../models/generated/domain-models'
 import { useRadioSearch, useStationFilter } from '../../composables/use-radio-recordings'
+import { count } from '../../utils/formatters'
 import { clock, day, STATIONS } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioCard from './radio-card.vue'
@@ -154,8 +155,6 @@ useIntersectionObserver(
   },
   { rootMargin: '0px 0px 100% 0px' }
 )
-
-const count = (n: number, word: string) => `${n} ${n === 1 ? word : `${word}s`}`
 
 const at = (name: string, start: number, kept = true) => ({
   path: `/radio/${name}`,

@@ -92,3 +92,24 @@ for (const phone of PHONES) {
     }).toEqual({ chips: [36], days: [52] })
   })
 }
+
+test('PÖFF timetable opens a film in the panel from its row and closes it on Escape', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await open(page, { width: 1440, height: 900 })
+  await page.locator('[data-testid="poff-row"]', { hasText: 'Ameerika arst' }).first().click()
+  await expect(page.getByTestId('poff-panel').getByRole('heading', { level: 2 })).toHaveText(
+    'Ameerika arst'
+  )
+  await page.mouse.wheel(0, 400)
+  const [nav, panel] = await Promise.all(
+    [page.locator('nav.navbar'), page.getByTestId('poff-panel')].map(async box => {
+      await expect(box).toBeVisible()
+      return box.boundingBox()
+    })
+  )
+  expect(panel!.y).toBe(nav!.y + nav!.height + 16)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('poff-panel')).toHaveCount(0)
+})
