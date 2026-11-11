@@ -121,6 +121,7 @@ services:
       - CLOUDFLARE_BYPASS_PROXY_URL=http://cloudflare-bypass-proxy:3000
       - TRADING212_ENABLED=true
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - RADIO_STATIONS=${RADIO_STATIONS:-KUKU,ARIPAEV,ELMAR,SKYPLUS}
     volumes:
       - radio_recordings:/recordings
       - ./trades:/app/trades:ro
@@ -162,32 +163,35 @@ services:
   radio-worker: &radio-worker
     build: radio-worker
     container_name: portfolio-radio-worker
-    profiles: [radio]
+    profiles: [radio, radio-kuku]
     command: ["planned"]
     restart: unless-stopped
     stop_grace_period: 5m
     volumes:
       - radio_recordings:/recordings
 
-  radio-bridge:
+  radio-bridge: &radio-bridge
     container_name: portfolio-radio-bridge
     image: jrottenberg/ffmpeg:8-alpine@sha256:3ab1c371ad3e734e7a31a3219e6a75120f1106c776b291db1bfc2d20158cd73e
-    profiles: [radio]
+    profiles: [radio, radio-aripaev]
+    environment:
+      STATION: aripaev
+      STREAM: https://www.aripaev.ee/raadio/stream.mp3
     user: "1000:1000"
     entrypoint: ["sh", "-c"]
     command:
       - >-
-        mkdir -p /recordings/.aripaev &&
+        mkdir -p /recordings/.$$STATION &&
         exec ffmpeg -nostdin -loglevel warning
         -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30
         -rw_timeout 15000000
-        -i https://www.aripaev.ee/raadio/stream.mp3
+        -i $$STREAM
         -map 0:a:0 -c:a copy
         -output_ts_offset $$(( $$(date +%s) % 95443 ))
         -f hls -hls_time 6 -hls_list_size 600
         -hls_flags delete_segments+omit_endlist
-        -hls_segment_filename /recordings/.aripaev/seg_%05d.ts
-        /recordings/.aripaev/stream.m3u8
+        -hls_segment_filename /recordings/.$$STATION/seg_%05d.ts
+        /recordings/.$$STATION/stream.m3u8
     restart: unless-stopped
     cpus: 0.1
     mem_limit: 64m
@@ -197,7 +201,36 @@ services:
   radio-worker-aripaev:
     <<: *radio-worker
     container_name: portfolio-radio-worker-aripaev
+    profiles: [radio, radio-aripaev]
     command: ["planned", "--station", "ARIPAEV", "--source", "/recordings/.aripaev/stream.m3u8"]
+
+  radio-bridge-elmar:
+    <<: *radio-bridge
+    container_name: portfolio-radio-bridge-elmar
+    profiles: [radio, radio-elmar]
+    environment:
+      STATION: elmar
+      STREAM: https://router.euddn.net/8103046e16b71d15d692b57c187875c7/elmar.mp3
+
+  radio-worker-elmar:
+    <<: *radio-worker
+    container_name: portfolio-radio-worker-elmar
+    profiles: [radio, radio-elmar]
+    command: ["planned", "--station", "ELMAR", "--source", "/recordings/.elmar/stream.m3u8"]
+
+  radio-bridge-skyplus:
+    <<: *radio-bridge
+    container_name: portfolio-radio-bridge-skyplus
+    profiles: [radio, radio-skyplus]
+    environment:
+      STATION: skyplus
+      STREAM: https://stream.skymedia.ee/live/SKYPLUS
+
+  radio-worker-skyplus:
+    <<: *radio-worker
+    container_name: portfolio-radio-worker-skyplus
+    profiles: [radio, radio-skyplus]
+    command: ["planned", "--station", "SKYPLUS", "--source", "/recordings/.skyplus/stream.m3u8"]
 
   app:
     image: caddy:2.8.4-alpine

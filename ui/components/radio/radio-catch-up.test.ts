@@ -16,7 +16,7 @@ const player = vi.hoisted(() => ({
 }))
 
 vi.mock('../../services/api', () => ({
-  radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn() },
+  radioService: { day: vi.fn(), record: vi.fn(), recordings: vi.fn(), stations: vi.fn() },
 }))
 vi.mock('../../composables/use-radio-player', () => ({ useRadioPlayer: () => player }))
 vi.mock('../../composables/use-auth-state', async () => {

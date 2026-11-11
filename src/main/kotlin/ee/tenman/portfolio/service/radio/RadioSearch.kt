@@ -135,7 +135,7 @@ private fun kept(
   edit: EditList?,
 ): Boolean = edit == null || edit.keep.any { start >= it.start && start < it.end }
 
-private fun fold(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(MARKS, "")
+internal fun fold(text: String): String = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD).replace(MARKS, "")
 
 private fun folded(texts: List<String>): Set<String> = texts.flatMap { text -> WORD.findAll(text).map { fold(it.value) }.toList() }.toSet()
 

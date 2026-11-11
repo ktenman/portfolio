@@ -1,7 +1,11 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.inAnyOrder
+import ch.tutteli.atrium.api.fluent.en_GB.only
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.values
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.JobExecution
 import ee.tenman.portfolio.domain.JobStatus
@@ -44,7 +48,22 @@ class RadioMetricsServiceTest {
     .gauge()
     .value()
 
-  private fun bridge(registry: SimpleMeterRegistry) = registry.get("portfolio.radio.bridge.timestamp.seconds").gauge().value()
+  private fun bridged(
+    station: String,
+    at: Instant,
+  ) {
+    val playlist = Files.createDirectories(directory.resolve(station)).resolve("stream.m3u8")
+    Files.setLastModifiedTime(Files.writeString(playlist, "#EXTM3U"), FileTime.from(at))
+  }
+
+  private fun bridge(
+    registry: SimpleMeterRegistry,
+    station: String = "Äripäev",
+  ) = registry
+    .get("portfolio.radio.bridge.timestamp.seconds")
+    .tag("station", station)
+    .gauge()
+    .value()
 
   private fun refreshed(
     missed: Map<Station, List<MissedCapture>> = emptyMap(),
@@ -53,6 +72,7 @@ class RadioMetricsServiceTest {
     renewed: Map<String, Instant> = emptyMap(),
   ): SimpleMeterRegistry {
     every { radioScheduleService.missed() } returns missed
+    every { jobExecutionRepository.findFirstByJobNameOrderByStartTimeDesc(any()) } returns null
     every { jobExecutionRepository.findFirstByJobNameOrderByStartTimeDesc("RadioScheduleJob") } returns
       status?.let { JobExecution("RadioScheduleJob", Instant.EPOCH, Instant.EPOCH, 0, it) }
     every { jobExecutionRepository.findFirstByJobNameOrderByStartTimeDesc(ARIPAEV_JOB) } returns
@@ -99,11 +119,35 @@ class RadioMetricsServiceTest {
   }
 
   @Test
-  fun `should export both stations before any refresh`() {
+  fun `should export every station before any refresh`() {
     val registry = SimpleMeterRegistry()
     RadioMetricsService(radioScheduleService, jobExecutionRepository, RadioProperties(recordings = directory)).bindTo(registry)
     expect(registry.get("portfolio.radio.schedule.failed").gauges().map { it.id.getTag("station") })
-      .toContainExactly("Kuku", "Äripäev")
+      .toContain.inAnyOrder.only
+      .values("Kuku", "Äripäev", "Elmar", "Sky Plus")
+  }
+
+  @Test
+  fun `should register no gauges for a station that is off`() {
+    val registry = SimpleMeterRegistry()
+    RadioMetricsService(
+      radioScheduleService,
+      jobExecutionRepository,
+      RadioProperties(recordings = directory, stations = listOf(Station.KUKU)),
+    ).bindTo(registry)
+    expect(registry.meters.mapNotNull { it.id.getTag("station") }.distinct()).toContainExactly("Kuku")
+  }
+
+  @Test
+  fun `should report the bridge of each listed station under its own label`() {
+    bridged(".skyplus", ARIPAEV_RENEWED)
+    expect(bridge(refreshed(), "Sky Plus")).toEqual(1_792_908_000.0)
+  }
+
+  @Test
+  fun `should keep the bridge of Äripäev silent when only the bridge of Sky Plus writes`() {
+    bridged(".skyplus", ARIPAEV_RENEWED)
+    expect(bridge(refreshed()).isNaN()).toEqual(true)
   }
 
   @Test
@@ -120,8 +164,7 @@ class RadioMetricsServiceTest {
 
   @Test
   fun `should report when the bridge last wrote its playlist`() {
-    val playlist = Files.createDirectories(directory.resolve(".aripaev")).resolve("stream.m3u8")
-    Files.setLastModifiedTime(Files.writeString(playlist, "#EXTM3U"), FileTime.from(KUKU_RENEWED))
+    bridged(".aripaev", KUKU_RENEWED)
     expect(bridge(refreshed())).toEqual(1_792_821_600.0)
   }
 
@@ -144,7 +187,7 @@ class RadioMetricsServiceTest {
   }
 
   private companion object {
-    val ARIPAEV_JOB = AripaevScheduleJob(mockk(), mockk(), mockk(), mockk(), mockk()).getName()
+    val ARIPAEV_JOB = AripaevScheduleJob(mockk(), mockk(), mockk(), mockk(), mockk(), mockk()).getName()
     val KUKU_RENEWED: Instant = Instant.ofEpochSecond(1_792_821_600)
     val ARIPAEV_RENEWED: Instant = Instant.ofEpochSecond(1_792_908_000)
   }

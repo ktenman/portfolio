@@ -37,7 +37,7 @@ class AripaevScheduleJobIT : RadioScheduleTestBase() {
       """"seriesSlug":"kuum-tool","title":"Õie ülevaade","description":"${'$'}6b"}""" +
       """],"episodeMedia":{}}]"""
 
-  private fun job() = AripaevScheduleJob(aripaevScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock)
+  private fun job() = AripaevScheduleJob(aripaevScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, radioProperties)
 
   @Test
   fun `should read Estonian letters from a response that names no charset`() {

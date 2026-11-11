@@ -161,7 +161,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
+          summary: '{{ $labels.station }} bridge has written no playlist for five minutes, so {{ $labels.station }} recordings lose audio'
       - alert: RadioScheduleFailed
         expr: portfolio_radio_schedule_failed == 1
         labels:

@@ -369,7 +369,7 @@ tests:
               summary: 'Kuku schedule has not been imported for two days, so nothing new is planned'
   - interval: 15s
     input_series:
-      - series: 'portfolio_radio_bridge_timestamp_seconds'
+      - series: 'portfolio_radio_bridge_timestamp_seconds{station="Äripäev"}'
         values: '0+15x40 600+0x40 stale'
     alert_rule_test:
       - eval_time: 14m
@@ -383,6 +383,7 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: warning
+              station: Äripäev
             exp_annotations:
               summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
       - eval_time: 25m
@@ -390,11 +391,27 @@ tests:
         exp_alerts:
           - exp_labels:
               severity: warning
+              station: Äripäev
             exp_annotations:
               summary: 'Äripäev bridge has written no playlist for five minutes, so Äripäev recordings lose audio'
   - interval: 15s
     input_series:
-      - series: 'portfolio_radio_bridge_timestamp_seconds'
+      - series: 'portfolio_radio_bridge_timestamp_seconds{station="Sky Plus"}'
+        values: '0+15x40 600+0x40'
+      - series: 'portfolio_radio_bridge_timestamp_seconds{station="Elmar"}'
+        values: '0+15x80'
+    alert_rule_test:
+      - eval_time: 18m
+        alertname: RadioBridgeStale
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              station: Sky Plus
+            exp_annotations:
+              summary: 'Sky Plus bridge has written no playlist for five minutes, so Sky Plus recordings lose audio'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_radio_bridge_timestamp_seconds{station="Äripäev"}'
         values: 'NaN+0x40'
     alert_rule_test:
       - eval_time: 9m

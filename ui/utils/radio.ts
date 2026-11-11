@@ -37,6 +37,8 @@ export const METHODS: Record<BoundaryMethod, string> = {
 export const STATIONS: Record<Station, string> = {
   [Station.KUKU]: 'Kuku',
   [Station.ARIPAEV]: 'Äripäev',
+  [Station.ELMAR]: 'Elmar',
+  [Station.SKYPLUS]: 'Sky Plus',
 }
 
 const DAYS = Object.values(DayOfWeek)

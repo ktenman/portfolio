@@ -39,6 +39,7 @@ class RadioDayTest {
       names,
       mockk<RadioArchiveService> { every { recordings() } returns recordings },
       RadioScheduleService(names, mockk(), mockk(), RadioProperties(), clock),
+      RadioProperties(),
       clock,
     )
   }

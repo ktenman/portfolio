@@ -14,6 +14,8 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.Capture
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioScheduleService
+import ee.tenman.portfolio.service.radio.ScheduledAiring
+import ee.tenman.portfolio.service.radio.ScheduledShow
 import io.mockk.mockk
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
@@ -31,7 +33,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put a
 
 abstract class RadioScheduleTestBase {
   @Resource
-  private lateinit var kukuScheduleClient: KukuScheduleClient
+  protected lateinit var kukuScheduleClient: KukuScheduleClient
 
   @Resource
   protected lateinit var radioScheduleService: RadioScheduleService
@@ -90,13 +92,20 @@ abstract class RadioScheduleTestBase {
     """"original_id":$original,"show":{"id":$show,"name":"$name","slug":"${SLUGS.getValue(show)}",""" +
     """"description_short":"Saade, mida juhivad Ülle ja Õie"}}"""
 
-  protected fun load(vararg episodes: String) {
+  protected fun stub(
+    domain: String,
+    vararg episodes: String,
+  ) {
     wireMockServer.stubFor(
       get(urlPathEqualTo("/api/schedule"))
-        .withQueryParam("domain", equalTo("kuku.pleier.ee"))
+        .withQueryParam("domain", equalTo(domain))
         .willReturn(okJson("""[{"day":"$day","episodes":[${episodes.joinToString(",")}]}]""")),
     )
-    RadioScheduleJob(kukuScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock).execute()
+  }
+
+  protected fun load(vararg episodes: String) {
+    stub("kuku.pleier.ee", *episodes)
+    RadioScheduleJob(kukuScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, radioProperties).execute()
   }
 
   protected fun recording(
@@ -114,6 +123,34 @@ abstract class RadioScheduleTestBase {
     )
   }
 
+  protected fun aripaev(
+    id: Long,
+    start: String,
+    end: String,
+  ) = aripaev(id, at(start), at(end))
+
+  protected fun aripaev(
+    id: Long,
+    start: ZonedDateTime,
+    end: ZonedDateTime,
+  ) = ScheduledAiring(
+    id,
+    ScheduledShow(ARIPAEV_SHOW, "Kuum tool", "kuum-tool", "Päeva põletavad küsimused"),
+    "Kuum tool",
+    start.toInstant(),
+    end.toInstant(),
+    null,
+  )
+
+  protected fun replaceAripaev(vararg airings: ScheduledAiring) {
+    radioScheduleService.replace(Station.ARIPAEV, airings.toList(), at("00:00").toInstant(), at("00:00").plusDays(1).toInstant())
+  }
+
+  protected fun aripaevRecording(
+    state: String,
+    programme: String = "Kuum tool",
+  ) = recording("2026-11-09-1100-aripaev-kuum-tool", at("08:00"), 600, state, programme, Station.ARIPAEV)
+
   protected fun choose(
     id: Long,
     record: Boolean,
@@ -126,7 +163,9 @@ abstract class RadioScheduleTestBase {
   protected fun plan(station: Station = Station.KUKU): List<Capture> =
     JsonMapperFactory.instance.readValue(Files.readString(radioProperties.recordings.resolve(station.plan)))
 
-  private companion object {
-    val SLUGS = mapOf(175L to "keskpaevatund", 231L to "tarkade-klubi")
+  protected companion object {
+    const val ARIPAEV_SHOW = (1L shl 48) + 1
+    const val ARIPAEV_AIRING = (1L shl 48) + 2
+    private val SLUGS = mapOf(175L to "keskpaevatund", 231L to "tarkade-klubi")
   }
 }

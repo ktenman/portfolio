@@ -101,7 +101,7 @@ class RadioControllerIT {
 
   @Test
   fun `should list one entry per station`() {
-    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(jsonPath("$[*].station", contains("KUKU", "ARIPAEV")))
+    mockMvc.perform(mvcGet("/api/radio/station")).andExpect(jsonPath("$[*].station", contains("KUKU", "ARIPAEV", "ELMAR", "SKYPLUS")))
   }
 
   @Test

@@ -37,6 +37,8 @@ kuku:
 
 aripaev:
   url: http://localhost:${wiremock.server.port}
+skyplus:
+  url: http://localhost:${wiremock.server.port}
 
 poff:
   url: http://localhost:${wiremock.server.port}

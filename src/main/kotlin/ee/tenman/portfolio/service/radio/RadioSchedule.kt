@@ -10,12 +10,13 @@ import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 val Station.bytesPerHour: Long get() = (bitrate / 8 + RATE * 2L) * 3600
 
 val MISSED_FOR: Duration = Duration.ofDays(1)
 private val GRACE = Duration.ofMinutes(2)
-private val PADDING = Duration.ofSeconds(10)
+private val PADDING = Duration.ofSeconds(15)
 private val UNSAFE = Regex("[^0-9a-z]+")
 private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
 
@@ -175,7 +176,7 @@ private fun capture(
 fun List<Capture>.cover(airing: RadioAiring): Boolean =
   any { it.slot.start <= airing.startsAt.epochSecond && it.slot.end >= airing.endsAt.epochSecond }
 
-private fun safe(slug: String): String = slug.lowercase().replace(UNSAFE, "-").trim('-')
+internal fun safe(slug: String): String = slug.lowercase().replace(UNSAFE, "-").trim('-')
 
 fun slots(
   times: List<Pair<Instant, Instant>>,
@@ -186,3 +187,5 @@ fun slots(
     .groupBy({ (start, end) -> start.toLocalTime() to end.toLocalTime() }, { it.first.dayOfWeek })
     .map { (time, days) -> AirSlot(days.distinct().sorted(), time.first, time.second) }
     .sortedWith(compareBy({ it.days.first() }, { it.start }))
+
+internal fun id(text: String): Long = UUID.nameUUIDFromBytes(text.toByteArray()).mostSignificantBits ushr 16 or (1L shl 48)

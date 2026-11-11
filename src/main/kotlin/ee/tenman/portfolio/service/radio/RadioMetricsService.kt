@@ -23,12 +23,17 @@ class RadioMetricsService(
 
   @Volatile private var failed = emptySet<Station>()
 
-  @Volatile private var bridged = Double.NaN
+  @Volatile private var bridged = emptyMap<Station, Double>()
 
   override fun bindTo(registry: MeterRegistry) {
     missed = MultiGauge.builder("portfolio.radio.missed.capture").register(registry)
-    Gauge.builder("portfolio.radio.bridge.timestamp.seconds", this) { it.bridged }.register(registry)
-    SCHEDULE_JOBS.keys.forEach { station ->
+    radioProperties.stations.filter { it.playlist != null }.forEach { station ->
+      Gauge
+        .builder("portfolio.radio.bridge.timestamp.seconds", this) { it.bridged[station] ?: Double.NaN }
+        .tag("station", station.label)
+        .register(registry)
+    }
+    radioProperties.stations.forEach { station ->
       Gauge
         .builder("portfolio.radio.plan.timestamp.seconds", this) { it.planned[station] ?: 0.0 }
         .tag("station", station.label)
@@ -43,16 +48,19 @@ class RadioMetricsService(
   fun refresh() {
     if (!::missed.isInitialized) return
     missed.register(radioScheduleService.missed().flatMap { (station, captures) -> captures.map { row(station, it) } }, true)
-    planned = SCHEDULE_JOBS.mapValues { (_, job) -> renewed(job) }
-    failed = SCHEDULE_JOBS.filterValues(::failed).keys
-    bridged = playlist()
+    val jobs = jobs()
+    planned = jobs.mapValues { (_, job) -> renewed(job) }
+    failed = jobs.filterValues(::failed).keys
+    bridged = radioProperties.stations.associateWith(::playlist)
   }
 
-  private fun playlist(): Double {
+  private fun jobs(): Map<Station, String> = SCHEDULE_JOBS.filterKeys { it in radioProperties.stations }
+
+  private fun playlist(station: Station): Double {
     val root = radioProperties.recordings
-    val playlist = root.resolve(BRIDGE_PLAYLIST)
+    val playlist = station.playlist?.let(root::resolve) ?: return Double.NaN
     if (Files.exists(playlist)) return Files.getLastModifiedTime(playlist).toMillis() / 1000.0
-    return if (Files.exists(root.resolve(Station.ARIPAEV.heartbeat))) 0.0 else Double.NaN
+    return if (Files.exists(root.resolve(station.heartbeat))) 0.0 else Double.NaN
   }
 
   private fun renewed(job: String): Double =
@@ -74,7 +82,12 @@ class RadioMetricsService(
     )
 
   companion object {
-    private const val BRIDGE_PLAYLIST = ".aripaev/stream.m3u8"
-    private val SCHEDULE_JOBS = mapOf(Station.KUKU to "RadioScheduleJob", Station.ARIPAEV to "AripaevScheduleJob")
+    private val SCHEDULE_JOBS =
+      mapOf(
+        Station.KUKU to "RadioScheduleJob",
+        Station.ARIPAEV to "AripaevScheduleJob",
+        Station.ELMAR to "ElmarScheduleJob",
+        Station.SKYPLUS to "SkyplusScheduleJob",
+      )
   }
 }

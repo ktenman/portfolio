@@ -27,6 +27,8 @@ class RadioLiveService(
     when (station) {
       Station.KUKU -> radioProperties.live
       Station.ARIPAEV -> radioProperties.aripaevLive
+      Station.ELMAR -> radioProperties.elmarLive
+      Station.SKYPLUS -> radioProperties.skyplusLive
     }
 
   private fun command(url: String): List<String> =

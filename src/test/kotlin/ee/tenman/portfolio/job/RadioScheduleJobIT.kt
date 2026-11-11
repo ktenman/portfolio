@@ -56,8 +56,8 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
       Capture(
         "$day-1200-keskpaevatund",
         listOf("Keskpäevatund"),
-        at("12:00:10").toEpochSecond(),
-        at("13:00:30").toEpochSecond(),
+        at("12:00:05").toEpochSecond(),
+        at("13:00:35").toEpochSecond(),
         Slot(at("12:00").toEpochSecond(), at("13:00").toEpochSecond()),
       ),
     )
@@ -70,7 +70,7 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
       episode(2, 175, "Keskpäevatund", "12:00", "13:00"),
       episode(3, 231, "Tarkade klubi", "13:30", "14:00"),
     )
-    val found = radioAiringRepository.findOverlapping(Station.KUKU, at("12:00:10").toInstant(), at("13:00:30").toInstant())
+    val found = radioAiringRepository.findOverlapping(Station.KUKU, at("12:00:05").toInstant(), at("13:00:35").toInstant())
     expect(found.map { it.externalId }).toContainExactly(2L)
   }
 
@@ -109,7 +109,7 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
   fun `should name the next capture of the recorder`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
-    expect(radioScheduleService.station(Station.KUKU).capture?.start).toEqual(at("12:00:10").toEpochSecond())
+    expect(radioScheduleService.station(Station.KUKU).capture?.start).toEqual(at("12:00:05").toEpochSecond())
   }
 
   @Test

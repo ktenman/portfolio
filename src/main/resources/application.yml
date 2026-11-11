@@ -173,6 +173,7 @@ scheduling:
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}
+  stations: ${RADIO_STATIONS:KUKU,ARIPAEV,ELMAR,SKYPLUS}
 
 etf:
   holding-reconciliation:
@@ -286,6 +287,9 @@ kuku:
 
 aripaev:
   url: https://www.aripaev.ee
+
+skyplus:
+  url: https://sky.ee
 
 poff:
   url: https://poff.ee

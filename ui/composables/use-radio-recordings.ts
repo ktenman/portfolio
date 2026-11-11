@@ -36,14 +36,23 @@ export const useStationFilter = () => {
   })
 }
 
-export const useRailStations = () => {
+const useStationQuery = (refetchInterval: number | false) => {
   const { isAuthenticated } = useAuthState()
-  const { data } = useQuery({
+  return useQuery({
     queryKey: ['radio-station'],
     queryFn: radioService.stations,
     enabled: isAuthenticated,
-    refetchInterval: 60_000,
+    refetchInterval,
   })
+}
+
+export const useStations = () => {
+  const { data } = useStationQuery(false)
+  return computed(() => (data.value ?? []).map(({ station }) => station))
+}
+
+export const useRailStations = () => {
+  const { data } = useStationQuery(60_000)
   const chosen = useStationFilter()
   return computed(() =>
     (data.value ?? []).filter(({ station }) => !chosen.value || station === chosen.value)
