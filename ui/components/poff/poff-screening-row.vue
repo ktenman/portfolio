@@ -9,15 +9,13 @@
     </td>
     <td class="py-3 pr-4 md-down:p-0">
       <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <a
-          :href="filmUrl(film)"
-          target="_blank"
-          rel="noopener"
+        <router-link
+          :to="{ name: 'PoffFilm', params: { slug: film.slug } }"
           class="relative font-semibold hover:underline focus-visible:underline md-down:before:absolute md-down:before:top-1/2 md-down:before:left-0 md-down:before:h-11 md-down:before:w-full md-down:before:min-w-11 md-down:before:-translate-y-1/2"
           data-testid="poff-title"
         >
           {{ film.title }}
-        </a>
+        </router-link>
         <radio-badge v-if="film.premiere" class="md-down:hidden">{{ film.premiere }}</radio-badge>
       </span>
       <span v-if="filmLine(film)" class="block text-sm text-ink-soft">{{ filmLine(film) }}</span>
@@ -63,7 +61,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { PoffFilm, PoffScreening } from '../../models/generated/domain-models'
-import { clock, filmLine, filmUrl, shortCinema, ticketUrl } from '../../utils/poff'
+import { clock, filmLine, shortCinema, ticketUrl } from '../../utils/poff'
 import RadioBadge from '../radio/radio-badge.vue'
 import RadioIcon from '../radio/radio-icon.vue'
 import PoffRating from './poff-rating.vue'

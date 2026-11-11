@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.verbs.expect
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
+import com.github.tomakehurst.wiremock.client.WireMock.notFound
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.serverError
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
@@ -31,8 +32,11 @@ class PoffStillServiceIT {
   @InjectWireMock
   private lateinit var wireMockServer: WireMockServer
 
-  private fun still(path: String = "/img/${UUID.randomUUID()}_big_16_9.jpeg"): String {
-    val image = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(1920, 1080, BufferedImage.TYPE_INT_RGB), "jpg", it) }
+  private fun still(
+    path: String = "/img/${UUID.randomUUID()}_big_16_9.jpeg",
+    wide: Int = 1920,
+  ): String {
+    val image = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(wide, wide * 9 / 16, BufferedImage.TYPE_INT_RGB), "jpg", it) }
     wireMockServer.stubFor(get(path).willReturn(ok().withBody(image.toByteArray())))
     return wireMockServer.baseUrl() + path
   }
@@ -53,6 +57,32 @@ class PoffStillServiceIT {
     poffStillService.store(films)
     poffStillService.store(films)
     wireMockServer.verify(1, getRequestedFor(urlPathEqualTo(path)))
+  }
+
+  @Test
+  fun `stores the thumbnail of the trailer as its poster`() {
+    val trailer = UUID.randomUUID().toString()
+    still("/vi/$trailer/maxresdefault.jpg")
+    poffStillService.store(listOf(poffFilm(1, trailer = trailer)))
+    expect(width("${posterKey(trailer)}-1280")).toEqual(1280)
+  }
+
+  @Test
+  fun `stores the first still as the poster when the trailer has no thumbnail`() {
+    val trailer = UUID.randomUUID().toString()
+    wireMockServer.stubFor(get("/vi/$trailer/maxresdefault.jpg").willReturn(notFound()))
+    poffStillService.store(listOf(poffFilm(1, stills = listOf(still(wide = 800)), trailer = trailer)))
+    expect(width("${posterKey(trailer)}-1280")).toEqual(800)
+  }
+
+  @Test
+  fun `downloads a trailer poster only once`() {
+    val trailer = UUID.randomUUID().toString()
+    still("/vi/$trailer/maxresdefault.jpg")
+    val films = listOf(poffFilm(1, trailer = trailer))
+    poffStillService.store(films)
+    poffStillService.store(films)
+    wireMockServer.verify(1, getRequestedFor(urlPathEqualTo("/vi/$trailer/maxresdefault.jpg")))
   }
 
   @Test

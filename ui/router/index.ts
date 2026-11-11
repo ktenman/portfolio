@@ -84,6 +84,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'PoffFilms',
         component: () => import('../components/poff/poff-films.vue'),
       },
+      {
+        path: 'film/:slug',
+        name: 'PoffFilm',
+        component: () => import('../components/poff/poff-film.vue'),
+      },
     ],
   },
   {
@@ -95,6 +100,7 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior: (to, from, saved) => saved ?? (to.path === from.path ? false : { top: 0 }),
 })
 
 export default router

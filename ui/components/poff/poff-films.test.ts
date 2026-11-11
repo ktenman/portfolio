@@ -48,6 +48,11 @@ describe('PoffFilms', () => {
 
   afterEach(() => vi.useRealTimers())
 
+  it('opens the page of a film from its title', async () => {
+    const title = (await mount()).find('[data-testid="poff-film-title"]')
+    expect(title.attributes('href')).toBe('/poff/film/american-doctor')
+  })
+
   it('lists the films still showing by rating', async () => {
     expect(titles(await mount())).toEqual([
       'Ameerika arst',

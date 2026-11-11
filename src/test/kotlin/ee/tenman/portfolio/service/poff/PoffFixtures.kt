@@ -46,6 +46,7 @@ fun poffFilm(
   cast: List<String> = emptyList(),
   screenings: List<PoffScreening> = listOf(poffScreening(id, "2026-11-10T16:00:00Z")),
   stills: List<String> = emptyList(),
+  trailer: String? = null,
 ) = PoffFilm(
   id = id,
   slug = "film-$id",
@@ -66,6 +67,6 @@ fun poffFilm(
   subtitles = emptyList(),
   credits = listOf(PoffCredit("Cast", cast)),
   stills = stills,
-  trailer = null,
+  trailer = trailer,
   screenings = screenings,
 )

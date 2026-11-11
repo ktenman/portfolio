@@ -14,6 +14,8 @@ export interface TimetableRow {
   screening: PoffScreening
 }
 
+export const HEADING = 'mb-2 text-xl font-semibold'
+
 export const CHIP =
   'platform-btn platform-btn-outline relative md-down:h-9 md-down:text-2xs md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
 
@@ -125,7 +127,5 @@ export const ratingName = (imdb?: ImdbRating | null): string => {
   return `IMDb ${ratingLabel(imdb)} from ${imdb.votes.toLocaleString('en-US')} votes`
 }
 
-export const filmUrl = (film: PoffFilm): string => `https://poff.ee/en/film/${film.slug}/`
-
 export const ticketUrl = (film: PoffFilm, screening: PoffScreening): string =>
-  `${filmUrl(film)}#screening_${screening.id}`
+  `https://poff.ee/en/film/${film.slug}/#screening_${screening.id}`

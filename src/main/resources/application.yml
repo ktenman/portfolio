@@ -295,6 +295,9 @@ imdb:
   datasets-url: https://datasets.imdbws.com
   suggestion-url: https://v3.sg.media-imdb.com
 
+youtube:
+  thumbnail-url: https://i.ytimg.com
+
 blackrock:
   url: https://www.blackrock.com
 
