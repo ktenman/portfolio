@@ -47,6 +47,11 @@ for (const phone of PHONES) {
     ['PÖFF timetable gives', '/poff', CONTROLS],
     ['PÖFF films give', '/poff/films', FILM_CONTROLS],
     ['PÖFF film page gives', '/poff/film/american-doctor', 'article :is(a, button, summary)'],
+    [
+      'PÖFF search gives',
+      '/poff?q=wil',
+      'main :is(input, a, button), [aria-label="Results"] button',
+    ],
   ]) {
     test(`${view} every control a 44px target without sideways scroll at ${size}`, async ({
       page,
@@ -103,13 +108,10 @@ test('PÖFF timetable opens a film in the panel from its row and closes it on Es
     'Ameerika arst'
   )
   await page.mouse.wheel(0, 400)
-  const [nav, panel] = await Promise.all(
-    [page.locator('nav.navbar'), page.getByTestId('poff-panel')].map(async box => {
-      await expect(box).toBeVisible()
-      return box.boundingBox()
-    })
-  )
-  expect(panel!.y).toBe(nav!.y + nav!.height + 16)
+  const nav = await page.locator('nav.navbar').boundingBox()
+  await expect
+    .poll(async () => (await page.getByTestId('poff-panel').boundingBox())?.y)
+    .toBe(nav!.y + nav!.height + 16)
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('poff-panel')).toHaveCount(0)
 })

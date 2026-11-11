@@ -123,6 +123,14 @@ describe('PoffTimetable', () => {
     expect(wrapper.find('[data-testid="poff-panel"]').exists()).toBe(false)
   })
 
+  it('leaves the panel to an open search on Escape', async () => {
+    const wrapper = await panel()
+    await wrapper.vm.$router.replace({ query: { ...wrapper.vm.$route.query, q: 'w' } })
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await flushPromises()
+    expect(wrapper.find('[data-testid="poff-panel"]').exists()).toBe(true)
+  })
+
   it('closes the panel from its close button', async () => {
     const wrapper = await panel()
     await wrapper.find('[aria-label="Close the film"]').trigger('click')
