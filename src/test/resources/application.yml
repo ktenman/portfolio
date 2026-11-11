@@ -46,6 +46,9 @@ imdb:
   datasets-url: http://localhost:${wiremock.server.port}
   suggestion-url: http://localhost:${wiremock.server.port}
 
+youtube:
+  thumbnail-url: http://localhost:${wiremock.server.port}
+
 radio:
   recordings: ${java.io.tmpdir}/radio-it
   live: ${java.io.tmpdir}/radio-it-live/stream.m3u8

@@ -46,6 +46,7 @@ for (const phone of PHONES) {
   for (const [view, path, selector] of [
     ['PÖFF timetable gives', '/poff', CONTROLS],
     ['PÖFF films give', '/poff/films', FILM_CONTROLS],
+    ['PÖFF film page gives', '/poff/film/american-doctor', 'article :is(a, button, summary)'],
   ]) {
     test(`${view} every control a 44px target without sideways scroll at ${size}`, async ({
       page,

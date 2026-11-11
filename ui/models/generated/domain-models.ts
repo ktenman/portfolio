@@ -465,6 +465,7 @@ export interface PoffFilm {
     trailer: string | null;
     screenings: PoffScreening[];
     imdb: ImdbRating | null;
+    poster: string | null;
 }
 
 export interface RecordingStatus {

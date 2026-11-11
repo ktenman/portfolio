@@ -6,7 +6,6 @@ import {
   festivalDays,
   festivalSummary,
   filmLine,
-  filmUrl,
   fullDate,
   ratingLabel,
   ratingName,
@@ -170,12 +169,6 @@ describe('poff', () => {
 
   it('names a missing rating', () => {
     expect(ratingName(undefined)).toBe('No IMDb rating')
-  })
-
-  it('links a film to its English page on poff.ee', () => {
-    expect(filmUrl(film(1, 'Kõlakamber', 'The Echo Chamber', []))).toBe(
-      'https://poff.ee/en/film/the-echo-chamber/'
-    )
   })
 
   it('links tickets to the screening on poff.ee', () => {

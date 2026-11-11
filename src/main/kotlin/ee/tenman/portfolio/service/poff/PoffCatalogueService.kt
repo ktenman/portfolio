@@ -32,7 +32,11 @@ class PoffCatalogueService(
         .findByImdbIdIsNotNull()
         .mapNotNull { row -> row.imdbId?.let { row.filmId to ImdbRating(it, row.rating, row.votes) } }
         .toMap()
-    return PoffCatalogueResponse(snapshot.syncedAt, stored.films.map { it.copy(imdb = ratings[it.id], stills = it.stills.map(::stillKey)) })
+    val films =
+      stored.films.map {
+        it.copy(imdb = ratings[it.id], stills = it.stills.map(::stillKey), poster = it.trailer?.let(::posterKey))
+      }
+    return PoffCatalogueResponse(snapshot.syncedAt, films)
   }
 
   @Transactional

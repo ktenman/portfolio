@@ -54,6 +54,7 @@ export const film = (
   trailer: null,
   screenings,
   imdb: null,
+  poster: null,
   ...overrides,
 })
 

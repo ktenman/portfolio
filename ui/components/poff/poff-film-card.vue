@@ -21,15 +21,13 @@
         <span class="sr-only">{{ ratingName(film.imdb) }}</span>
       </span>
     </div>
-    <a
-      :href="filmUrl(film)"
-      target="_blank"
-      rel="noopener"
+    <router-link
+      :to="{ name: 'PoffFilm', params: { slug: film.slug } }"
       class="mt-2.5 block leading-snug font-semibold after:absolute after:inset-0 hover:underline focus-visible:underline"
       data-testid="poff-film-title"
     >
       {{ film.title }}
-    </a>
+    </router-link>
     <p v-if="filmLine(film)" class="mb-0 text-sm text-ink-soft">{{ filmLine(film) }}</p>
     <radio-badge v-if="soldOut(film, now)" tone="error" class="mt-1">Sold out</radio-badge>
     <p v-else class="mt-1 mb-0 text-sm">{{ nextLine(film, now) }}</p>
@@ -40,7 +38,7 @@
 import { computed } from 'vue'
 import type { PoffFilm } from '../../models/generated/domain-models'
 import { poffService } from '../../services/api'
-import { filmLine, filmUrl, ratingLabel, ratingName, strongRating } from '../../utils/poff'
+import { filmLine, ratingLabel, ratingName, strongRating } from '../../utils/poff'
 import { nextLine, soldOut } from '../../utils/poff-films'
 import RadioBadge from '../radio/radio-badge.vue'
 

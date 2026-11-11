@@ -65,6 +65,11 @@ describe('PoffTimetable', () => {
 
   afterEach(() => vi.useRealTimers())
 
+  it('opens the page of a film from its title', async () => {
+    const title = (await mount()).find('[data-testid="poff-title"]')
+    expect(title.attributes('href')).toBe('/poff/film/a-photographer-in-cannes')
+  })
+
   it('opens on today with the Tallinn screenings', async () => {
     expect((await mount()).find('[data-testid="poff-band"]').text()).toBe(
       'Tue 10 Nov · 7 screenings in Tallinn'

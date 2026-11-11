@@ -8,6 +8,7 @@ import ee.tenman.portfolio.repository.PoffImdbRepository
 import ee.tenman.portfolio.repository.PoffSnapshotRepository
 import ee.tenman.portfolio.service.infrastructure.MinioService
 import ee.tenman.portfolio.service.poff.poffFilm
+import ee.tenman.portfolio.service.poff.posterKey
 import ee.tenman.portfolio.service.poff.stillKey
 import jakarta.annotation.Resource
 import org.hamcrest.Matchers.contains
@@ -51,6 +52,12 @@ class PoffControllerIT {
     val still = "https://assets.poff.ee/img/Kõlakamber_big_16_9.jpeg"
     poffSnapshotRepository.save(PoffSnapshot(PoffCatalogue(listOf(poffFilm(8810, stills = listOf(still)))), synced))
     mockMvc.perform(mvcGet("/api/poff/catalogue")).andExpect(jsonPath("$.films[0].stills[0]").value(stillKey(still)))
+  }
+
+  @Test
+  fun `returns the poster of a trailer as the key it is served under`() {
+    poffSnapshotRepository.save(PoffSnapshot(PoffCatalogue(listOf(poffFilm(8810, trailer = "NZGHgVd1T4A"))), synced))
+    mockMvc.perform(mvcGet("/api/poff/catalogue")).andExpect(jsonPath("$.films[0].poster").value(posterKey("NZGHgVd1T4A")))
   }
 
   @Test

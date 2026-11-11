@@ -35,6 +35,7 @@ data class PoffFilm(
   val trailer: String?,
   val screenings: List<PoffScreening>,
   val imdb: ImdbRating? = null,
+  val poster: String? = null,
 )
 
 data class PoffCredit(
