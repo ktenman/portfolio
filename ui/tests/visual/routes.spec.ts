@@ -36,6 +36,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/poff', name: 'poff', stub: stubPoff },
   { path: '/poff/films', name: 'poff-films', stub: stubPoff },
   { path: '/poff/film/american-doctor', name: 'poff-film', stub: stubPoff },
+  { path: '/poff?film=american-doctor', name: 'poff-panel', stub: stubPoff },
 ]
 
 const BREAKDOWN_ROUTES = ROUTES.filter(route =>

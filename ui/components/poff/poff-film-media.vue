@@ -1,6 +1,6 @@
 <template>
   <section v-if="film.trailer || film.stills.length">
-    <h3 :class="HEADING">{{ film.trailer ? 'Trailer and stills' : 'Stills' }}</h3>
+    <h3 v-if="!compact" :class="HEADING">{{ film.trailer ? 'Trailer and stills' : 'Stills' }}</h3>
     <div
       v-if="film.trailer"
       class="relative aspect-video overflow-hidden rounded-container bg-surface-sunken"
@@ -25,7 +25,7 @@
           v-if="film.poster"
           :src="poffService.stillUrl(film.poster, 1280)"
           :srcset="`${poffService.stillUrl(film.poster, 640)} 640w, ${poffService.stillUrl(film.poster, 1280)} 1280w`"
-          sizes="(min-width: 768px) 60vw, 100vw"
+          :sizes="compact ? '26rem' : '(min-width: 768px) 60vw, 100vw'"
           alt=""
           class="size-full object-cover"
         />
@@ -44,6 +44,7 @@
     <ul
       v-if="film.stills.length"
       class="mt-2 flex gap-2 overflow-x-auto md-down:-mr-3 md-down:pr-3 md-down:[scrollbar-width:none]"
+      :class="{ 'px-4': compact }"
     >
       <li
         v-for="(still, i) in film.stills"
@@ -94,7 +95,7 @@ import { poffService } from '../../services/api'
 import { HEADING } from '../../utils/poff'
 import RadioIcon from '../radio/radio-icon.vue'
 
-defineProps<{ film: PoffFilm }>()
+defineProps<{ film: PoffFilm; compact?: boolean }>()
 
 const playing = ref(false)
 const open = ref<string | null>(null)

@@ -258,6 +258,8 @@ export const formatPriceChange = (item: InstrumentDto): string => {
   return `${formatSignedCurrency(amount, item.baseCurrency)} / ${formatSignedPercent(percent)}`
 }
 
+export const count = (n: number, noun: string): string => `${n} ${noun}${n === 1 ? '' : 's'}`
+
 export const formatPercentage = (value: number): string => `${value.toFixed(2)}%`
 
 export const formatHoldingPercentage = (value: number): string => {

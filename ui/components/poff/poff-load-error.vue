@@ -5,14 +5,9 @@
         ? 'The PÖFF programme has not been imported yet.'
         : 'The PÖFF programme could not be loaded.'
     }}
-    <button
-      type="button"
-      class="ml-2 cursor-pointer font-semibold underline"
-      data-testid="poff-retry"
-      @click="refetch()"
-    >
+    <app-button ghost size="sm" class="ml-2" data-testid="poff-retry" @click="refetch()">
       Retry
-    </button>
+    </app-button>
   </alert-message>
 </template>
 
@@ -20,6 +15,7 @@
 import { computed } from 'vue'
 import { notImported } from '../../composables/use-poff-catalogue'
 import AlertMessage from '../shared/alert-message.vue'
+import AppButton from '../shared/app-button.vue'
 
 const props = defineProps<{ error: unknown; refetch: () => unknown }>()
 const missing = computed(() => notImported(props.error))
