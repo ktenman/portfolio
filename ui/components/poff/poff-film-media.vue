@@ -52,10 +52,11 @@
         class="aspect-[3/2] w-[calc((100%-2rem)/5)] shrink-0 md-down:w-[38%]"
       >
         <button
+          ref="thumbs"
           type="button"
           class="size-full cursor-pointer overflow-hidden rounded-control bg-surface-sunken"
-          :aria-label="`Still ${i + 1} of ${film.stills.length} from ${film.title}`"
-          @click="show(still)"
+          :aria-label="label(i)"
+          @click="show(i)"
         >
           <img
             :src="poffService.stillUrl(still, 640)"
@@ -68,16 +69,43 @@
     </ul>
     <dialog
       ref="lightbox"
-      :aria-label="`Still from ${film.title}`"
+      :aria-label="open === null ? undefined : label(open)"
       class="m-auto max-h-none max-w-none bg-transparent p-4 backdrop:bg-[rgb(0_0_0/0.85)]"
       @click.self="lightbox?.close()"
-      @close="open = null"
+      @close="close"
     >
-      <template v-if="open">
-        <img :src="poffService.stillUrl(open, 1280)" alt="" class="max-h-[90vh] max-w-full" />
+      <template v-if="open !== null">
+        <img
+          ref="still"
+          :src="poffService.stillUrl(film.stills[open]!, 1280)"
+          alt=""
+          draggable="false"
+          class="max-h-[85vh] max-w-full touch-pan-y"
+        />
+        <p v-if="film.stills.length > 1" class="mt-2 text-center text-sm text-white">
+          {{ open + 1 }} / {{ film.stills.length }}
+        </p>
+        <button
+          v-if="open > 0"
+          type="button"
+          :class="[ROUND, 'top-1/2 left-3 -translate-y-1/2']"
+          aria-label="Previous still"
+          @click="step(-1)"
+        >
+          <radio-icon name="left" class="size-5" />
+        </button>
+        <button
+          v-if="open < film.stills.length - 1"
+          type="button"
+          :class="[ROUND, 'top-1/2 right-3 -translate-y-1/2']"
+          aria-label="Next still"
+          @click="step(1)"
+        >
+          <radio-icon name="left" class="size-5 rotate-180" />
+        </button>
         <button
           type="button"
-          class="fixed top-3 right-3 flex size-11 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white"
+          :class="[ROUND, 'top-3 right-3']"
           aria-label="Close the still"
           @click="lightbox?.close()"
         >
@@ -89,19 +117,53 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, useTemplateRef } from 'vue'
+import { ref, useTemplateRef, watch } from 'vue'
+import { onKeyStroke, usePointerSwipe } from '@vueuse/core'
 import type { PoffFilm } from '../../models/generated/domain-models'
 import { poffService } from '../../services/api'
 import { HEADING } from '../../utils/poff'
 import RadioIcon from '../radio/radio-icon.vue'
 
-defineProps<{ film: PoffFilm; compact?: boolean }>()
+const props = defineProps<{ film: PoffFilm; compact?: boolean }>()
+
+const ROUND =
+  'fixed flex size-11 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white'
 
 const playing = ref(false)
-const open = ref<string | null>(null)
+const open = ref<number | null>(null)
 const lightbox = useTemplateRef<HTMLDialogElement>('lightbox')
-const show = (still: string) => {
-  open.value = still
+const thumbs = useTemplateRef<HTMLButtonElement[]>('thumbs')
+
+const label = (i: number) =>
+  `Still ${i + 1} of ${props.film.stills.length} from ${props.film.title}`
+
+const show = (i: number) => {
+  open.value = i
   lightbox.value?.showModal()
+}
+
+const step = (by: number) => {
+  if (open.value !== null && props.film.stills[open.value + by]) open.value += by
+}
+
+usePointerSwipe(useTemplateRef<HTMLImageElement>('still'), {
+  onSwipeEnd: (_, direction) => {
+    if (direction === 'left') step(1)
+    if (direction === 'right') step(-1)
+  },
+})
+
+watch(open, i => {
+  if (i === null) return
+  for (const still of [props.film.stills[i - 1], props.film.stills[i + 1]])
+    if (still) new Image().src = poffService.stillUrl(still, 1280)
+})
+
+onKeyStroke('ArrowLeft', () => step(-1))
+onKeyStroke('ArrowRight', () => step(1))
+
+const close = () => {
+  if (open.value !== null) thumbs.value?.[open.value]?.focus()
+  open.value = null
 }
 </script>

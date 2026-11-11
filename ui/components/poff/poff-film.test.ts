@@ -46,6 +46,16 @@ const mount = async (slug = 'the-beloved') => {
   return wrapper
 }
 
+const open = async (still: number) => {
+  const wrapper = await mount()
+  const thumbs = wrapper.findAll('li > button')
+  await thumbs[still - 1]!.trigger('click')
+  return wrapper
+}
+
+const shown = (wrapper: Awaited<ReturnType<typeof mount>>) =>
+  wrapper.find('dialog[open] img').attributes('src')
+
 describe('PoffFilm', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
@@ -103,17 +113,76 @@ describe('PoffFilm', () => {
   })
 
   it('opens a still larger', async () => {
-    const wrapper = await mount()
-    await wrapper.find('[aria-label="Still 2 of 2 from Armastatu"]').trigger('click')
-    expect(wrapper.find('dialog[open] img').attributes('src')).toBe('/still/b?width=1280')
+    const wrapper = await open(2)
+    expect(shown(wrapper)).toBe('/still/b?width=1280')
   })
 
   it('closes a still from its close button', async () => {
-    const wrapper = await mount()
-    await wrapper.find('[aria-label="Still 1 of 2 from Armastatu"]').trigger('click')
+    const wrapper = await open(1)
     await wrapper.find('[aria-label="Close the still"]').trigger('click')
     await flushPromises()
     expect(wrapper.find('dialog[open]').exists()).toBe(false)
+  })
+
+  it('steps to the next still', async () => {
+    const wrapper = await open(1)
+    await wrapper.find('[aria-label="Next still"]').trigger('click')
+    expect(shown(wrapper)).toBe('/still/b?width=1280')
+  })
+
+  it('steps back with the left arrow key', async () => {
+    const wrapper = await open(2)
+    await wrapper.find('dialog').trigger('keydown', { key: 'ArrowLeft' })
+    expect(shown(wrapper)).toBe('/still/a?width=1280')
+  })
+
+  it('steps to the next still on a swipe left', async () => {
+    const wrapper = await open(1)
+    const still = wrapper.find('dialog img')
+    await still.trigger('pointerdown', { clientX: 300, buttons: 1 })
+    await still.trigger('pointermove', { clientX: 120, buttons: 1 })
+    await still.trigger('pointerup', { clientX: 120, buttons: 0 })
+    expect(shown(wrapper)).toBe('/still/b?width=1280')
+  })
+
+  it('stops at the last still', async () => {
+    const wrapper = await open(2)
+    await wrapper.find('dialog').trigger('keydown', { key: 'ArrowRight' })
+    expect(shown(wrapper)).toBe('/still/b?width=1280')
+  })
+
+  it('hides the next button on the last still', async () => {
+    expect((await open(2)).find('[aria-label="Next still"]').exists()).toBe(false)
+  })
+
+  it('hides the previous button on the first still', async () => {
+    expect((await open(1)).find('[aria-label="Previous still"]').exists()).toBe(false)
+  })
+
+  it('counts the stills under the open one', async () => {
+    expect((await open(2)).find('dialog').text()).toContain('2 / 2')
+  })
+
+  it('names the open still in the label of the dialog', async () => {
+    expect((await open(2)).find('dialog').attributes('aria-label')).toBe(
+      'Still 2 of 2 from Armastatu'
+    )
+  })
+
+  it('returns focus to the thumbnail of the still last shown', async () => {
+    const wrapper = await open(1)
+    await wrapper.find('[aria-label="Next still"]').trigger('click')
+    await wrapper.find('[aria-label="Close the still"]').trigger('click')
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.findAll('li > button')[1]!.element)
+  })
+
+  it('shows no counter for a single still', async () => {
+    vi.mocked(poffService.catalogue).mockResolvedValue({
+      syncedAt: '2026-11-10T15:32:00Z',
+      films: [{ ...beloved, stills: ['a'] }],
+    })
+    expect((await open(1)).find('dialog').text()).not.toContain('1 / 1')
   })
 
   it('keeps the minor credits behind all credits', async () => {
