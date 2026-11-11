@@ -54,7 +54,7 @@ const open = async (still: number) => {
 }
 
 const shown = (wrapper: Awaited<ReturnType<typeof mount>>) =>
-  wrapper.find('dialog[open] img').attributes('src')
+  wrapper.findAll('dialog[open] img').pop()?.attributes('src')
 
 describe('PoffFilm', () => {
   beforeEach(() => {
@@ -115,6 +115,31 @@ describe('PoffFilm', () => {
   it('opens a still larger', async () => {
     const wrapper = await open(2)
     expect(shown(wrapper)).toBe('/still/b?width=1280')
+  })
+
+  it('shows the thumbnail under the still while the still loads', async () => {
+    const wrapper = await open(2)
+    expect(wrapper.findAll('dialog img').map(img => img.attributes('src'))).toEqual([
+      '/still/b?width=640',
+      '/still/b?width=1280',
+    ])
+  })
+
+  it('keeps the page from scrolling while a still is open', async () => {
+    await open(1)
+    await flushPromises()
+    expect(document.body.style.overflow).toBe('hidden')
+  })
+
+  it('lets the page scroll again once the still is closed', async () => {
+    const wrapper = await open(1)
+    await wrapper.find('[aria-label="Close the still"]').trigger('click')
+    await flushPromises()
+    expect(document.body.style.overflow).toBe('')
+  })
+
+  it('announces the count of the open still', async () => {
+    expect((await open(2)).find('dialog [role="status"]').text()).toBe('2 / 2')
   })
 
   it('closes a still from its close button', async () => {
