@@ -176,6 +176,12 @@ describe('PoffTimetable', () => {
     expect(titles(wrapper)).toHaveLength(7)
   })
 
+  it('keeps the screenings of thrillers after pressing Thriller', async () => {
+    const wrapper = await mount()
+    await choose(wrapper, 'Thriller')
+    expect(titles(wrapper)).toEqual(['Josephine'])
+  })
+
   it('shows only Tartu after choosing Tartu', async () => {
     const wrapper = await mount()
     await choose(wrapper, 'Tartu')

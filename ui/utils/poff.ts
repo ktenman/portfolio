@@ -8,6 +8,7 @@ export interface TimetableFilters {
   city: City
   rated: boolean
   available: boolean
+  genre: string | null
 }
 
 export interface TimetableRow {
@@ -23,7 +24,7 @@ export const OUTLINED =
   'rounded-control border border-control-border font-medium shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep'
 
 export const CHIP =
-  'platform-btn platform-btn-outline relative md-down:h-9 md-down:text-2xs md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
+  'platform-btn platform-btn-outline relative md-down:h-8 md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
 
 const PREMIERES = [
   'World premiere',
@@ -66,11 +67,18 @@ export const defaultDay = (days: string[], today: string): string => {
   return today < days[0] ? days[0] : days[days.length - 1]
 }
 
+const DOCUMENTARY =
+  /^(observational|participatory|poetic|performative|reflexive|expository) documentary$/i
+
+export const inGenre = (film: PoffFilm, genre: string): boolean =>
+  genre === 'Documentary' ? film.genres.some(g => DOCUMENTARY.test(g)) : film.genres.includes(genre)
+
 const keeps = (row: TimetableRow, day: string, filters: TimetableFilters): boolean =>
   tallinnDay(row.screening.start) === day &&
   row.screening.city === filters.city &&
   (!filters.rated || ratedSeven(row.film)) &&
-  (!filters.available || !row.screening.soldOut)
+  (!filters.available || !row.screening.soldOut) &&
+  (!filters.genre || inGenre(row.film, filters.genre))
 
 export const timetable = (
   films: PoffFilm[],

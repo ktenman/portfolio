@@ -6,7 +6,9 @@ import { SORTS, type FilmSort } from '../utils/poff-films'
 
 export const CITIES: City[] = ['Tallinn', 'Tartu']
 
-const useQueryState = () => {
+export const SHARED_FILTERS = ['city', 'day', 'rated', 'available', 'genre']
+
+export const usePoffFilters = () => {
   const route = useRoute()
   const router = useRouter()
   const set = (key: string, value?: string) =>
@@ -32,11 +34,6 @@ const useQueryState = () => {
       set('city', city.toLowerCase())
     },
   })
-  return { route, set, text, flag, city }
-}
-
-export const usePoffFilters = () => {
-  const { text, flag, city } = useQueryState()
   return {
     day: text('day'),
     film: text('film'),
@@ -44,20 +41,11 @@ export const usePoffFilters = () => {
     city,
     rated: flag('rated'),
     available: flag('available'),
-  }
-}
-
-export const usePoffFilmFilters = () => {
-  const { route, set, text, flag, city } = useQueryState()
-  return {
-    city,
+    genre: text('genre'),
     showing: computed({
       get: () => route.query.showing !== '0',
       set: (on: boolean) => set('showing', on ? undefined : '0'),
     }),
-    rated: flag('rated'),
-    tonight: flag('tonight'),
-    genre: text('genre'),
     programme: text('programme'),
     person: text('person'),
     sort: computed({

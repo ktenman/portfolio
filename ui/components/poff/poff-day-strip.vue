@@ -22,7 +22,7 @@
       :aria-label="fullDate(day)"
       :aria-pressed="day === model"
       :aria-current="day === today ? 'date' : undefined"
-      @click="model = day"
+      @click="model = clearable && day === model ? null : day"
     >
       <span class="text-label" :class="{ 'text-ink-soft': day !== model }">
         {{ day === today ? 'Today' : WEEKDAYS[mondayIndex(day)] }}
@@ -48,12 +48,17 @@ import { mondayIndex, WEEKDAYS } from '../../utils/iso-dates'
 import { revealInRow } from '../../utils/dom'
 import { fullDate } from '../../utils/poff'
 
-const props = defineProps<{ days: string[]; today: string }>()
+const props = defineProps<{ days: string[]; today: string; clearable?: boolean }>()
 
-const model = defineModel<string>({ required: true })
+const model = defineModel<string | null>({ required: true })
 const strip = useTemplateRef<HTMLElement>('strip')
 
-const center = () => revealInRow(strip.value, '[aria-pressed="true"]', 'center')
+const center = () =>
+  revealInRow(
+    strip.value,
+    model.value ? '[aria-pressed="true"]' : '[aria-current="date"]',
+    'center'
+  )
 
 onMounted(center)
 watch(() => props.days.length > 0, center, { flush: 'post' })

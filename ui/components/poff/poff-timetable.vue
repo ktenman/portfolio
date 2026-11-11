@@ -1,40 +1,13 @@
 <template>
   <poff-load-error v-if="!data && isError" :error="error" :refetch="refetch" />
   <template v-else>
-    <poff-day-strip v-model="selected" :days="days" :today="today" />
-    <div
-      class="mb-4 flex flex-wrap items-center gap-x-1.5 gap-y-2"
-      role="group"
-      aria-label="Filters"
-    >
-      <button
-        v-for="option in CITIES"
-        :key="option"
-        type="button"
-        :class="[CHIP, { active: city === option }]"
-        :aria-pressed="city === option"
-        @click="city = option"
-      >
-        {{ option }}
-      </button>
-      <span class="mx-1 h-5 w-px bg-hairline-strong" aria-hidden="true" />
-      <button
-        type="button"
-        :class="[CHIP, { active: rated }]"
-        :aria-pressed="rated"
-        @click="rated = !rated"
-      >
-        IMDb 7+
-      </button>
-      <button
-        type="button"
-        :class="[CHIP, { active: available }]"
-        :aria-pressed="available"
-        @click="available = !available"
-      >
-        Hide sold out
-      </button>
-    </div>
+    <poff-filter-bar
+      v-model:day="selected"
+      :films="data?.films ?? []"
+      :days="days"
+      :today="today"
+      :switches="['rated', 'available']"
+    />
     <div :class="{ 'grid grid-cols-[minmax(0,1fr)_26rem] items-start gap-6': shown }">
       <div class="overflow-hidden rounded-container border border-hairline bg-surface">
         <div
@@ -61,7 +34,7 @@
         </div>
         <p v-else-if="!rows.length" class="border-t border-hairline px-4 py-6 text-ink-soft">
           No screenings in {{ city }} on {{ formatWeekdayDate(selected) }}
-          <template v-if="rated || available">match the filters</template>
+          <template v-if="rated || available || genre">match the filters</template>
         </p>
         <table v-else ref="table" class="w-full md-down:block">
           <thead class="md-down:hidden">
@@ -109,11 +82,10 @@
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { onKeyStroke, useIntervalFn, useMediaQuery, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
-import { CITIES, usePoffFilters } from '../../composables/use-poff-filters'
+import { usePoffFilters } from '../../composables/use-poff-filters'
 import { formatWeekdayDate } from '../../utils/iso-dates'
 import { count } from '../../utils/formatters'
 import {
-  CHIP,
   LABEL,
   defaultDay,
   festivalDays,
@@ -122,13 +94,13 @@ import {
   timetable,
 } from '../../utils/poff'
 import RadioIcon from '../radio/radio-icon.vue'
-import PoffDayStrip from './poff-day-strip.vue'
 import PoffFilmPanel from './poff-film-panel.vue'
+import PoffFilterBar from './poff-filter-bar.vue'
 import PoffLoadError from './poff-load-error.vue'
 import PoffScreeningRow from './poff-screening-row.vue'
 
 const { data, isError, error, refetch } = usePoffCatalogue()
-const { day, film, city, rated, available, query } = usePoffFilters()
+const { day, film, city, rated, available, genre, query } = usePoffFilters()
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
 const earlierOpen = ref(false)
 const table = useTemplateRef<HTMLElement>('table')
@@ -142,7 +114,7 @@ const days = computed(() => festivalDays(data.value?.films ?? []))
 const selected = computed({
   get: () =>
     day.value && days.value.includes(day.value) ? day.value : defaultDay(days.value, today.value),
-  set: (value: string) => {
+  set: (value: string | null) => {
     day.value = value === defaultDay(days.value, today.value) ? null : value
   },
 })
@@ -151,6 +123,7 @@ const rows = computed(() =>
     city: city.value,
     rated: rated.value,
     available: available.value,
+    genre: genre.value,
   })
 )
 const shown = computed(() =>

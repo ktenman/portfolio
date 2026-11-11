@@ -1,11 +1,20 @@
 import type { PoffFilm, PoffScreening } from '../models/generated/domain-models'
 import { formatWeekdayDate } from './iso-dates'
-import { type City, clock, ratedSeven, shortCinema, strongRating, tallinnDay } from './poff'
+import {
+  type City,
+  clock,
+  inGenre,
+  ratedSeven,
+  shortCinema,
+  strongRating,
+  tallinnDay,
+} from './poff'
 
 export interface FilmFilters {
   showing: boolean
   rated: boolean
-  tonight: boolean
+  available: boolean
+  day: string | null
   genre: string | null
   programme: string | null
   person: string | null
@@ -22,9 +31,6 @@ export const SORTS: Record<FilmSort, string> = {
 
 export const TOP_GENRES = ['Drama', 'Documentary', 'Biographical', 'Thriller', 'Comedy']
 
-const DOCUMENTARY =
-  /^(observational|participatory|poetic|performative|reflexive|expository) documentary$/i
-
 const upcoming = (film: PoffFilm, now: Date): PoffScreening[] =>
   film.screenings
     .filter(s => Date.parse(s.start) > now.getTime())
@@ -32,31 +38,27 @@ const upcoming = (film: PoffFilm, now: Date): PoffScreening[] =>
 
 const open = (film: PoffFilm, now: Date) => upcoming(film, now).filter(s => !s.soldOut)
 
-const inGenre = (film: PoffFilm, genre: string) =>
-  genre === 'Documentary' ? film.genres.some(g => DOCUMENTARY.test(g)) : film.genres.includes(genre)
+const keeps = (film: PoffFilm, filters: FilmFilters, now: Date): boolean =>
+  (!(filters.city || filters.day) || film.screenings.length > 0) &&
+  (!filters.showing || upcoming(film, now).length > 0) &&
+  (!filters.rated || ratedSeven(film)) &&
+  (!filters.available || !soldOut(film, now)) &&
+  (!filters.genre || inGenre(film, filters.genre)) &&
+  (!filters.programme || film.programmes.includes(filters.programme)) &&
+  (!filters.person || film.credits.some(c => c.names.includes(filters.person ?? '')))
 
-const keeps = (film: PoffFilm, filters: FilmFilters, now: Date, today: string): boolean => {
-  const coming = upcoming(film, now)
-  return (
-    (!filters.city || film.screenings.length > 0) &&
-    (!filters.showing || coming.length > 0) &&
-    (!filters.rated || ratedSeven(film)) &&
-    (!filters.tonight || coming.some(s => tallinnDay(s.start) === today)) &&
-    (!filters.genre || inGenre(film, filters.genre)) &&
-    (!filters.programme || film.programmes.includes(filters.programme)) &&
-    (!filters.person || film.credits.some(c => c.names.includes(filters.person ?? '')))
-  )
-}
+const narrow = (film: PoffFilm, { city, day }: FilmFilters): PoffFilm =>
+  city || day
+    ? {
+        ...film,
+        screenings: film.screenings.filter(
+          s => (!city || s.city === city) && (!day || tallinnDay(s.start) === day)
+        ),
+      }
+    : film
 
-const inCity = (film: PoffFilm, city: City | null): PoffFilm =>
-  city ? { ...film, screenings: film.screenings.filter(s => s.city === city) } : film
-
-export const filterFilms = (films: PoffFilm[], filters: FilmFilters, now: Date): PoffFilm[] => {
-  const today = tallinnDay(now.toISOString())
-  return films
-    .map(film => inCity(film, filters.city))
-    .filter(film => keeps(film, filters, now, today))
-}
+export const filterFilms = (films: PoffFilm[], filters: FilmFilters, now: Date): PoffFilm[] =>
+  films.map(film => narrow(film, filters)).filter(film => keeps(film, filters, now))
 
 const byTitle = (a: PoffFilm, b: PoffFilm) => a.title.localeCompare(b.title, 'et')
 
