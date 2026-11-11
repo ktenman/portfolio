@@ -39,6 +39,14 @@ const press = async (wrapper: Wrapper, label: string) => {
   await flushPromises()
 }
 
+const pressDay = async (wrapper: Wrapper, date: number) => {
+  await wrapper
+    .findAll('[aria-label="Festival day"] button')
+    .find(b => b.text().endsWith(String(date)))
+    ?.trigger('click')
+  await flushPromises()
+}
+
 describe('PoffFilms', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
@@ -110,10 +118,22 @@ describe('PoffFilms', () => {
     expect(titles(await mount())).toEqual(['Tüdruk ilma nimeta'])
   })
 
-  it('keeps tonight’s films after pressing Tonight', async () => {
+  it('keeps the films screening on a pressed day', async () => {
     const wrapper = await mount()
-    await press(wrapper, 'Tonight')
-    expect(titles(wrapper)).not.toContain('Hilisõhtu ulme')
+    await pressDay(wrapper, 15)
+    expect(titles(wrapper)).toEqual(['Armastatu'])
+  })
+
+  it('clears the day when it is pressed again', async () => {
+    const wrapper = await mount({ day: '2026-11-15' })
+    await pressDay(wrapper, 15)
+    expect(titles(wrapper)).toHaveLength(8)
+  })
+
+  it('hides the films with only sold out screenings left after pressing Hide sold out', async () => {
+    const wrapper = await mount()
+    await press(wrapper, 'Hide sold out')
+    expect(titles(wrapper)).not.toContain('Fotograaf Cannes’is')
   })
 
   it('marks a pressed chip', async () => {

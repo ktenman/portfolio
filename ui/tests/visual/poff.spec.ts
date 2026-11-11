@@ -86,7 +86,7 @@ for (const phone of PHONES) {
     })
   }
 
-  test(`PÖFF timetable draws 36px chips and 52px day buttons at ${size}`, async ({
+  test(`PÖFF timetable draws 32px chips and 52px day buttons at ${size}`, async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile')
@@ -94,7 +94,7 @@ for (const phone of PHONES) {
     expect({
       chips: await distinct(page, CHIPS, 'height'),
       days: await distinct(page, DAYS, 'width'),
-    }).toEqual({ chips: [36], days: [52] })
+    }).toEqual({ chips: [32], days: [52] })
   })
 }
 

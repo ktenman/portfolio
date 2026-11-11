@@ -1,38 +1,15 @@
 <template>
   <poff-load-error v-if="!data && isError" :error="error" :refetch="refetch" />
   <template v-else>
-    <div class="mb-4 flex items-center gap-x-4 gap-y-3 md-down:flex-col md-down:items-stretch">
-      <div
-        class="flex gap-1.5 md-down:-mx-3 md-down:overflow-x-auto md-down:px-3 md-down:py-1 md-down:[scrollbar-width:none]"
-        role="group"
-        aria-label="Filters"
-      >
-        <template v-for="(chip, i) in chips" :key="chip.label">
-          <button
-            type="button"
-            :class="[CHIP, 'shrink-0', { active: chip.on }]"
-            :aria-pressed="chip.on"
-            @click="chip.toggle()"
-          >
-            {{ chip.label }}
-          </button>
-          <span
-            v-if="i === CITIES.length - 1"
-            class="mx-1 h-5 w-px shrink-0 self-center bg-hairline-strong"
-            aria-hidden="true"
-          />
-        </template>
-        <button
-          type="button"
-          :class="[CHIP, 'shrink-0 gap-1', { active: otherGenre }]"
-          :aria-expanded="genresOpen"
-          @click="genresOpen = !genresOpen"
-        >
-          {{ otherGenre || 'All genres' }}
-          <radio-icon name="down" class="size-3.5" :class="{ 'rotate-180': genresOpen }" />
-        </button>
-      </div>
-      <div class="flex items-center justify-between gap-4 md:ml-auto md:shrink-0">
+    <poff-filter-bar
+      v-model:day="filters.day"
+      :films="data?.films ?? []"
+      :days="days"
+      :today="today"
+      :switches="['rated', 'available', 'showing']"
+      clearable
+    >
+      <div class="-mt-2 mb-3 flex items-center justify-between gap-4">
         <span class="text-ink-soft" data-testid="poff-count">
           <strong class="font-semibold text-ink">{{ count(list.length, 'film') }}</strong>
           {{ filters.showing ? 'still showing' : '' }}
@@ -46,19 +23,7 @@
           <option v-for="(label, key) in SORTS" :key="key" :value="key">{{ label }}</option>
         </select>
       </div>
-    </div>
-    <div v-if="genresOpen" class="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Genres">
-      <button
-        v-for="name in allGenres"
-        :key="name"
-        type="button"
-        :class="[CHIP, { active: filters.genre === name }]"
-        :aria-pressed="filters.genre === name"
-        @click="choose(name)"
-      >
-        {{ name }}
-      </button>
-    </div>
+    </poff-filter-bar>
     <ul v-if="!data" :class="GRID" aria-busy="true" aria-label="Loading the films">
       <li v-for="i in 8" :key="i">
         <span class="skeleton block aspect-[3/2] rounded-container" />
@@ -74,59 +39,31 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
-import { CITIES, usePoffFilmFilters } from '../../composables/use-poff-filters'
+import { usePoffFilters } from '../../composables/use-poff-filters'
 import { count } from '../../utils/formatters'
-import { CHIP } from '../../utils/poff'
-import { SORTS, TOP_GENRES, filterFilms, genres, sortFilms } from '../../utils/poff-films'
-import RadioIcon from '../radio/radio-icon.vue'
+import { festivalDays, tallinnDay } from '../../utils/poff'
+import { SORTS, filterFilms, sortFilms } from '../../utils/poff-films'
 import PoffFilmCard from './poff-film-card.vue'
+import PoffFilterBar from './poff-filter-bar.vue'
 import PoffLoadError from './poff-load-error.vue'
 
 const GRID = 'grid grid-cols-2 gap-x-4 gap-y-6 md:grid-cols-4'
 
 const { data, isError, error, refetch } = usePoffCatalogue()
-const filters = reactive(usePoffFilmFilters())
+const filters = reactive(usePoffFilters())
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
 
-const allGenres = computed(() => genres(data.value?.films ?? []))
-const genresOpen = ref(false)
-const otherGenre = computed(() =>
-  filters.genre && !TOP_GENRES.includes(filters.genre) ? filters.genre : ''
-)
-const pick = (name: string) => (filters.genre = filters.genre === name ? null : name)
-const choose = (name: string) => {
-  pick(name)
-  genresOpen.value = false
-}
-const SWITCHES = [
-  ['showing', 'Still showing'],
-  ['rated', 'IMDb 7+'],
-  ['tonight', 'Tonight'],
-] as const
-const chips = computed(() => [
-  ...CITIES.map(name => ({
-    label: name,
-    on: filters.city === name,
-    toggle: () => (filters.city = name),
-  })),
-  ...SWITCHES.map(([key, label]) => ({
-    label,
-    on: filters[key],
-    toggle: () => (filters[key] = !filters[key]),
-  })),
-  ...TOP_GENRES.map(name => ({
-    label: name,
-    on: filters.genre === name,
-    toggle: () => pick(name),
-  })),
-  ...(['programme', 'person'] as const)
-    .filter(key => filters[key])
-    .map(key => ({ label: `${filters[key]} ×`, on: true, toggle: () => (filters[key] = null) })),
-])
+const today = computed(() => tallinnDay(now.value.toISOString()))
+const days = computed(() => festivalDays(data.value?.films ?? []))
+const day = computed(() => (filters.day && days.value.includes(filters.day) ? filters.day : null))
 const list = computed(() =>
-  sortFilms(filterFilms(data.value?.films ?? [], filters, now.value), filters.sort, now.value)
+  sortFilms(
+    filterFilms(data.value?.films ?? [], { ...filters, day: day.value }, now.value),
+    filters.sort,
+    now.value
+  )
 )
 </script>

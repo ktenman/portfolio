@@ -20,7 +20,7 @@ import {
 } from './poff'
 
 const films = poffCatalogue.films
-const all = { city: 'Tallinn' as const, rated: false, available: false }
+const all = { city: 'Tallinn' as const, rated: false, available: false, genre: null }
 
 describe('poff', () => {
   it('places a screening at half past midnight on its Tallinn day', () => {
@@ -77,6 +77,12 @@ describe('poff', () => {
     expect(
       timetable(films, '2026-11-10', { ...all, available: true }).map(r => r.screening.id)
     ).toEqual([11, 13, 12, 15, 18])
+  })
+
+  it('keeps the screenings of films in the chosen genre', () => {
+    expect(
+      timetable(films, '2026-11-10', { ...all, genre: 'Thriller' }).map(r => r.film.id)
+    ).toEqual([7])
   })
 
   it('moves started screenings under earlier today', () => {

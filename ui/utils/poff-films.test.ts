@@ -6,7 +6,8 @@ const now = new Date('2026-11-10T15:00:00Z')
 const none: FilmFilters = {
   showing: false,
   rated: false,
-  tonight: false,
+  available: false,
+  day: null,
   genre: null,
   programme: null,
   person: null,
@@ -40,9 +41,20 @@ describe('poff films', () => {
     ])
   })
 
-  it('keeps films with a screening later tonight', () => {
-    expect(ids(filterFilms(poffCatalogue.films, { ...none, tonight: true }, now))).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8,
+  it('keeps films with a screening still to come on the chosen day', () => {
+    expect(
+      ids(filterFilms(poffCatalogue.films, { ...none, day: '2026-11-10', showing: true }, now))
+    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+  })
+
+  it('leaves a film only its screenings on the chosen day', () => {
+    const kept = filterFilms(poffCatalogue.films, { ...none, day: '2026-11-15' }, now)
+    expect(kept.map(f => [f.id, ids(f.screenings)])).toEqual([[5, [16]]])
+  })
+
+  it('drops films whose screenings left are all sold out', () => {
+    expect(ids(filterFilms(poffCatalogue.films, { ...none, available: true }, now))).toEqual([
+      1, 2, 3, 5, 7, 8, 9, 10,
     ])
   })
 

@@ -96,6 +96,23 @@ describe('PoffSearch', () => {
     expect(wrapper.vm.$route.fullPath).toBe('/poff/films')
   })
 
+  it('keeps the filters when switching to Films', async () => {
+    const wrapper = await mount({ city: 'tartu', rated: '1', genre: 'Drama', day: '2026-11-10' })
+    await wrapper.find('[aria-label="PÖFF views"] a[href^="/poff/films"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.vm.$route.path).toBe('/poff/films'))
+    expect(wrapper.vm.$route.query).toEqual({
+      city: 'tartu',
+      rated: '1',
+      genre: 'Drama',
+      day: '2026-11-10',
+    })
+  })
+
+  it('marks the open view while a film is shown in the panel', async () => {
+    const wrapper = await mount({ film: 'wild-horse-nine' })
+    expect(wrapper.find('[aria-label="PÖFF views"] [aria-current="page"]').text()).toBe('Timetable')
+  })
+
   it('counts the results on the chips', async () => {
     const wrapper = await mount({ q: 'wi' })
     expect(wrapper.findAll('[aria-label="Results"] button').map(b => b.text())).toEqual([
