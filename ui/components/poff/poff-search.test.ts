@@ -110,6 +110,18 @@ describe('PoffSearch', () => {
     expect(link.attributes('href')).toBe('/poff/films?person=Wilma+Ots&showing=0')
   })
 
+  it('shows the films of a person opened from the results', async () => {
+    const wrapper = await mount({ q: 'wilma' })
+    await wrapper.find('[data-testid="poff-search-person"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="poff-sort"]').exists()).toBe(true))
+  })
+
+  it('shows films after the timetable', async () => {
+    const wrapper = await mount()
+    await wrapper.vm.$router.push('/poff/films')
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="poff-sort"]').exists()).toBe(true))
+  })
+
   it('opens the page of a film', async () => {
     const link = (await mount({ q: 'horse' })).find('[data-testid="poff-search-film"]')
     expect(link.attributes('href')).toBe('/poff/film/wild-horse-nine')

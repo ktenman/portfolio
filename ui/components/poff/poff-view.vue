@@ -28,7 +28,7 @@
       </nav>
       <keep-alive exclude="poff-film">
         <poff-search v-if="data && searching" :films="data.films" :query="query ?? ''" :now="now" />
-        <component :is="Component" v-else />
+        <component :is="Component" v-else :key="route.name" />
       </keep-alive>
     </router-view>
     <p v-if="data" class="mt-4 max-w-prose text-sm text-ink-soft">
