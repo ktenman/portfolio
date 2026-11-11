@@ -67,6 +67,8 @@ class ArchitectureTest {
         "..tuleva..",
         "..kuku..",
         "..aripaev..",
+        "ee.tenman.portfolio.poff..",
+        "ee.tenman.portfolio.imdb..",
       ).layer("Configuration")
       .definedBy("..configuration..")
       .layer("Jobs")

@@ -38,6 +38,14 @@ kuku:
 aripaev:
   url: http://localhost:${wiremock.server.port}
 
+poff:
+  url: http://localhost:${wiremock.server.port}
+  pause: 0ms
+
+imdb:
+  datasets-url: http://localhost:${wiremock.server.port}
+  suggestion-url: http://localhost:${wiremock.server.port}
+
 radio:
   recordings: ${java.io.tmpdir}/radio-it
   live: ${java.io.tmpdir}/radio-it-live/stream.m3u8

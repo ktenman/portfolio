@@ -114,7 +114,7 @@ groups:
           summary: 'Collection inventory is unavailable'
       - alert: CollectionMetricsIncomplete
         expr: |
-          (count(portfolio_collection_operation_info) or vector(0)) != 11
+          (count(portfolio_collection_operation_info) or vector(0)) != 12
             or portfolio:collection_operation_metrics_missing > 0
             or portfolio:collection_item_metrics_missing > 0
         for: 2m
@@ -226,6 +226,15 @@ groups:
           severity: warning
         annotations:
           summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'
+  - name: portfolio-poff
+    interval: 15s
+    rules:
+      - alert: PoffImportFailed
+        expr: min_over_time(portfolio_poff_import_failed[1h]) == 1
+        labels:
+          severity: warning
+        annotations:
+          summary: 'PÖFF import has failed for an hour, so the timetable may show stale screenings, sold-out flags or ratings; job_execution has the reason'
   - name: portfolio-host
     interval: 15s
     rules:

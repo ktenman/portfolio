@@ -26,7 +26,7 @@ route:
       repeat_interval: 2160h
     - receiver: plain
       matchers:
-        - alertname="LogoCollectionFailed"
+        - alertname=~"LogoCollectionFailed|PoffImportFailed"
       group_by: [environment, alertname]
       repeat_interval: 168h
     - receiver: host

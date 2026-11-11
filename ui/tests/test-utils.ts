@@ -13,7 +13,10 @@ export function deferred<T>() {
   return { promise, resolve, reject }
 }
 
-export function renderWithProviders(component: any): VueWrapper<any> & {
+export function renderWithProviders(
+  component: any,
+  attachTo?: HTMLElement
+): VueWrapper<any> & {
   queryClient: QueryClient
 } {
   const queryClient = new QueryClient({
@@ -37,6 +40,7 @@ export function renderWithProviders(component: any): VueWrapper<any> & {
   testRouter.push('/')
 
   const wrapper = mount(component, {
+    attachTo,
     global: {
       plugins: [[VueQueryPlugin, { queryClient }], testRouter],
     },

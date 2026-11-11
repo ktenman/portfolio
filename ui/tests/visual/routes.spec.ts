@@ -8,6 +8,7 @@ import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubMonitoring } from './monitoring-fixture'
+import { stubPoff } from './poff-fixture'
 import { stubRadio, stubRadioOnAir, stubRadioStill } from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
@@ -32,6 +33,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/radio/2026-10-23', name: 'radio-render-cuts', stub: stubRadioStill },
   { path: '/radio/2026-10-25', name: 'radio-wait-cuts', stub: stubRadio },
   { path: '/radio/2026-10-26', name: 'radio-failed-cuts', stub: stubRadio },
+  { path: '/poff', name: 'poff', stub: stubPoff },
 ]
 
 const BREAKDOWN_ROUTES = ROUTES.filter(route =>

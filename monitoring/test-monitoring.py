@@ -676,7 +676,7 @@ def check_metric_coverage():
         ('lightyear', 'prices'), ('trading212', 'prices'), ('binance', 'prices'),
         ('ft', 'history'), ('lightyear', 'history'), ('lightyear', 'holdings'),
         ('trading212', 'holdings'), ('blackrock', 'holdings'), ('vanguard', 'holdings'),
-        ('tuleva', 'history'), ('tuleva', 'holdings'),
+        ('tuleva', 'history'), ('tuleva', 'holdings'), ('imdb', 'ratings'),
     )
     required = (
         'enabled', 'expected_now', 'expected_items', 'window_start_timestamp_seconds',

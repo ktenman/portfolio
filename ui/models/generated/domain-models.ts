@@ -247,6 +247,11 @@ export interface EnumsResponse {
     currencies: string[];
 }
 
+export interface PoffCatalogueResponse {
+    syncedAt: DateAsString;
+    films: PoffFilm[];
+}
+
 export interface RecordingSummary {
     name: string;
     programme: string;
@@ -437,6 +442,31 @@ export interface FundWeightDto {
     weight: number;
 }
 
+export interface PoffFilm {
+    id: number;
+    slug: string;
+    title: string;
+    englishTitle: string;
+    originalTitle: string | null;
+    premiere: string | null;
+    directors: string[];
+    countries: string[];
+    year: number | null;
+    minutes: number | null;
+    programmes: string[];
+    genres: string[];
+    subjects: string[];
+    moods: string[];
+    synopsis: string[];
+    languages: string[];
+    subtitles: string[];
+    credits: PoffCredit[];
+    stills: string[];
+    trailer: string | null;
+    screenings: PoffScreening[];
+    imdb: ImdbRating | null;
+}
+
 export interface RecordingStatus {
     state: RecordingState;
     startedAt: number;
@@ -603,6 +633,32 @@ export interface LineGroup {
 export interface LargestPositionDto extends Serializable {
     name: string;
     percentage: number;
+}
+
+export interface PoffCredit {
+    role: string;
+    names: string[];
+}
+
+export interface PoffScreening {
+    id: number;
+    start: DateAsString;
+    end: DateAsString;
+    cinema: string;
+    city: string;
+    hall: string;
+    code: string | null;
+    qa: boolean;
+    qaMinutes: number | null;
+    guests: string | null;
+    ticket: number | null;
+    soldOut: boolean;
+}
+
+export interface ImdbRating {
+    id: string;
+    rating: number | null;
+    votes: number | null;
 }
 
 export interface RecordingPart {

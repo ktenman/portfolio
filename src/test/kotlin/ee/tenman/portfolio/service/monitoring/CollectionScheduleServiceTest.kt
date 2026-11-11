@@ -267,6 +267,13 @@ class CollectionScheduleServiceTest {
   }
 
   @Test
+  fun `should expect IMDb ratings after the next nightly download`() {
+    val service = service(clock("2026-11-11T10:00:00Z"))
+    val snapshot = snapshot(CollectionKey.IMDB_RATINGS).copy(lastFullSuccess = Instant.parse("2026-11-11T02:31:00Z"))
+    expect(service.expectation(snapshot).deadline).toEqual(Instant.parse("2026-11-12T03:00:00Z"))
+  }
+
+  @Test
   fun `should not hide a missed daily update behind a partial completion`() {
     val clock = clock("2026-09-25T10:00:00Z")
     val service = service(clock)

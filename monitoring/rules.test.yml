@@ -30,6 +30,8 @@ tests:
         values: '1+0x40'
       - series: 'portfolio_collection_operation_info{provider="tuleva",operation="holdings"}'
         values: '1+0x40'
+      - series: 'portfolio_collection_operation_info{provider="imdb",operation="ratings"}'
+        values: '1+0x40'
       - series: 'portfolio_collection_expected_now{provider="lightyear",operation="prices"}'
         values: '1+0x40'
       - series: 'portfolio_collection_expected_items{provider="lightyear",operation="prices"}'
@@ -535,6 +537,29 @@ tests:
               severity: warning
             exp_annotations:
               summary: 'Logo collection failed twice in a row, so holdings without a logo stay that way; job_execution has the reason'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_poff_import_failed'
+        values: '0x100 1x400'
+    alert_rule_test:
+      - eval_time: 1h24m
+        alertname: PoffImportFailed
+        exp_alerts: []
+      - eval_time: 1h26m
+        alertname: PoffImportFailed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'PÖFF import has failed for an hour, so the timetable may show stale screenings, sold-out flags or ratings; job_execution has the reason'
+  - interval: 15s
+    input_series:
+      - series: 'portfolio_poff_import_failed'
+        values: '0x100 1x200 0x400'
+    alert_rule_test:
+      - eval_time: 1h26m
+        alertname: PoffImportFailed
+        exp_alerts: []
   - interval: 1m
     input_series:
       - series: 'node_memory_SwapTotal_bytes{job="node"}'
