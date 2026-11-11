@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PoffImdbRepository : JpaRepository<PoffImdb, Long> {
   fun findByImdbIdIsNotNull(): List<PoffImdb>
+
+  fun existsByImdbIdIsNotNull(): Boolean
 }

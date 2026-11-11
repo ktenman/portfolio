@@ -9,6 +9,8 @@ class ImdbRatingService(
   private val imdbDatasetClient: ImdbDatasetClient,
   private val poffImdbRepository: PoffImdbRepository,
 ) {
+  fun matched(): Boolean = poffImdbRepository.existsByImdbIdIsNotNull()
+
   fun refresh() {
     val rows = poffImdbRepository.findByImdbIdIsNotNull()
     if (rows.isEmpty()) return

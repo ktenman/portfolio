@@ -39,6 +39,18 @@ class ImdbRatingServiceIT {
   private fun ratings() = poffImdbRepository.findAll().sortedBy { it.filmId }.map { it.rating?.toPlainString() to it.votes }
 
   @Test
+  fun `reports no matched film while every film is unmatched`() {
+    matched(1, null)
+    expect(imdbRatingService.matched()).toEqual(false)
+  }
+
+  @Test
+  fun `reports a matched film once one is matched`() {
+    matched(1, "tt9395802")
+    expect(imdbRatingService.matched()).toEqual(true)
+  }
+
+  @Test
   fun `stores the rating of every matched film`() {
     matched(1, "tt9395802")
     matched(2, "tt50340469")

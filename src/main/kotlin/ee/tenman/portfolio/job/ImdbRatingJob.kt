@@ -18,7 +18,7 @@ class ImdbRatingJob(
 
   @Scheduled(initialDelay = CollectionSchedules.IMDB_RATINGS_STARTUP_SECONDS * 1000, fixedDelay = Long.MAX_VALUE)
   fun runStartupImport() {
-    if (collectionMonitor.current(CollectionKey.IMDB_RATINGS, listOf(DATASET))) {
+    if (collectionMonitor.current(CollectionKey.IMDB_RATINGS, datasets())) {
       log.info("Skipping startup IMDb ratings download because the last one is still current")
       return
     }
@@ -31,12 +31,14 @@ class ImdbRatingJob(
   }
 
   override fun execute() {
-    collectionMonitor.collect(CollectionKey.IMDB_RATINGS, listOf(DATASET)) { run ->
+    collectionMonitor.collect(CollectionKey.IMDB_RATINGS, datasets()) { run ->
       run.attempted(DATASET)
       imdbRatingService.refresh()
       run.persisted(DATASET, changed = false)
     }
   }
+
+  private fun datasets() = listOfNotNull(DATASET.takeIf { imdbRatingService.matched() })
 
   companion object {
     const val DATASET = "title.ratings.tsv.gz"
