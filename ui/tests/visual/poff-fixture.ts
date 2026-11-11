@@ -180,7 +180,14 @@ const SHOWINGS: Showing[] = [
     ['Drama'],
     PLAZA,
     '1st Lux Hall',
-    { rating: [7.2, 4184] },
+    {
+      rating: [7.2, 4184],
+      credits: [
+        { role: 'Director', names: ['Rodrigo Sorogoyen'] },
+        { role: 'Cast', names: ['Olivia Wilde', 'Samira Wiley', 'Will Holland', 'Willem Kask'] },
+        { role: 'Production', names: ['Wildside Films'] },
+      ],
+    },
   ],
   [
     '20:15',
@@ -200,7 +207,7 @@ const SHOWINGS: Showing[] = [
     ['Drama', 'Essay film'],
     PLAZA,
     '2nd Hall',
-    { rating: [7.4, 150] },
+    { rating: [7.4, 150], credits: [{ role: 'Director', names: ['John Wilson'] }] },
   ],
   [
     '21:00',

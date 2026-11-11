@@ -1,14 +1,23 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3">
     <router-view v-slot="{ Component, route }">
-      <template v-if="!route.params.slug">
-        <div class="mb-4 flex flex-wrap items-baseline gap-x-3">
-          <h2 class="mb-0">PÖFF</h2>
+      <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-3">
+        <poff-back-link v-if="route.params.slug && query === null" />
+        <template v-else>
+          <h2 class="mb-0" :class="{ 'md-down:hidden': query !== null }">PÖFF</h2>
           <p v-if="data" class="mb-0 text-sm text-ink-soft md-down:hidden">
             {{ festivalSummary(data.films) }}
           </p>
-        </div>
-        <nav class="mb-4 flex gap-7 border-b border-hairline-strong" aria-label="PÖFF views">
+        </template>
+        <poff-search-field :compact="!!route.params.slug" class="ml-auto md:w-md" />
+      </div>
+      <poff-search v-if="data && searching" :films="data.films" :query="query ?? ''" :now="now" />
+      <template v-else>
+        <nav
+          v-if="!route.params.slug"
+          class="mb-4 flex gap-7 border-b border-hairline-strong"
+          aria-label="PÖFF views"
+        >
           <router-link
             v-for="view in VIEWS"
             :key="view.to"
@@ -19,8 +28,8 @@
             {{ view.label }}
           </router-link>
         </nav>
+        <component :is="Component" />
       </template>
-      <component :is="Component" />
     </router-view>
     <p v-if="data" class="mt-4 max-w-prose text-sm text-ink-soft">
       Programme from poff.ee, synced {{ synced(data.syncedAt, today) }}. Lighter ratings have under
@@ -33,7 +42,11 @@
 import { computed } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
+import { usePoffFilters } from '../../composables/use-poff-filters'
 import { festivalSummary, synced, tallinnDay } from '../../utils/poff'
+import PoffBackLink from './poff-back-link.vue'
+import PoffSearch from './poff-search.vue'
+import PoffSearchField from './poff-search-field.vue'
 
 const VIEWS = [
   { to: '/poff', label: 'Timetable' },
@@ -43,4 +56,6 @@ const VIEWS = [
 const { data } = usePoffCatalogue()
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
 const today = computed(() => tallinnDay(now.value.toISOString()))
+const { query } = usePoffFilters()
+const searching = computed(() => (query.value?.trim().length ?? 0) >= 2)
 </script>

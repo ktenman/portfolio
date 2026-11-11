@@ -30,6 +30,7 @@ export const usePoffFilters = () => {
   return {
     day: text('day'),
     film: text('film'),
+    query: text('q'),
     city: computed({
       get: (): City =>
         CITIES.find(c => c.toLowerCase() === route.query.city) ??

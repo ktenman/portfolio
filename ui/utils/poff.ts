@@ -17,6 +17,8 @@ export interface TimetableRow {
 
 export const HEADING = 'mb-2 text-xl font-semibold'
 
+export const LABEL = 'text-label font-semibold tracking-wide text-brass-deep uppercase'
+
 export const OUTLINED =
   'rounded-control border border-control-border font-medium shadow-control transition-colors hover:bg-brass-wash hover:text-brass-deep'
 

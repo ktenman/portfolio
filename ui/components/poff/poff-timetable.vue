@@ -48,11 +48,7 @@
             </template>
             <span v-else class="skeleton inline-block h-4 w-40 align-middle" />
           </span>
-          <span
-            class="text-label font-semibold tracking-wide text-brass-deep uppercase not-md-down:hidden"
-          >
-            IMDb
-          </span>
+          <span :class="LABEL" class="not-md-down:hidden">IMDb</span>
         </div>
         <div v-if="!data" aria-busy="true" aria-label="Loading the programme">
           <div v-for="i in 6" :key="i" class="flex gap-6 border-t border-hairline px-4 py-3.5">
@@ -69,9 +65,7 @@
         </p>
         <table v-else ref="table" class="w-full md-down:block">
           <thead class="md-down:hidden">
-            <tr
-              class="border-t border-hairline text-left text-label font-semibold tracking-wide text-brass-deep uppercase"
-            >
+            <tr :class="LABEL" class="border-t border-hairline text-left">
               <th class="w-32 py-2 pl-4">Time</th>
               <th class="py-2 pr-4">Film</th>
               <th class="w-56 py-2 pr-4">Cinema</th>
@@ -120,6 +114,7 @@ import { formatWeekdayDate } from '../../utils/iso-dates'
 import { count } from '../../utils/formatters'
 import {
   CHIP,
+  LABEL,
   defaultDay,
   festivalDays,
   splitStarted,
@@ -133,7 +128,7 @@ import PoffLoadError from './poff-load-error.vue'
 import PoffScreeningRow from './poff-screening-row.vue'
 
 const { data, isError, error, refetch } = usePoffCatalogue()
-const { day, film, city, rated, available } = usePoffFilters()
+const { day, film, city, rated, available, query } = usePoffFilters()
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
 const earlierOpen = ref(false)
 const table = useTemplateRef<HTMLElement>('table')
@@ -208,6 +203,6 @@ watch(
 )
 
 onKeyStroke('Escape', event => {
-  if (shown.value && !(event.target as Element).closest?.('dialog')) close()
+  if (shown.value && query.value === null && !(event.target as Element).closest?.('dialog')) close()
 })
 </script>
