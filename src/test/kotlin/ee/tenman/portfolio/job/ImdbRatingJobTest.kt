@@ -23,9 +23,20 @@ class ImdbRatingJobTest {
   }
 
   @Test
+  fun `should expect no dataset while no film is matched`() {
+    val collections = mutableListOf<CollectionRunResult>()
+    job(monitorForTests(collections), mockk(relaxed = true) { every { matched() } returns false }).execute()
+    expect(collections.single().expected).toBeEmpty()
+  }
+
+  @Test
   fun `should mark the ratings dataset failed when the download fails`() {
     val collections = mutableListOf<CollectionRunResult>()
-    val ratings = mockk<ImdbRatingService> { every { refresh() } throws IllegalStateException("IMDb dataset answered 503") }
+    val ratings =
+      mockk<ImdbRatingService> {
+        every { matched() } returns true
+        every { refresh() } throws IllegalStateException("IMDb dataset answered 503")
+      }
     runCatching { job(monitorForTests(collections), ratings).execute() }
     expect(collections.single().failed).toContainExactly(ImdbRatingJob.DATASET)
   }
@@ -60,7 +71,7 @@ class ImdbRatingJobTest {
 
   private fun job(
     monitor: CollectionMonitorService,
-    ratings: ImdbRatingService = mockk(relaxed = true),
+    ratings: ImdbRatingService = mockk(relaxed = true) { every { matched() } returns true },
     jobs: JobExecutionService = mockk(relaxed = true),
   ) = ImdbRatingJob(ratings, jobs, monitor)
 }

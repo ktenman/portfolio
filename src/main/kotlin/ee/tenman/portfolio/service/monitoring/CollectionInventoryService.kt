@@ -7,6 +7,7 @@ import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.job.CsusHoldingsRetrievalJob
 import ee.tenman.portfolio.job.ImdbRatingJob
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.poff.ImdbRatingService
 import ee.tenman.portfolio.tuleva.TulevaHoldingsService
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
 import org.springframework.stereotype.Service
@@ -16,6 +17,7 @@ class CollectionInventoryService(
   private val repository: InstrumentRepository,
   private val lightyear: LightyearScrapingProperties,
   private val trading212: Trading212ScrapingProperties,
+  private val ratings: ImdbRatingService,
 ) {
   fun configured(): Map<CollectionKey, Set<String>> {
     val symbols =
@@ -26,7 +28,7 @@ class CollectionInventoryService(
     val trading = symbols[ProviderName.TRADING212].orEmpty()
     return DATABASE_COLLECTIONS.mapValues { (_, provider) -> symbols[provider].orEmpty() } +
       (CollectionKey.LIGHTYEAR_PRICES to lightyear.getAllSymbols().toSet()) +
-      (CollectionKey.IMDB_RATINGS to setOf(ImdbRatingJob.DATASET)) +
+      (CollectionKey.IMDB_RATINGS to setOfNotNull(ImdbRatingJob.DATASET.takeIf { ratings.matched() })) +
       holdings(trading)
   }
 

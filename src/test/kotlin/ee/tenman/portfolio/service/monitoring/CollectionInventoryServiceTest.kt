@@ -8,7 +8,9 @@ import ee.tenman.portfolio.configuration.Trading212SymbolEntry
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.job.ImdbRatingJob
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.poff.ImdbRatingService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
@@ -17,7 +19,7 @@ class CollectionInventoryServiceTest {
   @Test
   fun `should initialize every operation when no database instruments exist`() {
     val repository = mockk<InstrumentRepository> { every { findByProviderNameIn(any()) } returns emptyList() }
-    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), Trading212ScrapingProperties())
+    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), Trading212ScrapingProperties(), ratings())
     expect(service.configured().keys).toEqual(CollectionKey.entries.toSet())
   }
 
@@ -32,7 +34,7 @@ class CollectionInventoryServiceTest {
       Trading212ScrapingProperties().apply {
       symbols = mutableListOf(Trading212SymbolEntry("BNKE:PAR:EUR", "BNKEp_EQ"), Trading212SymbolEntry("OTHER", "OTHER_EQ"))
     }
-    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), properties)
+    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), properties, ratings())
     expect(service.configured()[CollectionKey.TRADING212_HOLDINGS]).toEqual(setOf("BNKE:PAR:EUR"))
   }
 
@@ -44,9 +46,25 @@ class CollectionInventoryServiceTest {
         listOf("WEBN:GER:EUR", "VGLA:GER:EUR", "GOOGL:NSQ:USD", "WBIT:GER:EUR")
       .map { LightyearScrapingProperties.EtfConfig(it, "uuid") },
           )
-    val service = CollectionInventoryService(repository, lightyear, Trading212ScrapingProperties())
+    val service = CollectionInventoryService(repository, lightyear, Trading212ScrapingProperties(), ratings())
     expect(service.configured()[CollectionKey.LIGHTYEAR_HOLDINGS]).toEqual(setOf("WEBN:GER:EUR"))
   }
+
+  @Test
+  fun `should expect the IMDb ratings once a PÖFF film is matched`() {
+    val repository = mockk<InstrumentRepository> { every { findByProviderNameIn(any()) } returns emptyList() }
+    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), Trading212ScrapingProperties(), ratings())
+    expect(service.configured()[CollectionKey.IMDB_RATINGS]).toEqual(setOf(ImdbRatingJob.DATASET))
+  }
+
+  @Test
+  fun `should expect no IMDb ratings while no PÖFF film is matched`() {
+    val repository = mockk<InstrumentRepository> { every { findByProviderNameIn(any()) } returns emptyList() }
+    val service = CollectionInventoryService(repository, LightyearScrapingProperties(), Trading212ScrapingProperties(), ratings(false))
+    expect(service.configured()[CollectionKey.IMDB_RATINGS]).toEqual(emptySet())
+  }
+
+  private fun ratings(matched: Boolean = true) = mockk<ImdbRatingService> { every { matched() } returns matched }
 
   private fun instrument(
     symbol: String,
