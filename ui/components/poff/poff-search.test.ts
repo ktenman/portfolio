@@ -139,6 +139,15 @@ describe('PoffSearch', () => {
     expect(document.activeElement).toBe(field(wrapper).element)
   })
 
+  it('keeps the open folds after a visit to a film', async () => {
+    const wrapper = await mount({ q: 'wi' })
+    await press(wrapper, '2 more people')
+    await wrapper.vm.$router.push('/poff/film/wild-horse-nine')
+    await flushPromises()
+    wrapper.vm.$router.back()
+    await vi.waitFor(() => expect(people(wrapper)).toHaveLength(5))
+  })
+
   it('opens the search from the button on a film page', async () => {
     const wrapper = await mount()
     await wrapper.vm.$router.replace('/poff/film/wild-horse-nine')

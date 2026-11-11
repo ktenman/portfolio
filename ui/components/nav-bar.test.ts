@@ -85,14 +85,19 @@ describe('NavBar', () => {
       ])
     })
 
-    it('should scroll the active link into view', async () => {
-      const scroll = vi.fn()
-      Element.prototype.scrollIntoView = scroll
+    it('should scroll the row of links until the active link shows', async () => {
+      const place = vi
+        .spyOn(Element.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: Element) {
+          const active = this.classList.contains('active')
+          return (active ? { left: 320, right: 380 } : { left: 0, right: 300 }) as DOMRect
+        })
       await router.push('/transactions')
-      createWrapper()
+      const wrapper = createWrapper()
       await flushPromises()
+      place.mockRestore()
 
-      expect(scroll).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+      expect(wrapper.find('.navbar-scroll-container').element.scrollLeft).toBe(80)
     })
   })
 
