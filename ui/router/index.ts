@@ -79,6 +79,11 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Poff',
         component: () => import('../components/poff/poff-timetable.vue'),
       },
+      {
+        path: 'films',
+        name: 'PoffFilms',
+        component: () => import('../components/poff/poff-films.vue'),
+      },
     ],
   },
   {

@@ -259,6 +259,7 @@ const toFilm = (
       genres,
       minutes,
       imdb: rating ? { id: `tt${id}`, rating: rating[0], votes: rating[1] } : null,
+      stills: [`${id}`],
       ...overrides,
     }
   )
@@ -274,4 +275,12 @@ export const stubPoff: RouteStub = async page => {
   await page.route(apiRoute(`${API_ENDPOINTS.POFF}/catalogue`), route =>
     route.fulfill({ json: CATALOGUE })
   )
+  await page.route(/\/api\/poff\/stills\/(\d+)/, route => {
+    const id = Number(new URL(route.request().url()).pathname.split('/').pop())
+    const hue = (id * 47) % 360
+    route.fulfill({
+      contentType: 'image/svg+xml',
+      body: `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360" fill="hsl(${hue} 35% 45%)"/><circle cx="420" cy="150" r="110" fill="hsl(${hue} 30% 70%)"/></svg>`,
+    })
+  })
 }

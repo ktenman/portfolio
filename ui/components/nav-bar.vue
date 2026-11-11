@@ -31,14 +31,14 @@ import { utilityService } from '../services/api'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
-  { path: '/calculator', name: 'Calculator' },
+  { path: '/radio', name: 'Radio' },
+  { path: '/poff', name: 'PÖFF' },
   { path: '/instruments', name: 'Instruments' },
   { path: '/transactions', name: 'Transactions' },
   { path: '/etf-breakdown', name: 'ETF Breakdown' },
   { path: '/diversification', name: 'Diversification' },
+  { path: '/calculator', name: 'Calculator' },
   { path: '/monitoring', name: 'Monitoring' },
-  { path: '/radio', name: 'Radio' },
-  { path: '/poff', name: 'PÖFF' },
 ])
 
 const list = useTemplateRef<HTMLUListElement>('list')

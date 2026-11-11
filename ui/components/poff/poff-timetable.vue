@@ -1,19 +1,5 @@
 <template>
-  <alert-message v-if="!data && isError" :variant="missing ? 'info' : 'danger'">
-    {{
-      missing
-        ? 'The PÖFF programme has not been imported yet.'
-        : 'The PÖFF programme could not be loaded.'
-    }}
-    <button
-      type="button"
-      class="ml-2 cursor-pointer font-semibold underline"
-      data-testid="poff-retry"
-      @click="refetch()"
-    >
-      Retry
-    </button>
-  </alert-message>
+  <poff-load-error v-if="!data && isError" :error="error" :refetch="refetch" />
   <template v-else>
     <poff-day-strip v-if="data" v-model="selected" :days="days" :today="today" />
     <div
@@ -118,17 +104,21 @@
 <script lang="ts" setup>
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
-import { notImported, usePoffCatalogue } from '../../composables/use-poff-catalogue'
+import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
 import { CITIES, usePoffFilters } from '../../composables/use-poff-filters'
 import { formatWeekdayDate } from '../../utils/iso-dates'
-import { defaultDay, festivalDays, splitStarted, tallinnDay, timetable } from '../../utils/poff'
+import {
+  CHIP,
+  defaultDay,
+  festivalDays,
+  splitStarted,
+  tallinnDay,
+  timetable,
+} from '../../utils/poff'
 import RadioIcon from '../radio/radio-icon.vue'
-import AlertMessage from '../shared/alert-message.vue'
 import PoffDayStrip from './poff-day-strip.vue'
+import PoffLoadError from './poff-load-error.vue'
 import PoffScreeningRow from './poff-screening-row.vue'
-
-const CHIP =
-  'platform-btn platform-btn-outline relative md-down:h-9 md-down:text-2xs md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2'
 
 const { data, isError, error, refetch } = usePoffCatalogue()
 const { day, city, rated, available } = usePoffFilters()
@@ -137,7 +127,6 @@ const earlierOpen = ref(false)
 const table = useTemplateRef<HTMLElement>('table')
 const toggle = useTemplateRef<HTMLButtonElement>('toggle')
 
-const missing = computed(() => notImported(error.value))
 const today = computed(() => tallinnDay(now.value.toISOString()))
 const days = computed(() => festivalDays(data.value?.films ?? []))
 const selected = computed({

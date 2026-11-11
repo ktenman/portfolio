@@ -69,15 +69,20 @@ describe('NavBar', () => {
       expect(wrapper.text()).toContain('Transactions')
     })
 
-    it('should list PÖFF after Radio as the last navigation link', () => {
+    it('should group the navigation links by use', () => {
       const wrapper = createWrapper()
 
-      expect(
-        wrapper
-          .findAll('.nav-link')
-          .map(link => link.text())
-          .slice(-2)
-      ).toEqual(['Radio', 'PÖFF'])
+      expect(wrapper.findAll('.nav-link').map(link => link.text())).toEqual([
+        'Summary',
+        'Radio',
+        'PÖFF',
+        'Instruments',
+        'Transactions',
+        'ETF Breakdown',
+        'Diversification',
+        'Calculator',
+        'Monitoring',
+      ])
     })
 
     it('should scroll the active link into view', async () => {

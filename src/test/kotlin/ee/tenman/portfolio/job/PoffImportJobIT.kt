@@ -21,6 +21,7 @@ import ee.tenman.portfolio.service.poff.ImdbMatchService
 import ee.tenman.portfolio.service.poff.ImdbRatingService
 import ee.tenman.portfolio.service.poff.PoffCatalogueService
 import ee.tenman.portfolio.service.poff.PoffImportService
+import ee.tenman.portfolio.service.poff.PoffStillService
 import ee.tenman.portfolio.service.poff.poffFilm
 import ee.tenman.portfolio.service.poff.poffScreening
 import ee.tenman.portfolio.service.poff.ratingsFile
@@ -60,6 +61,9 @@ class PoffImportJobIT {
   @Resource
   private lateinit var imdbRatingService: ImdbRatingService
 
+  @Resource
+  private lateinit var poffStillService: PoffStillService
+
   @InjectWireMock
   private lateinit var wireMockServer: WireMockServer
 
@@ -70,7 +74,19 @@ class PoffImportJobIT {
     at: String = "2026-11-10T08:00:00Z",
     importService: PoffImportService = poffImportService,
     ratingService: ImdbRatingService = imdbRatingService,
-  ) = PoffImportJob(importService, catalogueService(at), imdbMatchService, ratingService, jobExecutionService, mockk(), tallinnClock(at))
+    clock: Clock = tallinnClock(at),
+    catalogueService: PoffCatalogueService = catalogueService(at),
+    stillService: PoffStillService = poffStillService,
+  ) = PoffImportJob(
+    importService,
+    catalogueService,
+    imdbMatchService,
+    ratingService,
+    stillService,
+    jobExecutionService,
+    mockk(),
+    clock,
+  )
 
   private fun afterFailure(
     later: String,
@@ -78,7 +94,7 @@ class PoffImportJobIT {
   ): PoffImportJob {
     val clock = MutableClock(Instant.parse("2026-12-01T08:00:00Z"))
     val catalogueService = PoffCatalogueService(poffSnapshotRepository, poffImdbRepository, clock)
-    val job = PoffImportJob(poffImportService, catalogueService, imdbMatchService, imdbRatingService, jobExecutionService, mockk(), clock)
+    val job = job(clock = clock, catalogueService = catalogueService)
     respond("/en/films/", "Bad gateway", 502)
     runCatching { job.execute() }
     wireMockServer.resetRequests()
@@ -168,6 +184,16 @@ class PoffImportJobIT {
     )
     job().execute()
     expect(poffImdbRepository.findAll().first { it.filmId == 8810L }.votes).toEqual(87)
+  }
+
+  @Test
+  fun `matches the films when their stills cannot be stored`() {
+    festival()
+    respond("/en/film/a-girl-unknown/", page("Tüdruk ilma nimeta", 6701))
+    suggestion()
+    val stills = mockk<PoffStillService> { every { store(any()) } throws IllegalStateException("MinIO answered 503") }
+    runCatching { job(stillService = stills).execute() }
+    expect(poffImdbRepository.findAll().first { it.filmId == 8810L }.imdbId).toEqual("tt50340469")
   }
 
   @Test
