@@ -36,8 +36,19 @@ class GicsIndustryClassificationServiceTest {
   ) = CompanyClassificationInput(holdingId = id, name = name, ticker = ticker)
 
   private fun respond(content: String) {
-    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), AiModel.primarySectorModel()) } returns
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), any()) } returns
       OpenRouterClassificationResult(content = content, model = AiModel.GPT_6_LUNA)
+  }
+
+  @Test
+  fun `should classify industries with Gemini 4 Argon first`() {
+    val start = slot<AiModel>()
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), capture(start)) } returns
+      OpenRouterClassificationResult(content = "1. 401010", model = AiModel.GEMINI_4_ARGON)
+
+    service.classifyBatch(listOf(company(1, "Põhja Pank")))
+
+    expect(start.captured).toEqual(AiModel.GEMINI_4_ARGON)
   }
 
   @Test
@@ -167,7 +178,7 @@ class GicsIndustryClassificationServiceTest {
 
   @Test
   fun `should return empty outcome when all fallback models fail`() {
-    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), AiModel.primarySectorModel()) } returns null
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, any(), any()) } returns null
 
     val outcome = service.classifyBatch(listOf(company(1L, "Apple", "AAPL")))
 

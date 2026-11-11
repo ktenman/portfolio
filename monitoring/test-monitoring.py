@@ -762,6 +762,14 @@ def check_openrouter_latest():
     print('The OpenRouter balance and monthly spend show the latest reading')
 
 
+def check_openrouter_lone_days():
+    board = json.loads((ROOT / 'grafana/dashboards/openrouter.json').read_text())
+    styles = {panel['title']: panel['fieldConfig']['defaults']['custom'] for panel in board['panels'] if panel.get('interval') == '1d'}
+    blank = [title for title, style in styles.items() if style.get('drawStyle') != 'bars' and style['showPoints'] != 'always']
+    assert not blank, f'{blank} draw a line with hidden points, so a day with no value next to it shows nothing'
+    print('OpenRouter daily panels show a day that has no neighbour')
+
+
 def check_once_delivery(base, name, labels, summary):
     def incident(ends_after):
         firing = alert(name, ends_after)
@@ -914,6 +922,7 @@ if __name__ == '__main__':
     check_metric_coverage()
     check_openrouter_days()
     check_openrouter_latest()
+    check_openrouter_lone_days()
     check_readiness_recovery()
     check_failed_startup_logs()
     check_delivery()

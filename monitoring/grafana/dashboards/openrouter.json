@@ -364,7 +364,7 @@
               "mode": "off"
             },
             "fillOpacity": 10,
-            "showPoints": "never"
+            "showPoints": "always"
           },
           "thresholds": {
             "mode": "absolute",

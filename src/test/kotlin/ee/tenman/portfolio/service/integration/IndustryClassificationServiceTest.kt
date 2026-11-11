@@ -102,17 +102,17 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should cascade to next model when claude opus returns unknown sector`() {
+  fun `should cascade to next model when gemini argon returns unknown sector`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(AiPurpose.SECTOR, any()) } returns
-      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.CLAUDE_OPUS_5_5)
-    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.GPT_6_LUNA, any(), any()) } returns
-      OpenRouterClassificationResult(content = "Software & Cloud Services", model = AiModel.GPT_6_LUNA)
+      OpenRouterClassificationResult(content = "Unknown Category", model = AiModel.GEMINI_4_ARGON)
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.DEEPSEEK_V4_PRO, any(), any()) } returns
+      OpenRouterClassificationResult(content = "Software & Cloud Services", model = AiModel.DEEPSEEK_V4_PRO)
 
     val result = service.classifyCompanyWithModel("Apple Inc")
 
     expect(result?.sector).toEqual(IndustrySector.SOFTWARE_CLOUD_SERVICES)
-    expect(result?.model).toEqual(AiModel.GPT_6_LUNA)
+    expect(result?.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
   }
 
   @Test
@@ -128,18 +128,18 @@ class IndustryClassificationServiceTest {
   }
 
   @Test
-  fun `should use GPT_6_LUNA as cascading fallback after CLAUDE_OPUS_5_5 fails`() {
+  fun `should use DEEPSEEK_V4_PRO as cascading fallback after GEMINI_4_ARGON fails`() {
     every { properties.enabled } returns true
     every { openRouterClient.classifyWithModel(AiPurpose.SECTOR, any()) } returns
-      OpenRouterClassificationResult(content = "Unknown", model = AiModel.CLAUDE_OPUS_5_5)
-    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.GPT_6_LUNA, any(), any()) } returns
-      OpenRouterClassificationResult(content = "Semiconductors", model = AiModel.GPT_6_LUNA)
+      OpenRouterClassificationResult(content = "Unknown", model = AiModel.GEMINI_4_ARGON)
+    every { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.DEEPSEEK_V4_PRO, any(), any()) } returns
+      OpenRouterClassificationResult(content = "Semiconductors", model = AiModel.DEEPSEEK_V4_PRO)
 
     val result = service.classifyCompanyWithModel("Nvidia")
 
     expect(result?.sector).toEqual(IndustrySector.SEMICONDUCTORS)
-    expect(result?.model).toEqual(AiModel.GPT_6_LUNA)
-    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.GPT_6_LUNA, any(), any()) }
+    expect(result?.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
+    verify(exactly = 1) { openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, any(), AiModel.DEEPSEEK_V4_PRO, any(), any()) }
   }
 
   @Test

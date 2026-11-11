@@ -1,10 +1,13 @@
 package ee.tenman.portfolio.openrouter
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.AiPurpose
+import feign.FeignException
 import feign.Request
+import feign.Response
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.just
@@ -14,6 +17,9 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 
 class OpenRouterClientTest {
   private val feignClient = mockk<OpenRouterFeignClient>()
@@ -112,6 +118,50 @@ class OpenRouterClientTest {
     expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
   }
 
+  @ParameterizedTest
+  @CsvSource("CLAUDE_OPUS_5_5,low", "DEEPSEEK_V4_PRO,none", "GPT_6_LUNA,", "GEMINI_4_ARGON,")
+  fun `should send each model its own reasoning effort`(
+    model: AiModel,
+    effort: String?,
+  ) {
+    val request = slot<OpenRouterRequest>()
+    every { feignClient.chatCompletion(any(), capture(request)) } returns okResponse("Finance")
+
+    client.classifyWithCascadingFallback(AiPurpose.SECTOR, "Põhja Pank", model)
+
+    expect(request.captured.reasoning?.effort).toEqual(effort)
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = [401, 402])
+  fun `should stop the sector cascade when OpenRouter refuses the key or its credits`(status: Int) {
+    val requests = mutableListOf<OpenRouterRequest>()
+    every { feignClient.chatCompletion(any(), capture(requests)) } throws rejected(status)
+
+    client.classifyWithCascadingFallback(AiPurpose.SECTOR, "Põhja Pank", AiModel.primarySectorModel())
+
+    expect(requests).toHaveSize(1)
+  }
+
+  @Test
+  fun `should stop the country cascade when the credits have run out`() {
+    val requests = mutableListOf<OpenRouterRequest>()
+    every { feignClient.chatCompletion(any(), capture(requests)) } throws rejected(402)
+
+    client.classifyWithCountryFallback(AiPurpose.COUNTRY, "Põhja Pank")
+
+    expect(requests).toHaveSize(1)
+  }
+
+  @Test
+  fun `should cascade to next model when a model answers with a server error`() {
+    every { feignClient.chatCompletion(any(), any()) } throws rejected(503) andThen okResponse("Finance")
+
+    val result = client.classifyWithCascadingFallback(AiPurpose.SECTOR, "Põhja Pank", AiModel.primarySectorModel())
+
+    expect(result?.model).toEqual(AiModel.primarySectorModel().nextSectorFallbackModel())
+  }
+
   @Test
   fun `returns null when feign call throws`() {
     every { feignClient.chatCompletion(any(), any()) } throws RuntimeException("boom")
@@ -158,6 +208,17 @@ class OpenRouterClientTest {
       .tags(*tags)
       .counter()
       ?.count()
+
+  private fun rejected(status: Int): FeignException =
+    FeignException.errorStatus(
+      "chatCompletion",
+      Response
+        .builder()
+        .status(status)
+        .request(Request.create(Request.HttpMethod.POST, "https://openrouter.ai/api/v1/chat/completions", emptyMap(), null, null, null))
+        .headers(emptyMap())
+        .build(),
+    )
 
   private fun okResponse(content: String) =
     OpenRouterResponse(

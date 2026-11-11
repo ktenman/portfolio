@@ -2,6 +2,7 @@ package ee.tenman.portfolio.openrouter
 
 import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.AiPurpose
+import feign.FeignException
 import feign.Request
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -51,8 +52,9 @@ class OpenRouterClient(
     var currentModel: AiModel? = startingModel
     while (currentModel != null) {
       val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.sectorFallbackTier)
-      val result = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
-      if (result != null) return result
+      val attempt = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
+      attempt.getOrNull()?.let { return it }
+      if (refused(attempt.exceptionOrNull())) return null
       val nextModel = currentModel.nextSectorFallbackModel()
       if (nextModel != null) {
         log.info("Cascading to next fallback model: ${nextModel.modelId} (tier ${nextModel.sectorFallbackTier})")
@@ -76,8 +78,9 @@ class OpenRouterClient(
     var currentModel: AiModel? = AiModel.primaryCountryModel()
     while (currentModel != null) {
       val selection = ModelSelection(model = currentModel, fallbackTier = currentModel.countryFallbackTier)
-      val result = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
-      if (result != null) return result
+      val attempt = executeWithSelectionForCascade(purpose, selection, prompt, maxTokens, temperature)
+      attempt.getOrNull()?.let { return it }
+      if (refused(attempt.exceptionOrNull())) return null
       val nextModel = currentModel.nextCountryFallbackModel()
       if (nextModel != null) {
         log.info("Cascading to next country fallback model: ${nextModel.modelId} (tier ${nextModel.countryFallbackTier})")
@@ -104,7 +107,14 @@ class OpenRouterClient(
       log.warn("Rate limit exceeded for $modelType model, skipping request")
       return null
     }
-    return executeRequest(purpose, selection, prompt, maxTokens, temperature)
+    return executeRequest(purpose, selection, prompt, maxTokens, temperature).getOrNull()
+  }
+
+  private fun refused(error: Throwable?): Boolean {
+    val status = (error as? FeignException)?.status() ?: return false
+    if (status !in REFUSED_STATUSES) return false
+    log.warn("Stopping the cascade because OpenRouter refused the key or its credits with status $status")
+    return true
   }
 
   private fun executeWithSelectionForCascade(
@@ -113,7 +123,7 @@ class OpenRouterClient(
     prompt: String,
     maxTokens: Int,
     temperature: Double,
-  ): OpenRouterClassificationResult? {
+  ): Result<OpenRouterClassificationResult?> {
     repeat(MAX_RATE_LIMIT_RETRIES) { attempt ->
       val waitTimeMs = circuitBreaker.getWaitTimeMsForModel(selection.model)
       if (waitTimeMs > 0) {
@@ -126,7 +136,7 @@ class OpenRouterClient(
       Thread.sleep(RATE_LIMIT_BUFFER_MS)
     }
     log.warn("Rate limit exceeded for model ${selection.modelId} after $MAX_RATE_LIMIT_RETRIES attempts, trying next fallback")
-    return null
+    return Result.success(null)
   }
 
   fun classifyWithOnlineSearch(
@@ -222,6 +232,7 @@ class OpenRouterClient(
     private val SEARCH_OPTIONS = Request.Options(Duration.ofSeconds(10), Duration.ofMinutes(10), true)
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
+    private val REFUSED_STATUSES = setOf(401, 402)
     private const val FLEX_TIER = "google-ai-studio/flex"
     private const val VERTEX = "google-vertex"
   }
@@ -232,13 +243,14 @@ class OpenRouterClient(
     prompt: String,
     maxTokens: Int,
     temperature: Double,
-  ): OpenRouterClassificationResult? {
+  ): Result<OpenRouterClassificationResult?> {
     val request =
       OpenRouterRequest(
         model = selection.modelId,
         messages = listOf(OpenRouterRequest.Message(role = "user", content = prompt)),
         maxTokens = maxTokens,
         temperature = temperature,
+        reasoning = selection.model.reasoningEffort?.let(OpenRouterRequest::Reasoning),
       )
     return runCatching {
       log.info("Calling OpenRouter API with model: ${selection.modelId} (tier: ${selection.fallbackTier})")
@@ -257,6 +269,6 @@ class OpenRouterClient(
     }.onFailure { throwable ->
       log.error("Error calling OpenRouter API with model ${selection.modelId}: ${throwable.message}", throwable)
       circuitBreaker.recordFailure(throwable)
-    }.getOrNull()
+    }
   }
 }

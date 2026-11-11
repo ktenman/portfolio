@@ -20,7 +20,7 @@ class GicsIndustryClassificationService(
     if (!properties.enabled) log.warn("Industry classification disabled, skipping batch of ${companies.size}")
     if (validCompanies.isEmpty() || !properties.enabled) return UNANSWERED
     val response =
-      openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, buildPrompt(validCompanies), AiModel.primarySectorModel()) ?: run {
+      openRouterClient.classifyWithCascadingFallback(AiPurpose.INDUSTRY, buildPrompt(validCompanies), AiModel.GEMINI_4_ARGON) ?: run {
         log.warn("Batch industry classification failed for ${validCompanies.size} companies")
         return UNANSWERED
       }
