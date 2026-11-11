@@ -11,7 +11,7 @@
       <radio-icon name="search" />
     </button>
     <label
-      class="group relative flex min-w-0 flex-1 items-center"
+      class="group relative z-0 flex min-w-0 flex-1 items-center before:absolute before:inset-x-0 before:top-1/2 before:-z-10 before:h-11 before:-translate-y-1/2"
       :class="{ 'md-down:hidden': folded }"
     >
       <radio-icon
@@ -27,7 +27,7 @@
         :placeholder="LABEL"
         enterkeyhint="search"
         autocomplete="off"
-        class="h-9 min-w-0 flex-1 rounded-container border bg-surface-subtle pr-11 pl-8.5 text-sm placeholder:text-ink-soft focus:bg-surface md-down:h-11 [&::-webkit-search-cancel-button]:hidden"
+        class="h-9 min-w-0 flex-1 rounded-container border bg-surface-subtle pr-11 pl-8.5 text-sm placeholder:text-ink-soft focus:bg-surface [&::-webkit-search-cancel-button]:hidden"
         :class="query ? 'border-brass' : 'border-control-border'"
         data-testid="poff-search"
       />
