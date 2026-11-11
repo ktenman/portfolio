@@ -11,25 +11,25 @@
         </template>
         <poff-search-field :compact="!!route.params.slug" class="ml-auto md:w-md" />
       </div>
-      <poff-search v-if="data && searching" :films="data.films" :query="query ?? ''" :now="now" />
-      <template v-else>
-        <nav
-          v-if="!route.params.slug"
-          class="mb-4 flex gap-7 border-b border-hairline-strong"
-          aria-label="PÖFF views"
+      <nav
+        v-if="!searching && !route.params.slug"
+        class="mb-4 flex gap-7 border-b border-hairline-strong"
+        aria-label="PÖFF views"
+      >
+        <router-link
+          v-for="view in VIEWS"
+          :key="view.to"
+          :to="view.to"
+          class="relative px-0.5 py-2.5 text-base leading-6 font-medium text-ink-soft transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:transition-colors hover:text-ink hover:after:bg-hairline-strong [&.active]:font-semibold [&.active]:text-ink [&.active]:after:bg-brass"
+          exact-active-class="active"
         >
-          <router-link
-            v-for="view in VIEWS"
-            :key="view.to"
-            :to="view.to"
-            class="relative px-0.5 py-2.5 text-base leading-6 font-medium text-ink-soft transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:transition-colors hover:text-ink hover:after:bg-hairline-strong [&.active]:font-semibold [&.active]:text-ink [&.active]:after:bg-brass"
-            exact-active-class="active"
-          >
-            {{ view.label }}
-          </router-link>
-        </nav>
-        <component :is="Component" />
-      </template>
+          {{ view.label }}
+        </router-link>
+      </nav>
+      <keep-alive exclude="poff-film">
+        <poff-search v-if="data && searching" :films="data.films" :query="query ?? ''" :now="now" />
+        <component :is="Component" v-else />
+      </keep-alive>
     </router-view>
     <p v-if="data" class="mt-4 max-w-prose text-sm text-ink-soft">
       Programme from poff.ee, synced {{ synced(data.syncedAt, today) }}. Lighter ratings have under
@@ -57,5 +57,5 @@ const { data } = usePoffCatalogue()
 const now = useNow({ scheduler: tick => useIntervalFn(tick, 60_000) })
 const today = computed(() => tallinnDay(now.value.toISOString()))
 const { query } = usePoffFilters()
-const searching = computed(() => (query.value?.trim().length ?? 0) >= 2)
+const searching = computed(() => !!data.value && (query.value?.trim().length ?? 0) >= 2)
 </script>

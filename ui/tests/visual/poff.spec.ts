@@ -115,3 +115,45 @@ test('PÖFF timetable opens a film in the panel from its row and closes it on Es
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('poff-panel')).toHaveCount(0)
 })
+
+const FOLDS = ['poff-earlier', 'poff-search-more']
+
+for (const [view, path, title] of [
+  ['timetable', '/poff', 'poff-title'],
+  ['films', '/poff/films', 'poff-film-title'],
+  ['search', '/poff?q=kino', 'poff-search-film'],
+] as const) {
+  for (const [way, back] of [
+    ['its back link', (page: Page) => page.getByRole('link', { name: /^Back to/ }).click()],
+    ["the browser's back", (page: Page) => page.goBack()],
+  ] as const) {
+    test(`PÖFF ${view} keeps its place and folds when a film is left by ${way}`, async ({
+      page,
+    }, testInfo) => {
+      await stubBuildInfo(page)
+      await stubEnums(page)
+      await stubPoff(page)
+      await openRoute(page, path)
+      for (const fold of FOLDS) {
+        const button = page.getByTestId(fold).first()
+        if (await button.count()) await button.click()
+      }
+      const link = page.getByTestId(title).last()
+      await link.scrollIntoViewIfNeeded()
+      let place = await page.evaluate(() => scrollY)
+      const panel = view === 'timetable' && testInfo.project.name === 'desktop'
+      await (panel ? page.getByTestId('poff-row').last().locator('td').first() : link).click()
+      await expect(page).toHaveURL(/\/poff\/film\/|[?&]film=/)
+      if (page.url().includes('film=')) {
+        place = await page.evaluate(() => scrollY)
+        await page.getByRole('link', { name: 'Open film page' }).click()
+      }
+      await expect(page).toHaveURL(/\/poff\/film\//)
+      await back(page)
+      await expect(page.getByTestId(title).last()).toBeVisible()
+      await expect.poll(() => page.evaluate(() => scrollY)).toBe(place)
+      await page.waitForTimeout(500)
+      expect(await page.evaluate(() => scrollY)).toBe(place)
+    })
+  }
+}

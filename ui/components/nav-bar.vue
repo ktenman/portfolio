@@ -1,9 +1,9 @@
 <template>
   <nav class="navbar border-b border-hairline-strong bg-surface navbar-sticky">
     <div class="mx-auto w-full max-w-app px-3">
-      <div class="navbar-scroll-container">
+      <div ref="row" class="navbar-scroll-container">
         <div class="navbar-content">
-          <ul ref="list" class="navbar-nav">
+          <ul class="navbar-nav">
             <li class="nav-item" v-for="route in routes" :key="route.path">
               <router-link class="nav-link" :to="route.path" active-class="active">
                 {{ route.name }}
@@ -28,6 +28,7 @@ import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { utilityService } from '../services/api'
+import { revealInRow } from '../utils/dom'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -41,7 +42,7 @@ const routes = ref([
   { path: '/monitoring', name: 'Monitoring' },
 ])
 
-const list = useTemplateRef<HTMLUListElement>('list')
+const row = useTemplateRef<HTMLDivElement>('row')
 const route = useRoute()
 
 watch(
@@ -49,9 +50,7 @@ watch(
   async () => {
     await nextTick()
     await document.fonts.ready
-    list.value
-      ?.querySelector('.nav-link.active')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    revealInRow(row.value, '.nav-link.active', 'nearest')
   },
   { immediate: true }
 )

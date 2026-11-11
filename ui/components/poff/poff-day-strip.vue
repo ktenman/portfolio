@@ -45,6 +45,7 @@
 <script lang="ts" setup>
 import { onMounted, useTemplateRef, watch } from 'vue'
 import { mondayIndex, WEEKDAYS } from '../../utils/iso-dates'
+import { revealInRow } from '../../utils/dom'
 import { fullDate } from '../../utils/poff'
 
 const props = defineProps<{ days: string[]; today: string }>()
@@ -52,10 +53,7 @@ const props = defineProps<{ days: string[]; today: string }>()
 const model = defineModel<string>({ required: true })
 const strip = useTemplateRef<HTMLElement>('strip')
 
-const center = () =>
-  strip.value
-    ?.querySelector('[aria-pressed="true"]')
-    ?.scrollIntoView({ block: 'nearest', inline: 'center' })
+const center = () => revealInRow(strip.value, '[aria-pressed="true"]', 'center')
 
 onMounted(center)
 watch(() => props.days.length > 0, center, { flush: 'post' })
