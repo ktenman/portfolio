@@ -70,7 +70,7 @@
     <dialog
       ref="lightbox"
       :aria-label="open === null ? undefined : label(open)"
-      class="m-auto max-h-none max-w-none bg-transparent p-4 backdrop:bg-[rgb(0_0_0/0.85)]"
+      class="m-0 size-full max-h-none max-w-none items-center justify-center bg-[rgb(0_0_0)] p-0 outline-none open:flex"
       @click.self="lightbox?.close()"
       @close="close"
     >
@@ -80,9 +80,12 @@
           :src="poffService.stillUrl(film.stills[open]!, 1280)"
           alt=""
           draggable="false"
-          class="max-h-[85vh] max-w-full touch-pan-y"
+          class="max-h-full max-w-full touch-pan-y"
         />
-        <p v-if="film.stills.length > 1" class="mt-2 text-center text-sm text-white">
+        <p
+          v-if="film.stills.length > 1"
+          class="absolute inset-x-0 bottom-4 text-center text-sm text-white"
+        >
           {{ open + 1 }} / {{ film.stills.length }}
         </p>
         <button
@@ -127,7 +130,7 @@ import RadioIcon from '../radio/radio-icon.vue'
 const props = defineProps<{ film: PoffFilm; compact?: boolean }>()
 
 const ROUND =
-  'fixed flex size-11 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white'
+  'fixed flex size-11 cursor-pointer items-center justify-center rounded-full bg-[rgb(0_0_0/0.6)] text-white'
 
 const playing = ref(false)
 const open = ref<number | null>(null)
