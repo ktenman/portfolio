@@ -160,6 +160,13 @@ describe('monitoring-view', () => {
     expect(wrapper.find('tbody tr').text()).toContain('Binance')
   })
 
+  it('spells IMDb with its own capitals', async () => {
+    const wrapper = await render([
+      collection({ key: 'IMDB_RATINGS', provider: 'imdb', operation: 'ratings' }),
+    ])
+    expect(wrapper.find('[data-testid="monitoring-toggle"]').text()).toBe('IMDb')
+  })
+
   it('shows the failure reason of each item when a row is expanded', async () => {
     const wrapper = await render([
       collection({

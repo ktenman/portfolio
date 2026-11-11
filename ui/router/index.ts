@@ -71,6 +71,17 @@ const routes: Array<RouteRecordRaw> = [
     ],
   },
   {
+    path: '/poff',
+    component: () => import('../components/poff/poff-view.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Poff',
+        component: () => import('../components/poff/poff-timetable.vue'),
+      },
+    ],
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

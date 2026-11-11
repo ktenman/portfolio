@@ -5,6 +5,7 @@ import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
 import ee.tenman.portfolio.domain.CollectionKey
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.job.CsusHoldingsRetrievalJob
+import ee.tenman.portfolio.job.ImdbRatingJob
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.tuleva.TulevaHoldingsService
 import ee.tenman.portfolio.vanguard.VanguardHoldingsService
@@ -25,6 +26,7 @@ class CollectionInventoryService(
     val trading = symbols[ProviderName.TRADING212].orEmpty()
     return DATABASE_COLLECTIONS.mapValues { (_, provider) -> symbols[provider].orEmpty() } +
       (CollectionKey.LIGHTYEAR_PRICES to lightyear.getAllSymbols().toSet()) +
+      (CollectionKey.IMDB_RATINGS to setOf(ImdbRatingJob.DATASET)) +
       holdings(trading)
   }
 

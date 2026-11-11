@@ -5,6 +5,7 @@ import { stubBuildInfo } from './build-info-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
+import { stubPoff } from './poff-fixture'
 import { stubRadio } from './radio-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -21,6 +22,7 @@ const ROUTES = [
   { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
   { path: '/radio/shows', name: 'radio-shows', stub: stubRadio },
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },
+  { path: '/poff', name: 'poff', stub: stubPoff },
 ]
 
 interface PaintedText {

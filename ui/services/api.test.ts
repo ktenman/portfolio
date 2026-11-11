@@ -5,6 +5,7 @@ import {
   instrumentsService,
   logoService,
   portfolioSummaryService,
+  poffService,
   radioService,
   transactionsService,
   utilityService,
@@ -186,6 +187,7 @@ describe('api services', () => {
     ],
     ['utility.getBuildInfo', () => utilityService.getBuildInfo(), 'get', '/build-info', undefined],
     ['radio.recordings', () => radioService.recordings(), 'get', '/radio', undefined],
+    ['poff.catalogue', () => poffService.catalogue(), 'get', '/poff/catalogue', undefined],
     [
       'radio.transcript',
       () => radioService.transcript('2026-10-17'),

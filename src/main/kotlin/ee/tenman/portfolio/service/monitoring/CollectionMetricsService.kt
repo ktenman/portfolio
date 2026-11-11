@@ -7,6 +7,7 @@ import ee.tenman.portfolio.dto.CollectionStatusDto
 import ee.tenman.portfolio.job.BinanceDataRetrievalJob
 import ee.tenman.portfolio.job.CsusHoldingsRetrievalJob
 import ee.tenman.portfolio.job.FtDataRetrievalJob
+import ee.tenman.portfolio.job.ImdbRatingJob
 import ee.tenman.portfolio.job.LightyearDataFetchJob
 import ee.tenman.portfolio.job.LightyearHistoricalDataRetrievalJob
 import ee.tenman.portfolio.job.LightyearPriceRetrievalJob
@@ -241,6 +242,7 @@ class CollectionMetricsService(
       CollectionKey.VANGUARD_HOLDINGS to VanguardHoldingsRetrievalJob::class.java.simpleName,
       CollectionKey.TULEVA_HISTORY to TulevaNavRetrievalJob::class.java.simpleName,
       CollectionKey.TULEVA_HOLDINGS to TulevaHoldingsRetrievalJob::class.java.simpleName,
+      CollectionKey.IMDB_RATINGS to ImdbRatingJob::class.java.simpleName,
     )
   }
 }

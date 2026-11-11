@@ -132,6 +132,7 @@ class CollectionScheduleService(
     CollectionKey.VANGUARD_HOLDINGS -> CollectionSchedules.VANGUARD_HOLDINGS_STARTUP_SECONDS
     CollectionKey.TULEVA_HISTORY -> CollectionSchedules.TULEVA_HISTORY_STARTUP_SECONDS
     CollectionKey.TULEVA_HOLDINGS -> CollectionSchedules.TULEVA_HOLDINGS_STARTUP_SECONDS
+    CollectionKey.IMDB_RATINGS -> CollectionSchedules.IMDB_RATINGS_STARTUP_SECONDS
   }
 
   companion object {
@@ -147,6 +148,7 @@ class CollectionScheduleService(
       CollectionKey.VANGUARD_HOLDINGS to CollectionSchedules.VANGUARD_HOLDINGS_CRON,
       CollectionKey.TULEVA_HISTORY to CollectionSchedules.TULEVA_HISTORY_CRON,
       CollectionKey.TULEVA_HOLDINGS to CollectionSchedules.TULEVA_HOLDINGS_CRON,
+      CollectionKey.IMDB_RATINGS to CollectionSchedules.IMDB_RATINGS_CRON,
     ).mapValues { CronExpression.parse(it.value) }
   }
 }

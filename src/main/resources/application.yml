@@ -96,6 +96,8 @@ spring:
           openrouter:
             connectTimeout: 10000
             readTimeout: 180000
+          imdbSuggestionClient:
+            readTimeout: 10000
 
 logging:
   level:
@@ -165,6 +167,7 @@ scheduling:
     intraday-summary-retention-days: ${INTRADAY_SUMMARY_RETENTION_DAYS:30}
     radio-episode-delay: ${RADIO_EPISODE_DELAY:15000}
     radio-schedule-cron: ${RADIO_SCHEDULE_CRON:0 30 3 * * *}
+    poff-import-cron: ${POFF_IMPORT_CRON:0 0/30 8-23 * * *}
     radio-storage-cron: ${RADIO_STORAGE_CRON:0 45 * * * *}
     split-check-cron: ${SPLIT_CHECK_CRON:0 0 6 1,15 * *}
 
@@ -283,6 +286,14 @@ kuku:
 
 aripaev:
   url: https://www.aripaev.ee
+
+poff:
+  url: https://poff.ee
+  pause: 300ms
+
+imdb:
+  datasets-url: https://datasets.imdbws.com
+  suggestion-url: https://v3.sg.media-imdb.com
 
 blackrock:
   url: https://www.blackrock.com

@@ -194,7 +194,7 @@ const STREAM_SILENCE_TIMEOUT = 45 * 1000
 
 const STREAM_RETRY_DELAY = 15 * 1000
 
-const PROVIDER_NAMES: Record<string, string> = { ft: 'FT', blackrock: 'BlackRock' }
+const PROVIDER_NAMES: Record<string, string> = { ft: 'FT', blackrock: 'BlackRock', imdb: 'IMDb' }
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 

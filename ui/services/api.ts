@@ -20,6 +20,7 @@ import {
   type CutReview,
   type JingleReview,
   type ManualCut,
+  type PoffCatalogueResponse,
   type ProgrammeChoice,
   type RadioDay,
   type RadioPlayerChoice,
@@ -230,6 +231,10 @@ export const monitoringService = {
   streamUrl: `/api${API_ENDPOINTS.MONITORING_COLLECTIONS}/stream`,
   rerun: (key: string) =>
     httpClient.post<void>(`${API_ENDPOINTS.MONITORING_COLLECTIONS}/${key}/rerun`),
+}
+
+export const poffService = {
+  catalogue: () => httpClient.get<PoffCatalogueResponse>(`${API_ENDPOINTS.POFF}/catalogue`),
 }
 
 export const radioService = {
