@@ -10,6 +10,7 @@ const none: FilmFilters = {
   genre: null,
   programme: null,
   person: null,
+  city: null,
 }
 const ids = (films: { id: number }[]) => films.map(f => f.id)
 const rated = (id: number, rating: number | null, votes: number | null, title = `Film ${id}`) =>
@@ -20,6 +21,17 @@ describe('poff films', () => {
     expect(ids(filterFilms(poffCatalogue.films, { ...none, showing: true }, now))).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9,
     ])
+  })
+
+  it('keeps films screening in the chosen city', () => {
+    expect(ids(filterFilms(poffCatalogue.films, { ...none, city: 'Tartu' }, now))).toEqual([8])
+  })
+
+  it('leaves a film only its screenings in the chosen city', () => {
+    const [kept] = filterFilms(poffCatalogue.films, { ...none, city: 'Tallinn' }, now).filter(
+      f => f.id === 8
+    )
+    expect(ids(kept!.screenings)).toEqual([20])
   })
 
   it('keeps films rated 7 or more', () => {

@@ -42,6 +42,7 @@ const press = async (wrapper: Wrapper, label: string) => {
 describe('PoffFilms', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
+    localStorage.clear()
     vi.setSystemTime(new Date('2026-11-10T15:00:00Z'))
     vi.mocked(poffService.catalogue).mockReset().mockResolvedValue(poffCatalogue)
   })
@@ -60,7 +61,6 @@ describe('PoffFilms', () => {
       'Armastatu',
       'Kõlakamber',
       'Eluröömu nimel',
-      'Tüdruk ilma nimeta',
       'Fotograaf Cannes’is',
       'Hilisõhtu ulme',
       'Shorts Rahvuslik võistlusprogramm 1',
@@ -68,7 +68,7 @@ describe('PoffFilms', () => {
   })
 
   it('counts the films still showing', async () => {
-    expect((await mount()).get('[data-testid="poff-count"]').text()).toBe('9 films still showing')
+    expect((await mount()).get('[data-testid="poff-count"]').text()).toBe('8 films still showing')
   })
 
   it('puts the rating on the still', async () => {
@@ -97,6 +97,17 @@ describe('PoffFilms', () => {
 
   it('marks a film whose screenings left are sold out', async () => {
     expect(card(await mount(), 'Fotograaf Cannes’is')?.text()).toContain('Sold out')
+  })
+
+  it('keeps the films screening in Tartu after pressing Tartu', async () => {
+    const wrapper = await mount()
+    await press(wrapper, 'Tartu')
+    expect(titles(wrapper)).toEqual(['Tüdruk ilma nimeta'])
+  })
+
+  it('opens on the city chosen in the timetable', async () => {
+    localStorage.setItem('poff-city', 'Tartu')
+    expect(titles(await mount())).toEqual(['Tüdruk ilma nimeta'])
   })
 
   it('keeps tonight’s films after pressing Tonight', async () => {
@@ -132,7 +143,7 @@ describe('PoffFilms', () => {
   it('shows a person filter from the address as a chip that removes it', async () => {
     const wrapper = await mount({ person: 'Tõnu Kark' })
     await press(wrapper, 'Tõnu Kark ×')
-    expect(titles(wrapper)).toHaveLength(9)
+    expect(titles(wrapper)).toHaveLength(8)
   })
 
   it('sorts by title after choosing A–Z', async () => {

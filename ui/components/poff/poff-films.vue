@@ -7,16 +7,21 @@
         role="group"
         aria-label="Filters"
       >
-        <button
-          v-for="chip in chips"
-          :key="chip.label"
-          type="button"
-          :class="[CHIP, 'shrink-0', { active: chip.on }]"
-          :aria-pressed="chip.on"
-          @click="chip.toggle()"
-        >
-          {{ chip.label }}
-        </button>
+        <template v-for="(chip, i) in chips" :key="chip.label">
+          <button
+            type="button"
+            :class="[CHIP, 'shrink-0', { active: chip.on }]"
+            :aria-pressed="chip.on"
+            @click="chip.toggle()"
+          >
+            {{ chip.label }}
+          </button>
+          <span
+            v-if="i === CITIES.length - 1"
+            class="mx-1 h-5 w-px shrink-0 self-center bg-hairline-strong"
+            aria-hidden="true"
+          />
+        </template>
         <button
           type="button"
           :class="[CHIP, 'shrink-0 gap-1', { active: otherGenre }]"
@@ -72,7 +77,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
-import { usePoffFilmFilters } from '../../composables/use-poff-filters'
+import { CITIES, usePoffFilmFilters } from '../../composables/use-poff-filters'
 import { count } from '../../utils/formatters'
 import { CHIP } from '../../utils/poff'
 import { SORTS, TOP_GENRES, filterFilms, genres, sortFilms } from '../../utils/poff-films'
@@ -102,6 +107,11 @@ const SWITCHES = [
   ['tonight', 'Tonight'],
 ] as const
 const chips = computed(() => [
+  ...CITIES.map(name => ({
+    label: name,
+    on: filters.city === name,
+    toggle: () => (filters.city = name),
+  })),
   ...SWITCHES.map(([key, label]) => ({
     label,
     on: filters[key],
