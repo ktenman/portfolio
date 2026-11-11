@@ -185,7 +185,7 @@ for (const [device, viewport] of [
     const view = page.locator('dialog[open]')
     expect(await view.boundingBox()).toEqual({ x: 0, y: 0, ...viewport })
     await expect(view).toHaveCSS('outline-style', 'none')
-    const still = (await page.locator('dialog[open] img').boundingBox())!
+    const still = (await page.locator('dialog[open] img').last().boundingBox())!
     await page.mouse.move(still.x + still.width * 0.8, still.y + still.height / 2)
     await page.mouse.down()
     await page.mouse.move(still.x + still.width * 0.2, still.y + still.height / 2, { steps: 5 })

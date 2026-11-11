@@ -75,15 +75,19 @@
       @close="close"
     >
       <template v-if="open !== null">
-        <img
-          ref="still"
-          :src="poffService.stillUrl(film.stills[open]!, 1280)"
-          alt=""
-          draggable="false"
-          class="max-h-full max-w-full touch-pan-y"
-        />
+        <div ref="still" class="relative size-full touch-none">
+          <img
+            v-for="width in [640, 1280]"
+            :key="`${open}-${width}`"
+            :src="poffService.stillUrl(film.stills[open]!, width)"
+            alt=""
+            draggable="false"
+            class="absolute inset-0 size-full object-contain"
+          />
+        </div>
         <p
           v-if="film.stills.length > 1"
+          role="status"
           class="absolute inset-x-0 bottom-4 text-center text-sm text-white"
         >
           {{ open + 1 }} / {{ film.stills.length }}
@@ -121,7 +125,7 @@
 
 <script lang="ts" setup>
 import { ref, useTemplateRef, watch } from 'vue'
-import { onKeyStroke, usePointerSwipe } from '@vueuse/core'
+import { onKeyStroke, usePointerSwipe, useScrollLock } from '@vueuse/core'
 import type { PoffFilm } from '../../models/generated/domain-models'
 import { poffService } from '../../services/api'
 import { HEADING } from '../../utils/poff'
@@ -140,8 +144,11 @@ const thumbs = useTemplateRef<HTMLButtonElement[]>('thumbs')
 const label = (i: number) =>
   `Still ${i + 1} of ${props.film.stills.length} from ${props.film.title}`
 
+const locked = useScrollLock(document.body)
+
 const show = (i: number) => {
   open.value = i
+  locked.value = true
   lightbox.value?.showModal()
 }
 
@@ -149,7 +156,7 @@ const step = (by: number) => {
   if (open.value !== null && props.film.stills[open.value + by]) open.value += by
 }
 
-usePointerSwipe(useTemplateRef<HTMLImageElement>('still'), {
+usePointerSwipe(useTemplateRef<HTMLElement>('still'), {
   onSwipeEnd: (_, direction) => {
     if (direction === 'left') step(1)
     if (direction === 'right') step(-1)
@@ -168,5 +175,6 @@ onKeyStroke('ArrowRight', () => step(1))
 const close = () => {
   if (open.value !== null) thumbs.value?.[open.value]?.focus()
   open.value = null
+  locked.value = false
 }
 </script>
