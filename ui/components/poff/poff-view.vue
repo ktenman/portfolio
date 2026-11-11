@@ -1,7 +1,10 @@
 <template>
   <div class="mx-auto mt-4 w-full max-w-app px-3">
     <router-view v-slot="{ Component, route }">
-      <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-3">
+      <div
+        class="flex flex-wrap items-center gap-x-3 gap-y-3"
+        :class="route.params.slug ? 'mb-4' : 'mb-2'"
+      >
         <template v-if="route.params.slug">
           <poff-back-link v-if="query === null" />
           <poff-search-field compact class="ml-auto md:w-md" />

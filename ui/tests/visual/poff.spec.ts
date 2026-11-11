@@ -50,7 +50,7 @@ for (const phone of PHONES) {
     [
       'PÖFF search gives',
       '/poff?q=wil',
-      'main :is(input, a, button), [aria-label="Results"] button',
+      'main :is(label:has(input), a, button), [aria-label="Results"] button',
     ],
   ]) {
     test(`${view} every control a 44px target without sideways scroll at ${size}`, async ({
