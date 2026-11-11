@@ -1,6 +1,6 @@
 import type { PoffFilm, PoffScreening } from '../models/generated/domain-models'
 import { formatWeekdayDate } from './iso-dates'
-import { clock, ratedSeven, shortCinema, strongRating, tallinnDay } from './poff'
+import { type City, clock, ratedSeven, shortCinema, strongRating, tallinnDay } from './poff'
 
 export interface FilmFilters {
   showing: boolean
@@ -9,6 +9,7 @@ export interface FilmFilters {
   genre: string | null
   programme: string | null
   person: string | null
+  city: City | null
 }
 
 export type FilmSort = 'top' | 'next' | 'az'
@@ -37,6 +38,7 @@ const inGenre = (film: PoffFilm, genre: string) =>
 const keeps = (film: PoffFilm, filters: FilmFilters, now: Date, today: string): boolean => {
   const coming = upcoming(film, now)
   return (
+    (!filters.city || film.screenings.length > 0) &&
     (!filters.showing || coming.length > 0) &&
     (!filters.rated || ratedSeven(film)) &&
     (!filters.tonight || coming.some(s => tallinnDay(s.start) === today)) &&
@@ -46,9 +48,14 @@ const keeps = (film: PoffFilm, filters: FilmFilters, now: Date, today: string): 
   )
 }
 
+const inCity = (film: PoffFilm, city: City | null): PoffFilm =>
+  city ? { ...film, screenings: film.screenings.filter(s => s.city === city) } : film
+
 export const filterFilms = (films: PoffFilm[], filters: FilmFilters, now: Date): PoffFilm[] => {
   const today = tallinnDay(now.toISOString())
-  return films.filter(film => keeps(film, filters, now, today))
+  return films
+    .map(film => inCity(film, filters.city))
+    .filter(film => keeps(film, filters, now, today))
 }
 
 const byTitle = (a: PoffFilm, b: PoffFilm) => a.title.localeCompare(b.title, 'et')

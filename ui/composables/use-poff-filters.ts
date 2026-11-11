@@ -21,34 +21,36 @@ const useQueryState = () => {
       get: () => route.query[key] === '1',
       set: (on: boolean) => set(key, on ? '1' : undefined),
     })
-  return { route, set, text, flag }
+  const remembered = useLocalStorage<City>('poff-city', 'Tallinn')
+  const city = computed({
+    get: (): City =>
+      CITIES.find(c => c.toLowerCase() === route.query.city) ??
+      CITIES.find(c => c === remembered.value) ??
+      'Tallinn',
+    set: (city: City) => {
+      remembered.value = city
+      set('city', city.toLowerCase())
+    },
+  })
+  return { route, set, text, flag, city }
 }
 
 export const usePoffFilters = () => {
-  const { route, set, text, flag } = useQueryState()
-  const remembered = useLocalStorage<City>('poff-city', 'Tallinn')
+  const { text, flag, city } = useQueryState()
   return {
     day: text('day'),
     film: text('film'),
     query: text('q'),
-    city: computed({
-      get: (): City =>
-        CITIES.find(c => c.toLowerCase() === route.query.city) ??
-        CITIES.find(c => c === remembered.value) ??
-        'Tallinn',
-      set: (city: City) => {
-        remembered.value = city
-        set('city', city.toLowerCase())
-      },
-    }),
+    city,
     rated: flag('rated'),
     available: flag('available'),
   }
 }
 
 export const usePoffFilmFilters = () => {
-  const { route, set, text, flag } = useQueryState()
+  const { route, set, text, flag, city } = useQueryState()
   return {
+    city,
     showing: computed({
       get: () => route.query.showing !== '0',
       set: (on: boolean) => set('showing', on ? undefined : '0'),
