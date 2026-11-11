@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { stubBuildInfo } from './build-info-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubPoff } from './poff-fixture'
-import { openRoute } from './settle'
+import { freeze, openRoute } from './settle'
 
 const PHONES = [
   { width: 375, height: 667 },
@@ -156,4 +156,37 @@ for (const [view, path, title] of [
       expect(await page.evaluate(() => scrollY)).toBe(place)
     })
   }
+}
+
+for (const [device, viewport] of [
+  ['phone', PHONES[1]],
+  ['desktop', { width: 1440, height: 900 }],
+] as const) {
+  test(`PÖFF film steps through every still in the enlarged view on a ${device}`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+    await open(page, viewport, '/poff/film/american-doctor')
+    await page.getByRole('button', { name: /^Still 1 of 5/ }).click()
+    for (let still = 2; still <= 5; still++) {
+      await page.getByRole('button', { name: 'Next still' }).click()
+      await expect(page.getByRole('dialog')).toHaveAccessibleName(
+        `Still ${still} of 5 from Ameerika arst`
+      )
+    }
+    await expect(page.getByRole('button', { name: 'Next still' })).toHaveCount(0)
+    await page.keyboard.press('ArrowLeft')
+    await page.keyboard.press('ArrowLeft')
+    await expect(page.getByRole('dialog')).toHaveAccessibleName('Still 3 of 5 from Ameerika arst')
+    await freeze(page)
+    const sizes = await distinct(page, 'dialog[open] button', 'width')
+    await expect(page).toHaveScreenshot(`poff-still-${device}.png`)
+    expect(sizes).toEqual([TARGET_PX])
+    const still = (await page.locator('dialog[open] img').boundingBox())!
+    await page.mouse.move(still.x + still.width * 0.8, still.y + still.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(still.x + still.width * 0.2, still.y + still.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await expect(page.getByRole('dialog')).toHaveAccessibleName('Still 4 of 5 from Ameerika arst')
+  })
 }
