@@ -22,7 +22,7 @@
     />
     <div class="flex gap-1.5" role="group" aria-label="Station">
       <button
-        v-for="chip in CHIPS"
+        v-for="chip in chips"
         :key="chip ?? 'all'"
         type="button"
         class="platform-btn relative md-down:before:absolute md-down:before:inset-x-0 md-down:before:top-1/2 md-down:before:h-11 md-down:before:-translate-y-1/2"
@@ -42,8 +42,7 @@
 import { computed, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
-import { useStationFilter } from '../../composables/use-radio-recordings'
-import { Station } from '../../models/generated/domain-models'
+import { useStationFilter, useStations } from '../../composables/use-radio-recordings'
 import { STATIONS } from '../../utils/radio'
 import SearchInput from '../shared/search-input.vue'
 import RadioSearch from './radio-search.vue'
@@ -53,7 +52,8 @@ const VIEWS = [
   { to: '/radio/shows', label: 'Shows' },
   { to: '/radio/catch-up', label: 'Catch-up' },
 ]
-const CHIPS = [null, ...Object.values(Station)]
+const stations = useStations()
+const chips = computed(() => [null, ...stations.value])
 
 const route = useRoute()
 const router = useRouter()

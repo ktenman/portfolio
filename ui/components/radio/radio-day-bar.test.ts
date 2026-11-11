@@ -4,9 +4,13 @@ import RadioDayBar from './radio-day-bar.vue'
 import { radioDay } from './radio-fixture'
 import { Station } from '../../models/generated/domain-models'
 
-const bar = (overrides = {}, station: Station | null = null) =>
+const bar = (
+  overrides = {},
+  station: Station | null = null,
+  stations: Station[] = [Station.KUKU, Station.ARIPAEV]
+) =>
   mount(RadioDayBar, {
-    props: { radioDay: radioDay(overrides), station },
+    props: { radioDay: radioDay(overrides), station, stations },
     global: { stubs: { RouterLink: RouterLinkStub } },
   })
 
@@ -27,6 +31,13 @@ const hours = (overrides = {}) =>
     .map(hour => hour.text())
 
 describe('RadioDayBar', () => {
+  it('should draw a track per listed station', () => {
+    const tracks = bar({}, null, [Station.KUKU, Station.ELMAR, Station.SKYPLUS]).findAll(
+      '[data-testid="radio-day-station"]'
+    )
+    expect(tracks.map(track => track.text())).toEqual(['Kuku', 'Elmar', 'Sky Plus'])
+  })
+
   it('should place a recorded span by the time it aired since five in the morning', () => {
     const span = bar().find('[data-testid="radio-day-span"]').attributes('style')
     expect(span).toContain(`left: ${((11 * 60 + 55 - 300) / 1440) * 100}%`)

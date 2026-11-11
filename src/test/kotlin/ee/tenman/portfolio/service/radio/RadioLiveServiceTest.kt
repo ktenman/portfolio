@@ -57,13 +57,29 @@ class RadioLiveServiceTest {
     expect { live.stream(left, Station.KUKU) }.notToThrow()
   }
 
-  @Test
-  fun `should pass on the plain MP3 stream of Äripäev`() {
-    val stream = directory.resolve("aripaev.mp3")
+  private fun heard(
+    station: Station,
+    properties: (String) -> RadioProperties,
+  ): Double {
+    val stream = directory.resolve("${station.name.lowercase()}.mp3")
     ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100:duration=6", "-c:a", "libmp3lame", "-b:a", "128k", stream.toString())
     val heard = directory.resolve("kuulatud.mp3")
-    val live = RadioLiveService(RadioProperties(recordings = directory, live = "puudub.m3u8", aripaevLive = stream.toString()))
-    Files.newOutputStream(heard).use { live.stream(it, Station.ARIPAEV) }
-    expect(probe(heard)["format"]["duration"].asString().toDouble() > 5.5).toEqual(true)
+    Files.newOutputStream(heard).use { RadioLiveService(properties(stream.toString())).stream(it, station) }
+    return probe(heard)["format"]["duration"].asString().toDouble()
+  }
+
+  @Test
+  fun `should pass on the plain MP3 stream of Äripäev`() {
+    expect(heard(Station.ARIPAEV) { RadioProperties(recordings = directory, live = "puudub.m3u8", aripaevLive = it) } > 5.5).toEqual(true)
+  }
+
+  @Test
+  fun `should pass on the plain MP3 stream of Elmar`() {
+    expect(heard(Station.ELMAR) { RadioProperties(recordings = directory, live = "puudub.m3u8", elmarLive = it) } > 5.5).toEqual(true)
+  }
+
+  @Test
+  fun `should pass on the plain MP3 stream of Sky Plus`() {
+    expect(heard(Station.SKYPLUS) { RadioProperties(recordings = directory, live = "puudub.m3u8", skyplusLive = it) } > 5.5).toEqual(true)
   }
 }

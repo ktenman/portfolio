@@ -605,7 +605,7 @@
             "uid": "prometheus"
           },
           "expr": "time() - portfolio_radio_bridge_timestamp_seconds",
-          "legendFormat": "Äripäev bridge",
+          "legendFormat": "{{station}} bridge",
           "refId": "B",
           "instant": false,
           "range": true,

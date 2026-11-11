@@ -3,6 +3,7 @@ package ee.tenman.portfolio.job
 import ee.tenman.portfolio.aripaev.AripaevScheduleClient
 import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
+import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.aripaevAirings
 import jakarta.annotation.PostConstruct
@@ -17,6 +18,7 @@ class AripaevScheduleJob(
   private val jobExecutionService: JobExecutionService,
   private val taskScheduler: TaskScheduler,
   private val clock: Clock,
+  private val radioProperties: RadioProperties,
 ) : Job {
   @PostConstruct
   fun scheduleInitialRun() {
@@ -29,6 +31,7 @@ class AripaevScheduleJob(
   }
 
   override fun execute() {
+    if (Station.ARIPAEV !in radioProperties.stations) return
     val airings = aripaevAirings(aripaevScheduleClient.getSchedule(), clock.zone)
     radioScheduleService.replace(Station.ARIPAEV, airings, airings.minOf { it.start }, airings.maxOf { it.end })
     radioScheduleService.plan()

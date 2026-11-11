@@ -44,10 +44,10 @@ class RadioScheduleTest {
   ) = PlannedAiring(programme, slug, at(start), at(end))
 
   @Test
-  fun `should shift a capture by the stream lag to hold ten seconds either side of the airing`() {
+  fun `should shift a capture by the stream lag to hold fifteen seconds either side of the airing`() {
     val found = captures(listOf(airing("Keskpäevatund", "keskpaevatund", "2026-10-24T12:00", "2026-10-24T13:00")), Station.KUKU, tallinn)
     val slot = Slot(at("2026-10-24T12:00").epochSecond, at("2026-10-24T13:00").epochSecond)
-    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start + 10, slot.end + 30, slot)
+    val expected = Capture("2026-10-24-1200-keskpaevatund", listOf("Keskpäevatund"), slot.start + 5, slot.end + 35, slot)
     expect(found).toContainExactly(expected)
   }
 
@@ -55,7 +55,7 @@ class RadioScheduleTest {
   fun `should shift an Äripäev capture by that stream's longer lag`() {
     val found = captures(listOf(airing("Kuum tool", "kuum-tool", "2026-11-09T11:00", "2026-11-09T12:00")), Station.ARIPAEV, tallinn)
     val slot = Slot(at("2026-11-09T11:00").epochSecond, at("2026-11-09T12:00").epochSecond)
-    val expected = Capture("2026-11-09-1100-aripaev-kuum-tool", listOf("Kuum tool"), slot.start + 20, slot.end + 40, slot)
+    val expected = Capture("2026-11-09-1100-aripaev-kuum-tool", listOf("Kuum tool"), slot.start + 15, slot.end + 45, slot)
     expect(found).toContainExactly(expected)
   }
 
@@ -252,7 +252,7 @@ class RadioScheduleTest {
 
   @Test
   fun `should need the hours of storage the stations table lists`() {
-    expect(Station.entries.map { it.bytesPerHour }).toContainExactly(230_400_000L, 172_800_000L)
+    expect(Station.entries.map { it.bytesPerHour }).toContainExactly(230_400_000L, 172_800_000L, 230_400_000L, 259_200_000L)
   }
 
   @Test

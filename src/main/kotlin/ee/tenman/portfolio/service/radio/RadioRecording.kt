@@ -31,8 +31,11 @@ data class RadioProperties(
   val outlineModel: AiModel = AiModel.GEMINI_4_ARGON,
   val live: String = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000",
   val aripaevLive: String = "https://www.aripaev.ee/raadio/stream.mp3",
+  val elmarLive: String = "https://router.euddn.net/8103046e16b71d15d692b57c187875c7/elmar.mp3",
+  val skyplusLive: String = "https://stream.skymedia.ee/live/SKYPLUS",
   val bucket: String = "radio",
   val localDays: Long = 7,
+  val stations: List<Station> = Station.entries,
 ) {
   val jingles: Path
     get() = recordings.resolve("jingles")

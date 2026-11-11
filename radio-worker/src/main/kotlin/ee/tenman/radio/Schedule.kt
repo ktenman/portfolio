@@ -15,7 +15,12 @@ data class Schedule(
   val heartbeat: String = "heartbeat.json",
 )
 
-val SCHEDULES = mapOf("ARIPAEV" to Schedule("plan-aripaev.json", "heartbeat-aripaev.json"))
+val SCHEDULES =
+  mapOf(
+    "ARIPAEV" to Schedule("plan-aripaev.json", "heartbeat-aripaev.json"),
+    "ELMAR" to Schedule("plan-elmar.json", "heartbeat-elmar.json"),
+    "SKYPLUS" to Schedule("plan-skyplus.json", "heartbeat-skyplus.json"),
+  )
 
 fun planned(
   recordings: Path,

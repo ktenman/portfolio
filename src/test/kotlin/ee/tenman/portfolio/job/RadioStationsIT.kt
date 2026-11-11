@@ -1,9 +1,11 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Station
@@ -11,46 +13,16 @@ import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.MissedReason
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RecorderState
-import ee.tenman.portfolio.service.radio.ScheduledAiring
 import ee.tenman.portfolio.service.radio.ScheduledShow
 import org.junit.jupiter.api.Test
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
 
 @IntegrationTest
 class RadioStationsIT : RadioScheduleTestBase() {
-  private fun aripaev(
-    id: Long,
-    start: String,
-    end: String,
-  ) = aripaev(id, at(start), at(end))
-
-  private fun aripaev(
-    id: Long,
-    start: ZonedDateTime,
-    end: ZonedDateTime,
-  ) = ScheduledAiring(
-    id,
-    ScheduledShow(ARIPAEV_SHOW, "Kuum tool", "kuum-tool", "Päeva põletavad küsimused"),
-    "Kuum tool",
-    start.toInstant(),
-    end.toInstant(),
-    null,
-  )
-
-  private fun replaceAripaev(vararg airings: ScheduledAiring) {
-    radioScheduleService.replace(Station.ARIPAEV, airings.toList(), at("00:00").toInstant(), at("00:00").plusDays(1).toInstant())
-  }
-
-  private fun aripaevRecording(
-    state: String,
-    programme: String = "Kuum tool",
-  ) = recording("2026-11-09-1100-aripaev-kuum-tool", at("08:00"), 600, state, programme, Station.ARIPAEV)
-
   @Test
   fun `should count the recordings of shows of one name on two stations apart`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
@@ -61,6 +33,31 @@ class RadioStationsIT : RadioScheduleTestBase() {
     aripaevRecording("captured", "Keskpäevatund")
     expect(radioScheduleService.programmes().associate { it.station to it.recordings })
       .toEqual(mapOf(Station.KUKU to 2, Station.ARIPAEV to 1))
+  }
+
+  @Test
+  fun `should refuse an import whose show belongs to another station`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    val taken = ScheduledShow(175, "Kuum tool", "kuum-tool", null)
+    expect { replaceAripaev(aripaev(ARIPAEV_AIRING, "13:00", "14:00").copy(show = taken)) }
+      .toThrow<IllegalStateException>()
+      .messageToContain("175", "Kuku", "Äripäev")
+  }
+
+  @Test
+  fun `should keep the show of Kuku when an import of Äripäev claims its id`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    val taken = ScheduledShow(175, "Kuum tool", "kuum-tool", null)
+    runCatching { replaceAripaev(aripaev(ARIPAEV_AIRING, "13:00", "14:00").copy(show = taken)) }
+    expect(radioProgrammeRepository.findByExternalId(175)?.name).toEqual("Keskpäevatund")
+  }
+
+  @Test
+  fun `should refuse an import whose airing belongs to another station`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    expect { replaceAripaev(aripaev(1, "13:00", "14:00")) }
+      .toThrow<IllegalStateException>()
+      .messageToContain("1", "Kuku", "Äripäev")
   }
 
   @Test
@@ -106,7 +103,7 @@ class RadioStationsIT : RadioScheduleTestBase() {
     replaceAripaev(aripaev(ARIPAEV_AIRING, "14:00", "15:00"))
     radioScheduleService.choose(175, ProgrammeChoice(true))
     val slot = """"slot":{"start":${at("12:00").toEpochSecond()},"end":${at("13:00").toEpochSecond()}}"""
-    val times = """"start":${at("12:00:10").toEpochSecond()},"end":${at("13:00:30").toEpochSecond()}"""
+    val times = """"start":${at("12:00:05").toEpochSecond()},"end":${at("13:00:35").toEpochSecond()}"""
     val kuku = Files.readString(radioProperties.recordings.resolve("plan.json")).filterNot(Char::isWhitespace)
     expect(plan(Station.ARIPAEV).size to kuku)
       .toEqual(0 to """[{"name":"$day-1200-keskpaevatund","programmes":["Keskpäevatund"],$times,$slot}]""")
@@ -281,7 +278,5 @@ class RadioStationsIT : RadioScheduleTestBase() {
 
   companion object {
     private val MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
-    private const val ARIPAEV_SHOW = (1L shl 48) + 1
-    private const val ARIPAEV_AIRING = (1L shl 48) + 2
   }
 }

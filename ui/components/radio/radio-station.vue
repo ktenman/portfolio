@@ -54,7 +54,7 @@ const upcoming = ({ capture }: RadioStation) =>
     : 'None selected'
 
 const facts = computed<[string, string][]>(() => {
-  const s = stations.value.find(({ station }) => station === (chosen.value ?? Station.KUKU))
+  const s = stations.value.find(({ station }) => station === Station.KUKU) ?? stations.value[0]
   if (!s) return []
   const disk: [string, string][] = [
     ['Free space', s.freeBytes == null ? '—' : `${Math.round(s.freeBytes / 1e9)} GB`],

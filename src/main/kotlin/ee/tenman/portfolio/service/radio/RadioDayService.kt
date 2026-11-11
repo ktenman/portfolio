@@ -16,6 +16,7 @@ class RadioDayService(
   private val radioProgrammeRepository: RadioProgrammeRepository,
   private val radioArchiveService: RadioArchiveService,
   private val radioScheduleService: RadioScheduleService,
+  private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
   fun day(
@@ -25,7 +26,7 @@ class RadioDayService(
     val today = LocalDateTime.now(clock).minusSeconds(DAY_STARTS.toSecondOfDay().toLong()).toLocalDate()
     val shown = date ?: today
     val now = clock.instant().epochSecond
-    val scope = listOfNotNull(station).ifEmpty { Station.entries }
+    val scope = listOfNotNull(station).ifEmpty { radioProperties.stations }
     val takes = takes(scope, now)
     val from = start(shown)
     val until = start(shown.plusDays(1))

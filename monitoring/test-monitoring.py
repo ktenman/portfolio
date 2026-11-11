@@ -287,17 +287,25 @@ def check_compose():
     assert services['backend']['environment']['MONITORING_POSTGRES_PASSWORD'] == services['postgres-exporter']['environment']['DATA_SOURCE_PASS'], \
         'the backend must set the monitoring role password that postgres-exporter logs in with'
     worker = services['radio-worker']
-    assert worker['profiles'] == ['radio'] and worker['oom_score_adj'] == 1000 and worker['mem_limit']
+    assert worker['oom_score_adj'] == 1000 and worker['mem_limit']
     assert worker['stop_grace_period'] == '5m' and list(worker['networks']) == ['radio']
     assert worker['restart'] == 'unless-stopped', 'a stopped radio worker must stay stopped when Docker restarts'
-    caps = ('profiles', 'cpus', 'cpu_shares', 'mem_limit', 'memswap_limit', 'oom_score_adj', 'stop_grace_period', 'restart', 'networks')
-    assert all(services['radio-worker-aripaev'][cap] == worker[cap] for cap in caps), services['radio-worker-aripaev']
+    caps = ('cpus', 'cpu_shares', 'mem_limit', 'memswap_limit', 'oom_score_adj', 'stop_grace_period', 'restart', 'networks')
+    radio = sorted(name for name, service in services.items() if 'radio' in service.get('profiles', []))
+    workers = [name for name in radio if name.startswith('radio-worker-')]
+    assert all(services[name][cap] == worker[cap] for name in workers for cap in caps), workers
+    stations = dict(entry.split(':') for entry in re.search(r"STATIONS='([^']+)'", deploy).group(1).split())
+    deployed = sorted(name for names in stations.values() for name in names.split(','))
+    assert deployed == radio, f'the deploy must start or stop every radio service by its station, lists {deployed}'
+    for station, names in stations.items():
+        for name in names.split(','):
+            assert services[name]['profiles'] == ['radio', f'radio-{station.lower()}'], (name, services[name]['profiles'])
     backup = services['radio-whisper']
     assert backup['profiles'] == ['whisper'], 'the deploy must never start the Whisper backup'
     assert backup['restart'] == 'unless-stopped', 'a stopped Whisper backup must stay stopped when Docker restarts'
     assert ('radio_model', '/model') in {(volume['source'], volume['target']) for volume in backup['volumes']}, backup['volumes']
     assert '/model' not in {volume['target'] for volume in worker['volumes']}, worker['volumes']
-    shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', 'radio-worker', 'radio-worker-aripaev', 'radio-bridge')]
+    shared = [{(volume['source'], volume['target']) for volume in services[name]['volumes']} for name in ('backend', *radio)]
     assert all(('radio_recordings', '/recordings') in mounts for mounts in shared), shared
     assert '9090/actuator/health' in ' '.join(services['backend']['healthcheck']['test'])
     assert '--rules.alert.resend-delay=15s' in services['prometheus']['command']
@@ -600,7 +608,7 @@ def check_host_gates():
         fakes = {
             'ssh': 'shift\nexec sh -c "$*"\n',
             'df': 'echo Filesystem\necho "/dev/root 100 $DISK 0 $DISK% /"\n',
-            'docker': 'case "$*" in *Health.Status*) echo healthy ;; *) echo "$HEARTBEAT" ;; esac\n',
+            'docker': 'echo "$COMPOSE_PROFILES|$*" >> "$HOME/docker.log"\ncase "$*" in *Health.Status*) echo healthy ;; *) echo "$HEARTBEAT" ;; esac\n',
             'sleep': '',
         }
         for name, body in fakes.items():
@@ -620,8 +628,28 @@ def check_host_gates():
         assert logs == sorted(f'{service}.log' for service in services), logs
         step = workflow_step(deploy, 'Deploy with Docker Compose')
         for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
-            command = f'{environment}export HEARTBEAT="{heartbeat}"\n{step}'
+            command = f'{environment}export HEARTBEAT="{heartbeat}" RADIO_STATIONS=KUKU,ARIPAEV,ELMAR,SKYPLUS\n{step}'
             assert run('bash', '-eo', 'pipefail', '-c', command, check=False).returncode == code, heartbeat
+        log = Path(directory) / 'docker.log'
+
+        def radio(enabled, stations):
+            log.unlink(missing_ok=True)
+            settings = f'export HEARTBEAT="running 0" RADIO_ENABLED={enabled} RADIO_STATIONS=\'{stations}\'\n'
+            result = run('bash', '-eo', 'pipefail', '-c', f'{environment}{settings}{step}', check=False)
+            calls = log.read_text().splitlines() if log.exists() else []
+            stopped = [call.split('|', 1)[1].split()[4:] for call in calls if '|compose --profile radio stop ' in call]
+            profiles = {call.split('|', 1)[0] for call in calls if call.endswith('|compose up -d')}
+            return result, stopped, profiles
+
+        for stations in ('KUKU,ELMR', 'KUKU, SKYPLUS', ','):
+            result, stopped, _ = radio('true', stations)
+            assert result.returncode != 0 and stations in result.stdout and not log.exists(), (stations, result, stopped)
+        _, stopped, profiles = radio('true', 'KUKU,ARIPAEV,SKYPLUS')
+        assert stopped == [['radio-bridge-elmar', 'radio-worker-elmar']], stopped
+        assert profiles == {'radio-kuku,radio-aripaev,radio-skyplus'}, profiles
+        _, stopped, _ = radio('false', 'KUKU,ARIPAEV,ELMAR,SKYPLUS')
+        assert len(stopped) == 1 and sorted(stopped[0]) == sorted(['radio-worker', 'radio-bridge', 'radio-worker-aripaev',
+            'radio-bridge-elmar', 'radio-worker-elmar', 'radio-bridge-skyplus', 'radio-worker-skyplus']), stopped
     cleanup = (root / 'scripts/docker-cleanup.py').read_text()
     compile(cleanup, 'docker-cleanup.py', 'exec')
     assert 'container prune -f --filter until=1h' in cleanup

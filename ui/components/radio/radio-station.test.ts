@@ -121,6 +121,14 @@ describe('RadioStation', () => {
     expect((await all(aripaev, idle)).text()).toContain('Room for≈ 3,159 h')
   })
 
+  it('should show the Room for figure of the first listed station on All when Kuku is off', async () => {
+    expect((await all(aripaev)).text()).toContain('Room for≈ 2,106 h')
+  })
+
+  it('should show nothing for a chosen station the API does not list', async () => {
+    expect((await chosen('elmar', idle)).text()).not.toContain('Room for')
+  })
+
   it('should show the Room for figure of the station on a chip', async () => {
     expect((await chosen('aripaev', idle, aripaev)).text()).toContain('Room for≈ 2,106 h')
   })

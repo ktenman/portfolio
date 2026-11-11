@@ -96,6 +96,7 @@ services:
       GOOGLE_VISION_API_KEY: ${GOOGLE_VISION_API_KEY}
       TRADING212_API_KEY_ID: ${TRADING212_API_KEY_ID}
       TRADING212_API_KEY_SECRET: ${TRADING212_API_KEY_SECRET}
+      RADIO_STATIONS: ${RADIO_STATIONS:-KUKU,ARIPAEV,ELMAR,SKYPLUS}
       OTEL_JAVAAGENT_ENABLED: "true"
       OTEL_SERVICE_NAME: backend
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
@@ -203,7 +204,7 @@ services:
     logging: *logging
     container_name: radio-worker
     image: ktenman/radio-worker:latest
-    profiles: [radio]
+    profiles: [radio, radio-kuku]
     command: ["planned"]
     restart: unless-stopped
     stop_grace_period: 5m
@@ -226,26 +227,29 @@ services:
       - radio_model:/model
       - radio_recordings:/recordings
 
-  radio-bridge:
+  radio-bridge: &radio-bridge
     logging: *logging
     container_name: radio-bridge
     image: jrottenberg/ffmpeg:8-alpine@sha256:3ab1c371ad3e734e7a31a3219e6a75120f1106c776b291db1bfc2d20158cd73e
-    profiles: [radio]
+    profiles: [radio, radio-aripaev]
+    environment:
+      STATION: aripaev
+      STREAM: https://www.aripaev.ee/raadio/stream.mp3
     user: "1000:1000"
     entrypoint: ["sh", "-c"]
     command:
       - >-
-        mkdir -p /recordings/.aripaev &&
+        mkdir -p /recordings/.$$STATION &&
         exec ffmpeg -nostdin -loglevel warning
         -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30
         -rw_timeout 15000000
-        -i https://www.aripaev.ee/raadio/stream.mp3
+        -i $$STREAM
         -map 0:a:0 -c:a copy
         -output_ts_offset $$(( $$(date +%s) % 95443 ))
         -f hls -hls_time 6 -hls_list_size 600
         -hls_flags delete_segments+omit_endlist
-        -hls_segment_filename /recordings/.aripaev/seg_%05d.ts
-        /recordings/.aripaev/stream.m3u8
+        -hls_segment_filename /recordings/.$$STATION/seg_%05d.ts
+        /recordings/.$$STATION/stream.m3u8
     restart: unless-stopped
     cpus: 0.1
     mem_limit: 64m
@@ -257,7 +261,36 @@ services:
   radio-worker-aripaev:
     <<: *radio-worker
     container_name: radio-worker-aripaev
+    profiles: [radio, radio-aripaev]
     command: ["planned", "--station", "ARIPAEV", "--source", "/recordings/.aripaev/stream.m3u8"]
+
+  radio-bridge-elmar:
+    <<: *radio-bridge
+    container_name: radio-bridge-elmar
+    profiles: [radio, radio-elmar]
+    environment:
+      STATION: elmar
+      STREAM: https://router.euddn.net/8103046e16b71d15d692b57c187875c7/elmar.mp3
+
+  radio-worker-elmar:
+    <<: *radio-worker
+    container_name: radio-worker-elmar
+    profiles: [radio, radio-elmar]
+    command: ["planned", "--station", "ELMAR", "--source", "/recordings/.elmar/stream.m3u8"]
+
+  radio-bridge-skyplus:
+    <<: *radio-bridge
+    container_name: radio-bridge-skyplus
+    profiles: [radio, radio-skyplus]
+    environment:
+      STATION: skyplus
+      STREAM: https://stream.skymedia.ee/live/SKYPLUS
+
+  radio-worker-skyplus:
+    <<: *radio-worker
+    container_name: radio-worker-skyplus
+    profiles: [radio, radio-skyplus]
+    command: ["planned", "--station", "SKYPLUS", "--source", "/recordings/.skyplus/stream.m3u8"]
 
   healthcheck:
     logging: *logging

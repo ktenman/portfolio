@@ -328,6 +328,34 @@ class MainTest {
     expect(Pair(names, status(recordings.resolve("aripaev")).station)).toEqual(Pair(written, "ARIPAEV"))
   }
 
+  private fun stationFiles(
+    tmp: Path,
+    station: String,
+    plan: String,
+  ): List<String> {
+    val recordings = Files.createDirectories(tmp.resolve("recordings"))
+    val start = now().toLong()
+    write(recordings.resolve(plan), listOf(Capture("saade", listOf("Õhtune Äratus"), start, start + 30)))
+    val flags =
+      arrayOf("--recordings", "$recordings", "--source", "http://127.0.0.1:9/stream.m3u8", "--model", model(tmp), "--tagger", CED_TINY)
+    runs("planned", "--station", station, *flags, stop = CountDownLatch(0))
+    return Files.list(recordings).use { paths -> paths.map { "${it.fileName}" }.sorted().toList() }
+  }
+
+  @Test
+  fun `planned for Elmar follows the plan and heartbeat of Elmar`(
+    @TempDir tmp: Path,
+  ) {
+    expect(stationFiles(tmp, "ELMAR", "plan-elmar.json")).toEqual(listOf("heartbeat-elmar.json", "plan-elmar.json", "saade"))
+  }
+
+  @Test
+  fun `planned for Sky Plus follows the plan and heartbeat of Sky Plus`(
+    @TempDir tmp: Path,
+  ) {
+    expect(stationFiles(tmp, "SKYPLUS", "plan-skyplus.json")).toEqual(listOf("heartbeat-skyplus.json", "plan-skyplus.json", "saade"))
+  }
+
   @Test
   fun `planned without a station records Kuku into its own plan and heartbeat`(
     @TempDir tmp: Path,

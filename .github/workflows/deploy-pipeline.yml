@@ -168,15 +168,30 @@ jobs:
       - name: Deploy with Docker Compose
         env:
           RADIO_ENABLED: ${{ vars.RADIO_ENABLED == 'true' }}
+          RADIO_STATIONS: ${{ vars.RADIO_STATIONS || 'KUKU,ARIPAEV,ELMAR,SKYPLUS' }}
         run: |
+          STATIONS='KUKU:radio-worker ARIPAEV:radio-bridge,radio-worker-aripaev ELMAR:radio-bridge-elmar,radio-worker-elmar SKYPLUS:radio-bridge-skyplus,radio-worker-skyplus'
+          [[ $RADIO_STATIONS =~ ^(KUKU|ARIPAEV|ELMAR|SKYPLUS)(,(KUKU|ARIPAEV|ELMAR|SKYPLUS))*$ ]] || { echo "RADIO_STATIONS is $RADIO_STATIONS, not a comma list of KUKU, ARIPAEV, ELMAR, SKYPLUS without spaces"; exit 1; }
+          RADIO_PROFILES=''
+          RADIO_STOPPED=''
+          for entry in $STATIONS; do
+            station=${entry%%:*}
+            if [ "$RADIO_ENABLED" = true ] && [[ ",$RADIO_STATIONS," == *",$station,"* ]]; then
+              RADIO_PROFILES=${RADIO_PROFILES:+$RADIO_PROFILES,}radio-$(echo "$station" | tr '[:upper:]' '[:lower:]')
+            else
+              RADIO_STOPPED="$RADIO_STOPPED ${entry#*:}"
+            fi
+          done
+          RADIO_STOPPED=${RADIO_STOPPED//,/ }
           ssh githubuser@fov.ee "\
             set -eu; \
             export COMPOSE_FILE=docker-compose.yml; \
             MONITORING='prometheus alertmanager node-exporter cadvisor redis-exporter postgres-exporter grafana socket-proxy loki tempo alloy'; \
             PROFILES=''; \
             if [ '$MONITORING_ENABLED' = true ]; then PROFILES=monitoring; else docker compose --profile monitoring stop \$MONITORING; fi; \
-            if [ '$RADIO_ENABLED' = true ]; then PROFILES=\${PROFILES:+\$PROFILES,}radio; else docker compose --profile radio stop radio-worker radio-worker-aripaev radio-bridge; fi; \
-            export COMPOSE_PROFILES=\$PROFILES; \
+            if [ -n '$RADIO_PROFILES' ]; then PROFILES=\${PROFILES:+\$PROFILES,}$RADIO_PROFILES; fi; \
+            if [ -n '$RADIO_STOPPED' ]; then docker compose --profile radio stop $RADIO_STOPPED; fi; \
+            export COMPOSE_PROFILES=\$PROFILES RADIO_STATIONS='$RADIO_STATIONS'; \
             docker volume inspect portfolio_seaweedfs_data >/dev/null; \
             docker run --rm --network none --read-only --mount type=volume,src=portfolio_seaweedfs_data,dst=/data,readonly --entrypoint sh docker.io/chrislusf/seaweedfs:4.47@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882 -c 'test -f /data/.portfolio-storage-ready'; \
             echo 'Pulling latest images (with retry)...' && \

@@ -5,9 +5,9 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { Station } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import RadioTabs from './radio-tabs.vue'
-import { radioSearch } from './radio-fixture'
+import { radioSearch, station } from './radio-fixture'
 
-vi.mock('../../services/api', () => ({ radioService: { search: vi.fn() } }))
+vi.mock('../../services/api', () => ({ radioService: { search: vi.fn(), stations: vi.fn() } }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -36,6 +36,8 @@ const open = async (path: string) => {
   return { router, wrapper }
 }
 
+const listed = (...stations: Station[]) => stations.map(s => station({ station: s }))
+
 const chips = (wrapper: VueWrapper) =>
   wrapper.findAll('[role="group"][aria-label="Station"] button.platform-btn')
 
@@ -43,7 +45,12 @@ const chip = (wrapper: VueWrapper, label: string) =>
   chips(wrapper).find(button => button.text() === label)!
 
 describe('RadioTabs', () => {
-  beforeEach(() => vi.mocked(radioService.search).mockReset().mockResolvedValue(radioSearch()))
+  beforeEach(() => {
+    vi.mocked(radioService.search).mockReset().mockResolvedValue(radioSearch())
+    vi.mocked(radioService.stations)
+      .mockReset()
+      .mockResolvedValue(listed(Station.KUKU, Station.ARIPAEV))
+  })
 
   afterEach(() => vi.useRealTimers())
 
@@ -120,6 +127,19 @@ describe('RadioTabs', () => {
   it('should offer all stations and each one by name', async () => {
     const { wrapper } = await open('/radio')
     expect(chips(wrapper).map(button => button.text())).toEqual(['All', 'Kuku', 'Äripäev'])
+  })
+
+  it('should show a chip per station the API lists', async () => {
+    vi.mocked(radioService.stations).mockResolvedValue(
+      listed(Station.KUKU, Station.ELMAR, Station.SKYPLUS)
+    )
+    const { wrapper } = await open('/radio')
+    expect(chips(wrapper).map(button => button.text())).toEqual([
+      'All',
+      'Kuku',
+      'Elmar',
+      'Sky Plus',
+    ])
   })
 
   it.each([

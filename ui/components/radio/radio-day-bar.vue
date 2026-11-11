@@ -151,7 +151,7 @@ const CROWDED = 5400
 
 type Span = Pick<PlannedSpan, 'start' | 'end'>
 
-const props = defineProps<{ radioDay: RadioDay; station: Station | null }>()
+const props = defineProps<{ radioDay: RadioDay; station: Station | null; stations: Station[] }>()
 
 const fraction = (seconds: number) =>
   (seconds - props.radioDay.from) / (props.radioDay.until - props.radioDay.from)
@@ -164,7 +164,7 @@ const at = (seconds: number) => `${fraction(seconds) * 100}%`
 const place = ({ start, end }: Span) => ({ left: at(start), width: share(end - start) })
 
 const tracks = computed(() =>
-  (props.station ? [props.station] : Object.values(Station)).map(station => {
+  (props.station ? [props.station] : props.stations).map(station => {
     const recorded = props.radioDay.recorded.filter(span => span.station === station)
     const planned = props.radioDay.planned.filter(span => span.station === station)
     return { station, recorded, planned, starts: [...recorded, ...planned].map(s => s.start) }

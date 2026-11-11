@@ -26,7 +26,7 @@
     <p v-if="isError" class="mb-0 text-loss-deep">Could not load the schedule.</p>
     <p v-else-if="isLoading" class="mb-0 text-ink-soft">Loading…</p>
     <template v-if="radioDay">
-      <radio-day-bar :radio-day="radioDay" :station="station" />
+      <radio-day-bar :radio-day="radioDay" :station="station" :stations="stations" />
       <radio-schedule :day="radioDay" />
       <radio-schedule v-if="phone && next && next.date !== radioDay.date" :day="next" />
       <p class="-mt-3 mb-0 text-sm text-ink-soft">
@@ -41,7 +41,7 @@
 import { computed } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
-import { useRadioDay, useStationFilter } from '../../composables/use-radio-recordings'
+import { useRadioDay, useStationFilter, useStations } from '../../composables/use-radio-recordings'
 import { dateDay } from '../../utils/radio'
 import RadioDayBar from './radio-day-bar.vue'
 import RadioSchedule from './radio-schedule.vue'
@@ -56,6 +56,7 @@ const date = computed({
   set: (day: string) => router.replace({ query: { ...route.query, day } }),
 })
 const station = useStationFilter()
+const stations = useStations()
 const { data: radioDay, isLoading, isError } = useRadioDay(date, station)
 const phone = useMediaQuery('(max-width: 767px)')
 

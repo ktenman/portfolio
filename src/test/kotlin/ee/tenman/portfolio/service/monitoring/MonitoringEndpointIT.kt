@@ -61,7 +61,7 @@ class MonitoringEndpointIT {
     expect(get(managementPort, "/actuator/prometheus").body()).toContain(
       "portfolio_radio_plan_timestamp_seconds{",
       "portfolio_radio_schedule_failed",
-      "portfolio_radio_bridge_timestamp_seconds NaN",
+      "portfolio_radio_bridge_timestamp_seconds{station=\"Sky Plus\"} NaN",
     )
   }
 

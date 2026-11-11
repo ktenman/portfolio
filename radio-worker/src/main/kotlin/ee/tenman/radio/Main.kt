@@ -207,7 +207,7 @@ private fun follow(
   stop: CountDownLatch,
 ): Int {
   val station = options.text("--station")
-  val schedule = station?.let { SCHEDULES[it] ?: usage("--station takes ARIPAEV, not $it") } ?: Schedule()
+  val schedule = station?.let { SCHEDULES[it] ?: usage("--station takes ${SCHEDULES.keys.joinToString()}, not $it") } ?: Schedule()
   val source = options.text("--source") ?: if (station == null) KUKU else usage("--station $station needs --source")
   val model = options.path("--model", MODEL)
   val threads = options.whole("--threads") ?: 1

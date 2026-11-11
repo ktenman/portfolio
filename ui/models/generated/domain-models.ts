@@ -870,6 +870,8 @@ export enum TranscriptState {
 export enum Station {
     KUKU = "KUKU",
     ARIPAEV = "ARIPAEV",
+    ELMAR = "ELMAR",
+    SKYPLUS = "SKYPLUS",
 }
 
 export enum RecorderState {

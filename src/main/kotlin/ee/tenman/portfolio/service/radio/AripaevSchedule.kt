@@ -6,7 +6,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
-import java.util.UUID
 
 private const val SCHEDULE = "\"schedule\":["
 
@@ -80,5 +79,3 @@ private fun source(
   return earlier.firstOrNull { it.day(zone) == show.day(zone) }
     ?: earlier.lastOrNull { it.title == null && it !in found }.takeIf { show.day(zone).dayOfWeek >= DayOfWeek.SATURDAY }
 }
-
-private fun id(text: String): Long = UUID.nameUUIDFromBytes(text.toByteArray()).mostSignificantBits ushr 16 or (1L shl 48)
