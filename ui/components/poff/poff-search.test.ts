@@ -72,7 +72,28 @@ describe('PoffSearch', () => {
 
   it('replaces the view with results from two letters', async () => {
     const wrapper = await mount({ q: 'wi' })
-    expect(wrapper.find('[aria-label="PÖFF views"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Festival day"]').exists()).toBe(false)
+  })
+
+  it('keeps the views over the results with none marked current', async () => {
+    const wrapper = await mount({ q: 'wi' })
+    const views = wrapper.findAll('[aria-label="PÖFF views"] a')
+    expect(views.map(view => view.classes('active'))).toEqual([false, false])
+  })
+
+  it('puts the field under the views', async () => {
+    const wrapper = await mount()
+    const views = wrapper.find('[aria-label="PÖFF views"]').element
+    expect(views.compareDocumentPosition(field(wrapper).element)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+  })
+
+  it('closes the search from a view', async () => {
+    const wrapper = await mount({ q: 'wil' })
+    await wrapper.find('[aria-label="PÖFF views"] a[href="/poff/films"]').trigger('click')
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="poff-sort"]').exists()).toBe(true))
+    expect(wrapper.vm.$route.fullPath).toBe('/poff/films')
   })
 
   it('counts the results on the chips', async () => {
