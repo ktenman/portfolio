@@ -61,6 +61,27 @@ class AiModelTest {
   }
 
   @Test
+  fun `should classify sectors with GPT-6 Luna first and Claude Opus last`() {
+    val cascade = generateSequence(AiModel.primarySectorModel()) { it.nextSectorFallbackModel() }.toList()
+
+    expect(cascade).toEqual(listOf(AiModel.GPT_6_LUNA, AiModel.GEMINI_4_ARGON, AiModel.DEEPSEEK_V4_PRO, AiModel.CLAUDE_OPUS_5_5))
+  }
+
+  @Test
+  fun `should classify countries with GPT-6 Luna first and Claude Opus last`() {
+    val cascade = generateSequence(AiModel.primaryCountryModel()) { it.nextCountryFallbackModel() }.toList()
+
+    expect(cascade).toEqual(listOf(AiModel.GPT_6_LUNA, AiModel.GEMINI_4_ARGON, AiModel.DEEPSEEK_V4_PRO, AiModel.CLAUDE_OPUS_5_5))
+  }
+
+  @Test
+  fun `should switch to Gemini 4 Argon while the circuit breaker is open`() {
+    val fallback = OpenRouterProperties().fallbackModel
+
+    expect(fallback).toEqual(AiModel.GEMINI_4_ARGON)
+  }
+
+  @Test
   fun `should keep the configured circuit breaker fallback model on the sector cascade`() {
     val fallback = OpenRouterProperties().fallbackModel
 

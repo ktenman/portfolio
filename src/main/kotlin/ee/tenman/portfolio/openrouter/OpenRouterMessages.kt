@@ -16,7 +16,12 @@ data class OpenRouterRequest(
   val responseFormat: ResponseFormat? = null,
   val provider: ProviderPreferences? = null,
   val plugins: List<Plugin>? = null,
+  val reasoning: Reasoning? = null,
 ) {
+  data class Reasoning(
+    val effort: String,
+  )
+
   data class Message(
     val role: String,
     val content: String,

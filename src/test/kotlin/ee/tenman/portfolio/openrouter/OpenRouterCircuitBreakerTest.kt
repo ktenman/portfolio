@@ -257,9 +257,9 @@ class OpenRouterCircuitBreakerTest {
     val tier0 = circuitBreaker.selectModelByTier(0)
     val tier1 = circuitBreaker.selectModelByTier(1)
     val tier2 = circuitBreaker.selectModelByTier(2)
-    expect(tier0.model).toEqual(AiModel.GEMINI_4_ARGON)
-    expect(tier1.model).toEqual(AiModel.CLAUDE_OPUS_5_5)
-    expect(tier2.model).toEqual(AiModel.GPT_6_LUNA)
+    expect(tier0.model).toEqual(AiModel.GPT_6_LUNA)
+    expect(tier1.model).toEqual(AiModel.GEMINI_4_ARGON)
+    expect(tier2.model).toEqual(AiModel.DEEPSEEK_V4_PRO)
   }
 
   @Test

@@ -121,7 +121,7 @@ class OpenRouterClientIT {
 
     expect(result).notToEqualNull()
     expect(result?.content).toEqual("Healthcare")
-    expect(result?.model).toEqual(AiModel.CLAUDE_OPUS_5_5)
+    expect(result?.model).toEqual(AiModel.GEMINI_4_ARGON)
   }
 
   @Test
@@ -187,6 +187,29 @@ class OpenRouterClientIT {
     )
     val result = openRouterClient.classify(AiPurpose.SECTOR, "Classify Apple Inc")
     expect(result).toEqual("Technology")
+  }
+
+  @Test
+  fun `should send the reasoning effort of the model that answers`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("deepseek/deepseek-v4-pro")))
+        .withRequestBody(matchingJsonPath("$.reasoning.effort", equalTo("none")))
+        .willReturn(okJson(createSuccessResponse("Finance"))),
+    )
+    val result = openRouterClient.classifyWithCascadingFallback(AiPurpose.SECTOR, "Põhja Pank", AiModel.DEEPSEEK_V4_PRO)
+    expect(result?.content).toEqual("Finance")
+  }
+
+  @Test
+  fun `should leave reasoning out of a request to a model with no effort set`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(notContaining("reasoning"))
+        .willReturn(okJson(createSuccessResponse("Finance"))),
+    )
+    val result = openRouterClient.classify(AiPurpose.SECTOR, "Põhja Pank")
+    expect(result).toEqual("Finance")
   }
 
   private fun createSuccessResponse(content: String): String =
