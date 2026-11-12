@@ -277,6 +277,45 @@ for (const [device, viewport] of [
   })
 }
 
+for (const phone of PHONES) {
+  test(`PÖFF film page keeps 24 px margins on a ${phone.width}px phone`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+    await open(page, phone, '/poff/film/american-doctor')
+    const trailer = (await page.locator('.aspect-video').boundingBox())!
+    const back = (await page.locator('main a:has(svg)').first().locator('svg').boundingBox())!
+    expect({ left: trailer.x, right: trailer.x + trailer.width, back: back.x }).toEqual({
+      left: 24,
+      right: phone.width - 24,
+      back: 24,
+    })
+  })
+
+  test(`PÖFF film stills start 16 px under the trailer on a ${phone.width}px phone`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+    await open(page, phone, '/poff/film/american-doctor')
+    const trailer = (await page.locator('.aspect-video').boundingBox())!
+    const strip = (await page.locator('ul:has(button[aria-label^="Still"])').boundingBox())!
+    expect({ gap: strip.y - trailer.y - trailer.height, right: strip.x + strip.width }).toEqual({
+      gap: 16,
+      right: phone.width,
+    })
+  })
+}
+
+test('PÖFF film keeps its stills 8 px under their heading when there is no trailer', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await open(page, PHONES[0], '/poff/film/children-s-shorts')
+  const heading = (await page.getByRole('heading', { name: 'Stills' }).boundingBox())!
+  const strip = (await page.locator('ul:has(button[aria-label^="Still"])').boundingBox())!
+  expect(strip.y - heading.y - heading.height).toBe(8)
+})
+
 test('PÖFF film shows the enlarged still no wider than its 1280 px copy on a wide screen', async ({
   page,
 }, testInfo) => {

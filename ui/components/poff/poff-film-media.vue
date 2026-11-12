@@ -43,8 +43,8 @@
     </div>
     <ul
       v-if="film.stills.length"
-      class="mt-2 flex gap-2 overflow-x-auto md-down:-mr-3 md-down:pr-3 md-down:[scrollbar-width:none]"
-      :class="{ 'px-4': compact }"
+      class="mt-2 flex gap-2 overflow-x-auto md-down:-mr-6 md-down:pr-6 md-down:[scrollbar-width:none]"
+      :class="{ 'px-4': compact, 'md-down:mt-4': film.trailer }"
     >
       <li
         v-for="(still, i) in film.stills"
