@@ -8,103 +8,110 @@
         {{ recordedSummary(radioDay) ?? plannedSummary(radioDay) }}
       </span>
     </template>
-    <div
-      v-for="track in tracks"
-      :key="track.station"
-      class="grid grid-cols-[72px_minmax(0,1fr)] items-end gap-x-3"
-      data-testid="radio-day-track"
-    >
-      <span class="h-7 text-sm leading-7 font-medium" data-testid="radio-day-station">
-        {{ STATIONS[track.station] }}
-      </span>
-      <div class="@container relative pt-10">
-        <router-link
-          v-for="span in track.recorded"
-          :key="span.start"
-          :to="`/radio/${span.name}`"
-          class="group absolute inset-y-0 z-10 rounded-control hover:bg-ink/5"
-          data-testid="radio-day-link"
-          :style="place(span)"
-          :title="`${span.programme} · ${times(span)}`"
-          :aria-label="`${span.programme}, ${times(span)} · ${STATIONS[track.station]}`"
-        >
-          <span
-            class="@container pointer-events-none block px-1 pt-px"
-            :style="{ width: room(span, track.starts) }"
-          >
-            <span
-              class="pointer-events-auto block max-w-fit truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden"
-            >
-              {{ clock(span.start, 0) }}
-            </span>
-            <span
-              class="pointer-events-auto block max-w-fit truncate text-sm font-medium group-hover:underline group-focus-visible:underline @max-[2rem]:hidden"
-            >
-              {{ span.programme }}
-            </span>
-          </span>
-        </router-link>
-        <div
-          v-for="span in track.planned"
-          :key="span.start"
-          class="absolute inset-y-0 z-10"
-          aria-hidden="true"
-          data-testid="radio-day-planned"
-          :style="place(span)"
-          :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"
-        >
-          <span
-            class="@container pointer-events-none block px-1 pt-px text-ink-soft"
-            :style="{ width: room(span, track.starts) }"
-          >
-            <span
-              class="pointer-events-auto block max-w-fit truncate text-label tabular-nums @max-[2rem]:hidden"
-            >
-              {{ clock(span.start, 0) }}
-            </span>
-            <span
-              class="pointer-events-auto block max-w-fit truncate text-sm font-medium @max-[2rem]:hidden"
-            >
-              {{ span.programme }}
-            </span>
-          </span>
-        </div>
-        <div class="relative h-7" aria-hidden="true">
-          <div class="absolute inset-x-0 top-2.5 h-2 rounded-control bg-hairline" />
-          <div
-            v-for="tick in radioDay.ticks"
-            :key="tick.at"
-            class="absolute"
-            :class="
-              tick.midnight
-                ? 'top-5 h-2 w-0.5 -ml-px bg-ink-faint'
-                : 'top-5.5 h-1.5 w-px bg-hairline-strong'
-            "
-            data-testid="radio-day-tick"
-            :style="{ left: at(tick.at) }"
-          />
-          <div
+    <div class="relative">
+      <div
+        v-for="track in tracks"
+        :key="track.station"
+        class="grid grid-cols-[72px_minmax(0,1fr)] items-end gap-x-3"
+        data-testid="radio-day-track"
+      >
+        <span class="h-7 text-sm leading-7 font-medium" data-testid="radio-day-station">
+          {{ STATIONS[track.station] }}
+        </span>
+        <div class="@container relative pt-10">
+          <router-link
             v-for="span in track.recorded"
             :key="span.start"
-            class="absolute top-2.5 h-2 min-w-0.5"
-            :class="span.recording ? `rounded-l-control ${LIVE}` : 'rounded-control bg-ink'"
-            data-testid="radio-day-span"
+            :to="`/radio/${span.name}`"
+            class="group absolute inset-y-0 z-10 rounded-control hover:bg-ink/5"
+            data-testid="radio-day-link"
             :style="place(span)"
-          />
+            :title="`${span.programme} · ${times(span)}`"
+            :aria-label="`${span.programme}, ${times(span)} · ${STATIONS[track.station]}`"
+          >
+            <span
+              class="@container pointer-events-none block px-1 pt-px"
+              :style="{ width: room(span, track.starts) }"
+            >
+              <span
+                class="pointer-events-auto block max-w-fit truncate text-label text-ink-soft tabular-nums @max-[2rem]:hidden"
+              >
+                {{ clock(span.start, 0) }}
+              </span>
+              <span
+                class="pointer-events-auto block max-w-fit truncate text-sm font-medium group-hover:underline group-focus-visible:underline @max-[2rem]:hidden"
+              >
+                {{ span.programme }}
+              </span>
+            </span>
+          </router-link>
           <div
             v-for="span in track.planned"
             :key="span.start"
-            class="absolute top-2.5 h-2 min-w-0.5 rounded-control border border-ink-soft"
-            data-testid="radio-day-planned-span"
+            class="absolute inset-y-0 z-10"
+            aria-hidden="true"
+            data-testid="radio-day-planned"
             :style="place(span)"
-          />
-          <div
-            v-if="current"
-            class="absolute top-0.5 bottom-0 -ml-px w-0.5 rounded-full bg-ink-soft"
-            data-testid="radio-day-now"
-            :style="{ left: at(radioDay.now) }"
-          />
+            :title="`${span.programme} · ${range(span.start, 0, span.end - span.start)} · planned`"
+          >
+            <span
+              class="@container pointer-events-none block px-1 pt-px text-ink-soft"
+              :style="{ width: room(span, track.starts) }"
+            >
+              <span
+                class="pointer-events-auto block max-w-fit truncate text-label tabular-nums @max-[2rem]:hidden"
+              >
+                {{ clock(span.start, 0) }}
+              </span>
+              <span
+                class="pointer-events-auto block max-w-fit truncate text-sm font-medium @max-[2rem]:hidden"
+              >
+                {{ span.programme }}
+              </span>
+            </span>
+          </div>
+          <div class="relative h-7" aria-hidden="true">
+            <div class="absolute inset-x-0 top-2.5 h-2 rounded-control bg-hairline" />
+            <div
+              v-for="tick in hours"
+              :key="tick.at"
+              class="absolute"
+              :class="
+                tick.midnight
+                  ? 'top-5 h-2 w-0.5 -ml-px bg-ink-faint'
+                  : 'top-5.5 h-1.5 w-px bg-hairline-strong'
+              "
+              data-testid="radio-day-tick"
+              :style="{ left: at(tick.at) }"
+            />
+            <div
+              v-for="span in track.recorded"
+              :key="span.start"
+              class="absolute top-2.5 h-2 min-w-0.5"
+              :class="span.recording ? `rounded-l-control ${LIVE}` : 'rounded-control bg-ink'"
+              data-testid="radio-day-span"
+              :style="place(span)"
+            />
+            <div
+              v-for="span in track.planned"
+              :key="span.start"
+              class="absolute top-2.5 h-2 min-w-0.5 rounded-control border border-ink-soft"
+              data-testid="radio-day-planned-span"
+              :style="place(span)"
+            />
+          </div>
         </div>
+      </div>
+      <div
+        v-if="current"
+        class="pointer-events-none absolute inset-0 grid grid-cols-[72px_minmax(0,1fr)] gap-x-3"
+        aria-hidden="true"
+      >
+        <div
+          class="absolute col-start-2 top-10.5 bottom-0 -ml-px w-0.5 rounded-full bg-ink-soft"
+          data-testid="radio-day-now"
+          :style="{ left: at(radioDay.now) }"
+        />
       </div>
     </div>
     <div
