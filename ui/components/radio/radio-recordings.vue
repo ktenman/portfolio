@@ -38,13 +38,7 @@
               </router-link>
               <span class="text-sm text-ink-soft tabular-nums">
                 {{ STATIONS[item.status.station] }} · {{ clock(item.span.start, 0) }} ·
-                <span :class="TONE_TEXT[STATES[item.status.state].tone]">
-                  {{
-                    item.status.state === RecordingState.CAPTURED
-                      ? cleaned(item)
-                      : STATES[item.status.state].label.toLowerCase()
-                  }}
-                </span>
+                <span :class="tone(item)">{{ note(item) }}</span>
               </span>
             </span>
             <button
@@ -68,20 +62,7 @@
           </router-link>
         </template>
         <template #cell-length="{ item }">
-          <span
-            data-testid="radio-length"
-            :class="{ 'text-ink-soft': !live(item) && !item.editList }"
-          >
-            {{ live(item) ? length(item.status.seconds) : cleaned(item) }}
-          </span>
-        </template>
-        <template #cell-text="{ item }">
-          <span data-testid="radio-transcript">{{ textState(item) }}</span>
-        </template>
-        <template #cell-state="{ item }">
-          <radio-badge :tone="STATES[item.status.state].tone">
-            {{ STATES[item.status.state].label }}
-          </radio-badge>
+          <span data-testid="radio-length" :class="tone(item)">{{ note(item) }}</span>
         </template>
         <template #header-actions>
           <span class="sr-only">Actions</span>
@@ -120,9 +101,9 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioRecordings, useStationFilter } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { clock, day, length, ROW_LINK, span, STATES, STATIONS, textState } from '../../utils/radio'
+import { clock, day, length, ROW_LINK, span, STATES, STATIONS } from '../../utils/radio'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
-import RadioBadge, { type BadgeTone } from './radio-badge.vue'
+import type { BadgeTone } from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioOnAir from './radio-on-air.vue'
 import RadioStation from './radio-station.vue'
@@ -152,6 +133,18 @@ const live = (item: RecordingSummary) => item.status.state === RecordingState.RE
 
 const cleaned = (item: RecordingSummary) =>
   item.editList ? length(Math.round(item.editList.durationSeconds / 60) * 60) : 'not cleaned'
+
+const note = (item: RecordingSummary) => {
+  const state = item.status.state
+  if (state === RecordingState.CAPTURED) return cleaned(item)
+  const label = STATES[state].label.toLowerCase()
+  return live(item) ? `${label} · ${length(item.status.seconds)}` : label
+}
+
+const tone = (item: RecordingSummary) =>
+  item.status.state === RecordingState.CAPTURED
+    ? { 'text-ink-soft': !item.editList }
+    : TONE_TEXT[STATES[item.status.state].tone]
 
 const remove = async (item: RecordingSummary) => {
   const confirmed = await confirm({
@@ -185,8 +178,6 @@ const columns: ColumnDefinition[] = [
     formatter: (_, item: RecordingSummary) => `${day(item.status.startedAt)} · ${span(item)}`,
   },
   { key: 'length', label: 'Length', class: 'whitespace-nowrap' },
-  { key: 'text', label: 'Transcript' },
-  { key: 'state', label: 'Status' },
   { key: 'actions', label: 'Actions', class: 'text-right' },
 ]
 </script>
