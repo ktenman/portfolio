@@ -71,6 +71,14 @@ export const ROW_LINK = 'font-semibold after:absolute after:inset-0 after:rounde
 export const PLAY =
   'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
 
+export const ROUND =
+  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+
+export const LISTEN = `${ROUND} border border-control-border bg-surface shadow-control focus-visible:outline-offset-2`
+
+export const LIVE_DOT =
+  "text-notice before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:bg-current before:align-middle before:content-['']"
+
 export const recordingTime = (keep: KeptSpan[], seconds: number): number => {
   const last = keep[keep.length - 1]?.end ?? seconds
   let left = seconds
@@ -212,14 +220,6 @@ export const STATES: Record<RecordingState, { label: string; tone: BadgeTone }> 
   [RecordingState.FAILED]: { label: 'Failed', tone: 'error' },
 }
 
-export const AIRING_STATES: Partial<Record<AiringState, { label: string; tone: BadgeTone }>> = {
-  [AiringState.RECORDED]: { label: 'Recorded', tone: 'plain' },
-  [AiringState.PARTIAL]: { label: 'Partial', tone: 'warn' },
-  [AiringState.RECORDING]: { label: 'Recording', tone: 'live' },
-  [AiringState.ON_AIR]: { label: 'On air', tone: 'live' },
-  [AiringState.PLANNED]: { label: 'Planned', tone: 'plain' },
-}
-
 export const airLength = (seconds: number): string => {
   const hours = Math.round(seconds / 3600)
   return hours && Math.abs(seconds - hours * 3600) <= 300 ? `${hours} h` : length(seconds)
@@ -244,10 +244,15 @@ export const airingNote = (airing: DayAiring): string | null => {
   if (airing.state === AiringState.RECORDED && recording)
     return `Recorded ${range(recording.start, 0, recording.end - recording.start)}`
   if (airing.state === AiringState.PARTIAL && recording) return covered(airing, recording)
-  if (airing.state === AiringState.RECORDING) return 'Being recorded'
-  if (airing.repeat) return ['Repeat', repeatNote(airing)].filter(Boolean).join(' · ')
+  const planned = airing.state === AiringState.PLANNED ? 'Planned' : null
+  if (airing.repeat) return [planned, 'Repeat', repeatNote(airing)].filter(Boolean).join(' · ')
   if (airing.state === AiringState.ON_AIR) return 'Not being recorded'
-  return airing.episode
+  return [planned, airing.episode].filter(Boolean).join(' · ') || null
+}
+
+export const AIRING_LIVE: Partial<Record<AiringState, string>> = {
+  [AiringState.ON_AIR]: 'On air',
+  [AiringState.RECORDING]: 'Being recorded',
 }
 
 export const missedRun = (airings: DayAiring[]): string => {

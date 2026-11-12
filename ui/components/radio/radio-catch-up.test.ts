@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
+import RadioBadge from './radio-badge.vue'
 import RadioCatchUp from './radio-catch-up.vue'
 import { airing, radioDay, recording } from './radio-fixture'
 import { AiringState, Station } from '../../models/generated/domain-models'
@@ -13,6 +14,8 @@ const player = vi.hoisted(() => ({
   toggle: vi.fn(),
   tuned: { value: null as string | null },
   playing: { value: false },
+  recording: { value: null as { name: string } | null },
+  recordingSeconds: { value: 0 },
 }))
 
 vi.mock('../../services/api', () => ({
@@ -53,6 +56,8 @@ describe('RadioCatchUp', () => {
     vi.clearAllMocks()
     player.tuned.value = null
     player.playing.value = false
+    player.recording.value = null
+    player.recordingSeconds.value = 0
     vi.mocked(radioService.day).mockResolvedValue(radioDay())
     vi.mocked(radioService.recordings).mockResolvedValue([recording()])
     vi.mocked(radioService.record).mockResolvedValue()
@@ -241,8 +246,7 @@ describe('RadioCatchUp', () => {
 
   it('should open the recording of an airing it plays', async () => {
     const wrapper = await mount()
-    const play = wrapper.findAll('button').find(b => b.text().includes('Hear the end'))!
-    await play.trigger('click')
+    await wrapper.get('button[aria-label^="Hear the end"]').trigger('click')
     await vi.waitFor(() =>
       expect(wrapper.vm.$router.currentRoute.value.path).toBe(`/radio/${recording().name}`)
     )
@@ -265,9 +269,14 @@ describe('RadioCatchUp', () => {
     expect(player.toggle).toHaveBeenCalled()
   })
 
-  it("should show the player's round play button on a recorded airing", async () => {
-    expect((await button('Listen: Keskpäevatund 12:00')).classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'bg-brass'])
+  it.each([
+    ['a recorded airing', 'Listen: Keskpäevatund 12:00'],
+    ['a partly recorded airing', 'Hear the end'],
+    ['an archived repeat', 'Listen: Keskpäevatund 18:00'],
+    ['an airing on air', 'Listen live'],
+  ])('should give %s a quiet round play button', async (_, label) => {
+    expect((await button(label)).classes()).toEqual(
+      expect.arrayContaining(['rounded-full', 'border', 'bg-surface'])
     )
   })
 
@@ -275,9 +284,57 @@ describe('RadioCatchUp', () => {
     expect((await button('Listen: Keskpäevatund 12:00')).text()).toBe('')
   })
 
-  it("should show the player's round play button on an airing on air", async () => {
-    expect((await button('Listen live')).classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'bg-brass'])
+  const hear = (seconds: number) => {
+    player.recording.value = { name: recording().name }
+    player.recordingSeconds.value = seconds
+    player.playing.value = true
+  }
+
+  it('should turn a recorded airing that plays into the brass pause button', async () => {
+    hear(1000)
+    expect((await button('Pause: Keskpäevatund 12:00')).classes()).toContain('bg-brass')
+  })
+
+  it('should pause a recorded airing that plays from its row', async () => {
+    hear(1000)
+    await (await button('Pause: Keskpäevatund 12:00')).trigger('click')
+    expect(player.toggle).toHaveBeenCalled()
+  })
+
+  it('should keep the play button of an airing whose part of the recording is not playing', async () => {
+    hear(1000)
+    expect(await button('Hear the end')).toBeDefined()
+  })
+
+  it('should give the record button a fingertip height on a phone', async () => {
+    expect((await button('Record: Ilmaparandaja')).classes()).toContain('max-md:min-h-11')
+  })
+
+  it('should give a playing airing the brass pause button', async () => {
+    player.tuned.value = Station.KUKU
+    player.playing.value = true
+    expect((await button('Pause')).classes()).toContain('bg-brass')
+  })
+
+  it('should show only the icon on the play button of a partly recorded airing', async () => {
+    expect((await button('Hear the end')).text()).toBe('')
+  })
+
+  it('should show no badge on an airing', async () => {
+    expect((await mount()).findAllComponents(RadioBadge)).toHaveLength(0)
+  })
+
+  it('should say an airing on air in the live colour', async () => {
+    expect((await row('Tarkade klubi')).get('.text-notice').text()).toBe('On air')
+  })
+
+  it('should say an airing is being recorded in the live colour', async () => {
+    expect((await row('Tööandjate tund')).get('.text-notice').text()).toBe('Being recorded')
+  })
+
+  it('should say a planned airing is planned', async () => {
+    expect((await row('Lihtsalt alusta')).get('[data-testid="radio-airing-meta"]').text()).toBe(
+      'Äripäev · Planned · Koondamishirm tõukas inseneri ettevõtlusesse'
     )
   })
 
@@ -385,7 +442,9 @@ describe('RadioCatchUp', () => {
 
   it('should lead the note of an airing on a phone with its station', async () => {
     airings(row2('Kuum tool', { station: Station.ARIPAEV, episode: 'Madis Toomsalu' }))
-    expect((await row('Kuum tool')).find('.md\\:hidden').text()).toBe('Äripäev · Madis Toomsalu')
+    expect((await row('Kuum tool')).get('[data-testid="radio-airing-meta"]').text()).toBe(
+      'Äripäev · Madis Toomsalu'
+    )
   })
 
   it('should show the station alone on a phone when an airing has no note', async () => {
@@ -395,9 +454,10 @@ describe('RadioCatchUp', () => {
 
   it('should leave the note of an airing without the station on wide rows', async () => {
     airings(row2('Kuum tool', { station: Station.ARIPAEV, episode: 'Madis Toomsalu' }))
-    expect((await row('Kuum tool')).find('.md\\:block.text-body-secondary').text()).toBe(
-      'Madis Toomsalu'
-    )
+    const meta = (await row('Kuum tool')).get('[data-testid="radio-airing-meta"]')
+    expect(meta.findAll('span:not(.md\\:hidden)').map(span => span.text())).toEqual([
+      'Madis Toomsalu',
+    ])
   })
 
   it('should tell apart two airings at the same minute by the station in the label', async () => {

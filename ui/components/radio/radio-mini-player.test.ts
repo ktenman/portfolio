@@ -177,6 +177,14 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open()).text()).toContain('KeskpäevatundRahvusooperi tüli')
   })
 
+  it('should write the topic of the mini player in ink', async () => {
+    await play(recording(), 'raw', 1000)
+    const topic = card(await open())
+      .findAll('p')
+      .find(line => line.text() === 'Rahvusooperi tüli')
+    expect(topic?.classes()).toContain('text-ink')
+  })
+
   it('should show the topic of the clean version at its own position', async () => {
     await play(recording(), 'episode', 2000)
     expect(card(await open()).text()).toContain('Mis toimub poliitikas?')

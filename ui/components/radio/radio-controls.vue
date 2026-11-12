@@ -81,15 +81,12 @@
 
 <script lang="ts" setup>
 import { RATES, useRadioPlayer } from '../../composables/use-radio-player'
-import { PLAY } from '../../utils/radio'
+import { PLAY, ROUND } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 
 defineProps<{ large?: boolean }>()
 
 const SUNKEN = 'h-11 w-12 bg-surface-sunken'
-
-const ROUND =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
 const player = useRadioPlayer()
 

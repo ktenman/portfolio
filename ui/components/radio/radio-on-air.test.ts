@@ -149,10 +149,19 @@ describe('RadioOnAir', () => {
     expect(wrapper.find('button').find('path').attributes('d')).toBe('M7 4v16l13-8z')
   })
 
-  it("should show the live button as the player's round play button", async () => {
+  it('should give the station on air a quiet round play button', async () => {
     expect((await mount({ ...idle, onAir: broadcast })).find('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'bg-brass', 'size-11', '[&>svg]:size-4.5'])
+      expect.arrayContaining(['rounded-full', 'border', 'bg-surface', 'size-11'])
     )
+  })
+
+  it('should turn the station playing into a brass pause button', async () => {
+    const player = useRadioPlayer()
+    player.tuned.value = Station.KUKU
+    player.playing.value = true
+    const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
+    player.close()
+    expect(classes).toContain('bg-brass')
   })
 
   it('should show only the icon on the live button', async () => {

@@ -25,7 +25,7 @@
           <p class="mb-0 truncate text-sm/4.5 font-semibold">
             {{ recording?.programme ?? STATIONS[player.tuned.value!] }}
           </p>
-          <p class="mb-0 truncate text-label/4 text-brass-deep">{{ topic }}</p>
+          <p class="mb-0 truncate text-label/4 text-ink">{{ topic }}</p>
         </div>
         <router-link
           v-if="recording"
