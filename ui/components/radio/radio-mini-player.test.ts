@@ -53,10 +53,12 @@ describe('RadioMiniPlayer', () => {
     player.attach(audio)
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     player.close()
     player.spot.value = null
     vi.restoreAllMocks()
+    await flushPromises()
+    vi.unstubAllGlobals()
   })
 
   const open = async (
@@ -102,6 +104,73 @@ describe('RadioMiniPlayer', () => {
     player.listen(Station.KUKU)
     audio.dispatchEvent(new Event('play'))
   }
+
+  const lockScreen = () => {
+    const handlers: Partial<Record<MediaSessionAction, MediaSessionActionHandler | null>> = {}
+    const session = {
+      metadata: null as MediaMetadataInit | null,
+      setActionHandler: (action: MediaSessionAction, handler: MediaSessionActionHandler | null) =>
+        (handlers[action] = handler),
+      setPositionState: vi.fn(),
+    }
+    vi.stubGlobal(
+      'MediaMetadata',
+      class {
+        constructor(init: MediaMetadataInit) {
+          Object.assign(this, init)
+        }
+      }
+    )
+    vi.stubGlobal('navigator', { ...navigator, mediaSession: session })
+    return { session, handlers }
+  }
+
+  const playLocked = async () => {
+    const lock = lockScreen()
+    await play(recording(), 'raw', 1000)
+    return { ...lock, wrapper: await open() }
+  }
+
+  it('should name the show, station and topic on the lock screen', async () => {
+    const { session } = await playLocked()
+    expect(session.metadata).toEqual({
+      title: 'Keskpäevatund',
+      artist: 'Kuku',
+      album: 'Rahvusooperi tüli',
+    })
+  })
+
+  it('should skip back 15 seconds from the lock screen', async () => {
+    const { handlers } = await playLocked()
+    handlers.seekbackward!({ action: 'seekbackward' })
+    expect(player.seconds.value).toBe(985)
+  })
+
+  it('should seek from the lock screen', async () => {
+    const { handlers } = await playLocked()
+    handlers.seekto!({ action: 'seekto', seekTime: 600 })
+    expect(player.seconds.value).toBe(600)
+  })
+
+  it('should not offer seeking on the lock screen while live', async () => {
+    const { handlers } = lockScreen()
+    listen()
+    await open()
+    expect(handlers.seekto).toBeNull()
+  })
+
+  it('should clear the lock-screen progress while live', async () => {
+    const { session } = await playLocked()
+    listen()
+    await flushPromises()
+    expect(session.setPositionState).toHaveBeenLastCalledWith()
+  })
+
+  it('should clear the lock screen when the player closes', async () => {
+    const { session, handlers, wrapper } = await playLocked()
+    wrapper.unmount()
+    expect([session.metadata, handlers.play]).toEqual([null, null])
+  })
 
   it('should show the programme and the topic at the position', async () => {
     await play(recording(), 'raw', 1000)

@@ -1,11 +1,15 @@
 <template>
   <div class="grid gap-6">
-    <nav v-if="radioDay" class="grid w-fit grid-cols-7 gap-1.5 max-md:hidden" aria-label="Day">
+    <nav
+      v-if="radioDay"
+      class="grid w-fit grid-cols-7 gap-1.5 max-md:w-full max-md:gap-1"
+      aria-label="Day"
+    >
       <button
         v-for="d in radioDay.days"
         :key="d"
         type="button"
-        class="relative grid w-13 cursor-pointer justify-items-center rounded-container border pt-1.5 pb-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
+        class="relative grid w-13 cursor-pointer max-md:w-auto justify-items-center rounded-container border pt-1.5 pb-2.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep"
         :class="[
           d === selected
             ? 'border-brass bg-brass-wash text-brass-deep inset-ring inset-ring-brass'
@@ -28,7 +32,7 @@
     <template v-if="radioDay">
       <radio-day-bar :radio-day="radioDay" :station="station" :stations="stations" />
       <radio-schedule :day="radioDay" />
-      <radio-schedule v-if="phone && next && next.date !== radioDay.date" :day="next" />
+      <radio-schedule v-if="more && next" :day="next" />
       <p class="-mt-3 mb-0 text-sm text-ink-soft">
         Repeats are not recorded when the original is archived. If the original was missed or
         recorded only in part, you can record the repeat.
@@ -70,5 +74,7 @@ const tomorrow = computed(() =>
     : null
 )
 
-const { data: next } = useRadioDay(() => (phone.value ? tomorrow.value : null), station)
+const more = computed(() => phone.value && radioDay.value?.date === radioDay.value?.today)
+
+const { data: next } = useRadioDay(() => (more.value ? tomorrow.value : null), station)
 </script>

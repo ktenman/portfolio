@@ -127,6 +127,12 @@ describe('RadioEpisode', () => {
     expect([player.version.value, player.seconds.value]).toEqual(['raw', 2300])
   })
 
+  it('should open a search hit on the transcript', async () => {
+    const { wrapper } = await open(recording(), '?t=2300')
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'RadioText' }).attributes('transcript')).toBe('true')
+  })
+
   it('should drop the searched line from the address once it plays', async () => {
     const { router } = await open(recording(), '?t=2150&raw=1')
     await flushPromises()

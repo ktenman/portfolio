@@ -26,6 +26,14 @@ vi.mock('../../composables/use-auth-state', async () => {
 
 enableAutoUnmount(afterEach)
 
+const onPhone = () =>
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
+
 const mount = async () => {
   const wrapper = renderWithProviders(RadioCatchUp)
   await flushPromises()
@@ -92,12 +100,7 @@ describe('RadioCatchUp', () => {
   })
 
   it("should list Monday's schedule under Sunday's on a phone", async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: true,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }))
+    onPhone()
     vi.mocked(radioService.day).mockResolvedValue(
       radioDay({ date: '2026-10-18', today: '2026-10-18' })
     )
@@ -106,17 +109,24 @@ describe('RadioCatchUp', () => {
     expect(radioService.day).toHaveBeenLastCalledWith('2026-10-19', null)
   })
 
-  it('should leave the day buttons to screens wider than a phone', async () => {
-    expect((await mount()).get('nav[aria-label="Day"]').classes()).toContain('max-md:hidden')
+  it('should show the day tiles on a phone', async () => {
+    expect((await mount()).get('nav[aria-label="Day"]').classes()).not.toContain('max-md:hidden')
+  })
+
+  it('should not add tomorrow under a past day on a phone', async () => {
+    onPhone()
+    vi.mocked(radioService.day).mockImplementation(async date =>
+      radioDay(date ? { date, from: radioDay().from - 86_400 } : {})
+    )
+    const wrapper = await mount()
+    await wrapper.vm.$router.replace({ query: { day: '2026-10-16' } })
+    await flushPromises()
+    vi.unstubAllGlobals()
+    expect(wrapper.findAll('h3').filter(h => h.text() === 'Schedule')).toHaveLength(1)
   })
 
   it("should list tomorrow's schedule under today's on a phone", async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: true,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }))
+    onPhone()
     vi.mocked(radioService.day).mockImplementation(async date =>
       radioDay(date ? { date, from: radioDay().from + 86_400 } : {})
     )
@@ -181,12 +191,7 @@ describe('RadioCatchUp', () => {
   })
 
   it("should ask for tomorrow's schedule of the station on a phone", async () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: true,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    }))
+    onPhone()
     vi.mocked(radioService.day).mockResolvedValue(
       radioDay({ date: '2026-10-18', today: '2026-10-18' })
     )
