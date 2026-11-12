@@ -734,3 +734,17 @@ tests:
               severity: warning
             exp_annotations:
               summary: 'OpenRouter balance has not been read for 30 minutes, so a low balance goes unannounced; check OPENROUTER_MANAGEMENT_KEY'
+  - interval: 1h
+    input_series:
+      - series: 'portfolio_openrouter_account_usage_dollars'
+        values: '0+0.75x26'
+      - series: 'portfolio_openrouter_key_usage_dollars'
+        values: '0+0.25x26'
+    alert_rule_test:
+      - eval_time: 26h
+        alertname: OpenRouterOtherKeysSpending
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: 'OpenRouter keys other than production spent $12.00 in the last day, out of the balance production calls need; look for a local run with scheduled jobs on'

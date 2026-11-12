@@ -6,6 +6,7 @@ import java.math.RoundingMode
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
@@ -17,6 +18,7 @@ private val DAY = DateTimeFormatter.ofPattern("EEEE dd.MM.yyyy", Locale.ENGLISH)
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss")
 private val AIR = DateTimeFormatter.ofPattern("HH:mm")
 private const val MARGIN = 180.0
+private const val LINE_LIMIT = 160
 
 data class Slot(
   val start: Long,
@@ -55,18 +57,15 @@ data class ShowStart(
   val lastNonShowLineTime: Double,
   val firstSpeechTime: Double,
   val opensWithMusic: Boolean,
-  val evidence: String,
 )
 
 data class OutlineBreak(
   val lastShowLineTime: Double,
   val firstShowLineTime: Double,
-  val evidence: String,
 )
 
 data class ShowEnd(
   val lastShowLineTime: Double,
-  val evidence: String,
 )
 
 data class OutlineChapter(
@@ -157,27 +156,31 @@ fun describe(
       "",
       "## Audio events from the loudness analysis",
       "Stretches of digital silence (below -75 dB for at least 30 ms) or quiet (below -50 dB for at least 0.3 s).",
-      "before/after = median loudness in dB over the 3 s before and after the event.",
+      "Each line: start-end in seconds, kind (digital or quiet), median loudness in dB over the 3 s before/after.",
       "",
     )
   val found =
     events.filter { inside(it.start) }.map {
-      "${fixed(it.start, 2).padStart(7)}-${fixed(it.end, 2).padStart(7)} s (${clock(it.start)})  ${it.kind.padEnd(15)}  " +
-        "before ${fixed(it.before, 1).padStart(6)} dB  after ${fixed(it.after, 1).padStart(6)} dB"
+      "${fixed(it.start, 2)}-${fixed(it.end, 2)} ${it.kind.substringBefore(' ')} ${fixed(it.before, 1)}/${fixed(it.after, 1)}"
     }
   val legend =
     listOf(
       "",
       "## Machine transcript (Estonian, no speaker labels, contains recognition errors)",
-      "Each line: start-end in seconds from the start of the file, the stream clock at the start, the text.",
+      "Each line: start in seconds from the start of the file, then the text, cut at … when long. " +
+        "[HH:MM] lines give the stream clock every 5 minutes.",
       "",
     )
+  val mark = { seconds: Double -> at(seconds).let { it.truncatedTo(ChronoUnit.MINUTES).minusMinutes(it.minute % 5L) } }
   val spoken =
     lines
       .filter { inside(it.start) }
-      .map { "${fixed(it.start, 1).padStart(7)}-${fixed(it.end, 1).padStart(7)} s (${clock(it.start)})  ${it.text}" }
+      .groupBy { mark(it.start) }
+      .flatMap { (time, rows) -> listOf("[${time.format(AIR)}]") + rows.map { "${fixed(it.start, 1)} ${cut(it.text)}" } }
   return (header + found + legend + spoken).joinToString("\n") + "\n"
 }
+
+private fun cut(text: String): String = if (text.length > LINE_LIMIT) "${text.take(LINE_LIMIT)}…" else text
 
 private fun nearest(
   lines: List<TranscriptLine>,

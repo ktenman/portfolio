@@ -45,7 +45,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "portfolio_openrouter_balance_dollars",
+          "expr": "last_over_time(portfolio_openrouter_balance_dollars[15m])",
           "legendFormat": "balance",
           "refId": "A",
           "instant": true,
@@ -106,9 +106,164 @@
       },
       "id": 1,
       "gridPos": {
-        "h": 8,
-        "w": 6,
+        "h": 5,
+        "w": 8,
         "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Runway at the last 7 days' spend",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "last_over_time(portfolio_openrouter_balance_dollars[15m]) / (delta(portfolio_openrouter_account_usage_dollars[7d]) / count_over_time(portfolio_openrouter_account_usage_dollars[7d:1h]) * 24)",
+          "legendFormat": "runway",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "links": [],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 3
+              }
+            ]
+          },
+          "unit": "suffix:days",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Production spend this month, budget $10–20",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(last_over_time(portfolio_openrouter_month_cost_dollars{month=\"${__to:date:YYYY-MM}\"}[15m])) or vector(0)",
+          "legendFormat": "month",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "links": [],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": false
+      },
+      "id": 11,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
         "y": 0
       }
     },
@@ -172,9 +327,9 @@
       "id": 2,
       "gridPos": {
         "h": 8,
-        "w": 18,
-        "x": 6,
-        "y": 0
+        "w": 12,
+        "x": 0,
+        "y": 13
       },
       "interval": "1d"
     },
@@ -239,14 +394,14 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 8
+        "x": 12,
+        "y": 13
       },
       "interval": "1d"
     },
     {
       "type": "timeseries",
-      "title": "Spend per day: account, this key, recorded",
+      "title": "Spend per day: production key and other keys",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -257,8 +412,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "delta(portfolio_openrouter_account_usage_dollars[1d] offset -1d)",
-          "legendFormat": "account",
+          "expr": "delta(portfolio_openrouter_key_usage_dollars[1d] offset -1d)",
+          "legendFormat": "production key",
           "refId": "A",
           "instant": false,
           "range": true,
@@ -269,21 +424,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "delta(portfolio_openrouter_key_usage_dollars[1d] offset -1d)",
-          "legendFormat": "this key",
+          "expr": "delta(portfolio_openrouter_account_usage_dollars[1d] offset -1d) - delta(portfolio_openrouter_key_usage_dollars[1d] offset -1d)",
+          "legendFormat": "other keys",
           "refId": "B",
-          "instant": false,
-          "range": true,
-          "format": "time_series"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(increase(portfolio_openrouter_cost_dollars_total[1d] offset -1d))",
-          "legendFormat": "recorded",
-          "refId": "C",
           "instant": false,
           "range": true,
           "format": "time_series"
@@ -301,7 +444,7 @@
             "showPoints": "never",
             "drawStyle": "bars",
             "stacking": {
-              "mode": "none"
+              "mode": "normal"
             }
           },
           "thresholds": {
@@ -314,7 +457,38 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "production key"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#3987e5",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "other keys"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#d95926",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -328,9 +502,9 @@
       "id": 4,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "w": 24,
+        "x": 0,
+        "y": 5
       },
       "interval": "1d"
     },
@@ -392,7 +566,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 21
       },
       "interval": "1d"
     },
@@ -458,7 +632,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 21
       },
       "interval": "1d"
     },
@@ -524,7 +698,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 29
       },
       "interval": "1d"
     },
@@ -541,7 +715,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (month, purpose) (portfolio_openrouter_month_cost_dollars)",
+          "expr": "sum by (month, purpose) (last_over_time(portfolio_openrouter_month_cost_dollars[15m]))",
           "refId": "A",
           "instant": true,
           "range": false,
@@ -600,7 +774,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 37
       }
     },
     {
@@ -616,7 +790,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (month, model) (portfolio_openrouter_month_cost_dollars)",
+          "expr": "sum by (month, model) (last_over_time(portfolio_openrouter_month_cost_dollars[15m]))",
           "refId": "A",
           "instant": true,
           "range": false,
@@ -675,7 +849,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 37
       }
     }
   ]

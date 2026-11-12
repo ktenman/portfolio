@@ -17,9 +17,9 @@ class RadioOutlineServiceTest {
   private val read =
     OutlineRead(
       listOf("Ainar Ruussaar"),
-      ShowStart(5.0, 50.0, true, "Tere."),
+      ShowStart(5.0, 50.0, true),
       emptyList(),
-      ShowEnd(90.0, "Kohtume taas."),
+      ShowEnd(90.0),
       listOf(OutlineChapter(50.0, "Rahvusooper Estonia")),
     )
 
@@ -36,6 +36,38 @@ class RadioOutlineServiceTest {
         match { it.startsWith("The user message is a machine transcript") },
         "ärakiri",
         match { it["required"] == listOf("hosts", "showStart", "breaks", "showEnd", "chapters") },
+      )
+    }
+  }
+
+  @Test
+  fun `should not ask the model to explain its decisions`() {
+    val client = mockk<OpenRouterClient>()
+    every { client.complete(AiPurpose.RADIO_OUTLINE, any(), any(), any(), any()) } returns null
+    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON, agreed = { true }) {}
+    verify {
+      client.complete(
+        AiPurpose.RADIO_OUTLINE,
+        any(),
+        match { "evidence" !in it },
+        any(),
+        match { "evidence" !in JsonMapperFactory.instance.writeValueAsString(it) },
+      )
+    }
+  }
+
+  @Test
+  fun `should tell the model that a rerun of another programme is a break`() {
+    val client = mockk<OpenRouterClient>()
+    every { client.complete(AiPurpose.RADIO_OUTLINE, any(), any(), any(), any()) } returns null
+    RadioOutlineService(client).reads(SHOW, "ärakiri", AiModel.GEMINI_4_ARGON, agreed = { true }) {}
+    verify {
+      client.complete(
+        AiPurpose.RADIO_OUTLINE,
+        any(),
+        match { "A rerun of a different programme played inside the recording is a break too." in it },
+        any(),
+        any(),
       )
     }
   }

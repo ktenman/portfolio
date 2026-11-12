@@ -20,12 +20,9 @@
         },
         "opensWithMusic": {
           "type": "boolean"
-        },
-        "evidence": {
-          "type": "string"
         }
       },
-      "required": ["lastNonShowLineTime", "firstSpeechTime", "opensWithMusic", "evidence"],
+      "required": ["lastNonShowLineTime", "firstSpeechTime", "opensWithMusic"],
       "additionalProperties": false
     },
     "breaks": {
@@ -40,12 +37,9 @@
           "firstShowLineTime": {
             "type": "number",
             "description": "start time in seconds, exactly as printed at the start of the transcript line"
-          },
-          "evidence": {
-            "type": "string"
           }
         },
-        "required": ["lastShowLineTime", "firstShowLineTime", "evidence"],
+        "required": ["lastShowLineTime", "firstShowLineTime"],
         "additionalProperties": false
       }
     },
@@ -55,12 +49,9 @@
         "lastShowLineTime": {
           "type": "number",
           "description": "start time in seconds, exactly as printed at the start of the transcript line"
-        },
-        "evidence": {
-          "type": "string"
         }
       },
-      "required": ["lastShowLineTime", "evidence"],
+      "required": ["lastShowLineTime"],
       "additionalProperties": false
     },
     "chapters": {

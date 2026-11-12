@@ -53,9 +53,9 @@ class RadioEpisodeServiceTest {
     end: Double,
   ) = OutlineRead(
     listOf("Ainar Ruussaar"),
-    ShowStart(before, first, false, "Tere."),
+    ShowStart(before, first, false),
     emptyList(),
-    ShowEnd(end, "Head aega."),
+    ShowEnd(end),
     listOf(OutlineChapter(first, "Ooperikriis", "Ooper", "Ooperi tüli.")),
   )
 
@@ -309,7 +309,7 @@ class RadioEpisodeServiceTest {
   fun `should end a break at a saved jingle`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
     transcribed(1.0, 5.0, 12.0, 30.0, 50.0)
-    saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0, "Väike paus."))))
+    saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0))))
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
     service(properties = properties).make(directory)

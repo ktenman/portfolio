@@ -20,13 +20,21 @@ class RadioOutlineTest {
     hosts: List<String> = listOf("Ainar Ruussaar"),
   ) = OutlineRead(
     hosts,
-    ShowStart(before, first, music, "Tere."),
-    breaks.map { OutlineBreak(it.first, it.second, "Väike paus.") },
-    ShowEnd(end, "Kohtume taas."),
+    ShowStart(before, first, music),
+    breaks.map { OutlineBreak(it.first, it.second) },
+    ShowEnd(end),
     listOf(OutlineChapter(first, "Rahvusooper Estonia")),
   )
 
   private fun linesAt(vararg starts: Double) = starts.map { TranscriptLine(it, it + 1, "lause", emptyList()) }
+
+  private fun described(
+    lines: List<TranscriptLine>,
+    events: List<AudioEvent> = emptyList(),
+  ): String {
+    val started = ZonedDateTime.of(2026, 10, 17, 11, 55, 0, 0, ZoneId.of("Europe/Tallinn")).toEpochSecond().toDouble()
+    return describe(RecordingStatus(RecordingState.CAPTURED, started, 4200.0), Show(PROGRAMME, null, 0.0, 4200.0), lines, events)
+  }
 
   @Test
   fun `should take the lower median of the reads that agree on the break count`() {
@@ -142,7 +150,7 @@ class RadioOutlineTest {
   @Test
   fun `should reject a read whose time is missing`() {
     val read = JsonMapperFactory.instance.writeValueAsString(outline(5.0, 50.0, emptyList(), 90.0))
-    val broken = read.replace(""""lastShowLineTime":90.0,""", "")
+    val broken = read.replace(""""lastShowLineTime":90.0""", "")
     expect(parse(broken)).toEqual(null)
   }
 
@@ -164,24 +172,40 @@ class RadioOutlineTest {
   }
 
   @Test
-  fun `should print events and lines on the stream clock`() {
-    val started = ZonedDateTime.of(2026, 10, 17, 11, 55, 0, 0, ZoneId.of("Europe/Tallinn")).toEpochSecond().toDouble()
+  fun `should print the stream clock, the events and the lines`() {
     val text =
-      describe(
-        RecordingStatus(RecordingState.CAPTURED, started, 4200.0),
-        Show(PROGRAMME, null, 0.0, 4200.0),
+      described(
         listOf(TranscriptLine(25.24, 27.8, "Siin saade on tänaseks kuulatud.", emptyList())),
         listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, -13.4)),
       )
-    val event = "  66.50-  67.36 s (11:56:06)  digital silence  before  -25.2 dB  after  -13.4 dB"
+    val event = "66.50-67.36 digital -25.2/-13.4"
     expect(Triple(text.lines().first(), event in text, text.trimEnd().lines().last()))
       .toEqual(
         Triple(
           "Recording: Kuku Raadio live internet stream, Saturday 17.10.2026, 70 minutes, stream clock 11:55:00-13:05:00.",
           true,
-          "   25.2-   27.8 s (11:55:25)  Siin saade on tänaseks kuulatud.",
+          "25.2 Siin saade on tänaseks kuulatud.",
         ),
       )
+  }
+
+  @Test
+  fun `should cut a transcript line after 160 characters`() {
+    val long = "Šokolaadijäätis ".repeat(11)
+    val lines = listOf(TranscriptLine(25.24, 60.0, long, emptyList()), TranscriptLine(61.0, 62.0, "õ".repeat(160), emptyList()))
+    expect(described(lines).trimEnd().lines().takeLast(2)).toEqual(listOf("25.2 ${long.take(160)}…", "61.0 ${"õ".repeat(160)}"))
+  }
+
+  @Test
+  fun `should mark the stream clock once for every five minutes of lines`() {
+    val lines =
+      listOf(
+        TranscriptLine(25.24, 27.8, "Tere õhtust.", emptyList()),
+        TranscriptLine(290.0, 292.0, "Šokolaad on otsas.", emptyList()),
+        TranscriptLine(310.0, 312.0, "Kell sai kaksteist.", emptyList()),
+      )
+    expect(described(lines).trimEnd().lines().takeLast(5))
+      .toEqual(listOf("[11:55]", "25.2 Tere õhtust.", "290.0 Šokolaad on otsas.", "[12:00]", "310.0 Kell sai kaksteist."))
   }
 
   @Test
@@ -250,7 +274,7 @@ class RadioOutlineTest {
   fun `should print a level with no audio around it as nan`() {
     val events = listOf(AudioEvent(66.5, 67.36, "digital silence", -25.2, Double.NaN))
     expect(
-      "after    nan dB" in
+      "66.50-67.36 digital -25.2/nan" in
         describe(RecordingStatus(RecordingState.PARTIAL, 0.0, 67.36), Show(PROGRAMME, null, 0.0, 67.36), emptyList(), events),
     ).toEqual(true)
   }
