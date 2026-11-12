@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { ref } from 'vue'
@@ -183,6 +183,41 @@ describe('NavBar', () => {
 
       const wrapper = createWrapper()
       expect(wrapper.text()).toContain('unknown')
+    })
+  })
+
+  describe('log out', () => {
+    const location = window.location
+
+    const visit = (hostname: string) =>
+      Object.defineProperty(window, 'location', {
+        value: { ...location, hostname },
+        writable: true,
+      })
+
+    afterEach(() => {
+      Object.defineProperty(window, 'location', { value: location, writable: true })
+    })
+
+    it('should not offer Log out on localhost', () => {
+      visit('localhost')
+      mockBuildInfo.value = buildInfoData
+
+      expect(createWrapper().find('form').exists()).toBe(false)
+    })
+
+    it('should post to the auth service from a Log out button on fov.ee', () => {
+      visit('fov.ee')
+      mockBuildInfo.value = buildInfoData
+      const form = createWrapper().find('form[method="post"][action="/logout"]')
+
+      expect(form.find('button[type="submit"]').text()).toBe('Log out')
+    })
+
+    it('should not offer Log out on fov.ee before build info arrives', () => {
+      visit('fov.ee')
+
+      expect(createWrapper().find('form').exists()).toBe(false)
     })
   })
 })
