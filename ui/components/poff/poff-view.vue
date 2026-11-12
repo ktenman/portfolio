@@ -38,7 +38,7 @@
     </router-view>
     <p v-if="data" class="mt-4 max-w-prose text-sm text-ink-soft">
       Programme from poff.ee, synced {{ synced(data.syncedAt, today) }}. Lighter ratings have under
-      100 votes. Information courtesy of IMDb (https://www.imdb.com). Used with permission.
+      100 votes.
     </p>
   </div>
 </template>
