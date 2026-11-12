@@ -253,3 +253,39 @@ for (const [device, viewport] of [
     await expect(page.getByRole('dialog')).toHaveAccessibleName('Still 4 of 5 from Ameerika arst')
   })
 }
+
+for (const [device, viewport] of [
+  ['phone', PHONES[1]],
+  ['desktop', { width: 1440, height: 900 }],
+] as const) {
+  test(`PÖFF film fits each still to its cell with no room to scroll on a ${device}`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop')
+    await open(page, viewport, '/poff/film/american-doctor')
+    const gaps = await page
+      .locator('li:has(> button[aria-label^="Still"])')
+      .evaluateAll(cells =>
+        cells.map(cell =>
+          Math.round(
+            cell.getBoundingClientRect().height -
+              cell.firstElementChild!.getBoundingClientRect().height
+          )
+        )
+      )
+    expect([...new Set(gaps)]).toEqual([0])
+  })
+}
+
+test('PÖFF film shows the enlarged still no wider than its 1280 px copy on a wide screen', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await open(page, { width: 1920, height: 1080 }, '/poff/film/american-doctor')
+  await page.getByRole('button', { name: /^Still 1 of 5/ }).click()
+  const width = await page
+    .locator('dialog[open] img')
+    .last()
+    .evaluate(img => img.getBoundingClientRect().width)
+  expect(width).toBeLessThanOrEqual(1280)
+})

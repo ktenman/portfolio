@@ -49,12 +49,12 @@
       <li
         v-for="(still, i) in film.stills"
         :key="still"
-        class="aspect-[3/2] w-[calc((100%-2rem)/5)] shrink-0 md-down:w-[38%]"
+        class="w-[calc((100%-2rem)/5)] shrink-0 md-down:w-[38%]"
       >
         <button
           ref="thumbs"
           type="button"
-          class="size-full cursor-pointer overflow-hidden rounded-control bg-surface-sunken"
+          class="block aspect-[3/2] w-full cursor-pointer overflow-hidden rounded-control bg-surface-sunken"
           :aria-label="label(i)"
           @click="show(i)"
         >
@@ -75,7 +75,7 @@
       @close="close"
     >
       <template v-if="open !== null">
-        <div ref="still" class="relative size-full touch-none">
+        <div ref="still" class="relative size-full max-w-[1280px] touch-none">
           <img
             v-for="width in [640, 1280]"
             :key="`${open}-${width}`"
