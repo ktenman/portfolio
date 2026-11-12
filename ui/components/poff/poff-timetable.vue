@@ -7,21 +7,22 @@
       :days="days"
       :today="today"
       :switches="['rated', 'available']"
+      :summary="summary"
     />
     <div :class="{ 'grid grid-cols-[minmax(0,1fr)_26rem] items-start gap-6': shown }">
-      <div class="overflow-hidden rounded-container border border-hairline bg-surface">
+      <div
+        class="overflow-clip rounded-container border border-hairline bg-surface md-down:-mx-3 md-down:rounded-none md-down:border-x-0"
+      >
         <div
           class="flex items-baseline justify-between bg-surface-band px-4 py-2.5 text-sm text-ink-soft"
         >
           <span data-testid="poff-band">
             <template v-if="data">
               <strong class="font-semibold text-ink">{{ formatWeekdayDate(selected) }}</strong>
-              · {{ count(rows.length, 'screening') }}
-              <span class="md-down:hidden">in {{ city }}</span>
+              · {{ count(rows.length, 'screening') }} in {{ city }}
             </template>
             <span v-else class="skeleton inline-block h-4 w-40 align-middle" />
           </span>
-          <span :class="LABEL" class="not-md-down:hidden">IMDb</span>
         </div>
         <div v-if="!data" aria-busy="true" aria-label="Loading the programme">
           <div v-for="i in 6" :key="i" class="flex gap-6 border-t border-hairline px-4 py-3.5">
@@ -62,14 +63,28 @@
                 </button>
               </td>
             </tr>
-            <poff-screening-row
-              v-for="row in earlierOpen ? rows : split.coming"
-              :key="row.screening.id"
-              :film="row.film"
-              :screening="row.screening"
-              :panel="wide"
-              :selected="row.film.slug === shown?.slug"
-            />
+            <template v-for="group in groups" :key="group.time">
+              <tr
+                class="sticky top-12 z-10 block border-t border-hairline bg-surface-band not-md-down:hidden"
+                data-testid="poff-hour"
+              >
+                <th class="block px-4 py-2 text-left font-normal" role="heading" aria-level="3">
+                  <span class="text-[17px] font-semibold tabular-nums">{{ group.time }}</span>
+                  {{ ' ' }}
+                  <span v-if="group.rows.length > 1" class="text-[13px] text-ink-soft">
+                    {{ count(group.rows.length, 'screening') }}
+                  </span>
+                </th>
+              </tr>
+              <poff-screening-row
+                v-for="row in group.rows"
+                :key="row.screening.id"
+                :film="row.film"
+                :screening="row.screening"
+                :panel="wide"
+                :selected="row.film.slug === shown?.slug"
+              />
+            </template>
           </tbody>
         </table>
       </div>
@@ -87,11 +102,13 @@ import { formatWeekdayDate } from '../../utils/iso-dates'
 import { count } from '../../utils/formatters'
 import {
   LABEL,
+  byStart,
   defaultDay,
   festivalDays,
   splitStarted,
   tallinnDay,
   timetable,
+  timetableSummary,
 } from '../../utils/poff'
 import RadioIcon from '../radio/radio-icon.vue'
 import PoffFilmPanel from './poff-film-panel.vue'
@@ -118,13 +135,15 @@ const selected = computed({
     day.value = value === defaultDay(days.value, today.value) ? null : value
   },
 })
-const rows = computed(() =>
-  timetable(data.value?.films ?? [], selected.value, {
-    city: city.value,
-    rated: rated.value,
-    available: available.value,
-    genre: genre.value,
-  })
+const filters = computed(() => ({
+  city: city.value,
+  rated: rated.value,
+  available: available.value,
+  genre: genre.value,
+}))
+const rows = computed(() => timetable(data.value?.films ?? [], selected.value, filters.value))
+const summary = computed(() =>
+  timetableSummary(selected.value, today.value, filters.value, rows.value.length)
 )
 const shown = computed(() =>
   wide.value ? data.value?.films.find(f => f.slug === film.value) : undefined
@@ -134,6 +153,7 @@ const split = computed(() =>
     ? splitStarted(rows.value, now.value)
     : { earlier: [], coming: rows.value }
 )
+const groups = computed(() => byStart(earlierOpen.value ? rows.value : split.value.coming))
 
 watch(
   () => split.value.earlier.length,

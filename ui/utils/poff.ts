@@ -94,6 +94,41 @@ export const timetable = (
         a.film.title.localeCompare(b.film.title, 'et')
     )
 
+type HourGroup = { time: string; rows: TimetableRow[] }
+
+export const byStart = (rows: TimetableRow[]): HourGroup[] =>
+  rows.reduce<HourGroup[]>((groups, row) => {
+    const time = clock(row.screening.start)
+    const last = groups[groups.length - 1]
+    if (last?.time === time) last.rows.push(row)
+    else groups.push({ time, rows: [row] })
+    return groups
+  }, [])
+
+export const FILTER_LABELS = {
+  showing: 'Still showing',
+  rated: 'IMDb 7+',
+  available: 'Hide sold out',
+} as const
+
+export const switchLabels = (
+  filters: Partial<Record<keyof typeof FILTER_LABELS, boolean>>,
+  keys: (keyof typeof FILTER_LABELS)[]
+): string[] => keys.filter(key => filters[key]).map(key => FILTER_LABELS[key])
+
+export const timetableSummary = (
+  day: string,
+  today: string,
+  filters: TimetableFilters,
+  screenings: number
+): string[] => [
+  day === today ? `Today, ${formatWeekdayDate(day)}` : formatWeekdayDate(day),
+  filters.city,
+  ...switchLabels(filters, ['rated', 'available']),
+  ...(filters.genre ? [filters.genre] : []),
+  count(screenings, 'screening'),
+]
+
 export const splitStarted = (rows: TimetableRow[], now: Date) => ({
   earlier: rows.filter(r => Date.parse(r.screening.start) <= now.getTime()),
   coming: rows.filter(r => Date.parse(r.screening.start) > now.getTime()),

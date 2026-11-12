@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { film, poffCatalogue, screening } from '../components/poff/poff-fixture'
 import {
+  byStart,
   clock,
   defaultDay,
   festivalDays,
@@ -17,12 +18,39 @@ import {
   tallinnDay,
   ticketUrl,
   timetable,
+  timetableSummary,
 } from './poff'
 
 const films = poffCatalogue.films
 const all = { city: 'Tallinn' as const, rated: false, available: false, genre: null }
 
 describe('poff', () => {
+  it('groups screenings under their start time', () => {
+    const rows = [
+      screening(1, '2026-11-10T15:45:00Z'),
+      screening(2, '2026-11-10T16:00:00Z'),
+      screening(3, '2026-11-10T16:00:00Z'),
+    ].map(s => ({ film: film(s.id, 'Öö', 'Night', [s]), screening: s }))
+    expect(byStart(rows).map(g => [g.time, g.rows.length])).toEqual([
+      ['17:45', 1],
+      ['18:00', 2],
+    ])
+  })
+
+  it('leads the timetable summary with today', () => {
+    expect(timetableSummary('2026-11-10', '2026-11-10', all, 21)).toEqual([
+      'Today, Tue 10 Nov',
+      'Tallinn',
+      '21 screenings',
+    ])
+  })
+
+  it('lists the active filters in the timetable summary', () => {
+    expect(
+      timetableSummary('2026-11-11', '2026-11-10', { ...all, rated: true, genre: 'Drama' }, 1)
+    ).toEqual(['Wed 11 Nov', 'Tallinn', 'IMDb 7+', 'Drama', '1 screening'])
+  })
+
   it('places a screening at half past midnight on its Tallinn day', () => {
     expect(tallinnDay('2026-11-08T22:30:00Z')).toBe('2026-11-09')
   })
