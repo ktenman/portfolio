@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto mt-4 w-full max-w-app px-3">
+  <div class="mx-auto mt-4 w-full max-w-app not-md-down:px-3">
     <router-view v-slot="{ Component, route }">
       <div
         class="flex flex-wrap items-center gap-x-3 gap-y-3"
@@ -29,7 +29,7 @@
             {{ view.label }}
           </router-link>
         </nav>
-        <poff-search-field class="mb-4 md:w-80" />
+        <poff-search-field ref="field" class="mb-4 md:w-80" />
       </template>
       <keep-alive exclude="poff-film">
         <poff-search v-if="data && searching" :films="data.films" :query="query ?? ''" :now="now" />
@@ -44,7 +44,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useIntervalFn, useNow } from '@vueuse/core'
 import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
@@ -70,4 +70,11 @@ const carried = computed(() =>
     SHARED_FILTERS.filter(key => key in route.query).map(key => [key, route.query[key]])
   )
 )
+const field = useTemplateRef<InstanceType<typeof PoffSearchField>>('field')
+watch(searching, async on => {
+  if (!on || !document.activeElement?.closest('#poff-pinned-panel')) return
+  window.scrollTo({ top: 0 })
+  await nextTick()
+  field.value?.focus()
+})
 </script>

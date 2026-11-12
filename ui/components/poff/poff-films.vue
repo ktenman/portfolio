@@ -7,6 +7,7 @@
       :days="days"
       :today="today"
       :switches="['rated', 'available', 'showing']"
+      :summary="summary"
       clearable
     >
       <div class="-mt-2 mb-3 flex items-center justify-between gap-4">
@@ -45,7 +46,7 @@ import { usePoffCatalogue } from '../../composables/use-poff-catalogue'
 import { usePoffFilters } from '../../composables/use-poff-filters'
 import { count } from '../../utils/formatters'
 import { festivalDays, tallinnDay } from '../../utils/poff'
-import { SORTS, filterFilms, sortFilms } from '../../utils/poff-films'
+import { SORTS, filmsSummary, filterFilms, sortFilms } from '../../utils/poff-films'
 import PoffFilmCard from './poff-film-card.vue'
 import PoffFilterBar from './poff-filter-bar.vue'
 import PoffLoadError from './poff-load-error.vue'
@@ -65,5 +66,8 @@ const list = computed(() =>
     filters.sort,
     now.value
   )
+)
+const summary = computed(() =>
+  filmsSummary(list.value.length, { ...filters, day: day.value }, filters.sort)
 )
 </script>

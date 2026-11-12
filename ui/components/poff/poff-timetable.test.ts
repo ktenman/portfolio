@@ -47,6 +47,9 @@ const focusNext = (wrapper: Awaited<ReturnType<typeof mount>>) => {
 const titles = (wrapper: Awaited<ReturnType<typeof mount>>) =>
   wrapper.findAll('[data-testid="poff-title"]').map(t => t.text())
 
+const hours = (wrapper: Awaited<ReturnType<typeof mount>>) =>
+  wrapper.findAll('[data-testid="poff-hour"]').map(h => h.text().replace(/\s+/g, ' '))
+
 const choose = async (wrapper: Awaited<ReturnType<typeof mount>>, label: string) => {
   await wrapper
     .findAll('button')
@@ -77,6 +80,34 @@ describe('PoffTimetable', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-11-10T16:10:00Z'))
     vi.mocked(poffService.catalogue).mockReset().mockResolvedValue(poffCatalogue)
+  })
+
+  it('heads the coming screenings with their start times', async () => {
+    expect(hours(await mount())).toEqual(['19:00', '19:30', '20:00', '21:30'])
+  })
+
+  it('marks each start time as a heading', async () => {
+    const hour = (await mount()).find('[data-testid="poff-hour"] [role="heading"]')
+    expect(hour.attributes('aria-level')).toBe('3')
+  })
+
+  it('heads the earlier screenings too once they are unfolded', async () => {
+    const wrapper = await mount()
+    await wrapper.find('[data-testid="poff-earlier"]').trigger('click')
+    expect(hours(wrapper).slice(0, 3)).toEqual(['17:45', '18:00 2 screenings', '19:00'])
+  })
+
+  it('ends the phone line of a row with the end time and the place', async () => {
+    expect((await mount()).find('[data-testid="poff-where"]').text()).toBe(
+      'Ends 20:40 · Plaza · 9th Hall · Q&A'
+    )
+  })
+
+  it('labels a rated row with IMDb under its rating', async () => {
+    const row = (await mount())
+      .findAll('[data-testid="poff-row"]')
+      .find(r => r.find('[data-testid="poff-imdb"]').exists())
+    expect(row?.find('[data-testid="poff-imdb"]').text()).toBe('IMDb')
   })
 
   afterEach(() => {

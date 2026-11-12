@@ -77,6 +77,8 @@ const close = () => {
   input.value?.blur()
 }
 
+defineExpose({ focus: () => input.value?.focus() })
+
 onKeyStroke('/', event => {
   const target = event.target as Element
   if (target.closest?.('input, textarea, select, [contenteditable]')) return

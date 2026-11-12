@@ -1,7 +1,9 @@
 import type { PoffFilm, PoffScreening } from '../models/generated/domain-models'
+import { count } from './formatters'
 import { formatWeekdayDate } from './iso-dates'
 import {
   type City,
+  switchLabels,
   clock,
   inGenre,
   ratedSeven,
@@ -99,3 +101,15 @@ export const nextLine = (film: PoffFilm, now: Date): string => {
 
 export const genres = (films: PoffFilm[]): string[] =>
   [...new Set(films.flatMap(f => f.genres))].sort((a, b) => a.localeCompare(b, 'en'))
+
+export const filmsSummary = (films: number, filters: FilmFilters, sort: FilmSort): string[] =>
+  [
+    count(films, 'film'),
+    filters.day && formatWeekdayDate(filters.day),
+    filters.city,
+    ...switchLabels(filters, ['showing', 'rated', 'available']),
+    filters.genre,
+    filters.programme,
+    filters.person,
+    SORTS[sort],
+  ].filter((part): part is string => !!part)

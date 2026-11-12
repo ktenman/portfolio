@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { film, poffCatalogue, screening } from '../components/poff/poff-fixture'
-import { filterFilms, genres, nextLine, sortFilms, type FilmFilters } from './poff-films'
+import {
+  filmsSummary,
+  filterFilms,
+  genres,
+  nextLine,
+  sortFilms,
+  type FilmFilters,
+} from './poff-films'
 
 const now = new Date('2026-11-10T15:00:00Z')
 const none: FilmFilters = {
@@ -18,6 +25,24 @@ const rated = (id: number, rating: number | null, votes: number | null, title = 
   film(id, title, title, [], { imdb: rating == null ? null : { id: `tt${id}`, rating, votes } })
 
 describe('poff films', () => {
+  it('ends the films summary with the sort', () => {
+    expect(filmsSummary(17, { ...none, showing: true, city: 'Tallinn' }, 'top')).toEqual([
+      '17 films',
+      'Tallinn',
+      'Still showing',
+      'Top rated',
+    ])
+  })
+
+  it('names the chosen day in the films summary', () => {
+    expect(filmsSummary(1, { ...none, day: '2026-11-12', city: 'Tartu' }, 'az')).toEqual([
+      '1 film',
+      'Thu 12 Nov',
+      'Tartu',
+      'A–Z',
+    ])
+  })
+
   it('keeps only films with a screening still to come', () => {
     expect(ids(filterFilms(poffCatalogue.films, { ...none, showing: true }, now))).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8, 9,

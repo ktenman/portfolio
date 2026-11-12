@@ -9,7 +9,8 @@ const PHONES = [
   { width: 390, height: 844 },
 ]
 const TARGET_PX = 44
-const DAYS = '[aria-label="Festival day"] button'
+const DAYS_GROUP = '[aria-label="Festival day"]'
+const DAYS = `${DAYS_GROUP} button`
 const CHIPS = '[aria-label="Filters"] button'
 const CONTROLS = [DAYS, CHIPS, '[data-testid="poff-earlier"]', '[data-testid="poff-title"]'].join(
   ', '
@@ -85,6 +86,65 @@ for (const phone of PHONES) {
       expect(layout).toEqual({ sideways: 0, small: [] })
     })
   }
+
+  for (const [view, path, lead] of [
+    ['timetable', '/poff', 'Today, Tue 10 Nov · Tallinn · 21 screenings'],
+    ['films', '/poff/films', '17 films · Tallinn · Still showing · Top rated'],
+  ] as const) {
+    test(`PÖFF ${view} pins its filter summary once the filters scroll away at ${size}`, async ({
+      page,
+    }, testInfo) => {
+      test.skip(testInfo.project.name !== 'mobile')
+      await open(page, phone, path)
+      await page.mouse.wheel(0, 600)
+      const bar = page.getByTestId('poff-pinned')
+      await expect(bar).toHaveText(lead)
+      expect((await bar.boundingBox())?.y).toBe(0)
+      await bar.click()
+      await expect(page.locator(DAYS_GROUP)).toHaveCount(2)
+      await bar.click()
+      await expect(page.locator(DAYS_GROUP)).toHaveCount(1)
+    })
+  }
+
+  test(`PÖFF timetable pins the current start time under the bar at ${size}`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await open(page, phone)
+    await page.mouse.wheel(0, 600)
+    await expect(page.getByTestId('poff-pinned')).toBeVisible()
+    const tops = await page
+      .getByTestId('poff-hour')
+      .evaluateAll(hours => hours.map(hour => hour.getBoundingClientRect().top))
+    expect(tops).toContain(48)
+  })
+
+  test(`PÖFF timetable keeps a focused title clear of the pinned bar at ${size}`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await open(page, phone)
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight))
+    await expect(page.getByTestId('poff-pinned')).toBeVisible()
+    const title = page.getByTestId('poff-title').first()
+    await title.evaluate(link => (link as HTMLElement).focus())
+    expect((await title.boundingBox())!.y).toBeGreaterThanOrEqual(85)
+  })
+
+  test(`PÖFF timetable moves a search begun in the pinned bar to the top at ${size}`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await open(page, phone)
+    await page.mouse.wheel(0, 600)
+    await page.getByTestId('poff-pinned').click()
+    await page.getByTestId('poff-search').last().pressSequentially('wil')
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0)
+    expect(
+      await page.evaluate(() => (document.activeElement as HTMLInputElement | null)?.value)
+    ).toBe('wil')
+  })
 
   test(`PÖFF timetable draws 32px chips and 52px day buttons at ${size}`, async ({
     page,

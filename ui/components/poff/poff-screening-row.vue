@@ -1,6 +1,6 @@
 <template>
   <tr
-    class="border-t border-hairline align-top md-down:grid md-down:grid-cols-[3.5rem_minmax(0,1fr)_auto] md-down:gap-x-3 md-down:px-4 md-down:py-3"
+    class="border-t border-hairline align-top md-down:grid md-down:grid-cols-[minmax(0,1fr)_auto] md-down:gap-x-3 md-down:px-4 md-down:py-3"
     :class="{
       'cursor-pointer hover:bg-surface-hover': panel,
       'bg-brass-wash outline -outline-offset-1 outline-brass hover:bg-brass-wash': selected,
@@ -9,9 +9,9 @@
     :data-film="film.slug"
     data-testid="poff-row"
   >
-    <td class="py-3 pl-4 whitespace-nowrap tabular-nums md-down:p-0">
+    <td class="py-3 pl-4 whitespace-nowrap tabular-nums md-down:hidden">
       <span class="font-semibold">{{ clock(screening.start) }}</span>
-      <span class="text-sm text-ink-soft md-down:block">–{{ clock(screening.end) }}</span>
+      <span class="text-sm text-ink-soft">–{{ clock(screening.end) }}</span>
     </td>
     <td class="py-3 pr-4 md-down:p-0">
       <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -32,8 +32,8 @@
         <radio-badge v-if="badge" class="md-down:hidden">{{ badge }}</radio-badge>
       </span>
       <span v-if="filmLine(film)" class="block text-sm text-ink-soft">{{ filmLine(film) }}</span>
-      <span class="block text-sm text-ink-soft not-md-down:hidden">
-        {{ place }}
+      <span class="block text-sm text-ink-soft not-md-down:hidden" data-testid="poff-where">
+        Ends {{ clock(screening.end) }} · {{ place }}
         <template v-if="screening.qa">· Q&amp;A</template>
       </span>
       <span
@@ -52,7 +52,7 @@
       </span>
     </td>
     <td class="py-3 pr-4 text-right md-down:p-0">
-      <poff-rating :imdb="film.imdb" />
+      <poff-rating :imdb="film.imdb" stacked />
     </td>
     <td class="py-2.5 pr-4 text-right md-down:hidden">
       <radio-badge v-if="screening.soldOut" tone="error">Sold out</radio-badge>

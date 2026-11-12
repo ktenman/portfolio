@@ -30,12 +30,14 @@ export type IconName =
   | 'open'
   | 'close'
   | 'search'
+  | 'filter'
 
 defineProps<{ name: IconName }>()
 
 const SOLID = new Set<IconName>(['play', 'pause'])
 
 const PATHS: Record<IconName, string[]> = {
+  filter: ['M3 6h18', 'M7 12h10', 'M10 18h4'],
   back: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'],
   forward: ['M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8', 'M21 3v5h-5'],
   play: ['M7 4v16l13-8z'],
