@@ -9,16 +9,18 @@
       v-if="!$slots.heading"
       type="button"
       data-testid="radio-section-heading"
-      class="flex min-h-11 w-full cursor-pointer items-baseline gap-3 rounded-container px-2 py-2 text-left transition-colors hover:bg-surface-hover"
+      class="flex min-h-11 w-full cursor-pointer items-baseline gap-3 rounded-container max-md:flex-wrap max-md:gap-x-1.5 max-md:gap-y-0.5 px-2 py-2 text-left transition-colors hover:bg-surface-hover"
       @click="emit('play', section.start)"
     >
-      <span class="w-14 shrink-0 text-sm text-ink-soft tabular-nums">
+      <span class="w-14 shrink-0 text-sm text-ink-soft tabular-nums max-md:w-auto">
         {{ sectionTime(section, raw, startedAt) }}
       </span>
-      <span class="min-w-0 grow font-semibold break-words">
+      <span class="min-w-0 grow font-semibold break-words max-md:order-last max-md:basis-full">
         {{ section.title }}
       </span>
-      <span class="shrink-0 text-sm whitespace-nowrap text-ink-soft tabular-nums">
+      <span
+        class="shrink-0 text-sm whitespace-nowrap text-ink-soft tabular-nums max-md:before:content-['·_']"
+      >
         {{ minutes(section.end - section.start) }}
       </span>
     </button>
@@ -29,15 +31,15 @@
         v-memo="[line, raw, line === current, line === current && spoken]"
         data-testid="radio-text-line"
         :aria-current="line === current ? 'true' : undefined"
-        class="grid scroll-mt-[calc(var(--radio-player)+5rem)] scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
+        class="grid scroll-mt-[calc(var(--radio-player)+5rem)] scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5 max-md:relative max-md:grid-cols-1"
         :class="{ 'bg-brass-wash': line === current, 'opacity-60': cut }"
       >
         <button
           type="button"
-          class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink"
+          class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink max-md:absolute max-md:inset-0 max-md:self-stretch max-md:rounded-container"
           @click="emit('play', line.start)"
         >
-          {{ lineTime(line.start, raw, startedAt, audible) }}
+          <span class="max-md:sr-only">{{ lineTime(line.start, raw, startedAt, audible) }}</span>
         </button>
         <div>
           <p

@@ -1,6 +1,9 @@
 <template>
-  <section class="card mb-0">
-    <div class="card-body" :class="{ 'py-1.5': fold }">
+  <section
+    class="card mb-0"
+    :class="{ 'max-md:-mx-6 max-md:rounded-none max-md:border-x-0 max-md:shadow-none': bleed }"
+  >
+    <div class="card-body" :class="{ 'py-1.5': fold, 'max-md:px-4': bleed }">
       <div
         class="flex flex-wrap justify-between gap-2"
         :class="fold ? 'items-center' : 'mb-3 items-baseline'"
@@ -36,7 +39,7 @@ import { ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import RadioIcon from './radio-icon.vue'
 
-const props = defineProps<{ title: string; fold?: 'open' | 'shut' }>()
+const props = defineProps<{ title: string; fold?: 'open' | 'shut'; bleed?: boolean }>()
 
 const open = props.fold
   ? useLocalStorage(`radio-fold:${props.title}`, props.fold === 'open')
