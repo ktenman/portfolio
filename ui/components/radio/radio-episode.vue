@@ -20,7 +20,7 @@
         </a>
         <span aria-hidden="true" class="mx-1.5">·</span>
       </radio-player>
-      <radio-text :recording="recording" />
+      <radio-text :recording="recording" :transcript="Number.isFinite(at)" />
     </template>
   </div>
 </template>

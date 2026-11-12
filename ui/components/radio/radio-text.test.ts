@@ -45,10 +45,11 @@ describe('RadioText', () => {
 
   const render = async (
     target: RecordingSummary = recording(),
+    transcript = false,
     queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   ) => {
     const wrapper = mount(RadioText, {
-      props: { recording: target },
+      props: { recording: target, transcript },
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     })
     await flushPromises()
@@ -102,6 +103,43 @@ describe('RadioText', () => {
     player.load(recording(), 'episode')
     const times = lines(await render()).map(line => line.find('button').text())
     expect(times).toEqual(['0:00', '22:28', '22:39'])
+  })
+
+  it('should show the transcript instead of the topics after choosing Transcript', async () => {
+    const wrapper = await render()
+    await wrapper.get('[role="group"][aria-label="Show"] button:last-child').trigger('click')
+    expect([
+      wrapper.get('[data-testid="radio-transcript"]').classes('max-md:hidden'),
+      wrapper.get('[data-testid="radio-rail"]').classes('max-md:hidden'),
+    ]).toEqual([false, true])
+  })
+
+  it('should show the current line after choosing Transcript', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    vi.mocked(Element.prototype.scrollIntoView).mockClear()
+    await wrapper.get('[role="group"][aria-label="Show"] button:last-child').trigger('click')
+    expect(scrolled()).toEqual([lines(wrapper)[0].element])
+  })
+
+  it('should follow the transcript again after choosing it', async () => {
+    const wrapper = await render()
+    await hear(wrapper, 762.5)
+    window.dispatchEvent(new WheelEvent('wheel'))
+    await wrapper.get('[role="group"][aria-label="Show"] button:last-child').trigger('click')
+    expect(player.lost.value).toBe(false)
+  })
+
+  it('should not offer Topics and Transcript before there is a transcript', async () => {
+    vi.mocked(radioService.transcript).mockResolvedValue([])
+    expect((await render()).find('[role="group"][aria-label="Show"]').exists()).toBe(false)
+  })
+
+  it('should open on Transcript when asked to', async () => {
+    const wrapper = await render(recording(), true)
+    expect(wrapper.get('[role="group"][aria-label="Show"] [aria-pressed="true"]').text()).toBe(
+      'Transcript'
+    )
   })
 
   it('should leave a gap in the recording out of the episode time of a line', async () => {
@@ -240,7 +278,7 @@ describe('RadioText', () => {
   it('should mark the search results stale once a cut is deleted', async () => {
     const client = new QueryClient()
     client.setQueryData(['radio', 'search', 'valimised'], { pages: [], pageParams: [] })
-    const wrapper = await render(recording(), client)
+    const wrapper = await render(recording(), false, client)
     wrapper.findComponent(RadioCutCard).vm.$emit('drop')
     await flushPromises()
     expect(client.getQueryState(['radio', 'search', 'valimised'])?.isInvalidated).toBe(true)

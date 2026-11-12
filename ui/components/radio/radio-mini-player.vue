@@ -61,7 +61,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, useTemplateRef } from 'vue'
+import { computed, onScopeDispose, useTemplateRef, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { clamp, useDraggable, useElementSize, useMediaQuery, useWindowSize } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
@@ -145,4 +145,38 @@ const topic = computed(() => {
   const part = parts.value.find(({ start, end }) => start <= at && at < end)
   return part?.title ?? fullDay(target.status.startedAt)
 })
+
+const session = 'mediaSession' in navigator ? navigator.mediaSession : null
+const ACTIONS: MediaSessionAction[] = ['play', 'pause', 'seekbackward', 'seekforward', 'seekto']
+
+if (session) {
+  watchEffect(() => {
+    const station = recording.value?.status.station ?? player.tuned.value
+    session.metadata = new MediaMetadata({
+      title: recording.value?.programme ?? 'Live',
+      artist: station ? STATIONS[station] : '',
+      album: topic.value,
+    })
+  })
+  watchEffect(() => {
+    const seekable = !player.live.value
+    session.setActionHandler('play', () => player.playing.value || player.toggle())
+    session.setActionHandler('pause', () => player.playing.value && player.toggle())
+    session.setActionHandler('seekbackward', seekable ? () => player.skip(-15) : null)
+    session.setActionHandler('seekforward', seekable ? () => player.skip(30) : null)
+    session.setActionHandler(
+      'seekto',
+      seekable ? ({ seekTime }) => player.seek(seekTime ?? 0) : null
+    )
+  })
+  watchEffect(() => {
+    const duration = player.total.value
+    if (player.live.value || !duration) return session.setPositionState()
+    session.setPositionState({ duration, position: Math.min(player.seconds.value, duration) })
+  })
+  onScopeDispose(() => {
+    session.metadata = null
+    ACTIONS.forEach(action => session.setActionHandler(action, null))
+  })
+}
 </script>
