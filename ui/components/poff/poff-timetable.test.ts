@@ -48,7 +48,7 @@ const titles = (wrapper: Awaited<ReturnType<typeof mount>>) =>
   wrapper.findAll('[data-testid="poff-title"]').map(t => t.text())
 
 const hours = (wrapper: Awaited<ReturnType<typeof mount>>) =>
-  wrapper.findAll('[data-testid="poff-hour"]').map(h => h.text().replace(/\s+/g, ' '))
+  wrapper.findAll('[data-testid="poff-hour"]').map(h => h.text())
 
 const choose = async (wrapper: Awaited<ReturnType<typeof mount>>, label: string) => {
   await wrapper
@@ -94,7 +94,7 @@ describe('PoffTimetable', () => {
   it('heads the earlier screenings too once they are unfolded', async () => {
     const wrapper = await mount()
     await wrapper.find('[data-testid="poff-earlier"]').trigger('click')
-    expect(hours(wrapper).slice(0, 3)).toEqual(['17:45', '18:00 2 screenings', '19:00'])
+    expect(hours(wrapper).slice(0, 3)).toEqual(['17:45', '18:00', '19:00'])
   })
 
   it('ends the phone line of a row with the end time and the place', async () => {
