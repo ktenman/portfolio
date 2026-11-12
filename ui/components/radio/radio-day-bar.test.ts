@@ -141,17 +141,24 @@ describe('RadioDayBar', () => {
   })
 
   it('should place the noon tick seven hours into the broadcast day', () => {
-    const ticks = bar().findAll('[data-testid="radio-day-tick"]')
+    const ticks = bar({ now: DAY.until + 60 }).findAll('[data-testid="radio-day-tick"]')
     expect(ticks[1].attributes('style')).toContain(`left: ${(7 / 24) * 100}%`)
   })
 
   it('should mark midnight stronger than the other ticks', () => {
-    const ticks = bar({}, Station.KUKU).findAll('[data-testid="radio-day-tick"]')
+    const ticks = bar({ now: DAY.until + 60 }, Station.KUKU).findAll(
+      '[data-testid="radio-day-tick"]'
+    )
     expect(ticks.map(tick => tick.classes('bg-ink-faint'))).toEqual([false, false, false, true])
   })
 
   it('should label the hours of the broadcast day', () => {
     expect(hours({ now: DAY.until + 60 })).toEqual(['06', '12', '18', '00'])
+  })
+
+  it('should draw one Now line across every station', () => {
+    const stations = [Station.KUKU, Station.ARIPAEV, Station.SKYPLUS]
+    expect(bar({}, null, stations).findAll('[data-testid="radio-day-now"]')).toHaveLength(1)
   })
 
   it('should hide the hour label next to the current time', () => {
@@ -170,6 +177,17 @@ describe('RadioDayBar', () => {
 
   const tracks = (station?: Station | null, overrides = {}) =>
     bar(overrides, station).findAll('[data-testid="radio-day-track"]')
+
+  const rowTicks = (overrides = {}) =>
+    tracks(null, overrides).map(track => track.findAll('[data-testid="radio-day-tick"]').length)
+
+  it('should hide the row ticks the axis hides beside Now', () => {
+    expect(rowTicks()).toEqual([3, 3])
+  })
+
+  it('should show every row tick on a day that is not today', () => {
+    expect(rowTicks({ now: DAY.until + 60 })).toEqual([4, 4])
+  })
 
   it('should draw one track per station on All', () => {
     expect(tracks().map(track => track.get('[data-testid="radio-day-station"]').text())).toEqual([
