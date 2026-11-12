@@ -1,5 +1,6 @@
 <template>
-  <label class="mb-0 inline-flex cursor-pointer items-center gap-2 whitespace-nowrap">
+  <label class="mb-0 flex cursor-pointer items-center gap-3">
+    <slot />
     <input
       type="checkbox"
       class="form-check-input"
@@ -7,7 +8,6 @@
       :aria-label="`Record every time: ${programme.name}`"
       @change="choose($event.target as HTMLInputElement)"
     />
-    Every time
   </label>
 </template>
 

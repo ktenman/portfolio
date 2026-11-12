@@ -130,3 +130,42 @@ test('radio failed cut search gives its details a fingertip target on a phone', 
   const box = await page.getByText('Details', { exact: true }).boundingBox()
   expect(box!.height).toBeGreaterThanOrEqual(44)
 })
+
+for (const viewport of [
+  { width: 375, height: 667 },
+  { width: 390, height: 844 },
+]) {
+  test(`radio shows tick from anywhere on a 44px row at ${viewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await page.setViewportSize(viewport)
+    await stubRadioOnAir(page)
+    await openRoute(page, '/radio/shows')
+    const missed = await page.getByTestId('radio-programme-row').evaluateAll(
+      labels =>
+        labels.filter(label => {
+          label.scrollIntoView({ block: 'center' })
+          const row = label.parentElement!.getBoundingClientRect()
+          const hit = document.elementFromPoint(row.left + 2, row.top + 2)?.closest('label')
+          return hit !== label || label.getBoundingClientRect().height < 44
+        }).length
+    )
+    const scroll = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+    expect({ missed, scroll }).toEqual({ missed: 0, scroll: 0 })
+  })
+}
+
+test('radio shows tables stay clear of the side cards at 1024px', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop')
+  await page.setViewportSize({ width: 1024, height: 900 })
+  await stubRadioOnAir(page)
+  await openRoute(page, '/radio/shows')
+  const rail = await page
+    .getByRole('complementary', { name: 'Recorders and broadcast' })
+    .boundingBox()
+  const edges = await page
+    .locator('.desktop-table-wrapper')
+    .evaluateAll(wrappers => wrappers.map(wrapper => wrapper.getBoundingClientRect().right))
+  expect(Math.max(...edges)).toBeLessThanOrEqual(rail!.x)
+})

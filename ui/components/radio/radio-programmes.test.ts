@@ -117,7 +117,7 @@ describe('RadioProgrammes', () => {
 
   it('should show a programme on a phone as one row with its name and air time', async () => {
     expect((await mount()).find('[data-testid="radio-programme-row"]').text()).toBe(
-      'KeskpäevatundKuku · Sat 12:00–13:00 · Mon–Wed, Fri 01:00–02:00 Every time'
+      'KeskpäevatundKuku · Sat 12:00–13:00 · Mon–Wed, Fri 01:00–02:00'
     )
   })
 
@@ -139,6 +139,27 @@ describe('RadioProgrammes', () => {
     slots: [{ days: [DayOfWeek.MONDAY], start: '11:00:00', end: '12:00:00' }],
     recordings: 0,
     station,
+  })
+
+  const groups = async () =>
+    (await mount()).findAll('[data-testid="radio-programme-group"]').map(group => group.text())
+
+  it('should head the ticked shows apart from the others with how many each holds', async () => {
+    vi.mocked(radioService.programmes).mockResolvedValue([
+      ...many(2, true),
+      show('Kuum tool', Station.ARIPAEV),
+    ])
+    expect(await groups()).toEqual(['Recorded every time2', 'Other shows1 · by next airing'])
+  })
+
+  it('should leave out the heading of ticked shows when none is ticked', async () => {
+    expect(await groups()).toEqual(['Other shows1 · by next airing'])
+  })
+
+  it('should tick the box of a show on a phone when its row is tapped', async () => {
+    const row = (await mount()).find<HTMLLabelElement>('[data-testid="radio-programme-row"]')
+    row.element.click()
+    expect(row.find<HTMLInputElement>('input').element.checked).toBe(true)
   })
 
   it('should name the columns of the shows table', async () => {
