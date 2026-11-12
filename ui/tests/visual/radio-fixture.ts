@@ -134,30 +134,6 @@ const KUKU_PROGRAMMES = [
     recordings: 0,
   },
   {
-    id: 12,
-    name: 'Hommikuprogramm',
-    description: 'Uudised, ilm ja külalised igal tööpäeval',
-    recordEvery: false,
-    slots: [{ days: WEEKDAYS, start: '06:00:00', end: '10:00:00' }],
-    recordings: 0,
-  },
-  {
-    id: 300,
-    name: 'Neeme Raud. Siin',
-    description: null,
-    recordEvery: false,
-    slots: [{ days: [DayOfWeek.SATURDAY], start: '10:00:00', end: '12:00:00' }],
-    recordings: 0,
-  },
-  {
-    id: 301,
-    name: 'Meretund',
-    description: null,
-    recordEvery: false,
-    slots: [{ days: [DayOfWeek.SATURDAY], start: '09:00:00', end: '10:00:00' }],
-    recordings: 0,
-  },
-  {
     id: 302,
     name: 'Ilmaparandaja',
     description: null,
@@ -182,6 +158,14 @@ const KUKU_PROGRAMMES = [
     recordings: 0,
   },
   {
+    id: 306,
+    name: 'Kukkuv Õun',
+    description: null,
+    recordEvery: false,
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '20:00:00', end: '21:00:00' }],
+    recordings: 0,
+  },
+  {
     id: 305,
     name: 'EMALAEV',
     description: null,
@@ -190,24 +174,32 @@ const KUKU_PROGRAMMES = [
     recordings: 0,
   },
   {
-    id: 306,
-    name: 'Kukkuv Õun',
+    id: 12,
+    name: 'Hommikuprogramm',
+    description: 'Uudised, ilm ja külalised igal tööpäeval',
+    recordEvery: false,
+    slots: [{ days: WEEKDAYS, start: '06:00:00', end: '10:00:00' }],
+    recordings: 0,
+  },
+  {
+    id: 301,
+    name: 'Meretund',
     description: null,
     recordEvery: false,
-    slots: [{ days: [DayOfWeek.SATURDAY], start: '20:00:00', end: '21:00:00' }],
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '09:00:00', end: '10:00:00' }],
+    recordings: 0,
+  },
+  {
+    id: 300,
+    name: 'Neeme Raud. Siin',
+    description: null,
+    recordEvery: false,
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '10:00:00', end: '12:00:00' }],
     recordings: 0,
   },
 ]
 
 const ARIPAEV_PROGRAMMES = [
-  {
-    id: 400,
-    name: 'Kuum tool',
-    description: null,
-    recordEvery: true,
-    slots: [{ days: [DayOfWeek.SATURDAY], start: '10:00:00', end: '11:00:00' }],
-    recordings: 1,
-  },
   {
     id: 401,
     name: 'Tööandjate tund',
@@ -216,11 +208,19 @@ const ARIPAEV_PROGRAMMES = [
     slots: [{ days: [DayOfWeek.SATURDAY], start: '13:00:00', end: '14:00:00' }],
     recordings: 0,
   },
+  {
+    id: 400,
+    name: 'Kuum tool',
+    description: null,
+    recordEvery: true,
+    slots: [{ days: [DayOfWeek.SATURDAY], start: '10:00:00', end: '11:00:00' }],
+    recordings: 1,
+  },
 ]
 
 const PROGRAMMES = [
-  ...KUKU_PROGRAMMES.map(item => ({ ...item, station: Station.KUKU })),
   ...ARIPAEV_PROGRAMMES.map(item => ({ ...item, station: Station.ARIPAEV })),
+  ...KUKU_PROGRAMMES.map(item => ({ ...item, station: Station.KUKU })),
 ]
 
 const SATURDAY_ONE = Date.UTC(2026, 9, 24, 10, 0, 0) / 1000
