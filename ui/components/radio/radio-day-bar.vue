@@ -1,5 +1,8 @@
 <template>
-  <radio-card title="Recorded time" class="max-md:hidden">
+  <radio-card
+    :title="!radioDay.recorded.length && radioDay.planned.length ? 'Planned time' : 'Recorded time'"
+    class="max-md:hidden"
+  >
     <template #aside>
       <span class="text-sm text-ink-soft" data-testid="radio-day-summary">
         {{ recordedSummary(radioDay) ?? plannedSummary(radioDay) }}
@@ -35,7 +38,7 @@
               {{ clock(span.start, 0) }}
             </span>
             <span
-              class="pointer-events-auto block max-w-fit truncate text-sm font-medium group-hover:underline group-focus-visible:underline @max-[3.5rem]:hidden"
+              class="pointer-events-auto block max-w-fit truncate text-sm font-medium group-hover:underline group-focus-visible:underline @max-[2rem]:hidden"
             >
               {{ span.programme }}
             </span>
@@ -60,7 +63,7 @@
               {{ clock(span.start, 0) }}
             </span>
             <span
-              class="pointer-events-auto block max-w-fit truncate text-sm font-medium @max-[3.5rem]:hidden"
+              class="pointer-events-auto block max-w-fit truncate text-sm font-medium @max-[2rem]:hidden"
             >
               {{ span.programme }}
             </span>

@@ -238,4 +238,18 @@ describe('RadioDayBar', () => {
     const short = `min(${(900 / (DAY.until - DAY.from)) * 100}cqw`
     expect(room([FINISHED], planned, FINISHED.start)[0]).toContain(short)
   })
+
+  it('should title a day with only planned airings by its planned time', () => {
+    expect(bar({ recorded: [] }).find('h3').text()).toBe('Planned time')
+  })
+
+  it('should keep Recorded time on a day with nothing recorded or planned', () => {
+    expect(bar({ recorded: [], planned: [] }).find('h3').text()).toBe('Recorded time')
+  })
+
+  it('should shorten the name of a recording in a narrow room rather than hide it', () => {
+    expect(bar().find('[data-testid="radio-day-link"]').html()).not.toContain(
+      '@max-[3.5rem]:hidden'
+    )
+  })
 })

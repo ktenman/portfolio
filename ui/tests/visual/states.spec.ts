@@ -424,6 +424,22 @@ test('the radio player stays in view while the page scrolls', async ({ page }, t
   await expect(page).toHaveScreenshot('radio-player-scrolled.png')
 })
 
+test('the radio player keeps its show and way back in view on a phone', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await page.setViewportSize({ width: 375, height: 667 })
+  await openRoute(page, '/radio/2026-10-17')
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const card = page.getByTestId('radio-player')
+  await expect(card.getByRole('heading', { name: 'Keskpäevatund' })).toBeInViewport()
+  await expect(card.getByRole('link', { name: 'Recordings' })).toBeInViewport()
+  expect((await card.boundingBox())!.height).toBeLessThanOrEqual(667 / 2)
+})
+
 test('the radio rail stays in view while the text scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await stubBuildInfo(page)

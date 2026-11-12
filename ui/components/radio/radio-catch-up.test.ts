@@ -324,8 +324,8 @@ describe('RadioCatchUp', () => {
     expect((await mount()).findAllComponents(RadioBadge)).toHaveLength(0)
   })
 
-  it('should say an airing on air in the live colour', async () => {
-    expect((await row('Tarkade klubi')).get('.text-notice').text()).toBe('On air')
+  it('should mark an airing on air apart from one being recorded', async () => {
+    expect((await row('Tarkade klubi')).find('.text-notice').exists()).toBe(false)
   })
 
   it('should say an airing is being recorded in the live colour', async () => {

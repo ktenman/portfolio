@@ -20,7 +20,7 @@
         :class="topic === current ? 'text-brass-deep' : 'text-ink-soft'"
       >
         <span class="text-sm">{{ topic.time }}</span>
-        <span class="text-[0.6875rem]">{{ minutes(span(topic)) }}</span>
+        <span class="text-label">{{ minutes(span(topic)) }}</span>
       </span>
       <span :class="{ 'font-semibold text-brass-deep': topic === current }">
         {{ topic.title }}

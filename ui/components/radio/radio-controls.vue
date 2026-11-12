@@ -26,6 +26,7 @@
         type="button"
         :class="[ROUND, 'text-label', large ? 'size-13' : 'size-11', 'flex-col']"
         aria-label="Back 15 s"
+        :aria-keyshortcuts="large ? 'J' : undefined"
         @click="player.skip(-15)"
       >
         <radio-icon name="back" />
@@ -35,6 +36,7 @@
         type="button"
         :class="[PLAY, large ? 'size-14 max-md:size-16' : 'size-11']"
         :aria-label="player.playing.value ? 'Pause' : 'Play'"
+        :aria-keyshortcuts="large ? 'K' : undefined"
         data-testid="radio-play"
         @click="player.toggle()"
       >
@@ -45,6 +47,7 @@
         type="button"
         :class="[ROUND, 'text-label', large ? 'size-13' : 'size-11', 'flex-col-reverse']"
         aria-label="Forward 30 s"
+        :aria-keyshortcuts="large ? 'L' : undefined"
         @click="player.skip(30)"
       >
         30

@@ -80,8 +80,8 @@ export const ROUND =
 
 export const LISTEN = `${ROUND} border border-control-border bg-surface shadow-control focus-visible:outline-offset-2`
 
-export const LIVE_DOT =
-  "text-notice before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:bg-current before:align-middle before:content-['']"
+const DOT =
+  "before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:align-middle before:content-['']"
 
 export const recordingTime = (keep: KeptSpan[], seconds: number): number => {
   const last = keep[keep.length - 1]?.end ?? seconds
@@ -254,9 +254,15 @@ export const airingNote = (airing: DayAiring): string | null => {
   return [planned, airing.episode].filter(Boolean).join(' · ') || null
 }
 
-export const AIRING_LIVE: Partial<Record<AiringState, string>> = {
-  [AiringState.ON_AIR]: 'On air',
-  [AiringState.RECORDING]: 'Being recorded',
+export const AIRING_LIVE: Partial<Record<AiringState, { label: string; mark: string }>> = {
+  [AiringState.ON_AIR]: {
+    label: 'On air',
+    mark: `${DOT} text-ink before:border before:border-current`,
+  },
+  [AiringState.RECORDING]: {
+    label: 'Being recorded',
+    mark: `${DOT} text-notice before:bg-current`,
+  },
 }
 
 export const missedRun = (airings: DayAiring[]): string => {

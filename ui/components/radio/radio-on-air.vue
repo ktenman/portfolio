@@ -1,5 +1,5 @@
 <template>
-  <section v-if="live.length" :class="aside ? 'card mb-0 overflow-hidden' : 'mt-8'">
+  <section v-if="live.length" :class="{ 'card mb-0 overflow-hidden': aside }">
     <h3 class="text-heading" :class="aside ? 'mb-0 px-5 pt-5 pb-1.5' : 'mb-3'">On air</h3>
     <div :class="{ 'card mb-0 overflow-hidden': !aside }">
       <template v-for="{ station, onAir, next } in live" :key="station">
