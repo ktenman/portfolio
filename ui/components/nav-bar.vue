@@ -16,8 +16,11 @@
             <span class="text-body-secondary build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
             </span>
-            <form v-if="hosted" method="post" action="/logout">
-              <AppButton type="submit" size="sm" ghost>Log out</AppButton>
+            <form v-if="hosted" class="log-out" method="post" action="/logout">
+              <button class="nav-link" type="submit">
+                Log out
+                <span class="nav-indicator"></span>
+              </button>
             </form>
           </div>
         </div>
@@ -32,7 +35,6 @@ import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { utilityService } from '../services/api'
 import { revealInRow } from '../utils/dom'
-import AppButton from './shared/app-button.vue'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -176,6 +178,22 @@ function formatDate(dateString: string): string {
   padding: 0.25rem 0.5rem;
 }
 
+.log-out {
+  display: flex;
+  align-items: center;
+}
+
+.log-out::before {
+  content: '';
+  width: 1px;
+  height: 1rem;
+  background-color: var(--color-hairline-strong);
+}
+
+.log-out .nav-link {
+  cursor: pointer;
+}
+
 @media (min-width: 992px) {
   .navbar-sticky {
     position: sticky;
@@ -197,6 +215,10 @@ function formatDate(dateString: string): string {
 
   .build-info {
     margin-left: 3rem;
+  }
+
+  .log-out .nav-link {
+    min-height: 2.75rem;
   }
 }
 </style>
