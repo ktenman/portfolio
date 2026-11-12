@@ -110,3 +110,13 @@ for (const viewport of [
     expect(small).toEqual([])
   })
 }
+
+test('radio recordings table fits its card at 768px', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'tablet')
+  await stubRadioOnAir(page)
+  await openRoute(page, '/radio')
+  const overflow = await page
+    .locator('.desktop-table-wrapper')
+    .evaluate(table => table.scrollWidth - table.clientWidth)
+  expect(overflow).toBe(0)
+})

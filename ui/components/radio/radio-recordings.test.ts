@@ -92,18 +92,9 @@ describe('RadioRecordings', () => {
     expect((await mount()).text()).not.toContain('Cuts')
   })
 
-  it('should say a transcribed recording has its transcript', async () => {
-    expect((await mount()).text()).toContain('Ready')
-  })
-
-  it('should not bold a transcript', async () => {
-    expect((await mount()).find('[data-testid="radio-transcript"]').classes()).not.toContain(
-      'font-semibold'
-    )
-  })
-
-  it('should say a recording in progress is being recorded', async () => {
-    expect((await mount()).findAll('tbody tr')[1]!.text()).toContain('Recording')
+  it('should show the show, station, recorded time and length of a recording', async () => {
+    const headers = (await mount()).findAll('thead th').map(th => th.text())
+    expect(headers).toEqual(['Show', 'Station', 'Recorded', 'Length', 'Actions'])
   })
 
   it('should name each recording link after its programme, day and time', async () => {
@@ -163,7 +154,7 @@ describe('RadioRecordings', () => {
 
   it('should mark a phone row that is still being recorded', async () => {
     const rows = (await mount()).findAll('[data-testid="radio-recording-row"]')
-    expect(rows[1]!.text()).toContain('recording')
+    expect(rows[1]!.text()).toContain('recording · 1 min')
   })
 
   const LENGTH = '[data-testid="radio-length"]'
@@ -173,7 +164,11 @@ describe('RadioRecordings', () => {
   })
 
   it('should give a desktop row still being recorded its length so far', async () => {
-    expect((await mount()).findAll(LENGTH)[1]!.text()).toBe('1 min')
+    expect((await mount()).findAll(LENGTH)[1]!.text()).toBe('recording · 1 min')
+  })
+
+  it('should say a desktop row is being recorded in the live colour', async () => {
+    expect((await mount()).findAll(LENGTH)[1]!.classes()).toContain('text-notice')
   })
 
   it('should call a desktop row without an edit list not cleaned', async () => {
@@ -186,11 +181,15 @@ describe('RadioRecordings', () => {
     expect((await mount()).get(LENGTH).classes()).toContain('text-ink-soft')
   })
 
-  it('should give a partial desktop row its cleaned length', async () => {
+  it.each([
+    [RecordingState.PARTIAL, 'partial', 'text-brass-deep'],
+    [RecordingState.FAILED, 'failed', 'text-loss-deep'],
+  ])('should say a %s desktop row is %s in its tone', async (state, text, tone) => {
     vi.mocked(radioService.recordings).mockResolvedValue([
-      recording({ status: { ...recording().status, state: RecordingState.PARTIAL } }),
+      recording({ status: { ...recording().status, state } }),
     ])
-    expect((await mount()).get(LENGTH).text()).toBe('42 min')
+    const cell = (await mount()).get(LENGTH)
+    expect([cell.text(), cell.classes(tone)]).toEqual([text, true])
   })
 
   it('should leave the actions empty for a recording still being recorded', async () => {
@@ -288,11 +287,6 @@ describe('RadioRecordings', () => {
       programme: 'Kuum tool',
       status: { ...recording().status, station: Station.ARIPAEV },
     })
-
-  it('should keep a Station column right after Show', async () => {
-    const headers = (await mount()).findAll('thead th').map(header => header.text())
-    expect(headers.slice(0, 2)).toEqual(['Show', 'Station'])
-  })
 
   it('should name the station of a recording in its column', async () => {
     vi.mocked(radioService.recordings).mockResolvedValue([aripaev()])

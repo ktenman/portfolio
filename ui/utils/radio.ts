@@ -18,7 +18,6 @@ import {
   Station,
   type TimelineEntry,
   type TranscriptSection,
-  TranscriptState,
 } from '../models/generated/domain-models'
 import type { BadgeTone } from '../components/radio/radio-badge.vue'
 import { WEEKDAYS } from './iso-dates'
@@ -275,15 +274,6 @@ export const RECORDER_STATES: Record<RecorderState, { label: string; tone: Badge
   [RecorderState.RECORDING]: { label: 'Recording', tone: 'live' },
   [RecorderState.OFF]: { label: 'Off', tone: 'error' },
 }
-
-const TEXT_STATES: Record<TranscriptState, string> = {
-  [TranscriptState.NONE]: '—',
-  [TranscriptState.RECORDING]: 'In progress',
-  [TranscriptState.TRANSCRIBED]: 'Ready',
-}
-
-export const textState = (recording: RecordingSummary): string =>
-  TEXT_STATES[recording.transcriptState]
 
 export const audioFormat = (format: AudioFormat | null): string =>
   format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
