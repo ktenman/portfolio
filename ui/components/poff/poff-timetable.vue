@@ -68,12 +68,12 @@
                 class="sticky top-12 z-10 block border-t border-hairline bg-surface-band not-md-down:hidden"
                 data-testid="poff-hour"
               >
-                <th class="block px-4 py-2 text-left font-normal" role="heading" aria-level="3">
-                  <span class="text-[17px] font-semibold tabular-nums">{{ group.time }}</span>
-                  {{ ' ' }}
-                  <span v-if="group.rows.length > 1" class="text-[13px] text-ink-soft">
-                    {{ count(group.rows.length, 'screening') }}
-                  </span>
+                <th
+                  class="block px-4 py-2 text-left text-[17px] font-semibold tabular-nums"
+                  role="heading"
+                  aria-level="3"
+                >
+                  {{ group.time }}
                 </th>
               </tr>
               <poff-screening-row
