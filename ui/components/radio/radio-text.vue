@@ -14,7 +14,7 @@
       :class="{ 'max-md:hidden': shown === 'topics' }"
       data-testid="radio-transcript"
     >
-      <radio-card title="Transcript">
+      <radio-card title="Transcript" bleed>
         <p v-if="transcript.isLoading.value" class="mb-0 text-ink-soft">Loading…</p>
         <p v-else-if="!topics.length" class="mb-0 text-ink-soft">No transcript yet.</p>
         <div v-else ref="list">

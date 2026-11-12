@@ -169,3 +169,63 @@ test('radio shows tables stay clear of the side cards at 1024px', async ({ page 
     .evaluateAll(wrappers => wrappers.map(wrapper => wrapper.getBoundingClientRect().right))
   expect(Math.max(...edges)).toBeLessThanOrEqual(rail!.x)
 })
+
+test.describe('radio transcript on a phone', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await stubRadio(page)
+    await openRoute(page, '/radio/2026-10-17?t=0')
+  })
+
+  test("runs the screen's width", async ({ page }) => {
+    const card = await page.getByTestId('radio-transcript').locator('section.card').boundingBox()
+    const text = await page
+      .getByTestId('radio-text-line')
+      .first()
+      .locator('p')
+      .first()
+      .boundingBox()
+    expect({ x: card!.x, width: card!.width, wide: text!.width >= 300 }).toEqual({
+      x: 0,
+      width: 390,
+      wide: true,
+    })
+  })
+
+  test('lands a tap in the middle of a sentence on its play button', async ({ page }) => {
+    const missed = await page.getByTestId('radio-text-line').evaluateAll(
+      lines =>
+        lines.filter(line => {
+          line.scrollIntoView({ block: 'center' })
+          const text = line.querySelector('p')!.getBoundingClientRect()
+          const hit = document.elementFromPoint(text.x + text.width / 2, text.y + text.height / 2)
+          return (
+            hit?.closest('button')?.closest('li') !== line ||
+            line.getBoundingClientRect().height < 44
+          )
+        }).length
+    )
+    expect(missed).toBe(0)
+  })
+
+  test('starts a topic title on its own line', async ({ page }) => {
+    const spans = page.getByTestId('radio-section-heading').first().locator('span')
+    const time = await spans.first().boundingBox()
+    const title = await spans.nth(1).boundingBox()
+    expect(title!.y).toBeGreaterThanOrEqual(time!.y + time!.height)
+  })
+
+  test('draws the version picker without an outline', async ({ page }) => {
+    const picker = page.getByRole('combobox', { name: 'Version' })
+    const look = await picker.evaluate(select => {
+      const style = getComputedStyle(select)
+      return { border: style.borderTopColor, fill: style.backgroundColor }
+    })
+    const box = await picker.boundingBox()
+    expect({ ...look, tall: box!.height >= 44 }).toEqual({
+      border: 'rgba(0, 0, 0, 0)',
+      fill: 'rgba(0, 0, 0, 0)',
+      tall: true,
+    })
+  })
+})

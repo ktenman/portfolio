@@ -28,7 +28,7 @@
         <select
           v-model="version"
           aria-label="Version"
-          class="form-select form-select-sm min-h-11 w-auto rounded-full bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium md:hidden"
+          class="form-select form-select-sm min-h-11 w-auto rounded-full border-transparent bg-transparent bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium text-ink-soft md:hidden"
         >
           <option value="raw">Raw</option>
           <option v-if="cleaned" value="episode">Clean</option>

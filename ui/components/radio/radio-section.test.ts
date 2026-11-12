@@ -58,4 +58,8 @@ describe('RadioSection', () => {
   it('should not fold three lines of a cut', () => {
     expect(render(3).find('[data-testid="radio-section-more"]').exists()).toBe(false)
   })
+
+  it("should name a line's play button by its time", () => {
+    expect(lines(render(1))[0].get('button').text()).toBe('12:30:30')
+  })
 })
