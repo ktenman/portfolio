@@ -56,6 +56,7 @@
 import { computed, nextTick, useTemplateRef } from 'vue'
 import { onKeyStroke } from '@vueuse/core'
 import { usePoffFilters } from '../../composables/use-poff-filters'
+import { typing } from '../../utils/dom'
 import RadioIcon from '../radio/radio-icon.vue'
 
 const props = defineProps<{ compact?: boolean }>()
@@ -80,8 +81,7 @@ const close = () => {
 defineExpose({ focus: () => input.value?.focus() })
 
 onKeyStroke('/', event => {
-  const target = event.target as Element
-  if (target.closest?.('input, textarea, select, [contenteditable]')) return
+  if (typing(event.target)) return
   event.preventDefault()
   input.value?.focus()
 })

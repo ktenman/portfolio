@@ -19,6 +19,8 @@ const ROUTES = [
   { path: '/instruments', name: 'instruments', stub: stubInstruments },
   { path: '/transactions', name: 'transactions', stub: stubTransactions },
   { path: '/etf-breakdown', name: 'etf-breakdown', stub: stubEtfBreakdown },
+  { path: '/radio', name: 'radio', stub: stubRadio },
+  { path: '/radio/2026-10-17', name: 'radio-clean', stub: stubRadio },
   { path: '/radio/2026-10-17/cuts', name: 'radio-cuts', stub: stubRadio },
   { path: '/radio/shows', name: 'radio-shows', stub: stubRadio },
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },

@@ -1,6 +1,7 @@
 <template>
   <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="min-w-0">
+      <radio-on-air class="mb-8 lg:hidden" />
       <data-table
         :items="shown"
         :columns="columns"
@@ -82,7 +83,6 @@
           </span>
         </template>
       </data-table>
-      <radio-on-air class="lg:hidden" />
     </div>
     <radio-station />
   </div>

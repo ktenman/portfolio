@@ -230,31 +230,6 @@ describe('RadioPlayer', () => {
     expect(wrapper.get('p').element.textContent).toBe('Kõik·Saturday, 17.10')
   })
 
-  it('should measure how far the clock sits below the top of the card', async () => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(private readonly report: () => void) {}
-        observe() {
-          this.report()
-        }
-        disconnect() {}
-      }
-    )
-    const box = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
-      this: Element
-    ) {
-      return new DOMRect(0, this.matches('[data-testid="radio-clock"]') ? 245 : 100, 300, 40)
-    })
-    const wrapper = render()
-    await wrapper.vm.$nextTick()
-    box.mockRestore()
-    vi.unstubAllGlobals()
-    expect(wrapper.get('[data-testid="radio-player"]').attributes('style')).toContain(
-      '--radio-head: 145px'
-    )
-  })
-
   it('should name the versions without their lengths', () => {
     const options = render()
       .findAll('select[aria-label="Version"] option')
@@ -313,5 +288,82 @@ describe('RadioPlayer', () => {
     player.lost.value = true
     await wrapper.vm.$nextTick()
     expect(wrapper.findAll('button').some(b => b.text() === 'Back to the current line')).toBe(false)
+  })
+
+  const press = (key: string, init: KeyboardEventInit = {}, target: EventTarget = window) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...init }))
+
+  const after = (key: string, version: Version = 'raw', at = 1000) => {
+    render(version)
+    player.seek(at)
+    press(key)
+    return player.seconds.value
+  }
+
+  it('should play and pause with K', () => {
+    render()
+    press('k')
+    expect(audio.play).toHaveBeenCalled()
+  })
+
+  it('should go back 15 s with J', () => {
+    expect(after('j')).toBe(985)
+  })
+
+  it('should go forward 30 s with L', () => {
+    expect(after('l')).toBe(1030)
+  })
+
+  it('should jump to the start of the next cut with N in Raw', () => {
+    expect(after('n')).toBe(2120)
+  })
+
+  it('should stay put with N when no cut lies ahead', () => {
+    expect(after('n', 'raw', 3900)).toBe(3900)
+  })
+
+  it('should stay put with N in Clean', () => {
+    expect(after('n', 'episode', 100)).toBe(100)
+  })
+
+  it('should ignore a shortcut held with Ctrl or Cmd', () => {
+    render()
+    player.seek(1000)
+    press('l', { ctrlKey: true })
+    press('l', { metaKey: true })
+    expect(player.seconds.value).toBe(1000)
+  })
+
+  it('should ignore a shortcut typed into a field', () => {
+    render()
+    player.seek(1000)
+    const field = document.body.appendChild(document.createElement('input'))
+    press('l', {}, field)
+    field.remove()
+    expect(player.seconds.value).toBe(1000)
+  })
+
+  it('should answer a shortcut while a slider has focus', () => {
+    render()
+    player.seek(1000)
+    const slider = document.body.appendChild(
+      Object.assign(document.createElement('input'), { type: 'range' })
+    )
+    press('l', {}, slider)
+    slider.remove()
+    expect(player.seconds.value).toBe(1030)
+  })
+
+  it('should leave Space to the page', () => {
+    render()
+    press(' ')
+    expect(audio.play).not.toHaveBeenCalled()
+  })
+
+  it('should name the key of each control', () => {
+    const keys = render()
+      .findAll('button[aria-keyshortcuts]')
+      .map(button => `${button.attributes('aria-label')}=${button.attributes('aria-keyshortcuts')}`)
+    expect(keys).toEqual(['Back 15 s=J', 'Play=K', 'Forward 30 s=L'])
   })
 })

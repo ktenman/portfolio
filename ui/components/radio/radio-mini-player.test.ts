@@ -377,4 +377,11 @@ describe('RadioMiniPlayer', () => {
     tune(Station.KUKU)
     expect(card(await open('/radio', null, BROADCAST)).exists()).toBe(true)
   })
+
+  it("should not answer the episode page's shortcuts", async () => {
+    await play(recording(), 'raw', 1000)
+    await open()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }))
+    expect(player.seconds.value).toBe(1000)
+  })
 })

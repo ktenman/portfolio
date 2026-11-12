@@ -24,7 +24,7 @@
         <span class="md:hidden">{{ station }}</span>
         <template v-for="(part, i) in meta" :key="part">
           <span :class="{ 'md:hidden': !i }">{{ ' · ' }}</span>
-          <span :class="{ [LIVE_DOT]: part === live }">{{ part }}</span>
+          <span :class="part === live?.label && live.mark">{{ part }}</span>
         </template>
       </span>
     </div>
@@ -76,7 +76,6 @@ import {
   coversEnd,
   LINK,
   LISTEN,
-  LIVE_DOT,
   PLAY,
   ROW_LINK,
   STATIONS,
@@ -93,7 +92,7 @@ const toast = useToast()
 const station = computed(() => STATIONS[props.airing.station])
 const live = computed(() => AIRING_LIVE[props.airing.state])
 const meta = computed(() =>
-  [live.value, airingNote(props.airing)].filter((part): part is string => !!part)
+  [live.value?.label, airingNote(props.airing)].filter((part): part is string => !!part)
 )
 
 const recording = computed(() =>

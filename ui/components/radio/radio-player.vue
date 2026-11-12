@@ -1,10 +1,5 @@
 <template>
-  <section
-    ref="card"
-    class="card sticky top-0 z-10 mb-4 max-md:top-[calc(1rem-var(--radio-head))] lg:top-[60.5px]"
-    :style="{ '--radio-head': `${head}px` }"
-    data-testid="radio-player"
-  >
+  <section class="card sticky top-0 z-10 mb-4 lg:top-[60.5px]" data-testid="radio-player">
     <div class="card-body grid gap-4">
       <div
         class="flex items-center gap-6 max-md:grid max-md:grid-cols-[1fr_auto] max-md:gap-x-3 max-md:gap-y-4"
@@ -16,7 +11,7 @@
             <span>{{ fullDay(recording.status.startedAt) }}</span>
           </p>
         </div>
-        <p ref="time" class="mb-0 text-3xl font-semibold tabular-nums" data-testid="radio-clock">
+        <p class="mb-0 text-3xl font-semibold tabular-nums" data-testid="radio-clock">
           <template v-if="raw">
             {{ clock(recording.status.startedAt, player.seconds.value, true) }}
             <span class="block text-sm font-normal text-ink-soft">
@@ -82,12 +77,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
-import { useResizeObserver } from '@vueuse/core'
+import { computed, onBeforeUnmount } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { edition, useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
+import { typing } from '../../utils/dom'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 
@@ -102,12 +98,6 @@ const player = useRadioPlayer()
 const decisions = useRadioDecisions(() => props.recording)
 onBeforeUnmount(decisions.flush)
 
-const card = useTemplateRef('card')
-const time = useTemplateRef('time')
-const head = ref(0)
-useResizeObserver(card, () => {
-  head.value = time.value!.getBoundingClientRect().top - card.value!.getBoundingClientRect().top
-})
 const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => edition(props.recording) === 'episode')
 const version = computed({
@@ -117,4 +107,24 @@ const version = computed({
 const parts = computed(() =>
   raw.value ? rawParts(props.recording, decisions.removed.value) : episodeParts(props.recording)
 )
+
+const nextCut = () => {
+  if (!raw.value) return
+  const cut = props.recording.cuts.find(({ start }) => start > player.seconds.value + 1)
+  if (cut) player.seek(cut.start)
+}
+
+const KEYS: Record<string, () => void> = {
+  k: () => player.toggle(),
+  j: () => player.skip(-15),
+  l: () => player.skip(30),
+  n: nextCut,
+}
+
+useEventListener(window, 'keydown', (event: KeyboardEvent) => {
+  const action = KEYS[event.key.toLowerCase()]
+  if (!action || event.ctrlKey || event.metaKey || event.altKey || typing(event.target)) return
+  event.preventDefault()
+  action()
+})
 </script>
