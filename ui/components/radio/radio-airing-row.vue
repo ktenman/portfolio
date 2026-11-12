@@ -20,17 +20,19 @@
         {{ airing.name }}
       </router-link>
       <span v-else class="block font-semibold">{{ airing.name }}</span>
-      <span class="block text-sm text-body-secondary md:hidden">
-        {{ [station, note].filter(Boolean).join(' · ') }}
+      <span class="block text-sm text-body-secondary" data-testid="radio-airing-meta">
+        <span class="md:hidden">{{ station }}</span>
+        <template v-for="(part, i) in meta" :key="part">
+          <span :class="{ 'md:hidden': !i }">{{ ' · ' }}</span>
+          <span :class="{ [LIVE_DOT]: part === live }">{{ part }}</span>
+        </template>
       </span>
-      <span v-if="note" class="hidden text-sm text-body-secondary md:block">{{ note }}</span>
     </div>
     <span class="hidden text-ink-soft tabular-nums md:block">
       {{ airLength(airing.end - airing.start) }}
     </span>
     <span class="col-start-2 max-md:empty:hidden md:col-start-auto">
-      <radio-badge v-if="badge" :tone="badge.tone">{{ badge.label }}</radio-badge>
-      <span v-else-if="airing.state === AiringState.ARCHIVED" class="text-sm text-ink-soft">
+      <span v-if="airing.state === AiringState.ARCHIVED" class="text-sm text-ink-soft">
         Original archived
       </span>
     </span>
@@ -42,8 +44,8 @@
         type="button"
         :class="[
           action.icon
-            ? [PLAY, 'size-11 md:size-9']
-            : [LINK, action.quiet ? 'bg-surface-sunken text-ink-soft' : 'bg-surface'],
+            ? [action.icon === 'pause' ? PLAY : LISTEN, 'size-11 md:size-9']
+            : [LINK, 'bg-surface max-md:min-h-11'],
           'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"
         :disabled="!action.run"
@@ -67,17 +69,18 @@ import { useRadioRecordings } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
 import {
-  AIRING_STATES,
+  AIRING_LIVE,
   airingNote,
   airLength,
   clock,
   coversEnd,
   LINK,
+  LISTEN,
+  LIVE_DOT,
   PLAY,
   ROW_LINK,
   STATIONS,
 } from '../../utils/radio'
-import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
 
 const props = defineProps<{ airing: DayAiring }>()
@@ -88,8 +91,10 @@ const router = useRouter()
 const toast = useToast()
 
 const station = computed(() => STATIONS[props.airing.station])
-const note = computed(() => airingNote(props.airing))
-const badge = computed(() => AIRING_STATES[props.airing.state])
+const live = computed(() => AIRING_LIVE[props.airing.state])
+const meta = computed(() =>
+  [live.value, airingNote(props.airing)].filter((part): part is string => !!part)
+)
 
 const recording = computed(() =>
   props.airing.state === AiringState.ARCHIVED
@@ -101,6 +106,13 @@ const summary = computed(() => {
   return name ? recordings.value?.find(r => r.name === name) : undefined
 })
 const page = computed(() => summary.value && `/radio/${summary.value.name}`)
+
+const hearing = computed(() => {
+  const heard = recording.value
+  if (!heard || !player.playing.value || player.recording.value?.name !== heard.name) return false
+  const at = heard.start + player.recordingSeconds.value
+  return heard.from <= at && at < heard.to
+})
 
 const listen = () => {
   const heard = recording.value
@@ -127,17 +139,17 @@ const record = (value: boolean) => () =>
 
 const action = computed(() => {
   const airing = props.airing
+  if (hearing.value) return { label: 'Pause', run: player.toggle, icon: 'pause' as const }
   switch (airing.state) {
     case AiringState.RECORDED:
+    case AiringState.ARCHIVED:
       return { label: 'Listen', run: listen(), icon: 'play' as const }
     case AiringState.PARTIAL:
       return {
         label: coversEnd(airing) ? 'Hear the end' : 'Listen',
         run: listen(),
-        quiet: true,
+        icon: 'play' as const,
       }
-    case AiringState.ARCHIVED:
-      return { label: 'Listen', run: listen(), quiet: true }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
       return player.tuned.value === airing.station && player.playing.value

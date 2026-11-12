@@ -86,3 +86,27 @@ for (const route of BREAKDOWN_ROUTES) {
     expect(layout).toEqual({ controls: 7, squeezed: [] })
   })
 }
+
+for (const viewport of [
+  { width: 375, height: 667 },
+  { width: 390, height: 844 },
+]) {
+  test(`radio catch-up gives every row control a fingertip target at ${viewport.width}px`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile')
+    await page.setViewportSize(viewport)
+    await stubRadio(page)
+    await openRoute(page, '/radio/catch-up')
+    const small = await page
+      .getByTestId('radio-airing')
+      .getByRole('button')
+      .evaluateAll(buttons =>
+        buttons
+          .map(button => button.getBoundingClientRect())
+          .filter(box => box.width < 44 || box.height < 44)
+          .map(box => `${box.width}x${box.height}`)
+      )
+    expect(small).toEqual([])
+  })
+}
