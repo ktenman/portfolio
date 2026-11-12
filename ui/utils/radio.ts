@@ -24,15 +24,20 @@ import { WEEKDAYS } from './iso-dates'
 
 const ZONE = 'Europe/Tallinn'
 
-export const METHODS: Record<BoundaryMethod, string> = {
-  [BoundaryMethod.DIGITAL_SILENCE]: 'digital silence',
-  [BoundaryMethod.STATION_JINGLE]: 'station jingle',
-  [BoundaryMethod.LEVEL_DIP]: 'level dip',
-  [BoundaryMethod.TRANSCRIPT_ONLY]: 'text only',
-  [BoundaryMethod.MANUAL]: 'manual',
-  [BoundaryMethod.SOUND]: 'sound analysis',
-  [BoundaryMethod.REPEATED_AUDIO]: 'repeated audio',
+const METHODS: Record<BoundaryMethod, string> = {
+  [BoundaryMethod.DIGITAL_SILENCE]: 'silence',
+  [BoundaryMethod.STATION_JINGLE]: 'the station jingle',
+  [BoundaryMethod.LEVEL_DIP]: 'a dip in volume',
+  [BoundaryMethod.TRANSCRIPT_ONLY]: 'the transcript',
+  [BoundaryMethod.MANUAL]: 'you',
+  [BoundaryMethod.SOUND]: 'the music',
+  [BoundaryMethod.REPEATED_AUDIO]: 'audio heard before',
 }
+
+const AND = new Intl.ListFormat('en', { type: 'conjunction' })
+
+export const foundBy = (methods: BoundaryMethod[]): string =>
+  `Found by ${AND.format([...new Set(methods)].map(method => METHODS[method]))}`
 
 export const STATIONS: Record<Station, string> = {
   [Station.KUKU]: 'Kuku',
@@ -272,7 +277,7 @@ export const nightOf = (until: number): string => {
 export const RECORDER_STATES: Record<RecorderState, { label: string; tone: BadgeTone }> = {
   [RecorderState.WAITING]: { label: 'Waiting', tone: 'plain' },
   [RecorderState.RECORDING]: { label: 'Recording', tone: 'live' },
-  [RecorderState.OFF]: { label: 'Off', tone: 'error' },
+  [RecorderState.OFF]: { label: 'Not running', tone: 'error' },
 }
 
 export const audioFormat = (format: AudioFormat | null): string =>

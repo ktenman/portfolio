@@ -120,3 +120,13 @@ test('radio recordings table fits its card at 768px', async ({ page }, testInfo)
     .evaluate(table => table.scrollWidth - table.clientWidth)
   expect(overflow).toBe(0)
 })
+
+test('radio failed cut search gives its details a fingertip target on a phone', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile')
+  await stubRadio(page)
+  await openRoute(page, '/radio/2026-10-26')
+  const box = await page.getByText('Details', { exact: true }).boundingBox()
+  expect(box!.height).toBeGreaterThanOrEqual(44)
+})
