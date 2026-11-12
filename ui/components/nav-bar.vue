@@ -16,6 +16,9 @@
             <span class="text-body-secondary build-info-text">
               {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
             </span>
+            <form v-if="hosted" method="post" action="/logout">
+              <AppButton type="submit" size="sm" ghost>Log out</AppButton>
+            </form>
           </div>
         </div>
       </div>
@@ -29,6 +32,7 @@ import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { utilityService } from '../services/api'
 import { revealInRow } from '../utils/dom'
+import AppButton from './shared/app-button.vue'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -42,6 +46,7 @@ const routes = ref([
   { path: '/monitoring', name: 'Monitoring' },
 ])
 
+const hosted = window.location.hostname === 'fov.ee'
 const row = useTemplateRef<HTMLDivElement>('row')
 const route = useRoute()
 
