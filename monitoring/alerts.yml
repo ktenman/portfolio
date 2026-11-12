@@ -187,6 +187,14 @@ groups:
           severity: warning
         annotations:
           summary: 'OpenRouter balance has not been read for 30 minutes, so a low balance goes unannounced; check OPENROUTER_MANAGEMENT_KEY'
+      - alert: OpenRouterOtherKeysSpending
+        expr: delta(portfolio_openrouter_account_usage_dollars[1d]) - delta(portfolio_openrouter_key_usage_dollars[1d]) > 5
+        for: 15m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'OpenRouter keys other than production spent ${{ printf "%.2f" $value }} in the last day, out of the balance production calls need; look for a local run with scheduled jobs on'
   - name: portfolio-split
     interval: 15s
     rules:

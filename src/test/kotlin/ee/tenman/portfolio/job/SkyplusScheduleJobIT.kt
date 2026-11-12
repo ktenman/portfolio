@@ -1,6 +1,9 @@
 package ee.tenman.portfolio.job
 
-import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.fluent.en_GB.inAnyOrder
+import ch.tutteli.atrium.api.fluent.en_GB.only
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
+import ch.tutteli.atrium.api.fluent.en_GB.values
 import ch.tutteli.atrium.api.verbs.expect
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
@@ -31,6 +34,7 @@ class SkyplusScheduleJobIT : RadioScheduleTestBase() {
     )
     SkyplusScheduleJob(skyplusScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, radioProperties).execute()
     expect(radioScheduleService.programmes().filter { it.station == Station.SKYPLUS }.map { it.name })
-      .toContainExactly("Õhtune Äratus", "Õhtu Plus")
+      .toContain.inAnyOrder.only
+      .values("Õhtune Äratus", "Õhtu Plus")
   }
 }

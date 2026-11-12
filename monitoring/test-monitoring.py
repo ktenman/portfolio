@@ -237,7 +237,8 @@ def check_configurations():
     run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro',
         '--entrypoint', 'amtool', ALERTMANAGER,
         'check-config', '/etc/alertmanager/alertmanager.yml')
-    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown', 'OpenRouterBalanceLow', 'OpenRouterBalanceUnreadable'):
+    for name in ('HostSwapHigh', 'HostDiskHigh', 'HostMemoryLow', 'MonitoringTargetDown',
+                 'OpenRouterBalanceLow', 'OpenRouterBalanceUnreadable', 'OpenRouterOtherKeysSpending'):
         route = run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/alertmanager:ro', '--entrypoint', 'amtool', ALERTMANAGER,
                     'config', 'routes', 'test', '--config.file=/etc/alertmanager/alertmanager.yml', f'alertname={name}').stdout.strip()
         assert route == 'host', f'{name} must reach the host receiver, which repeats daily and sends resolved, not {route}'
@@ -759,27 +760,33 @@ def check_metric_coverage():
     print(f'{len(operations)}-operation and per-item metric coverage passed')
 
 
+def evaluate_openrouter(expressions, values, tests, **overrides):
+    labels = 'month="2026-11",purpose="sector",model="google/gemini-4-argon",type="prompt",outcome="success"'
+    metrics = sorted(set(re.findall(r'portfolio_openrouter_\w+', ' '.join(expressions))))
+    document = json.dumps({'evaluation_interval': '15s', 'tests': [{
+        'interval': '15s',
+        'input_series': [{'series': f'{metric}{{{labels}}}', 'values': overrides.get(metric, values)} for metric in metrics],
+        'promql_expr_test': tests,
+    }]})
+    with tempfile.TemporaryDirectory() as temporary:
+        Path(temporary).chmod(0o755)
+        (Path(temporary) / 'openrouter.test.yml').write_text(document)
+        run('docker', 'run', '--rm', '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
+            'test', 'rules', '/test/openrouter.test.yml')
+
+
 def check_openrouter_days():
     board = json.loads((ROOT / 'grafana/dashboards/openrouter.json').read_text())
     daily = [target['expr'] for panel in board['panels'] if panel.get('interval') == '1d' for target in panel['targets']]
     assert daily, 'the OpenRouter dashboard has no daily panel'
-    labels = 'purpose="sector",model="google/gemini-4-argon",type="prompt",outcome="success"'
     flat_day_then_six_hours_of_spend = '7+0x5760 8+1x1439'
+    account_spends_twice_the_key = '7+0x5760 9+2x1439'
     spent_since_midnight = [{'expr': f'count(0 < ({expr}) <= 1441)', 'eval_time': '1d', 'exp_samples': [{'labels': '{}', 'value': 1}]}
                             for expr in daily]
     loads_the_samples_after_midnight = {'expr': 'vector(1)', 'eval_time': '2d', 'exp_samples': [{'labels': '{}', 'value': 1}]}
-    document = json.dumps({'evaluation_interval': '15s', 'tests': [{
-        'interval': '15s',
-        'input_series': [{'series': f'{metric}{{{labels}}}', 'values': flat_day_then_six_hours_of_spend}
-                         for metric in sorted(set(re.findall(r'portfolio_openrouter_\w+', ' '.join(daily))))],
-        'promql_expr_test': spent_since_midnight + [loads_the_samples_after_midnight],
-    }]})
-    with tempfile.TemporaryDirectory() as temporary:
-        Path(temporary).chmod(0o755)
-        (Path(temporary) / 'days.test.yml').write_text(document)
-        run('docker', 'run', '--rm', '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
-            'test', 'rules', '/test/days.test.yml')
-    print('OpenRouter daily bars show the day that starts at them, the running one up to now')
+    evaluate_openrouter(daily, flat_day_then_six_hours_of_spend, spent_since_midnight + [loads_the_samples_after_midnight],
+                        portfolio_openrouter_account_usage_dollars=account_spends_twice_the_key)
+    print('OpenRouter daily bars show the day that starts at them, the running one up to now, and split the account between the keys')
 
 
 def check_openrouter_latest():
@@ -787,7 +794,12 @@ def check_openrouter_latest():
     latest = [target for panel in board['panels'] if panel['type'] != 'timeseries' for target in panel['targets']]
     assert latest and all(target['instant'] and not target['range'] for target in latest), \
         'a panel of the latest value must read it now, a range query shows N/A until a step point falls after the first sample'
-    print('The OpenRouter balance and monthly spend show the latest reading')
+    expressions = [target['expr'].replace('${__to:date:YYYY-MM}', '2026-11') for target in latest]
+    read_for_ten_minutes_then_restarting = '62+1x40 stale'
+    shown_a_minute_into_the_restart = [{'expr': f'count(({expr}) > 0)', 'eval_time': '11m', 'exp_samples': [{'labels': '{}', 'value': 1}]}
+                                       for expr in expressions]
+    evaluate_openrouter(expressions, read_for_ten_minutes_then_restarting, shown_a_minute_into_the_restart)
+    print('The OpenRouter tiles and monthly bars show the latest reading and keep it while the backend restarts')
 
 
 def check_openrouter_lone_days():
