@@ -26,7 +26,7 @@
       <li
         v-for="line in visible"
         :key="line.start"
-        v-memo="[line, line === current, line === current && spoken]"
+        v-memo="[line, raw, line === current, line === current && spoken]"
         data-testid="radio-text-line"
         :aria-current="line === current ? 'true' : undefined"
         class="grid scroll-mt-[calc(var(--radio-player)+5rem)] scroll-mb-32 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 rounded-container px-2 py-2.5"
@@ -37,7 +37,7 @@
           class="cursor-pointer self-start text-left text-sm font-semibold text-ink-soft tabular-nums hover:text-ink"
           @click="emit('play', line.start)"
         >
-          {{ clock(startedAt, line.start, true) }}
+          {{ lineTime(line.start, raw, startedAt, audible) }}
         </button>
         <div>
           <p
@@ -60,10 +60,7 @@
           </p>
           <p v-if="line.split" class="mt-1 mb-0 flex flex-wrap items-center gap-2 text-sm">
             <radio-badge tone="warn">Cut splits a sentence</radio-badge>
-            <span class="text-ink-soft">
-              {{ line.split.title }}
-              {{ range(startedAt, line.split.start, line.split.end) }}
-            </span>
+            <span class="text-ink-soft">{{ splitNote(line.split, raw, startedAt) }}</span>
           </p>
         </div>
       </li>
@@ -83,16 +80,18 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
 import type {
+  KeptSpan,
   TranscriptLine,
   TranscriptSection,
   TranscriptWord,
 } from '../../models/generated/domain-models'
-import { clock, minutes, range, sectionTime } from '../../utils/radio'
+import { lineTime, minutes, sectionTime, splitNote } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 
 const props = defineProps<{
   section: TranscriptSection
   startedAt: number
+  audible: KeptSpan[]
   raw: boolean
   playing: boolean
   current?: TranscriptLine

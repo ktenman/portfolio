@@ -5,6 +5,7 @@ import {
   type DayAiring,
   type AudioFormat,
   BoundaryMethod,
+  type Cut,
   type CutProgress,
   CutStep,
   DayOfWeek,
@@ -187,6 +188,16 @@ export const sectionTime = (section: TranscriptSection, raw: boolean, startedAt:
 
 export const range = (startedAt: number, start: number, end: number, withSeconds = false): string =>
   `${clock(startedAt, start, withSeconds)}–${clock(startedAt, end, withSeconds)}`
+
+export const lineTime = (
+  seconds: number,
+  raw: boolean,
+  startedAt: number,
+  audible: KeptSpan[]
+): string => (raw ? clock(startedAt, seconds, true) : position(episodeTime(audible, seconds)))
+
+export const splitNote = ({ title, start, end }: Cut, raw: boolean, startedAt: number): string =>
+  raw ? `${title} ${range(startedAt, start, end)}` : `${title}, ${minutes(end - start)} removed`
 
 export const day = (startedAt: number): string =>
   `${WEEKDAY.format(instant(startedAt))} ${DATE.format(instant(startedAt)).slice(0, 5)}`

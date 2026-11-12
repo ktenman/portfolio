@@ -202,6 +202,16 @@ describe('RadioPlayer', () => {
     expect(render().find('input[type="range"]').attributes('aria-valuetext')).toBe('0:00 / 1:10:00')
   })
 
+  it('should lead the Raw readout with the time of day', () => {
+    const text = render().get('[data-testid="radio-clock"]').text()
+    expect(text.replace(/\s+/g, ' ')).toBe('11:55:00 0:00 of 1:10:00')
+  })
+
+  it('should keep the position readout on Clean', () => {
+    const text = render('episode').get('[data-testid="radio-clock"]').text()
+    expect(text.replace(/\s+/g, ' ')).toBe('0:00 / 41:52')
+  })
+
   it('should name the show and its day in the card', () => {
     const wrapper = render()
     expect([wrapper.get('h2').text(), wrapper.get('p').text()]).toEqual([

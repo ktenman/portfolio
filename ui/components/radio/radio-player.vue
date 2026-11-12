@@ -17,10 +17,18 @@
           </p>
         </div>
         <p ref="time" class="mb-0 text-3xl font-semibold tabular-nums" data-testid="radio-clock">
-          {{ position(player.seconds.value) }}
-          <span class="text-ink-soft max-md:text-lg max-md:font-normal">
-            / {{ position(player.total.value) }}
-          </span>
+          <template v-if="raw">
+            {{ clock(recording.status.startedAt, player.seconds.value, true) }}
+            <span class="block text-sm font-normal text-ink-soft">
+              {{ position(player.seconds.value) }} of {{ position(player.total.value) }}
+            </span>
+          </template>
+          <template v-else>
+            {{ position(player.seconds.value) }}
+            <span class="text-ink-soft max-md:text-lg max-md:font-normal">
+              / {{ position(player.total.value) }}
+            </span>
+          </template>
         </p>
         <select
           v-model="version"
@@ -79,7 +87,7 @@ import { useResizeObserver } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { edition, useRadioPlayer, type Version } from '../../composables/use-radio-player'
-import { episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
+import { clock, episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioScrubber from './radio-scrubber.vue'
 

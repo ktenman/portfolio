@@ -98,6 +98,48 @@ describe('RadioText', () => {
     expect(player.seconds.value).toBe(1359.5)
   })
 
+  it('should show the episode time on lines in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    const times = lines(await render()).map(line => line.find('button').text())
+    expect(times).toEqual(['0:00', '22:28', '22:39'])
+  })
+
+  it('should leave a gap in the recording out of the episode time of a line', async () => {
+    const gapped = recording({
+      audible: [
+        { start: 761.5, end: 1000 },
+        { start: 1100, end: 2120 },
+        { start: 2255, end: 3025 },
+        { start: 3137, end: 3837 },
+      ],
+    })
+    player.load(gapped, 'episode')
+    expect(
+      lines(await render(gapped))[1]
+        .find('button')
+        .text()
+    ).toBe('20:48')
+  })
+
+  it('should give lines their time of day after switching to the raw version', async () => {
+    player.load(recording(), 'episode')
+    const wrapper = await render()
+    player.swap('raw')
+    await flushPromises()
+    expect(lines(wrapper).map(line => line.find('button').text())).toEqual([
+      '12:07:42',
+      '12:30:10',
+      '12:32:36',
+    ])
+  })
+
+  it('should say how much a cut removed in the cleaned version', async () => {
+    player.load(recording(), 'episode')
+    expect(lines(await render())[1].text()).toContain(
+      'Cut splits a sentenceAd break, 2 min removed'
+    )
+  })
+
   it('should play a topic from its heading', async () => {
     const wrapper = await render()
     await wrapper.findAll('[data-testid="radio-section-heading"]')[1].trigger('click')

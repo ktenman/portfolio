@@ -15,6 +15,7 @@ import {
   fullDay,
   left,
   length,
+  lineTime,
   megabytes,
   minutes,
   missedRun,
@@ -23,6 +24,7 @@ import {
   position,
   rawParts,
   recordingTime,
+  splitNote,
   textState,
 } from './radio'
 import { airing, programme, recording } from '../components/radio/radio-fixture'
@@ -310,5 +312,25 @@ describe('episodeParts', () => {
       summary: null,
     }
     expect(episodeParts(recording({ topics: [topic] }))[0]!.name).toBe('Tesla uus roadster')
+  })
+})
+
+describe('lineTime', () => {
+  it('should give a line its time of day in the raw version', () => {
+    expect(lineTime(762, true, STARTED, recording().audible)).toBe('12:07:42')
+  })
+
+  it('should give a line its place in the episode in the cleaned version', () => {
+    expect(lineTime(2256, false, STARTED, recording().audible)).toBe('22:39')
+  })
+})
+
+describe('splitNote', () => {
+  it('should give a split cut its time of day in the raw version', () => {
+    expect(splitNote(recording().cuts[1], true, STARTED)).toBe('Ad break 12:30–12:32')
+  })
+
+  it('should say how much a split cut removed in the cleaned version', () => {
+    expect(splitNote(recording().cuts[1], false, STARTED)).toBe('Ad break, 2 min removed')
   })
 })

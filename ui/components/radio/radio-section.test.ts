@@ -19,6 +19,7 @@ describe('RadioSection', () => {
       props: {
         section: sections([2130, 2140, 2150, 2160, 2170].slice(0, count).map(spoken))[2],
         startedAt: recording().status.startedAt,
+        audible: recording().audible,
         raw: true,
         playing: false,
       },
