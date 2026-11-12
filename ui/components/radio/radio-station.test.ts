@@ -81,11 +81,11 @@ describe('RadioStation', () => {
     ])
   })
 
-  it('should show one station off while the other records', async () => {
+  it('should show one station not running while the other records', async () => {
     const off = { ...idle, recorder: RecorderState.OFF }
     const recording = { ...aripaev, recorder: RecorderState.RECORDING }
     expect(await rows(off, recording)).toEqual([
-      expect.stringContaining('KukuOff'),
+      expect.stringContaining('KukuNot running'),
       expect.stringContaining('ÄripäevRecording'),
     ])
   })
@@ -174,8 +174,10 @@ describe('RadioStation', () => {
     expect((await mount(idle)).text()).toContain('RecorderWaiting')
   })
 
-  it('should show the recorder off when the worker is not seen', async () => {
-    expect((await mount({ ...idle, recorder: RecorderState.OFF })).text()).toContain('RecorderOff')
+  it('should say the recorder is not running when the worker is not seen', async () => {
+    expect((await mount({ ...idle, recorder: RecorderState.OFF })).text()).toContain(
+      'RecorderNot running'
+    )
   })
 
   it('should name the last recording with the day and time it ended', async () => {

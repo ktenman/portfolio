@@ -40,11 +40,11 @@
     </div>
     <p v-if="quotes" class="mb-0 text-sm">{{ quotes }}</p>
     <p class="mb-0 text-sm text-ink-soft">
-      Boundary: {{ cut.methods.map(m => METHODS[m]).join(' · ') }}
+      {{ foundBy(cut.methods) }}
     </p>
     <div v-if="cut.jingle" class="flex flex-wrap items-center justify-between gap-2 text-sm">
       <span class="text-ink-soft">
-        Jingle r = {{ cut.jingle.r.toFixed(2) }} ·
+        Jingle match {{ Math.round(cut.jingle.r * 100) }}% ·
         {{ cut.jingle.saved ? 'saved' : 'unconfirmed' }}
       </span>
       <app-button
@@ -65,7 +65,7 @@ import { computed } from 'vue'
 import { CutKind } from '../../models/generated/domain-models'
 import type { Cut, CutContext, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { clock, length, METHODS, range } from '../../utils/radio'
+import { clock, foundBy, length, range } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'

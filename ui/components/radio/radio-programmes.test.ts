@@ -141,9 +141,9 @@ describe('RadioProgrammes', () => {
     station,
   })
 
-  it('should keep a Station column right after Show', async () => {
+  it('should name the columns of the shows table', async () => {
     const headers = (await mount()).findAll('thead th').map(header => header.text())
-    expect(headers.slice(0, 2)).toEqual(['Show', 'Station'])
+    expect(headers).toEqual(['Show', 'Station', 'Airs', 'Archived', 'Record'])
   })
 
   it('should name the station of a show in its column', async () => {

@@ -51,7 +51,15 @@
             <radio-icon name="alert" />
             The search stopped at {{ stopped(recording.failure.failedAt) }}
           </p>
-          <p class="mb-0 text-sm text-ink-soft">{{ recording.failure.reason }}</p>
+          <details class="group text-sm text-ink-soft">
+            <summary
+              class="flex w-fit cursor-pointer list-none items-center gap-1 max-md:min-h-11 [&::-webkit-details-marker]:hidden"
+            >
+              Details
+              <radio-icon name="down" class="size-4 group-open:rotate-180" />
+            </summary>
+            {{ recording.failure.reason }}
+          </details>
         </template>
       </li>
     </ul>

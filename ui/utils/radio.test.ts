@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { ProgrammeCutState, Station, type KeptSpan } from '../models/generated/domain-models'
+import {
+  BoundaryMethod,
+  ProgrammeCutState,
+  Station,
+  type KeptSpan,
+} from '../models/generated/domain-models'
 import {
   advance,
   audioFormat,
@@ -7,6 +12,7 @@ import {
   day,
   episodeParts,
   episodeTime,
+  foundBy,
   fullDay,
   left,
   length,
@@ -322,5 +328,17 @@ describe('splitNote', () => {
 
   it('should say how much a split cut removed in the cleaned version', () => {
     expect(splitNote(recording().cuts[1], false, STARTED)).toBe('Ad break, 2 min removed')
+  })
+})
+
+describe('foundBy', () => {
+  it('should name a method once when both ends of a cut were found the same way', () => {
+    expect(foundBy([BoundaryMethod.MANUAL, BoundaryMethod.MANUAL])).toBe('Found by you')
+  })
+
+  it('should join the two ways the ends of a cut were found', () => {
+    expect(foundBy([BoundaryMethod.LEVEL_DIP, BoundaryMethod.TRANSCRIPT_ONLY])).toBe(
+      'Found by a dip in volume and the transcript'
+    )
   })
 })

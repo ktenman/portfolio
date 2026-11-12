@@ -67,8 +67,8 @@ const shown = computed(() =>
 const columns: ColumnDefinition[] = [
   { key: 'name', label: 'Show' },
   { key: 'station', label: 'Station', formatter: (value: Station) => STATIONS[value] },
-  { key: 'slots', label: 'On air' },
+  { key: 'slots', label: 'Airs' },
   { key: 'recordings', label: 'Archived' },
-  { key: 'recordEvery', label: 'Recording' },
+  { key: 'recordEvery', label: 'Record' },
 ]
 </script>

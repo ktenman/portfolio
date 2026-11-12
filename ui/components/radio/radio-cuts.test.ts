@@ -98,7 +98,7 @@ describe('Radio cuts', () => {
   })
 
   it('should name how the machine found the edges of a cut', async () => {
-    expect((await card(1)).text()).toContain('level dip · station jingle')
+    expect((await card(1)).text()).toContain('Found by a dip in volume and the station jingle')
   })
 
   it('should save a decision without a button', async () => {
@@ -117,7 +117,7 @@ describe('Radio cuts', () => {
   })
 
   it('should show the jingle that ends a break and how well it matched', async () => {
-    expect((await card(1)).text()).toContain('Jingle r = 0.93 · unconfirmed')
+    expect((await card(1)).text()).toContain('Jingle match 93% · unconfirmed')
   })
 
   it('should show no jingle for a cut without one', async () => {
@@ -363,10 +363,12 @@ describe('Radio cuts', () => {
     failure: { reason: 'No outline read to vote on', failedAt: '2026-10-19T10:20:00Z' },
   })
 
-  it('should say when and why a cut search failed', async () => {
-    expect((await render(failed)).text()).toContain(
-      'The search stopped at 13:20No outline read to vote on'
-    )
+  it('should say when a cut search failed', async () => {
+    expect((await render(failed)).text()).toContain('The search stopped at 13:20')
+  })
+
+  it('should fold why a cut search failed into its details', async () => {
+    expect((await render(failed)).get('details').text()).toContain('No outline read to vote on')
   })
 
   it('should look for the cuts of a failed programme again', async () => {
