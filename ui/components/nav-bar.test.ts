@@ -214,6 +214,13 @@ describe('NavBar', () => {
       expect(form.find('button[type="submit"]').text()).toBe('Log out')
     })
 
+    it('should set Log out as a navigation link instead of a boxed button', () => {
+      visit('fov.ee')
+      mockBuildInfo.value = buildInfoData
+
+      expect(createWrapper().find('form button').classes()).toEqual(['nav-link'])
+    })
+
     it('should not offer Log out on fov.ee before build info arrives', () => {
       visit('fov.ee')
 
