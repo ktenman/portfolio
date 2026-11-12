@@ -1,5 +1,8 @@
 <template>
-  <div class="mx-auto mt-4 w-full max-w-app not-md-down:px-3">
+  <div
+    class="mx-auto mt-4 w-full max-w-app"
+    :class="route.params.slug ? 'px-3' : 'not-md-down:px-3'"
+  >
     <router-view v-slot="{ Component, route }">
       <div
         class="flex flex-wrap items-center gap-x-3 gap-y-3"
