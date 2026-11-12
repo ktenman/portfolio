@@ -10,11 +10,12 @@
             :key="section.start"
             :section="section"
             :started-at="recording.status.startedAt"
+            :audible="recording.audible"
             :raw="raw"
             :playing="section.start === playing?.start"
             :current="current"
             :spoken="spoken"
-            @play="play(section, $event)"
+            @play="play"
           >
             <template v-if="raw && cutOf(section)" #heading>
               <div :class="HATCH" class="rounded-container px-3">
@@ -70,7 +71,7 @@ import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioCuts, useRadioTranscript } from '../../composables/use-radio-recordings'
 import { useToast } from '../../composables/use-toast'
 import { radioService } from '../../services/api'
-import { episodeParts, HATCH, rawParts } from '../../utils/radio'
+import { episodeParts, episodeTime, HATCH, rawParts } from '../../utils/radio'
 import RadioCard from './radio-card.vue'
 import RadioCutCard from './radio-cut-card.vue'
 import RadioCuts from './radio-cuts.vue'
@@ -140,10 +141,10 @@ let touched = 0
 
 const behavior = () => (motion.value === 'reduce' ? 'auto' : 'smooth')
 
-const play = (section: TranscriptSection, from: number) =>
+const play = (from: number) =>
   raw.value
     ? player.playFrom(from)
-    : player.playFrom((section.episodeStart ?? 0) + from - section.start, 'episode')
+    : player.playFrom(episodeTime(props.recording.audible, from), 'episode')
 
 const scroll = () =>
   list.value
