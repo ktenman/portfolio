@@ -838,7 +838,7 @@ def check_alert_separation(base):
                                       alert('CollectionItemsStale', 30, 'tuleva', 'history', 'grouped'),
                                       alert('RadioScheduleFailed', 30, 'kuku', environment='grouped'),
                                       alert('RadioScheduleFailed', 30, 'aripaev', environment='grouped')])
-    wait_for(lambda: sent('issues/1936\n\ngrouped ') and sent('items\n\ngrouped RadioScheduleFailed'))
+    wait_for(lambda: sent('grafana/d/circuit-breakers\n\ngrouped ') and sent('items\n\ngrouped RadioScheduleFailed'))
 
 
 def check_delivery():
@@ -877,7 +877,7 @@ def check_delivery():
                      and len(events('/heartbeat')) >= 1)
             message = notifications('CollectionPricesUnavailable', 'firing', 'lightyear')[0]
             assert 'CollectionPricesUnavailable' in message
-            assert 'github.com/ktenman/portfolio/issues/1936' in message
+            assert 'https://fov.ee/grafana/d/circuit-breakers' in message
             assert 'instrument' not in message and 'account' not in message
             request(base + '/api/v2/alerts', [incident])
             time.sleep(1)

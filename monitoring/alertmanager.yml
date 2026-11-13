@@ -41,7 +41,7 @@ receivers:
         chat_id_file: /run/monitoring-secrets/chat_id
         send_resolved: true
         parse_mode: ''
-        message: '{{ range $index, $alert := .Alerts }}{{ if $index }}{{ "\n\n" }}{{ end }}{{ .Labels.environment }} {{ .Labels.severity }} {{ .Status }} {{ .Labels.alertname }} {{ .Labels.provider }} {{ .Labels.operation }}: {{ .Annotations.summary }}{{ if .Annotations.last_persistence }} Last persisted: {{ .Annotations.last_persistence }}.{{ end }}{{ if .Annotations.last_success }} Last full success: {{ .Annotations.last_success }}.{{ end }}{{ if .Annotations.recent_failure }} Recent failure: {{ .Annotations.recent_failure }}.{{ end }} Details: https://github.com/ktenman/portfolio/issues/1936{{ end }}'
+        message: '{{ range $index, $alert := .Alerts }}{{ if $index }}{{ "\n\n" }}{{ end }}{{ .Labels.environment }} {{ .Labels.severity }} {{ .Status }} {{ .Labels.alertname }} {{ .Labels.provider }} {{ .Labels.operation }}: {{ .Annotations.summary }}{{ if .Annotations.last_persistence }} Last persisted: {{ .Annotations.last_persistence }}.{{ end }}{{ if .Annotations.last_success }} Last full success: {{ .Annotations.last_success }}.{{ end }}{{ if .Annotations.recent_failure }} Recent failure: {{ .Annotations.recent_failure }}.{{ end }} Details: https://fov.ee/grafana/d/circuit-breakers{{ end }}'
   - name: plain
     telegram_configs:
       - bot_token_file: /run/monitoring-secrets/bot_token
