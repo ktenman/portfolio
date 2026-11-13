@@ -42,20 +42,12 @@ curl "http://localhost:3000/prices?tickers=WTAIm_EQ,SPYLa_EQ,QDVEd_EQ"
 
 ```json
 {
-  "data": {
-    "WTAIm_EQ": {
-      "b": 74.47,
-      "s": 74.47,
-      "t": "2025-11-13T11:45:00.878Z"
-    },
-    "SPYLa_EQ": {
-      "b": 14.4774,
-      "s": 14.4774,
-      "t": "2025-11-13T11:52:29.165Z"
-    }
-  }
+  "WTAIm_EQ": 74.47,
+  "SPYLa_EQ": 14.4774
 }
 ```
+
+Each value is the last trade price from Trading212's `instrumentarium/v1/prices/last-trade`. An unknown ticker comes back as `0`.
 
 ### WisdomTree Adapter - Fetch ETF Holdings
 

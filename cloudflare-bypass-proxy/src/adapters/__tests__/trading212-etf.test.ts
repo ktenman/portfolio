@@ -25,7 +25,12 @@ describe('Trading212 ETF Adapters', () => {
 
   it('should proxy holdings request to upstream with ticker', async () => {
     const mockResponse = [{ ticker: 'SANe_EQ', percentage: 13.94, externalName: null }]
-    executeCurl.mockResolvedValue({ stdout: JSON.stringify(mockResponse), duration: 100 })
+    executeCurl.mockResolvedValue({
+      stdout: JSON.stringify(mockResponse),
+      duration: 100,
+      statusCode: 200,
+      contentType: 'application/json',
+    })
 
     const response = await request(await listen(app)).get(
       '/trading212/etf-holdings?ticker=BNKEp_EQ'
@@ -42,7 +47,12 @@ describe('Trading212 ETF Adapters', () => {
 
   it('should proxy summary request to upstream with ticker', async () => {
     const mockResponse = { expenseRatio: 0.3, holdingsCount: 29, holdings: [] }
-    executeCurl.mockResolvedValue({ stdout: JSON.stringify(mockResponse), duration: 100 })
+    executeCurl.mockResolvedValue({
+      stdout: JSON.stringify(mockResponse),
+      duration: 100,
+      statusCode: 200,
+      contentType: 'application/json',
+    })
 
     const response = await request(await listen(app)).get('/trading212/etf-summary?ticker=BNKEp_EQ')
 
@@ -53,6 +63,14 @@ describe('Trading212 ETF Adapters', () => {
         url: 'https://live.services.trading212.com/rest/v2/exchange-traded-funds?ticker=BNKEp_EQ',
       })
     )
+  })
+
+  it('should answer with the upstream status when the ETF summary is not found', async () => {
+    executeCurl.mockResolvedValue({ stdout: '', duration: 100, statusCode: 404, contentType: '' })
+
+    const response = await request(await listen(app)).get('/trading212/etf-summary?ticker=BNKEp_EQ')
+
+    expect(response.status).toBe(404)
   })
 
   it('should return 500 when curl fails', async () => {
