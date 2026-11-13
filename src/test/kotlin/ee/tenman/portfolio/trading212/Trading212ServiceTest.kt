@@ -29,19 +29,12 @@ class Trading212ServiceTest {
 
   @Test
   fun `should map prices only for eligible Trading212-provider symbols`() {
-    val response =
-      Trading212Response(
-        data =
-          mapOf(
-            "BNKEp_EQ" to Trading212PriceData(bid = BigDecimal("330.77"), spread = BigDecimal("0.05"), timestamp = "2026-04-16T10:00:00Z"),
-          ),
-      )
-    every { client.getPrices("BNKEp_EQ") } returns response
+    every { client.getPrices("BNKEp_EQ") } returns mapOf("BNKEp_EQ" to BigDecimal("4.75"))
 
     val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR"))
 
     expect(prices.size).toEqual(1)
-    expect(prices["BNKE:PAR:EUR"]).notToEqualNull().toEqualNumerically(BigDecimal("330.77"))
+    expect(prices["BNKE:PAR:EUR"]).notToEqualNull().toEqualNumerically(BigDecimal("4.75"))
     verify { client.getPrices("BNKEp_EQ") }
   }
 
@@ -63,7 +56,7 @@ class Trading212ServiceTest {
 
   @Test
   fun `cannot return price when ticker missing from upstream response`() {
-    every { client.getPrices(any()) } returns Trading212Response(data = emptyMap())
+    every { client.getPrices(any()) } returns emptyMap()
 
     val prices = service.fetchCurrentPrices(setOf("BNKE:PAR:EUR", "VUAA:GER:EUR"))
 
@@ -72,7 +65,7 @@ class Trading212ServiceTest {
 
   @Test
   fun `should report missing configured prices as invalid responses`() {
-    every { client.getPrices("BNKEp_EQ") } returns Trading212Response(data = emptyMap())
+    every { client.getPrices("BNKEp_EQ") } returns emptyMap()
     val errors = mutableListOf<String>()
 
     service.fetchCurrentPrices(setOf("BNKE:PAR:EUR")) { symbol, _ -> errors += symbol }

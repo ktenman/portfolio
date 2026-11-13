@@ -7,6 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient
 import org.springframework.context.annotation.Bean
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
+import java.math.BigDecimal
 
 @FeignClient(
   name = "trading212Client",
@@ -16,7 +17,7 @@ interface Trading212Client {
   @GetMapping("/prices")
   fun getPrices(
     @RequestParam tickers: String,
-  ): Trading212Response
+  ): Map<String, BigDecimal>
 }
 
 @FeignClient(

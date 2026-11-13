@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { CurlOptions } from '../types'
 import { executeCurl } from './curl-executor'
 import { logger } from './logger'
 
@@ -7,12 +8,8 @@ export enum ResponseType {
   HTML = 'html',
 }
 
-interface AdapterConfig {
-  url: string
-  timeout?: number
-  maxBuffer?: number
+interface AdapterConfig extends CurlOptions {
   responseType?: ResponseType
-  headers?: Record<string, string>
 }
 
 export async function handleProxyRequest(
@@ -20,31 +17,39 @@ export async function handleProxyRequest(
   res: Response,
   config: AdapterConfig
 ): Promise<void> {
+  const { responseType, ...curlOptions } = config
   try {
     const start = Date.now()
-    const { stdout } = await executeCurl({
-      url: config.url,
-      timeout: config.timeout,
-      maxBuffer: config.maxBuffer,
-      headers: config.headers,
-    })
+    const { stdout, statusCode } = await executeCurl(curlOptions)
 
     const duration = Date.now() - start
     logger.info(`Request completed in ${duration}ms`)
 
-    if (config.responseType === ResponseType.HTML) {
+    if (statusCode < 200 || statusCode >= 300) {
+      sendFailure(res, statusCode, `Upstream ${config.url} returned ${statusCode}`, {
+        upstreamStatus: statusCode,
+      })
+      return
+    }
+
+    if (responseType === ResponseType.HTML) {
       res.type('html').send(stdout)
     } else {
       res.json(JSON.parse(stdout))
     }
   } catch (error) {
-    const message = errorMessage(error)
-    logger.error(message)
-    res.status(500).json({
-      error: 'Failed to fetch data',
-      message,
-    })
+    sendFailure(res, 500, errorMessage(error))
   }
+}
+
+function sendFailure(
+  res: Response,
+  status: number,
+  message: string,
+  details: Record<string, unknown> = {}
+): void {
+  logger.error(message)
+  res.status(status).json({ error: 'Failed to fetch data', message, ...details })
 }
 
 export function validateParam(

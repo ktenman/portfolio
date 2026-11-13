@@ -4,7 +4,7 @@ import { handleProxyRequest, validateParam, ResponseType } from '../utils/adapte
 import { createRateLimiter } from '../middleware/rate-limiter'
 import { logger } from '../utils/logger'
 
-const TRADING212_URL = 'https://live.services.trading212.com/public-instrument-cache/v1/prices'
+const TRADING212_URL = 'https://live.services.trading212.com/instrumentarium/v1/prices/last-trade'
 
 async function handler(req: Request, res: Response): Promise<void> {
   const tickers = validateParam(req, res, 'tickers', 'query')
@@ -13,7 +13,10 @@ async function handler(req: Request, res: Response): Promise<void> {
   logger.info(`Fetching prices for tickers: ${tickers}`)
 
   await handleProxyRequest(req, res, {
-    url: `${TRADING212_URL}?tickers=${tickers}`,
+    url: TRADING212_URL,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tickers: tickers.split(','), extended: false }),
     timeout: 10000,
     maxBuffer: 1024 * 1024,
     responseType: ResponseType.JSON,

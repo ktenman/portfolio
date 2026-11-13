@@ -85,7 +85,7 @@ note left of Proxy
   **Metrics:** Track requests, errors, duration
 end note
 
-Proxy --> Backend: JSON Response\n{"data": {"WTAI": {"b": 74.47}}}
+Proxy --> Backend: JSON Response\n{"WTAIm_EQ": 74.47}
 deactivate Proxy
 
 == Failed Request Flow without Proxy (Comparison) ==

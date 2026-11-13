@@ -219,7 +219,7 @@ class RetryIT {
     private const val HOLDINGS = "/v1/market-data/$LIGHTYEAR_UUID/fund-info/holdings"
     private const val KLINES = """[["1758499200000","61000.0","61500.0","60900.0","61234.5","12.3"]]"""
     private const val CHART = """[{"timestamp":"2026-09-21T00:00:00Z","open":10.1,"close":10.4,"high":10.5,"low":10.0,"volume":1200}]"""
-    private const val PRICES = """{"data":{"VUAAm_EQ":{"b":112.34,"s":0.05,"t":"2026-09-22T10:00:00Z"}}}"""
+    private const val PRICES = """{"VUAAm_EQ":112.34}"""
     private const val ETF_HOLDINGS = """[{"ticker":"RETRYx_EQ","percentage":4.2,"externalName":"Société Générale"}]"""
   }
 }

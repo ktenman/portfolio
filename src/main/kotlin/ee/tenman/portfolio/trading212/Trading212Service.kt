@@ -37,13 +37,13 @@ class Trading212Service(
     val prices =
       entries
         .mapNotNull { entry ->
-          val priceData = response.data[entry.ticker]
-          if (priceData == null) {
+          val price = response[entry.ticker]
+          if (price == null) {
             log.warn("No price data found for ticker: ${entry.ticker} (symbol: ${entry.symbol})")
             onFailure(entry.symbol, IllegalArgumentException("Missing Trading212 price for ${entry.symbol}"))
             return@mapNotNull null
           }
-          entry.symbol to priceData.bid
+          entry.symbol to price
         }.toMap()
     log.info("Successfully fetched prices for ${prices.size}/${entries.size} instruments")
     return prices
