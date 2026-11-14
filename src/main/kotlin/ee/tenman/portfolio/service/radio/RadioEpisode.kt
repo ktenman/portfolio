@@ -50,9 +50,10 @@ fun metadata(
   marks: List<Pair<Double, String>>,
   total: Double,
 ): String {
-  val ends = marks.drop(1).map { it.first } + total
+  val heard = marks.filter { it.first < total }
+  val ends = heard.drop(1).map { it.first } + total
   return ";FFMETADATA1\n" +
-    marks.zip(ends).joinToString("") { (mark, end) ->
+    heard.zip(ends).joinToString("") { (mark, end) ->
       val start = round(mark.first * 1000).toLong()
       "[CHAPTER]\nTIMEBASE=1/1000\nSTART=$start\nEND=${round(end * 1000).toLong()}\ntitle=${escape(mark.second)}\n"
     }
