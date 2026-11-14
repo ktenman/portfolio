@@ -101,7 +101,7 @@ Full detail in `~/.claude/CLAUDE.md`.
 
 ## Core Development Philosophy
 
-NEVER commit anything under `docs/superpowers/` (specs, plans, SDD ledgers) — `.gitignore` excludes them, so do not `git add -f` them or include them in pull requests.
+NEVER commit anything under `docs/superpowers/` (specs, plans, SDD ledgers) except the visual baselines in `docs/superpowers/baseline/` — `.gitignore` excludes the rest, so do not `git add -f` them or include them in pull requests.
 
 Prefer editing an existing file to creating a new one; create files only when the goal requires it. Never write `*.md` or README files unless explicitly asked.
 

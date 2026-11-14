@@ -98,7 +98,10 @@ __pycache__/
 .venv/
 .pytest_cache/
 
-### Working docs (keep architecture diagrams) ###
+### Working docs (keep architecture diagrams and visual baselines) ###
 docs/*
 !docs/architecture/
+!docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/baseline/
 /monitoring/secrets/
