@@ -6,12 +6,15 @@ enum class AiModel(
   val sectorFallbackTier: Int = -1,
   val countryFallbackTier: Int = -1,
   val reasoningEffort: String? = null,
+  val flexTier: String? = null,
+  val takesTemperature: Boolean = true,
 ) {
-  GEMINI_4_ARGON("google/gemini-4-argon", 400, sectorFallbackTier = 1, countryFallbackTier = 1),
+  GEMINI_4_ARGON("google/gemini-4-argon", 400, sectorFallbackTier = 1, countryFallbackTier = 1, flexTier = "google-ai-studio/flex"),
   CLAUDE_OPUS_5_5("anthropic/claude-opus-5.5", 240, sectorFallbackTier = 3, countryFallbackTier = 3, reasoningEffort = "low"),
   GPT_6_LUNA("openai/gpt-6-luna", 240, sectorFallbackTier = 0, countryFallbackTier = 0),
   DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 2, countryFallbackTier = 2, reasoningEffort = "none"),
   GEMINI_3_5_FLASH_LITE("google/gemini-3.5-flash-lite", 400),
+  GPT_6_1_TERRA("openai/gpt-6.1-terra", 240, flexTier = "openai/flex", takesTemperature = false),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }

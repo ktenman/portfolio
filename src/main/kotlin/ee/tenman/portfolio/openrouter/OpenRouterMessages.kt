@@ -11,7 +11,7 @@ data class OpenRouterRequest(
   val messages: List<Message>,
   @JsonProperty("max_tokens")
   val maxTokens: Int = 50,
-  val temperature: Double = 0.1,
+  val temperature: Double? = 0.1,
   @JsonProperty("response_format")
   val responseFormat: ResponseFormat? = null,
   val provider: ProviderPreferences? = null,

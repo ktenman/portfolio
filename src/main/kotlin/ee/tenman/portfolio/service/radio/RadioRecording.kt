@@ -29,7 +29,7 @@ private val MODELS = mapOf("TalTechNLP/streaming-zipformer-large.et-en" to "Zipf
 @ConfigurationProperties(prefix = "radio")
 data class RadioProperties(
   val recordings: Path = Path.of("/recordings"),
-  val outlineModel: AiModel = AiModel.GEMINI_4_ARGON,
+  val outlineModel: AiModel = AiModel.GPT_6_1_TERRA,
   val live: String = "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000",
   val aripaevLive: String = "https://www.aripaev.ee/raadio/stream.mp3",
   val elmarLive: String = "https://router.euddn.net/8103046e16b71d15d692b57c187875c7/elmar.mp3",

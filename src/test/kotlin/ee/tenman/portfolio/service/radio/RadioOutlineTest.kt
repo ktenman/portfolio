@@ -113,6 +113,11 @@ class RadioOutlineTest {
   }
 
   @Test
+  fun `should take a show start before the first line as the first line`() {
+    expect(match(outline(0.0, 23.9, emptyList(), 90.0, music = false), linesAt(23.9, 90.0))?.showStart?.lastNonShowLineTime).toEqual(23.9)
+  }
+
+  @Test
   fun `should move an answer given as the end of a line to that line`() {
     val lines = linesAt(5.0, 50.0, 70.0, 80.0) + TranscriptLine(85.0, 92.3, "Kohtume nädala pärast.", emptyList())
     expect(match(outline(5.0, 50.0, listOf(70.0 to 80.0), 92.3), lines)?.showEnd?.lastShowLineTime).toEqual(85.0)

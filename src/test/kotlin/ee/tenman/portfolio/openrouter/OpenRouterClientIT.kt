@@ -148,6 +148,26 @@ class OpenRouterClientIT {
   }
 
   @Test
+  fun `should complete on OpenAI's flex tier without a temperature`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("openai/gpt-6.1-terra")))
+        .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("openai/flex")))
+        .withRequestBody(notContaining("temperature"))
+        .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
+    )
+    val result =
+      openRouterClient.complete(
+        AiPurpose.RADIO_OUTLINE,
+        AiModel.GPT_6_1_TERRA,
+        "Leia saade.",
+        "Saade algab 11:59.",
+        mapOf("type" to "object"),
+      )
+    expect(result).toEqual("{\"hosts\":[]}")
+  }
+
+  @Test
   fun `should search the web natively through Vertex without falling back to another provider`() {
     wireMockServer.stubFor(
       post(urlEqualTo("/chat/completions"))

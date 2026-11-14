@@ -171,9 +171,9 @@ class OpenRouterClient(
         model = model.modelId,
         messages = listOf(OpenRouterRequest.Message("system", system), OpenRouterRequest.Message("user", user)),
         maxTokens = DEFAULT_MAX_TOKENS,
-        temperature = 0.0,
+        temperature = 0.0.takeIf { model.takesTemperature },
         responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
-        provider = OpenRouterRequest.ProviderPreferences(listOf(FLEX_TIER)),
+        provider = OpenRouterRequest.ProviderPreferences(listOfNotNull(model.flexTier)),
       ),
     )
 
@@ -233,7 +233,6 @@ class OpenRouterClient(
     private const val RATE_LIMIT_BUFFER_MS = 50L
     private const val MAX_RATE_LIMIT_RETRIES = 3
     private val REFUSED_STATUSES = setOf(401, 402)
-    private const val FLEX_TIER = "google-ai-studio/flex"
     private const val VERTEX = "google-vertex"
   }
 
