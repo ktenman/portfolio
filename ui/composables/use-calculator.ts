@@ -83,9 +83,6 @@ export function useCalculator() {
       if (initialAnnualReturnRate.value === null) {
         initialAnnualReturnRate.value = calculationResult.value.median
       }
-      if (form.value.initialWorth === 0) {
-        form.value.initialWorth = calculationResult.value.total
-      }
       if (form.value.annualReturnRate === 7 && !hasUserModifiedAnnualReturn.value) {
         form.value.annualReturnRate = calculationResult.value.median
       }
@@ -104,7 +101,7 @@ export function useCalculator() {
       const freshData = result.data
 
       Object.assign(form.value, {
-        initialWorth: freshData?.total || 0,
+        initialWorth: 0,
         monthlyInvestment: 585,
         yearlyGrowthRate: 5,
         annualReturnRate: initialAnnualReturnRate.value || freshData?.median || 7,

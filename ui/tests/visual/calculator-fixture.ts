@@ -13,7 +13,6 @@ const RESULT: CalculationResult = {
   })),
   median: 19.847302516384927,
   average: 15.632948170255413,
-  total: 164272.83910456281,
 }
 
 export const stubCalculator: RouteStub = async page => {
