@@ -15,7 +15,7 @@ Two confirmed usage situations, both first-class:
 - **Phone-first daily glance.** Summary opened on mobile between other things, to see where things stand. Must survive a three-second read.
 - **Deliberate desk sessions.** Desktop, sitting down on purpose: recording transactions, reviewing XIRR, digging into ETF holdings and diversification. Density and control are wanted here.
 
-No family, shared-reader, or client audience exists. The standalone XIRR calculator at `calculator.fov.ee` is reachable by anyone, but it is **not built for anyone else** — it serves the same single owner. No surface in this product should be designed for an outside visitor, and none should carry copy that addresses one.
+No family, shared-reader, or client audience exists. No surface in this product should be designed for an outside visitor, and none should carry copy that addresses one.
 
 ## Product Purpose
 

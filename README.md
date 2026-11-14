@@ -15,7 +15,7 @@ Track investments across brokers, review portfolio performance, and look through
 - **ETF analysis:** underlying companies, sectors, industries, countries, and expense ratios. Holdings come from Vanguard, Lightyear, and Trading 212, with source provenance for classifications.
 - **Diversification:** allocation planning against existing holdings and a portfolio comparison against VGLA.
 - **Market data:** scheduled price retrieval from Financial Times, Binance, Lightyear, and Trading 212, plus historical gap filling and intraday price storage.
-- **Calculator:** investment projections with XIRR, also exposed through the public calculator routes in [Caddyfile](Caddyfile).
+- **Calculator:** investment projections with XIRR.
 - **Supporting services:** company logos in S3 storage, OpenRouter classification and logo selection, Google Cloud Vision OCR, Telegram notifications, and vehicle valuation integrations.
 
 ## Quick start

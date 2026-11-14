@@ -575,14 +575,16 @@ def check_caddy_routes():
             assert fetch('/prometheus/query') == '|302|https://fov.ee/login?redirect=/prometheus/query', \
                 'the login must run before the prefix is stripped, or it returns to the app instead of Prometheus'
             assert fetch('/prometheus/assets/index.js', 'user=1') == 'prometheus /assets/index.js|200|', \
-                'the monitoring routes must stay above the calculator routes, which send every *.js to the frontend'
+                'the monitoring routes must stay above the static asset routes, which send every *.js to the frontend'
             assert fetch('/alertmanager/api/v2/silences', 'user=1') == 'alertmanager /api/v2/silences|200|'
             assert fetch('/alertmanager') == '|302|https://fov.ee/alertmanager/'
             assert fetch('/grafana/') == '|302|https://fov.ee/login?redirect=/grafana/'
             assert fetch('/grafana/public/build/app.js', 'user=1') == 'grafana /grafana/public/build/app.js|200|', \
-                'Grafana serves from its sub-path, so Caddy must keep the prefix and stay above the calculator routes'
+                'Grafana serves from its sub-path, so Caddy must keep the prefix and stay above the static asset routes'
             assert fetch('/grafana') == '|302|https://fov.ee/grafana/'
             assert fetch('/', 'user=1') == 'frontend /|200|'
+            assert fetch('/calculator') == '|302|https://fov.ee/login?redirect=/calculator'
+            assert fetch('/api/calculator') == '|302|https://fov.ee/login?redirect=/api/calculator'
         finally:
             for container in containers:
                 run('docker', 'rm', '-f', container, check=False)
