@@ -105,6 +105,6 @@ class AiModelTest {
   private fun rankedBy(tier: (AiModel) -> Int): List<AiModel> = AiModel.entries.filter { tier(it) >= 0 }.sortedBy(tier)
 
   companion object {
-    private val OFF_CASCADE = setOf("GEMINI_3_5_FLASH_LITE")
+    private val OFF_CASCADE = setOf("GEMINI_3_5_FLASH_LITE", "GPT_6_1_TERRA")
   }
 }

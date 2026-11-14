@@ -206,8 +206,12 @@ fun match(
 ): OutlineRead? =
   runCatching {
     val snap = { time: Double -> checkNotNull(printed(lines, time)) { "No transcript line starts or ends within 1 s of $time" } }
+    val opening = { time: Double -> lines.firstOrNull()?.start?.takeIf { time < it } ?: snap(time) }
     read.copy(
-      showStart = with(read.showStart) { copy(lastNonShowLineTime = snap(lastNonShowLineTime), firstSpeechTime = snap(firstSpeechTime)) },
+      showStart =
+        with(read.showStart) {
+          copy(lastNonShowLineTime = opening(lastNonShowLineTime), firstSpeechTime = snap(firstSpeechTime))
+        },
       breaks = read.breaks.map { it.copy(lastShowLineTime = snap(it.lastShowLineTime), firstShowLineTime = snap(it.firstShowLineTime)) },
       showEnd = read.showEnd.copy(lastShowLineTime = snap(read.showEnd.lastShowLineTime)),
       chapters = read.chapters.map { it.copy(time = spoken(lines, it.time)) },
