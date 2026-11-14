@@ -76,7 +76,7 @@ class RadioEpisodeService(
     val heading = title(status, edit.found(), clock.zone)
     radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, heading, temporary, status.station)
     save(directory.resolve(EDIT_LIST_FILE), edit)
-    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    Files.move(temporary, directory.resolve(EPISODE_FILE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }
 
   private fun findings(
@@ -243,7 +243,6 @@ class RadioEpisodeService(
   private fun now(): String = Instant.now(clock).truncatedTo(ChronoUnit.SECONDS).toString()
 
   companion object {
-    private const val EPISODE = "episode.m4a"
     private const val TEMPORARY = "episode.tmp.m4a"
     private const val FAILED = "episode-failed.json"
     private const val OUTLINE = "outline.json"

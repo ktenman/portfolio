@@ -110,6 +110,29 @@ class RadioStorageServiceIT {
   }
 
   @Test
+  fun `should keep only the episode audio in the bucket once a recording is older than the kept days`() {
+    val directory = recording("2026-09-02-1200-tarkade-klubi", startedAt = 1788253200.0)
+    Files.writeString(directory.resolve(EPISODE_FILE), "puhas saade")
+    radioStorageService.store()
+    expect(keys("2026-09-02-1200-tarkade-klubi").map { it.substringAfter('/') }).toEqual(listOf(EPISODE_FILE, STATUS_FILE, TRANSCRIPT_FILE))
+  }
+
+  @Test
+  fun `should stop serving the raw audio of a recording whose episode alone is kept`() {
+    val directory = recording("2026-09-03-1200-tarkade-klubi", startedAt = 1788253200.0)
+    Files.writeString(directory.resolve(EPISODE_FILE), "puhas saade")
+    radioStorageService.store()
+    expect(radioStorageService.resource(directory, "raw.mp3")).toEqual(null)
+  }
+
+  @Test
+  fun `should keep the raw audio of an old recording that has no episode`() {
+    recording("2026-09-04-1200-tarkade-klubi", startedAt = 1788253200.0)
+    radioStorageService.store()
+    expect(keys("2026-09-04-1200-tarkade-klubi").map { it.substringAfter('/') }).toEqual(listOf("raw.mp3", STATUS_FILE, TRANSCRIPT_FILE))
+  }
+
+  @Test
   fun `should keep the local audio of a recent recording`() {
     val directory = recording("2026-10-05-1200-tarkade-klubi")
     radioStorageService.store()

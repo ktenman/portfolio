@@ -74,6 +74,17 @@ class RadioStorageService(
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
     (audio + pcm(directory)).forEach(Files::delete)
     Files.deleteIfExists(directory.resolve(FINGERPRINTS))
+    if (EPISODE_FILE in saved) forget(directory, saved)
+  }
+
+  private fun forget(
+    directory: Path,
+    saved: Map<String, StoredFile>,
+  ) {
+    val raw = saved.keys.filter { AUDIO.matches(it) && it != EPISODE_FILE }
+    if (raw.isEmpty()) return
+    raw.forEach { remove(directory, it) }
+    save(directory.resolve(UPLOAD), Upload(radioProperties.bucket, saved - raw.toSet()))
   }
 
   private fun upload(

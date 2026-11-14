@@ -21,6 +21,7 @@ const val TRANSCRIPT_FILE = "transcript.json"
 const val DELETED_FILE = "deleted.json"
 const val EDIT_LIST_FILE = "edit-list.json"
 const val REVIEW_FILE = "review.json"
+const val EPISODE_FILE = "episode.m4a"
 val NAME = Regex("[0-9a-z][0-9a-z-]*")
 private val COMMIT = Regex("[0-9a-f]{40}")
 private val MODELS = mapOf("TalTechNLP/streaming-zipformer-large.et-en" to "Zipformer", "ced-tiny int8" to "CED-tiny")

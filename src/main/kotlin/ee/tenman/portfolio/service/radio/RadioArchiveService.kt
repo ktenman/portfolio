@@ -184,7 +184,7 @@ class RadioArchiveService(
       sounds = readModel(directory.resolve(SOUNDS_FILE)),
       editList = edit,
       failure = failure,
-      episodeBytes = size(directory, EPISODE),
+      episodeBytes = size(directory, EPISODE_FILE),
       cuts = cuts,
       timeline = timelineOf(cuts, decided, status),
       audible = audibleOf(directory, status, edit),
@@ -250,7 +250,6 @@ class RadioArchiveService(
     directory.resolve(file).takeIf(Files::exists)?.let(Files::size) ?: read<Upload>(directory.resolve(UPLOAD))?.files?.get(file)?.size
 
   companion object {
-    private const val EPISODE = "episode.m4a"
     private const val FAILED = "episode-failed.json"
   }
 }

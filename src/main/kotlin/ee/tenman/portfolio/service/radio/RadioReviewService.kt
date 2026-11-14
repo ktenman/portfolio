@@ -149,7 +149,7 @@ class RadioReviewService(
     runCatching { radioRenderService.render(timeline, spans, marks, heading, temporary, status.station, progress) }
       .onFailure { Files.deleteIfExists(temporary) }
       .getOrThrow()
-    Files.move(temporary, directory.resolve(EPISODE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    Files.move(temporary, directory.resolve(EPISODE_FILE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
     return reviewed(edit, keep, kept, marks)
   }
 
@@ -184,7 +184,6 @@ class RadioReviewService(
       spans.zipWithNext().all { (left, right) -> left.second < right.first }
 
   companion object {
-    private const val EPISODE = "episode.m4a"
     private const val REVIEWED = "episode.review.m4a"
     private const val MOST = 99
     private const val STEP = 10

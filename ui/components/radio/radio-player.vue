@@ -30,7 +30,7 @@
           aria-label="Version"
           class="form-select form-select-sm min-h-11 w-auto rounded-full border-transparent bg-transparent bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium text-ink-soft md:hidden"
         >
-          <option value="raw">Raw</option>
+          <option v-if="original" value="raw">Raw</option>
           <option v-if="cleaned" value="episode">Clean</option>
         </select>
         <div role="group" aria-label="Version" class="flex max-md:hidden">
@@ -40,7 +40,7 @@
             type="button"
             class="relative cursor-pointer border border-hairline bg-surface-sunken px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors first:rounded-l-container last:-ml-px last:rounded-r-container focus-visible:z-2 enabled:hover:not-aria-pressed:bg-surface-hover enabled:hover:not-aria-pressed:text-ink disabled:cursor-not-allowed disabled:text-ink-faint aria-pressed:z-1 aria-pressed:border-brass aria-pressed:bg-brass-wash aria-pressed:text-brass-deep"
             :aria-pressed="version === option.value"
-            :disabled="option.value === 'episode' && !cleaned"
+            :disabled="option.value === 'episode' ? !cleaned : !original"
             @click="version = option.value"
           >
             {{ option.label }}
@@ -81,7 +81,7 @@ import { computed, onBeforeUnmount } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { edition, useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { edition, pruned, useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
 import { typing } from '../../utils/dom'
 import RadioControls from './radio-controls.vue'
@@ -100,6 +100,7 @@ onBeforeUnmount(decisions.flush)
 
 const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => edition(props.recording) === 'episode')
+const original = computed(() => !pruned(props.recording))
 const version = computed({
   get: () => player.version.value,
   set: (value: Version) => player.swap(value),
