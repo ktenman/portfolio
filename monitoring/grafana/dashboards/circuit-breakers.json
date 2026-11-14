@@ -35,7 +35,7 @@
     {
       "type": "stat",
       "title": "Breaker state now",
-      "description": "A collection job run through JobExecutionService has the circuit breaker job-execution:<job>. Open skips its runs; half-open lets 5 trial runs through and closes once they succeed. A job that runs outside JobExecutionService has no breaker and always reads Closed.",
+      "description": "Every Resilience4j breaker: one per job that runs through JobExecutionService, named after the job, and openrouter. Open skips the job's runs for 5 minutes; half-open lets one run through and closes once it succeeds.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -46,8 +46,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "portfolio_collection_circuit_breaker_state",
-          "legendFormat": "{{provider}} {{operation}}",
+          "expr": "label_replace(sum by (name) (resilience4j_circuitbreaker_state{state=~\"open|forced_open\"}) + 2 * sum by (name) (resilience4j_circuitbreaker_state{state=\"half_open\"}), \"name\", \"$1\", \"name\", \"job-execution:(.+)\")",
+          "legendFormat": "{{name}}",
           "refId": "A",
           "instant": true,
           "range": false,
@@ -111,7 +111,7 @@
       },
       "id": 1,
       "gridPos": {
-        "h": 6,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 0
@@ -130,8 +130,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "portfolio_collection_circuit_breaker_state",
-          "legendFormat": "{{provider}} {{operation}}",
+          "expr": "label_replace(sum by (name) (resilience4j_circuitbreaker_state{state=~\"open|forced_open\"}) + 2 * sum by (name) (resilience4j_circuitbreaker_state{state=\"half_open\"}), \"name\", \"$1\", \"name\", \"job-execution:(.+)\")",
+          "legendFormat": "{{name}}",
           "refId": "A",
           "instant": false,
           "range": true,
@@ -141,7 +141,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
+            "mode": "fixed"
           },
           "custom": {
             "fillOpacity": 80,
@@ -197,10 +197,10 @@
       },
       "id": 2,
       "gridPos": {
-        "h": 10,
+        "h": 16,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 8
       }
     },
     {
@@ -245,7 +245,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -263,7 +264,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "interval": "5m"
     },
@@ -323,8 +324,213 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 24
       }
+    },
+    {
+      "type": "timeseries",
+      "title": "Failed and skipped runs per hour",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(sum by (name) (increase(resilience4j_circuitbreaker_calls_seconds_count{kind=\"failed\", name=~\"job-execution:.+\"}[1h])) > 0, \"name\", \"$1\", \"name\", \"job-execution:(.+)\")",
+          "legendFormat": "{{name}} failed",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(sum by (name) (increase(resilience4j_circuitbreaker_not_permitted_calls_total{name=~\"job-execution:.+\"}[1h])) > 0, \"name\", \"$1\", \"name\", \"job-execution:(.+)\")",
+          "legendFormat": "{{name}} skipped",
+          "refId": "B",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "interval": "1h",
+      "description": "Runs a job breaker recorded as failed, and runs it skipped while open."
+    },
+    {
+      "type": "timeseries",
+      "title": "Provider requests per minute",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(sum by (clientName, http_status_code) (rate(http_client_requests_seconds_count[$__rate_interval])) * 60, \"client\", \"$1\", \"clientName\", \".*\\\\.(.+)\")",
+          "legendFormat": "{{client}} {{http_status_code}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "min": 0,
+          "unit": "reqpm"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "id": 7,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "interval": "1m",
+      "description": "Requests of each Feign client by HTTP status."
+    },
+    {
+      "type": "timeseries",
+      "title": "Provider response time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(sum by (clientName) (rate(http_client_requests_seconds_sum[$__rate_interval])) / sum by (clientName) (rate(http_client_requests_seconds_count[$__rate_interval])), \"client\", \"$1\", \"clientName\", \".*\\\\.(.+)\")",
+          "legendFormat": "{{client}}",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "showPoints": "never",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "id": 8,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "description": "Mean time of each Feign client's requests."
     },
     {
       "type": "logs",
@@ -361,7 +567,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 48
       }
     }
   ]

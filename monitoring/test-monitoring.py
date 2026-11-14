@@ -468,6 +468,10 @@ def check_grafana():
     dashboards = [json.loads(path.read_text()) for path in sorted((directory / 'dashboards').glob('*.json'))]
     unknown = datasource_uids(dashboards) - {'prometheus', 'loki', 'tempo', 'grafana', '-- Grafana --'}
     assert not unknown, f'dashboards must use the provisioned datasources, found {unknown}'
+    masked = [panel['title'] for dashboard in dashboards for panel in dashboard['panels']
+              if panel['type'] == 'state-timeline' and panel['options'].get('mergeValues', True)
+              and panel['fieldConfig']['defaults'].get('color', {}).get('mode') == 'thresholds']
+    assert not masked, f'a state timeline that merges values must colour by its value mappings, not thresholds, found {masked}'
     with compose_project('grafana') as project:
         container = f'{project}-grafana-1'
 
@@ -700,6 +704,15 @@ def check_production_permissions():
     print('Production UID1000 secret and data volume permissions passed')
 
 
+def promtool_test(name, document, rules=False):
+    with tempfile.TemporaryDirectory() as temporary:
+        Path(temporary).chmod(0o755)
+        (Path(temporary) / name).write_text(document)
+        mounts = ['-v', f'{ROOT}:/etc/prometheus:ro'] if rules else []
+        run('docker', 'run', '--rm', *mounts, '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
+            'test', 'rules', f'/test/{name}')
+
+
 def check_metric_coverage():
     operations = (
         ('lightyear', 'prices'), ('trading212', 'prices'), ('binance', 'prices'),
@@ -713,7 +726,7 @@ def check_metric_coverage():
         'last_completion_timestamp_seconds', 'last_persisted_timestamp_seconds',
         'last_full_success_timestamp_seconds', 'last_run_attempted_items',
         'last_run_fetched_items', 'last_run_persisted_items', 'last_run_failed_items',
-        'consecutive_empty_runs', 'run_duration_seconds', 'circuit_breaker_state',
+        'consecutive_empty_runs', 'run_duration_seconds',
     )
 
     def series(metric, labels='', value=0):
@@ -751,13 +764,55 @@ def check_metric_coverage():
                 + fixture(expected_item=True)
                 + fixture(expected_item=True, item_metrics=True, missing_item_initialization=True)
                 + fixture(expected_item=True, item_metrics=True))
-    with tempfile.TemporaryDirectory() as temporary:
-        Path(temporary).chmod(0o755)
-        (Path(temporary) / 'coverage.test.yml').write_text(document)
-        run('docker', 'run', '--rm', '-v', f'{ROOT}:/etc/prometheus:ro',
-            '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
-            'test', 'rules', '/test/coverage.test.yml')
+    promtool_test('coverage.test.yml', document, rules=True)
     print(f'{len(operations)}-operation and per-item metric coverage passed')
+
+
+def check_job_failures():
+    def calls(job, kind, values):
+        return {'series': f'resilience4j_circuitbreaker_calls_seconds_count{{name="job-execution:{job}",kind="{kind}"}}', 'values': values}
+
+    document = json.dumps({'rule_files': ['/etc/prometheus/alerts.yml'], 'evaluation_interval': '15s', 'tests': [{
+        'interval': '15s',
+        'input_series': [
+            calls('TulevaNavRetrievalJob', 'failed', '0 0 1+0x100'),
+            calls('TulevaNavRetrievalJob', 'successful', '0+0x100'),
+            calls('PoffImportJob', 'failed', '0+1x100'),
+            calls('PoffImportJob', 'successful', '0 0 1+0x100'),
+            calls('RadioEpisodeJob', 'successful', '0+1x100'),
+        ],
+        'alert_rule_test': [{
+            'eval_time': '20m',
+            'alertname': 'JobFailing',
+            'exp_alerts': [{
+                'exp_labels': {'severity': 'warning', 'name': 'job-execution:TulevaNavRetrievalJob'},
+                'exp_annotations': {'summary': 'TulevaNavRetrievalJob failed every run in the last 25 hours; job_execution has the reason'},
+            }],
+        }],
+    }]})
+    promtool_test('jobs.test.yml', document, rules=True)
+    print('JobFailing names a job whose every run in a day failed, and not one that also succeeded')
+
+
+def check_breaker_states():
+    board = json.loads((ROOT / 'grafana/dashboards/circuit-breakers.json').read_text())
+    states = {target['expr'] for panel in board['panels'] if panel['title'].startswith('Breaker state') for target in panel['targets']}
+    assert len(states) == 1, states
+
+    def breaker(name, current):
+        return [{'series': f'resilience4j_circuitbreaker_state{{name="{name}",state="{state}"}}', 'values': '1' if state == current else '0'}
+                for state in ('closed', 'open', 'half_open', 'forced_open', 'disabled', 'metrics_only')]
+
+    expected = [{'labels': '{name="PoffImportJob"}', 'value': 2}, {'labels': '{name="Trading212DataRetrievalJob"}', 'value': 1},
+                {'labels': '{name="openrouter"}', 'value': 0}]
+    document = json.dumps({'evaluation_interval': '15s', 'tests': [{
+        'interval': '15s',
+        'input_series': breaker('job-execution:PoffImportJob', 'half_open') + breaker('job-execution:Trading212DataRetrievalJob', 'open')
+        + breaker('openrouter', 'closed'),
+        'promql_expr_test': [{'expr': states.pop(), 'eval_time': '0s', 'exp_samples': expected}],
+    }]})
+    promtool_test('breakers.test.yml', document)
+    print('The breaker panels read closed, open and half-open as their value mappings, named after the job')
 
 
 def evaluate_openrouter(expressions, values, tests, **overrides):
@@ -768,11 +823,7 @@ def evaluate_openrouter(expressions, values, tests, **overrides):
         'input_series': [{'series': f'{metric}{{{labels}}}', 'values': overrides.get(metric, values)} for metric in metrics],
         'promql_expr_test': tests,
     }]})
-    with tempfile.TemporaryDirectory() as temporary:
-        Path(temporary).chmod(0o755)
-        (Path(temporary) / 'openrouter.test.yml').write_text(document)
-        run('docker', 'run', '--rm', '-v', f'{temporary}:/test:ro', '--entrypoint', 'promtool', PROMETHEUS,
-            'test', 'rules', '/test/openrouter.test.yml')
+    promtool_test('openrouter.test.yml', document)
 
 
 def check_openrouter_days():
@@ -960,6 +1011,8 @@ if __name__ == '__main__':
     check_host_gates()
     check_production_permissions()
     check_metric_coverage()
+    check_job_failures()
+    check_breaker_states()
     check_openrouter_days()
     check_openrouter_latest()
     check_openrouter_lone_days()

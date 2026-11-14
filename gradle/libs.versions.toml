@@ -41,6 +41,7 @@ spring-boot-docker-compose = { module = "org.springframework.boot:spring-boot-do
 # Spring Cloud
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "springCloud" }
 spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
+feign-micrometer = { module = "io.github.openfeign:feign-micrometer" }
 
 # SpringDoc OpenAPI
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
@@ -59,9 +60,11 @@ flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql
 spring-boot-starter-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway" }
 
 # Resilience4j
+resilience4j-bom = { module = "io.github.resilience4j:resilience4j-bom", version.ref = "resilience4j" }
 resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
 resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
 resilience4j-kotlin = { module = "io.github.resilience4j:resilience4j-kotlin", version.ref = "resilience4j" }
+resilience4j-micrometer = { module = "io.github.resilience4j:resilience4j-micrometer", version.ref = "resilience4j" }
 
 # Utilities
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }

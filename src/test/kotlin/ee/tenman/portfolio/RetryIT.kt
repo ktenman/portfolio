@@ -2,6 +2,7 @@ package ee.tenman.portfolio
 
 import ch.tutteli.atrium.api.fluent.en_GB.notToEqualNull
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
@@ -21,6 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.verify
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.Scenario
+import ee.tenman.portfolio.binance.BinanceClient
 import ee.tenman.portfolio.binance.BinanceService
 import ee.tenman.portfolio.blackrock.BlackRockFund
 import ee.tenman.portfolio.blackrock.BlackRockHoldingsService
@@ -34,6 +36,7 @@ import ee.tenman.portfolio.trading212.Trading212HoldingsService
 import ee.tenman.portfolio.trading212.Trading212Service
 import feign.FeignException
 import feign.RetryableException
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -46,6 +49,9 @@ import java.time.LocalDate
 class RetryIT {
   @Resource
   private lateinit var binanceService: BinanceService
+
+  @Resource
+  private lateinit var meterRegistry: MeterRegistry
 
   @Resource
   private lateinit var lightyearPriceService: LightyearPriceService
@@ -70,6 +76,14 @@ class RetryIT {
     stubFailingOnce({ get(urlPathEqualTo(TICKER_PATH)) }, okJson("""{"symbol":"BTCEUR","price":"61234.5"}"""))
     expect(binanceService.getCurrentPrice("BTCEUR")).toEqualNumerically(BigDecimal("61234.5"))
     verify(2, getRequestedFor(urlPathEqualTo(TICKER_PATH)))
+  }
+
+  @Test
+  fun `should time each provider request by client and status`() {
+    stubFor(get(urlPathEqualTo(TICKER_PATH)).willReturn(okJson("""{"symbol":"BTCEUR","price":"61234.5"}""")))
+    binanceService.getCurrentPrice("BTCEUR")
+    val requests = meterRegistry.get("http.client.requests").tags("clientName", BinanceClient::class.java.name, "http.status_code", "200")
+    expect(requests.timer().count()).toEqual(1L)
   }
 
   @Test
@@ -122,11 +136,10 @@ class RetryIT {
   }
 
   @Test
-  fun `should return trading212 prices after one 503`() {
+  fun `should leave a failed trading212 price request to the job retry`() {
     stubFailingOnce({ get(urlPathEqualTo(PRICES_PATH)) }, okJson(PRICES))
-    val prices = trading212Service.fetchCurrentPrices(setOf("VUAA:GER:EUR"))
-    expect(prices.getValue("VUAA:GER:EUR")).toEqualNumerically(BigDecimal("112.34"))
-    verify(2, getRequestedFor(urlPathEqualTo(PRICES_PATH)))
+    expect { trading212Service.fetchCurrentPrices(setOf("VUAA:GER:EUR")) }.toThrow<FeignException.ServiceUnavailable>()
+    verify(1, getRequestedFor(urlPathEqualTo(PRICES_PATH)))
   }
 
   @Test

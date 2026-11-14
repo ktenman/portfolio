@@ -96,19 +96,6 @@ class CollectionMetricsServiceTest {
   }
 
   @Test
-  fun `should expose open job circuit breakers without creating new breakers`() {
-    val fixture = fixture()
-    fixture.breakers.circuitBreaker("job-execution:LightyearPriceRetrievalJob").transitionToOpenState()
-    expect(
-      fixture.registry
-        .find("portfolio.collection.circuit.breaker.state")
-      .tags("provider", "lightyear", "operation", "prices")
-        .gauge()
-        ?.value(),
-        ).toEqual(1.0)
-  }
-
-  @Test
   fun `should reject an incomplete inventory snapshot as missing monitoring data`() {
     val fixture = fixture()
     every { fixture.state.snapshots() } returns snapshots().drop(1)

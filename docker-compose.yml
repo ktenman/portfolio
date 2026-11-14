@@ -240,6 +240,7 @@ services:
     command:
       - >-
         mkdir -p /recordings/.$$STATION &&
+        rm -f /recordings/.$$STATION/seg_*.ts &&
         exec ffmpeg -nostdin -loglevel warning
         -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 30
         -rw_timeout 15000000
@@ -332,6 +333,7 @@ services:
       - --web.route-prefix=/
       - --storage.path=/alertmanager
       - --data.retention=4320h
+      - --cluster.listen-address=
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./monitoring/secrets:/run/monitoring-secrets:ro
@@ -358,7 +360,7 @@ services:
       - --web.external-url=https://fov.ee/prometheus/
       - --web.route-prefix=/
       - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.time=30d
       - --storage.tsdb.retention.size=2GB
       - --rules.alert.resend-delay=15s
     volumes:

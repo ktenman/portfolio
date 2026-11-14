@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.AiModel
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Clock
@@ -40,7 +41,7 @@ class OpenRouterCircuitBreakerTest {
           ),
       )
     clock = MutableClock(TEST_INSTANT)
-    circuitBreaker = OpenRouterCircuitBreaker(properties, clock)
+    circuitBreaker = OpenRouterCircuitBreaker(properties, CircuitBreakerRegistry.ofDefaults(), clock)
   }
 
   @Test

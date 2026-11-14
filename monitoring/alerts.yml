@@ -20,7 +20,6 @@ groups:
             or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_last_run_failed_items)
             or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_consecutive_empty_runs)
             or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_run_duration_seconds)
-            or (portfolio_collection_operation_info unless on(provider, operation) portfolio_collection_circuit_breaker_state)
           ) or vector(0)
       - record: portfolio:collection_item_metrics_missing
         expr: |
@@ -243,6 +242,17 @@ groups:
           severity: warning
         annotations:
           summary: 'PÖFF import has failed for an hour, so the timetable may show stale screenings, sold-out flags or ratings; job_execution has the reason'
+  - name: portfolio-jobs
+    interval: 5m
+    rules:
+      - alert: JobFailing
+        expr: |
+          sum by(name) (increase(resilience4j_circuitbreaker_calls_seconds_count{kind="failed", name=~"job-execution:.+"}[25h])) > 0
+            unless on(name) sum by(name) (increase(resilience4j_circuitbreaker_calls_seconds_count{kind="successful", name=~"job-execution:.+"}[25h])) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: '{{ reReplaceAll "job-execution:" "" $labels.name }} failed every run in the last 25 hours; job_execution has the reason'
   - name: portfolio-host
     interval: 15s
     rules:
