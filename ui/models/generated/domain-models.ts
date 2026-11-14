@@ -269,11 +269,11 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
-    cutState: CutState;
-    transcriptState: TranscriptState;
     drops: number;
-    topics: TimelineEntry[];
     span: Slot;
+    topics: TimelineEntry[];
+    transcriptState: TranscriptState;
+    cutState: CutState;
 }
 
 export interface TranscriptLine {
@@ -853,17 +853,17 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
+}
+
 export enum CutState {
     NONE = "NONE",
     FAILED = "FAILED",
     SUGGESTED = "SUGGESTED",
     REVIEWED = "REVIEWED",
-}
-
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum Station {

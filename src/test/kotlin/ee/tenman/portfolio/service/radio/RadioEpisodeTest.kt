@@ -25,4 +25,11 @@ class RadioEpisodeTest {
       ),
     )
   }
+
+  @Test
+  fun `should leave out a chapter that starts after the episode ends`() {
+    expect(metadata(listOf(0.0 to "Soovide aeg", 596.67 to "Lõpusoov"), 596.666)).toEqual(
+      ";FFMETADATA1\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=596666\ntitle=Soovide aeg\n",
+    )
+  }
 }
