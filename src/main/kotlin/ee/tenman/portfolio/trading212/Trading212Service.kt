@@ -1,9 +1,7 @@
 package ee.tenman.portfolio.trading212
 
 import ee.tenman.portfolio.configuration.Trading212ScrapingProperties
-import feign.FeignException
 import org.slf4j.LoggerFactory
-import org.springframework.resilience.annotation.Retryable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
@@ -14,7 +12,6 @@ class Trading212Service(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchCurrentPrices(
     eligibleSymbols: Set<String>,
     onFailure: (String, Throwable) -> Unit = { _, _ -> },

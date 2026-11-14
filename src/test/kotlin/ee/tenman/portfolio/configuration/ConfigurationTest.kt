@@ -18,6 +18,9 @@ import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.LOGO_CANDI
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.service.logo.ImageSearchLogoService
+import feign.FeignException
+import feign.Request
+import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -32,6 +35,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.web.client.ResourceAccessException
 import org.springframework.web.client.RestClient
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class TimeRangeConverterTest {
   private val converter = TimeRangeConverter()
@@ -176,6 +180,27 @@ class Resilience4jConfigurationTest {
         .retryConfig.exceptionPredicate
 
     expect(predicate.test(RuntimeException("connection reset by peer"))).toEqual(true)
+  }
+
+  @Test
+  fun `cannot retry job execution when the provider rejects the request`() {
+    val predicate =
+      Resilience4jConfiguration()
+        .retryRegistry()
+        .retry("job-execution")
+        .retryConfig.exceptionPredicate
+    val request = Request.create(Request.HttpMethod.GET, "https://example.com/hinnad", emptyMap(), null, Charsets.UTF_8, null)
+
+    expect(predicate.test(FeignException.NotFound("Tundmatu sümbol", request, null, emptyMap()))).toEqual(false)
+  }
+
+  @Test
+  fun `should keep a job breaker closed through ten successful runs of two minutes`() {
+    val breaker = Resilience4jConfiguration().circuitBreakerRegistry().circuitBreaker("job-execution:PoffImportJob")
+
+    repeat(10) { breaker.onSuccess(2, TimeUnit.MINUTES) }
+
+    expect(breaker.state).toEqual(CircuitBreaker.State.CLOSED)
   }
 }
 

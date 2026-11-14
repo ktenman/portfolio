@@ -80,7 +80,9 @@
         }
       ],
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "noValue": "No alerts firing"
+        },
         "overrides": []
       },
       "options": {
@@ -266,7 +268,12 @@
           "format": "time_series"
         }
       ],
-      "links": [],
+      "links": [
+        {
+          "title": "Host",
+          "url": "/grafana/d/host"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "bytes",
@@ -331,7 +338,12 @@
           "format": "time_series"
         }
       ],
-      "links": [],
+      "links": [
+        {
+          "title": "Host",
+          "url": "/grafana/d/host"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -400,7 +412,12 @@
           "format": "time_series"
         }
       ],
-      "links": [],
+      "links": [
+        {
+          "title": "Host",
+          "url": "/grafana/d/host"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -810,6 +827,74 @@
         "w": 12,
         "x": 12,
         "y": 40
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Host CPU used",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))) * 100",
+          "legendFormat": "cpu",
+          "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "links": [
+        {
+          "title": "Host",
+          "url": "/grafana/d/host"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 10,
+            "showPoints": "never"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "max": 100,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
       }
     }
   ]

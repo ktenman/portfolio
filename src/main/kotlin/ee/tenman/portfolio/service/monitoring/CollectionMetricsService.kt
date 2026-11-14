@@ -167,7 +167,6 @@ class CollectionMetricsService(
     gauge("expected.now", tags) { expectation(key) { if (it.expectedNow) 1.0 else 0.0 } }
     gauge("window.start.timestamp.seconds", tags) { expectation(key) { it.windowStart.epochSecond.toDouble() } }
     gauge("deadline.timestamp.seconds", tags) { expectation(key) { it.deadline.epochSecond.toDouble() } }
-    gauge("circuit.breaker.state", tags) { breaker(key) }
     registerOutcomes(key, tags)
   }
 

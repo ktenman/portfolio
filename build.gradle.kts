@@ -48,6 +48,8 @@ dependencies {
   implementation(libs.resilience4j.circuitbreaker)
   implementation(libs.resilience4j.retry)
   implementation(libs.resilience4j.kotlin)
+  implementation(libs.resilience4j.micrometer)
+  implementation(libs.feign.micrometer)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.telegrambots.spring.boot.starter) {
     exclude(group = "org.glassfish.jersey.containers", module = "jersey-container-grizzly2-http")
@@ -98,6 +100,11 @@ dependencyManagement {
       .get()
       .toString(),
         )
+    mavenBom(
+      libs.resilience4j.bom
+        .get()
+        .toString(),
+    )
   }
 }
 

@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
 @Component
 class OpenRouterCircuitBreaker(
   private val properties: OpenRouterProperties,
+  breakers: CircuitBreakerRegistry,
   private val clock: Clock = Clock.systemUTC(),
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
@@ -39,8 +40,7 @@ class OpenRouterCircuitBreaker(
         .permittedNumberOfCallsInHalfOpenState(1)
         .automaticTransitionFromOpenToHalfOpenEnabled(true)
         .build()
-    val registry = CircuitBreakerRegistry.of(config)
-    circuitBreaker = registry.circuitBreaker("openrouter")
+    circuitBreaker = breakers.circuitBreaker("openrouter", config)
     circuitBreaker.eventPublisher
       .onStateTransition { event ->
         log.info(

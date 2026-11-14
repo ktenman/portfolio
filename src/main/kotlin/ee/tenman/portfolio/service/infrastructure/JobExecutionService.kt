@@ -2,10 +2,13 @@ package ee.tenman.portfolio.service.infrastructure
 
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.job.Job
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
 import io.github.resilience4j.retry.RetryRegistry
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Instant
@@ -19,37 +22,35 @@ class JobExecutionService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
+  @EventListener(ApplicationReadyEvent::class)
+  fun register(event: ApplicationReadyEvent) =
+    event.applicationContext
+    .getBeansOfType(Job::class.java)
+    .values
+    .forEach(::breaker)
+
   fun executeJob(job: Job) {
     val jobName = job.getName()
-    val circuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution:$jobName")
+    val circuitBreaker = breaker(job)
     val retry = retryRegistry.retry("job-execution")
     val startTime = Instant.now(clock)
-
-    if (circuitBreaker.state == CircuitBreaker.State.OPEN) {
-      log.warn("Circuit breaker is OPEN for job execution. Skipping job: $jobName")
-      jobTransactionService.saveJobExecution(
-        job = job,
-        startTime = startTime,
-        endTime = Instant.now(clock),
-        status = JobStatus.SKIPPED,
-        message = "Circuit breaker is OPEN",
-      )
-      return
-    }
-
     var status = JobStatus.SUCCESS
     var message: String? = null
 
     try {
       log.info("Starting execution of job: $jobName")
 
-      retry.executeSupplier {
-        circuitBreaker.executeSupplier {
+      circuitBreaker.executeSupplier {
+        retry.executeSupplier {
           jobTransactionService.executeJobInTransaction(job)
         }
       }
 
       log.info("Job $jobName executed successfully")
+    } catch (e: CallNotPermittedException) {
+      status = JobStatus.SKIPPED
+      message = e.message
+      log.warn("Skipping job $jobName: ${e.message}")
     } catch (e: Exception) {
       status = JobStatus.FAILURE
       message = e.message
@@ -68,4 +69,6 @@ class JobExecutionService(
       log.info("Job execution record saved: ${savedJobExecution.id}")
     }
   }
+
+  private fun breaker(job: Job): CircuitBreaker = circuitBreakerRegistry.circuitBreaker("job-execution:${job.getName()}")
 }
