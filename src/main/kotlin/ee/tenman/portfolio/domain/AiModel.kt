@@ -12,6 +12,7 @@ enum class AiModel(
   GPT_6_LUNA("openai/gpt-6-luna", 240, sectorFallbackTier = 0, countryFallbackTier = 0),
   DEEPSEEK_V4_PRO("deepseek/deepseek-v4-pro", 240, sectorFallbackTier = 2, countryFallbackTier = 2, reasoningEffort = "none"),
   GEMINI_3_5_FLASH_LITE("google/gemini-3.5-flash-lite", 400),
+  GEMINI_4_CARBON("google/gemini-4-carbon", 400, reasoningEffort = "minimal"),
   ;
 
   fun nextSectorFallbackModel(): AiModel? = entries.find { it.sectorFallbackTier == this.sectorFallbackTier + 1 }
