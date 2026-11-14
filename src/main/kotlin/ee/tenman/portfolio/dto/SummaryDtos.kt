@@ -39,7 +39,6 @@ data class CalculationResult(
   var cashFlows: List<CashFlow> = mutableListOf(),
   var median: Double = 0.0,
   var average: Double = 0.0,
-  var total: BigDecimal = BigDecimal.ZERO,
 ) : Serializable {
   companion object {
     private const val serialVersionUID: Long = 1L

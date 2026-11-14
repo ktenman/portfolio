@@ -51,7 +51,6 @@ describe('useCalculator', () => {
         cashFlows: [],
         median: 0,
         average: 7,
-        total: 0,
       },
     })
   })
@@ -87,23 +86,34 @@ describe('useCalculator', () => {
     })
   })
 
-  it('should update form values when calculation result changes', async () => {
+  it('should update annual return rate when calculation result changes', async () => {
     await setupCalculator()
 
-    expect(calculator.form.value.initialWorth).toBe(0)
     expect(calculator.form.value.annualReturnRate).toBe(7)
 
     mockData.value = {
       cashFlows: [],
       median: 11.5,
       average: 12.5,
-      total: 50000,
     } as CalculationResult
 
     await nextTick()
 
-    expect(calculator.form.value.initialWorth).toBe(50000)
     expect(calculator.form.value.annualReturnRate).toBe(11.5)
+  })
+
+  it('should keep initial worth when calculation result changes', async () => {
+    await setupCalculator()
+
+    mockData.value = {
+      cashFlows: [],
+      median: 11.5,
+      average: 12.5,
+    } as CalculationResult
+
+    await nextTick()
+
+    expect(calculator.form.value.initialWorth).toBe(0)
   })
 
   it('should calculate year summaries correctly', async () => {
@@ -189,15 +199,15 @@ describe('useCalculator', () => {
         cashFlows: [],
         median: 15,
         average: 18,
-        total: 75000,
       },
     })
 
     await setupCalculator()
+    calculator.form.value.initialWorth = 12000
     await calculator.resetCalculator()
 
     expect(calculator.form.value).toEqual({
-      initialWorth: 75000,
+      initialWorth: 0,
       monthlyInvestment: 585,
       yearlyGrowthRate: 5,
       annualReturnRate: 15,
@@ -296,6 +306,7 @@ describe('useCalculator', () => {
   it('should use user-modified annual return rate instead of calculated average', async () => {
     await setupCalculator()
 
+    calculator.form.value.initialWorth = 10000
     calculator.form.value.annualReturnRate = 50
     await nextTick()
 
@@ -303,7 +314,6 @@ describe('useCalculator', () => {
       cashFlows: [],
       median: 11.5,
       average: 12.5,
-      total: 10000,
     } as CalculationResult
 
     await nextTick()
@@ -342,13 +352,11 @@ describe('useCalculator', () => {
       cashFlows: [],
       median: 11.5,
       average: 15.5,
-      total: 60000,
     } as CalculationResult
 
     await nextTick()
 
     expect(calculator.form.value.annualReturnRate).toBe(25)
-    expect(calculator.form.value.initialWorth).toBe(60000)
   })
 
   it('should reset user-modified flag when resetCalculator is called', async () => {
@@ -357,7 +365,6 @@ describe('useCalculator', () => {
         cashFlows: [],
         median: 15,
         average: 18,
-        total: 75000,
       },
     })
 
@@ -375,7 +382,6 @@ describe('useCalculator', () => {
       cashFlows: [],
       median: 20,
       average: 22,
-      total: 80000,
     } as CalculationResult
 
     await nextTick()

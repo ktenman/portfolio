@@ -63,7 +63,6 @@ class CalculationService(
       median = if (xirrsResults.isEmpty()) 0.0 else calculateMedian(xirrsResults.map { it.amount }),
       average = if (xirrsResults.isEmpty()) 0.0 else xirrsResults.map { it.amount }.average(),
       cashFlows = xirrsResults,
-      total = BigDecimal.ZERO,
     )
   }
 

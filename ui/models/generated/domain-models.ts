@@ -165,7 +165,6 @@ export interface CalculationResult extends Serializable {
     cashFlows: CashFlow[];
     median: number;
     average: number;
-    total: number;
 }
 
 export interface DiversificationCalculatorRequestDto {
