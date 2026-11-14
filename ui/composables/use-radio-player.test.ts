@@ -284,6 +284,22 @@ describe('useRadioPlayer', () => {
     expect([player.version.value, audio.currentTime]).toEqual(['raw', 762])
   })
 
+  it('should play the episode of a recording whose raw audio is gone', () => {
+    player.load(recording({ sizeBytes: 0 }))
+    expect(audio.src).toContain('episode.m4a')
+  })
+
+  it('should keep a recording without any audio on the raw version', () => {
+    player.load(recording({ sizeBytes: 0, editList: null, episodeBytes: null }))
+    expect(player.version.value).toEqual('raw')
+  })
+
+  it('should play a moment of a recording whose raw audio is gone from the same moment in the episode', () => {
+    player.load(recording({ sizeBytes: 0 }), 'episode')
+    player.playFrom(2400)
+    expect([player.version.value, audio.currentTime]).toEqual(['episode', 1503.5])
+  })
+
   it('should stop being lost after a seek', () => {
     player.load(recording())
     player.lost.value = true

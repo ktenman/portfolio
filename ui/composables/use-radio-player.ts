@@ -161,7 +161,7 @@ const load = (target: RecordingSummary, wanted: Version = 'raw') => {
     started.value = false
   }
   recording.value = target
-  version.value = wanted
+  version.value = pruned(target) ? 'episode' : wanted
   tuned.value = null
   if (element.value) speed(element.value, rate.value)
   open()
@@ -213,7 +213,10 @@ const toggle = () => {
 const skip = (by: number) => pick(seconds.value + by)
 
 const playFrom = (at: number, wanted: Version = 'raw') => {
-  if (recording.value && version.value !== wanted) load(recording.value, wanted)
+  const target = recording.value
+  if (target && wanted === 'raw' && pruned(target))
+    return playFrom(episodeTime(target.audible, at), 'episode')
+  if (target && version.value !== wanted) load(target, wanted)
   plan = null
   pick(at)
   play()
@@ -312,6 +315,9 @@ const vacant = (name?: string) =>
 
 export const edition = (target: RecordingSummary): Version =>
   target.editList && target.episodeBytes ? 'episode' : 'raw'
+
+export const pruned = (target: RecordingSummary) =>
+  !target.sizeBytes && edition(target) === 'episode'
 
 const recall = async () => {
   const card = await radioService.player().catch(() => null)

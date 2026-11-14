@@ -268,6 +268,26 @@ describe('RadioPlayer', () => {
     expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Clean'])
   })
 
+  it('should not offer the raw recording once its audio is removed', () => {
+    const wrapper = render('episode', recording({ sizeBytes: 0 }))
+    expect(wrapper.findAll('select[aria-label="Version"] option').map(o => o.text())).toEqual([
+      'Clean',
+    ])
+  })
+
+  it('should offer the raw recording of a capture without any audio', () => {
+    const wrapper = render('raw', recording({ sizeBytes: 0, editList: null, episodeBytes: null }))
+    expect(wrapper.findAll('select[aria-label="Version"] option').map(o => o.text())).toEqual([
+      'Raw',
+    ])
+  })
+
+  it('should disable the raw segment once its audio is removed', () => {
+    const wrapper = render('episode', recording({ sizeBytes: 0 }))
+    const segment = wrapper.findAll('[role="group"][aria-label="Version"] button')[0]!
+    expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Raw'])
+  })
+
   it('should keep the select for phones only', () => {
     const wrapper = render()
     expect([
