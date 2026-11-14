@@ -148,6 +148,26 @@ class OpenRouterClientIT {
   }
 
   @Test
+  fun `should complete on Gemini's flex tier with minimal reasoning`() {
+    wireMockServer.stubFor(
+      post(urlEqualTo("/chat/completions"))
+        .withRequestBody(matchingJsonPath("$.model", equalTo("google/gemini-4-carbon")))
+        .withRequestBody(matchingJsonPath("$.provider.order[0]", equalTo("google-ai-studio/flex")))
+        .withRequestBody(matchingJsonPath("$.reasoning.effort", equalTo("minimal")))
+        .willReturn(okJson(createSuccessResponse("{\"hosts\":[]}"))),
+    )
+    val result =
+      openRouterClient.complete(
+        AiPurpose.RADIO_OUTLINE,
+        AiModel.GEMINI_4_CARBON,
+        "Leia saade.",
+        "Saade algab 11:59.",
+        mapOf("type" to "object"),
+      )
+    expect(result).toEqual("{\"hosts\":[]}")
+  }
+
+  @Test
   fun `should search the web natively through Vertex without falling back to another provider`() {
     wireMockServer.stubFor(
       post(urlEqualTo("/chat/completions"))

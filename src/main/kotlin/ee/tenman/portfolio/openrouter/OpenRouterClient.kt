@@ -173,6 +173,7 @@ class OpenRouterClient(
         maxTokens = DEFAULT_MAX_TOKENS,
         temperature = 0.0,
         responseFormat = OpenRouterRequest.ResponseFormat(OpenRouterRequest.JsonSchema("outline", schema)),
+        reasoning = model.reasoningEffort?.let(OpenRouterRequest::Reasoning),
         provider = OpenRouterRequest.ProviderPreferences(listOf(FLEX_TIER)),
       ),
     )
