@@ -121,10 +121,7 @@ fov.ee {
     }
 
     # Protected routes
-    @protected {
-        not path /login /login/* /oauth2/* /logout /assets/* *.js *.css *.svg /apple-touch-icon.png
-    }
-    handle @protected {
+    handle {
         import login
 
         # API routes

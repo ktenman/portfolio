@@ -101,12 +101,8 @@ export function useCalculator() {
       const freshData = result.data
 
       Object.assign(form.value, {
-        initialWorth: 0,
-        monthlyInvestment: 585,
-        yearlyGrowthRate: 5,
+        ...getDefaultFormValues(),
         annualReturnRate: initialAnnualReturnRate.value || freshData?.median || 7,
-        years: 30,
-        taxRate: 22,
       })
     } catch (error) {
       console.error('Failed to fetch fresh data:', error)
