@@ -81,7 +81,7 @@ import { computed, onBeforeUnmount } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import type { RecordingSummary } from '../../models/generated/domain-models'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
-import { edition, pruned, useRadioPlayer, type Version } from '../../composables/use-radio-player'
+import { cleanable, pruned, useRadioPlayer, type Version } from '../../composables/use-radio-player'
 import { clock, episodeParts, fullDay, HATCH, position, rawParts } from '../../utils/radio'
 import { typing } from '../../utils/dom'
 import RadioControls from './radio-controls.vue'
@@ -99,7 +99,7 @@ const decisions = useRadioDecisions(() => props.recording)
 onBeforeUnmount(decisions.flush)
 
 const raw = computed(() => player.version.value === 'raw')
-const cleaned = computed(() => edition(props.recording) === 'episode')
+const cleaned = computed(() => cleanable(props.recording))
 const original = computed(() => !pruned(props.recording))
 const version = computed({
   get: () => player.version.value,

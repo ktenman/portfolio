@@ -9,4 +9,6 @@ interface RadioProgrammeRepository : JpaRepository<RadioProgramme, Long> {
   fun findByExternalId(externalId: Long): RadioProgramme?
 
   fun findAllByExternalIdIn(externalIds: Collection<Long>): List<RadioProgramme>
+
+  fun findByUncutSinceNotNull(): List<RadioProgramme>
 }

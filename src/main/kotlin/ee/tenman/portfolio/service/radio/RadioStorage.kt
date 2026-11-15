@@ -3,9 +3,11 @@ package ee.tenman.portfolio.service.radio
 import io.minio.GetObjectArgs
 import io.minio.MinioClient
 import org.springframework.core.io.AbstractResource
+import org.springframework.core.io.Resource
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.math.max
 
 const val UPLOAD = "upload.json"
 val AUDIO = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.mp3")
@@ -77,3 +79,20 @@ class RangeStream(
 
   private fun opened(): InputStream = stream ?: open(offset).also { stream = it }
 }
+
+const val SHOW_FILE = "show.mp3"
+
+data class ShowPart(
+  val resource: Resource,
+  val inpoint: Double,
+)
+
+data class RadioShow(
+  val file: String,
+  val parts: List<ShowPart>,
+)
+
+fun inpoints(parts: List<RecordingPart>): List<Double> =
+  parts
+    .runningFold(0.0) { reached, part -> max(reached, part.offsetSeconds + (part.durationSeconds ?: 0.0)) }
+    .zip(parts) { reached, part -> max(0.0, reached - part.offsetSeconds) }

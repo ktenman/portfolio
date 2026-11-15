@@ -119,6 +119,7 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   render: null,
   renderFailure: null,
   episodeBytes: 34_000_000,
+  uncut: false,
   cuts: [
     cut(CutKind.BEFORE, 'Before the show', 0, 761.5, [DIGITAL]),
     {

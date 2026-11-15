@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.RadioAiring
+import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.domain.Station
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,6 +26,7 @@ data class RadioProgrammeDto(
   val name: String,
   val description: String?,
   val recordEvery: Boolean,
+  val uncut: Boolean,
   val slots: List<AirSlot>,
   val recordings: Int,
   val station: Station,
@@ -38,7 +40,11 @@ data class AirSlot(
 
 data class ProgrammeChoice(
   val recordEvery: Boolean,
+  val uncut: Boolean = false,
 )
+
+fun RecordingStatus.uncut(chosen: List<RadioProgramme>): Boolean =
+  chosen.any { it.station == station && it.name in programmes && (it.uncutSince?.epochSecond ?: Long.MAX_VALUE) <= startedAt }
 
 data class ScheduledShow(
   val externalId: Long,

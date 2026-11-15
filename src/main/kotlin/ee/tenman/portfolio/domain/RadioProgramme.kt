@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.Table
+import java.time.Instant
 
 @Entity
 @Table(name = "radio_programme")
@@ -19,6 +20,8 @@ class RadioProgramme(
   var description: String? = null,
   @Column(name = "record_every", nullable = false)
   var recordEvery: Boolean = false,
+  @Column(name = "uncut_since")
+  var uncutSince: Instant? = null,
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   var station: Station = Station.KUKU,

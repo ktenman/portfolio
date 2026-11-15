@@ -173,6 +173,19 @@ class RadioControllerIT {
   }
 
   @Test
+  fun `should save the full show under the programme and its day`() {
+    Files.writeString(directory.resolve("raw.mp3"), "Keskpäevatund täies pikkuses")
+    mockMvc
+      .perform(mvcGet("/api/radio/2026-10-17/show.mp3"))
+      .andExpect(
+        header().string(
+          CONTENT_DISPOSITION,
+          "attachment; filename=\"Keskpaeevatund 2026-10-17.mp3\"; filename*=UTF-8''Keskp%C3%A4evatund%202026-10-17.mp3",
+        ),
+      )
+  }
+
+  @Test
   fun `should save a byte range of the episode under the programme and its day`() {
     mockMvc
       .perform(mvcGet("/api/radio/2026-10-17/episode.m4a").header(RANGE, "bytes=0-3"))

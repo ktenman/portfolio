@@ -269,6 +269,7 @@ export interface RecordingSummary {
     programmeCuts: ProgrammeCuts[];
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
+    uncut: boolean;
     drops: number;
     span: Slot;
     topics: TimelineEntry[];
@@ -317,6 +318,7 @@ export interface RadioProgrammeDto {
     name: string;
     description: string | null;
     recordEvery: boolean;
+    uncut: boolean;
     slots: AirSlot[];
     recordings: number;
     station: Station;
@@ -324,6 +326,7 @@ export interface RadioProgrammeDto {
 
 export interface ProgrammeChoice {
     recordEvery: boolean;
+    uncut: boolean;
 }
 
 export interface RadioStation {

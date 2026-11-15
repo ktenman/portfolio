@@ -213,6 +213,7 @@ data class RecordingSummary(
   val programmeCuts: List<ProgrammeCuts>,
   val render: RenderProgress? = null,
   val renderFailure: EpisodeFailure? = null,
+  val uncut: Boolean = false,
 ) {
   val drops: Int
     get() = (status.parts.size - 1).coerceAtLeast(0)

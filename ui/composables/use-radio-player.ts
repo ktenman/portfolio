@@ -313,8 +313,11 @@ const leave = () => {
 const vacant = (name?: string) =>
   !started.value && !tuned.value && (!recording.value || recording.value.name === name)
 
+export const cleanable = (target: RecordingSummary) =>
+  Boolean(target.editList && target.episodeBytes)
+
 export const edition = (target: RecordingSummary): Version =>
-  target.editList && target.episodeBytes ? 'episode' : 'raw'
+  cleanable(target) && !(target.uncut && target.sizeBytes) ? 'episode' : 'raw'
 
 export const pruned = (target: RecordingSummary) =>
   !target.sizeBytes && edition(target) === 'episode'

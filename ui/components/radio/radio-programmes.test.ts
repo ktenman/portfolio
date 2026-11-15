@@ -36,6 +36,7 @@ describe('RadioProgrammes', () => {
         name: 'Keskpäevatund',
         description: 'Ülle ja Õie arutavad nädala uudiseid',
         recordEvery: false,
+        uncut: false,
         slots: [
           { days: [DayOfWeek.SATURDAY], start: '12:00:00', end: '13:00:00' },
           {
@@ -68,7 +69,7 @@ describe('RadioProgrammes', () => {
     await (await mount())
       .find('input[aria-label="Record every time: Keskpäevatund"]')
       .setValue(true)
-    expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true })
+    expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true, uncut: false })
   })
 
   it('should name a show as the next capture once it is ticked', async () => {
@@ -107,6 +108,7 @@ describe('RadioProgrammes', () => {
       name: `Saade ${i}`,
       description: null,
       recordEvery,
+      uncut: false,
       slots: [{ days: [DayOfWeek.SATURDAY], start: '09:00:00', end: '10:00:00' }],
       recordings: 0,
       station: Station.KUKU,
@@ -136,6 +138,7 @@ describe('RadioProgrammes', () => {
     name,
     description: null,
     recordEvery: false,
+    uncut: false,
     slots: [{ days: [DayOfWeek.MONDAY], start: '11:00:00', end: '12:00:00' }],
     recordings: 0,
     station,
@@ -162,9 +165,17 @@ describe('RadioProgrammes', () => {
     expect(row.find<HTMLInputElement>('input').element.checked).toBe(true)
   })
 
+  it('should ask to keep music and ads of a programme once ticked', async () => {
+    vi.mocked(radioService.choose).mockResolvedValue()
+    await (await mount())
+      .find('input[aria-label="Keep music and ads: Keskpäevatund"]')
+      .setValue(true)
+    expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: false, uncut: true })
+  })
+
   it('should name the columns of the shows table', async () => {
     const headers = (await mount()).findAll('thead th').map(header => header.text())
-    expect(headers).toEqual(['Show', 'Station', 'Airs', 'Archived', 'Record'])
+    expect(headers).toEqual(['Show', 'Station', 'Airs', 'Archived', 'Record', 'Uncut'])
   })
 
   it('should name the station of a show in its column', async () => {
