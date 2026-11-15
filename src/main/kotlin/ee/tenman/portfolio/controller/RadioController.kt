@@ -22,11 +22,9 @@ import ee.tenman.portfolio.service.radio.RadioProgrammeDto
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioSearch
 import ee.tenman.portfolio.service.radio.RadioSearchService
-import ee.tenman.portfolio.service.radio.RadioShowService
 import ee.tenman.portfolio.service.radio.RadioSpot
 import ee.tenman.portfolio.service.radio.RadioStation
 import ee.tenman.portfolio.service.radio.RecordingSummary
-import ee.tenman.portfolio.service.radio.SHOW_FILE
 import ee.tenman.portfolio.service.radio.TranscriptSection
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.Resource
@@ -59,7 +57,6 @@ class RadioController(
   private val radioArchiveService: RadioArchiveService,
   private val radioScheduleService: RadioScheduleService,
   private val radioLiveService: RadioLiveService,
-  private val radioShowService: RadioShowService,
   private val radioDayService: RadioDayService,
   private val radioPositionService: RadioPositionService,
   private val radioPlayerService: RadioPlayerService,
@@ -151,17 +148,6 @@ class RadioController(
     @RequestBody position: RadioPositionDto,
   ) = radioPositionService.save(listener, name, position)
 
-  @GetMapping("/{name}/$SHOW_FILE")
-  fun getShow(
-    @PathVariable name: String,
-    response: HttpServletResponse,
-  ) {
-    val show = radioArchiveService.show(name) ?: return response.sendError(HttpStatus.NOT_FOUND.value())
-    response.contentType = "audio/mpeg"
-    response.setHeader(CONTENT_DISPOSITION, disposition(show.file))
-    radioShowService.write(show, response.outputStream)
-  }
-
   @GetMapping("/{name}/{file}")
   fun getFile(
     @PathVariable name: String,
@@ -215,15 +201,9 @@ class RadioController(
     file: String?,
   ): ResponseEntity<Resource> {
     if (resource == null || file == null) return ResponseEntity.notFound().build()
-    return media(resource).header(CONTENT_DISPOSITION, disposition(file)).body(resource)
+    val disposition = ContentDisposition.attachment().filename(file, UTF_8).build()
+    return media(resource).header(CONTENT_DISPOSITION, disposition.toString()).body(resource)
   }
-
-  private fun disposition(file: String): String =
-    ContentDisposition
-      .attachment()
-      .filename(file, UTF_8)
-      .build()
-      .toString()
 
   private fun media(resource: Resource): ResponseEntity.BodyBuilder =
     ResponseEntity
