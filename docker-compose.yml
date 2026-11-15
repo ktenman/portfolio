@@ -41,7 +41,7 @@ services:
     logging: *logging
     container_name: redis
     image: redis:8-alpine
-    command: redis-server --maxmemory 768mb --maxmemory-policy allkeys-lru --save 3600 1 --stop-writes-on-bgsave-error no
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 3600 1 --stop-writes-on-bgsave-error no
     volumes:
       - redis_data:/data
     healthcheck:
@@ -50,7 +50,7 @@ services:
       timeout: 1s
       retries: 5
     restart: always
-    mem_limit: 1024m
+    mem_limit: 512m
 
   seaweedfs:
     logging: *logging
@@ -160,6 +160,7 @@ services:
       timeout: 2s
       retries: 18
       start_period: 40s
+    mem_limit: 256m
 
   app:
     logging: *logging
