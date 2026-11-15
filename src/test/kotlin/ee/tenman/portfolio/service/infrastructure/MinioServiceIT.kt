@@ -6,7 +6,6 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.MinioProperties
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_CACHE
 import io.minio.BucketExistsArgs
 import io.minio.ListObjectsArgs
 import io.minio.MakeBucketArgs
@@ -15,11 +14,8 @@ import io.minio.RemoveObjectArgs
 import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import jakarta.annotation.Resource
-import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
-import org.springframework.cache.CacheManager
-import java.time.Duration
 import java.time.LocalDate
 import java.util.UUID
 
@@ -33,9 +29,6 @@ class MinioServiceIT {
 
   @Resource
   private lateinit var minioProperties: MinioProperties
-
-  @Resource
-  private lateinit var cacheManager: CacheManager
 
   @AfterEach
   fun cleanup() {
@@ -66,8 +59,6 @@ class MinioServiceIT {
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
 
     minioService.uploadLogo(holdingUuid, testData)
-    evictCachedLogo(holdingUuid)
-
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
   }
@@ -93,8 +84,6 @@ class MinioServiceIT {
 
     minioService.uploadLogo(holdingUuid, originalData)
     minioService.uploadLogo(holdingUuid, newData)
-    awaitCachedLogo(holdingUuid, newData)
-    evictCachedLogo(holdingUuid)
 
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(newData.asList())
@@ -106,8 +95,6 @@ class MinioServiceIT {
     val testData = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x03)
     minioService.downloadLogo(holdingUuid)
     minioService.uploadLogo(holdingUuid, testData)
-    awaitCachedLogo(holdingUuid, testData)
-    evictCachedLogo(holdingUuid)
     val downloaded = minioService.downloadLogo(holdingUuid)
     expect(downloaded).notToEqualNull().asList().toEqual(testData.asList())
   }
@@ -156,7 +143,6 @@ class MinioServiceIT {
         .`object`(name)
         .build(),
     )
-    evictCachedLogo(uuid)
     expect(minioService.downloadLogo(uuid)).toEqual(null)
   }
 
@@ -187,21 +173,5 @@ class MinioServiceIT {
     val service = MinioService(client, minioProperties)
     val failure = runCatching { service.downloadLogo(UUID.randomUUID()) }.exceptionOrNull()
     expect(((failure as? IllegalStateException)?.cause as? ErrorResponseException)?.errorResponse()?.code()).toEqual("InvalidAccessKeyId")
-  }
-
-  private fun evictCachedLogo(uuid: UUID) {
-    val cache = cacheManager.getCache(ETF_LOGOS_CACHE) ?: error("$ETF_LOGOS_CACHE not configured")
-    cache.evict(uuid.toString())
-  }
-
-  private fun awaitCachedLogo(
-    uuid: UUID,
-    logo: ByteArray,
-  ) {
-    val cache = cacheManager.getCache(ETF_LOGOS_CACHE) ?: error("$ETF_LOGOS_CACHE not configured")
-    await()
-      .atMost(Duration.ofSeconds(2))
-      .pollInterval(Duration.ofMillis(10))
-      .until { (cache.get(uuid.toString())?.get() as? ByteArray)?.contentEquals(logo) == true }
   }
 }

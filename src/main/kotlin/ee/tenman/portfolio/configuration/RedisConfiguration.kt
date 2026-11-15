@@ -24,7 +24,6 @@ class RedisConfiguration {
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
     cacheConfigurations[PLATFORM_SUMMARY_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
-    cacheConfigurations[ETF_LOGOS_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(365))
     cacheConfigurations[ETF_BREAKDOWN_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2))
     cacheConfigurations[LIGHTYEAR_UUID_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[LOGO_CANDIDATES_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
@@ -50,8 +49,6 @@ class RedisConfiguration {
     const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"
     const val TRANSACTION_CACHE = "transaction-cache-v6"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
-    const val ETF_LOGOS_CACHE: String = "etf-logos-v4"
-    const val LEGACY_ETF_LOGOS_CACHE: String = "etf-logos-v3"
     const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v4"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v4"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v4"
