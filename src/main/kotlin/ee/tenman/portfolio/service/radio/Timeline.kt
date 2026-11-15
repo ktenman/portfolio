@@ -167,7 +167,7 @@ private fun uncover(
 }
 
 fun runs(mask: BooleanArray): List<Pair<Int, Int>> {
-  val edges = (0..mask.size).filter { k -> (k < mask.size && mask[k]) != (k > 0 && mask[k - 1]) }
+  val edges = (0..mask.size).filter { k -> mask.getOrElse(k) { false } != mask.getOrElse(k - 1) { false } }
   return edges.chunked(2).map { it[0] to it[1] }
 }
 
