@@ -1,15 +1,12 @@
 package ee.tenman.portfolio.service.infrastructure
 
 import ee.tenman.portfolio.configuration.MinioProperties
-import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.ETF_LOGOS_CACHE
 import io.minio.GetObjectArgs
 import io.minio.ListObjectsArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
 import io.minio.errors.ErrorResponseException
 import org.slf4j.LoggerFactory
-import org.springframework.cache.annotation.CachePut
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import java.io.ByteArrayInputStream
@@ -24,16 +21,11 @@ class MinioService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @CachePut(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun uploadLogo(
     uuid: UUID,
     logoData: ByteArray,
-  ): ByteArray {
-    uploadObject("logos/$uuid.png", logoData, MediaType.IMAGE_PNG_VALUE)
-    return logoData
-  }
+  ) = uploadObject("logos/$uuid.png", logoData, MediaType.IMAGE_PNG_VALUE)
 
-  @Cacheable(value = [ETF_LOGOS_CACHE], key = "#uuid.toString()")
   fun downloadLogo(uuid: UUID): ByteArray? = downloadObject("logos/$uuid.png")
 
   fun uploadPoffStill(
