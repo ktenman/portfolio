@@ -65,22 +65,7 @@ class RadioArchiveService(
     file: String,
   ): Resource? {
     if (!AUDIO.matches(file)) return null
-    return directory(name, STATUS_FILE)?.let { audio(it, file) }
-  }
-
-  fun show(name: String): RadioShow? {
     val directory = directory(name, STATUS_FILE) ?: return null
-    val status = readStatus(directory)
-    val parts = status.parts.sortedBy { it.offsetSeconds }
-    if (parts.isEmpty()) return null
-    val found = parts.map { audio(directory, it.file) ?: return null }
-    return RadioShow(downloadName(name, status, SHOW_FILE, clock.zone), found.zip(inpoints(parts), ::ShowPart))
-  }
-
-  private fun audio(
-    directory: Path,
-    file: String,
-  ): Resource? {
     val path = inside(directory, file) ?: return null
     if (Files.isReadable(path)) return FileSystemResource(path)
     return radioStorageService.resource(directory, file)

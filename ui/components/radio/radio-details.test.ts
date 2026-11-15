@@ -22,25 +22,18 @@ describe('RadioDetails', () => {
     expect(render().find('details').exists()).toBe(false)
   })
 
-  it('should offer the full show and the cleaned episode for download', () => {
+  it('should offer only the cleaned episode for download', () => {
     const links = render()
-      .findAll('a[download]')
-      .map(a => a.attributes('href'))
-    expect(links).toEqual(['/api/radio/2026-10-17/show.mp3', '/api/radio/2026-10-17/episode.m4a'])
-  })
-
-  it('should offer only the cleaned episode once the raw audio is gone', () => {
-    const links = render(recording({ sizeBytes: 0 }))
       .findAll('a[download]')
       .map(a => a.attributes('href'))
     expect(links).toEqual(['/api/radio/2026-10-17/episode.m4a'])
   })
 
-  it('should keep the downloads reachable while folded', () => {
+  it('should keep the download reachable while folded', () => {
     const links = render()
       .findAll('a[download]')
       .map(a => a.attributes('aria-label'))
-    expect(links).toEqual(['Download the full show, 134 MB', 'Download the clean version, 34 MB'])
+    expect(links).toEqual(['Download the clean version, 34 MB'])
   })
 
   it('should leave the cuts out of the facts', async () => {

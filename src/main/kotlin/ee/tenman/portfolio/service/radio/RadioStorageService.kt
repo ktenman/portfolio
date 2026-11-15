@@ -1,7 +1,5 @@
 package ee.tenman.portfolio.service.radio
 
-import ee.tenman.portfolio.domain.RadioProgramme
-import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.minio.BucketExistsArgs
 import io.minio.MakeBucketArgs
 import io.minio.MinioClient
@@ -20,7 +18,6 @@ import java.time.temporal.ChronoUnit
 class RadioStorageService(
   private val minioClient: MinioClient,
   private val radioEpisodeService: RadioEpisodeService,
-  private val radioProgrammeRepository: RadioProgrammeRepository,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
@@ -28,9 +25,8 @@ class RadioStorageService(
 
   fun store() {
     prepare()
-    val chosen = radioProgrammeRepository.findByUncutSinceNotNull()
     directories(radioProperties.recordings).forEach { directory ->
-      runCatching { store(directory, chosen) }.onFailure { log.error("Cannot store radio recording $directory", it) }
+      runCatching { store(directory) }.onFailure { log.error("Cannot store radio recording $directory", it) }
     }
   }
 
@@ -54,15 +50,12 @@ class RadioStorageService(
     minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build())
   }
 
-  private fun store(
-    directory: Path,
-    chosen: List<RadioProgramme>,
-  ) {
+  private fun store(directory: Path) {
     val status = readStatus(directory)
     if (status.state == RecordingState.RECORDING) return
     sync(directory)
     if (processed(directory)) pcm(directory).forEach(Files::delete)
-    if (old(status)) offload(directory, status.uncut(chosen))
+    if (old(status)) offload(directory)
   }
 
   private fun sync(directory: Path) {
@@ -76,15 +69,12 @@ class RadioStorageService(
     save(directory.resolve(UPLOAD), Upload(radioProperties.bucket, saved - gone.toSet() + local))
   }
 
-  private fun offload(
-    directory: Path,
-    uncut: Boolean,
-  ) {
+  private fun offload(directory: Path) {
     val saved = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
     (audio + pcm(directory)).forEach(Files::delete)
     Files.deleteIfExists(directory.resolve(FINGERPRINTS))
-    if (EPISODE_FILE in saved && !uncut) forget(directory, saved)
+    if (EPISODE_FILE in saved) forget(directory, saved)
   }
 
   private fun forget(
