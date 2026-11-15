@@ -10,7 +10,6 @@ import jakarta.annotation.PostConstruct
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
-import java.time.Duration
 import java.time.LocalDate
 
 @ScheduledJob
@@ -34,10 +33,12 @@ class SkyplusScheduleJob(
 
   override fun execute() {
     if (Station.SKYPLUS !in radioProperties.stations) return
+    val rows = skyplusScheduleClient.getSchedule().data
+    if (rows.isEmpty()) return
     val today = LocalDate.now(clock)
     val from = today.atStartOfDay(clock.zone).toInstant()
-    val airings = skyplusAirings(skyplusScheduleClient.getSchedule().data, today, AmsScheduleJob.DAYS, clock.zone)
-    radioScheduleService.replace(Station.SKYPLUS, airings, from, from + Duration.ofDays(AmsScheduleJob.DAYS))
+    val until = today.plusDays(1).atStartOfDay(clock.zone).toInstant()
+    radioScheduleService.replace(Station.SKYPLUS, skyplusAirings(rows, today, AmsScheduleJob.DAYS, clock.zone), from, until)
     radioScheduleService.plan()
   }
 }

@@ -360,7 +360,7 @@ Migrations are in `src/main/resources/db/migration/` using timestamp naming `VYY
 - **Trading Platforms:** Trading212, Lightyear (via Cloudflare Bypass Proxy with curl-impersonate)
 - **AI Services:** OpenRouter (Claude Haiku for ETF sector classification), Google Cloud Vision (OCR)
 - **Vehicle:** Auto24 (Estonian car marketplace valuation), Veego (tax reporting)
-- **Radio:** Kuku (schedule API and live HLS stream), aripaev.ee (Äripäev Raadio schedule via its RSC payload, and its MP3 stream through the `radio-bridge` service), Elmar (schedule from the same AMS API as Kuku, MP3 stream through `radio-bridge-elmar`), sky.ee (Sky Plus weekly schedule template, MP3 stream through `radio-bridge-skyplus`)
+- **Radio:** Kuku (schedule API and live HLS stream), aripaev.ee (Äripäev Raadio schedule via its RSC payload, and its MP3 stream through the `radio-bridge` service), Elmar (schedule from the same AMS API as Kuku, MP3 stream through `radio-bridge-elmar`), sky.ee (Sky Plus schedule of the shows airing today, MP3 stream through `radio-bridge-skyplus`)
 - **Film festival:** poff.ee (PÖFF programme via HTML scraping), IMDb (title suggestions for matching, and the non-commercial ratings dataset)
 - **Other:** Telegram (notifications), MinIO (S3-compatible logo storage)
 - **Infrastructure:** Cloudflare Bypass Proxy (Node.js/TypeScript, curl-impersonate for TLS fingerprint spoofing)
