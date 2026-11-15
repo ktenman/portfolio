@@ -97,7 +97,7 @@ Backend defaults are in [application.yml](src/main/resources/application.yml). D
 
 The storage service is **SeaweedFS**. The `MINIO_*` names remain for configuration compatibility, and the backend continues to use the MinIO Java SDK to access its S3 endpoint. For a backend running on the host, use the host-accessible endpoint and matching access/secret keys.
 
-[.env.local.example](.env.local.example) provides OAuth and storage settings for Compose-based setups. Docker Compose reads `.env` for interpolation; backend processes launched on the host receive configuration through their shell environment. OAuth deployment also uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `ALLOWED_EMAILS`; see the Compose files for access-list and redirect settings.
+[.env.local.example](.env.local.example) provides OAuth and storage settings for Compose-based setups. Docker Compose reads `.env` for interpolation; backend processes launched on the host receive configuration through their shell environment. OAuth deployment also uses `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `ALLOWED_EMAILS`; see the Compose files for access-list and redirect settings.
 
 ## Technical stack
 
@@ -135,7 +135,7 @@ flowchart LR
 
 The backend separates controllers, services, and repositories. Scheduled jobs update market data and holdings, calculate portfolio metrics, and clean up retained intraday data. Redis caches instruments, transactions, summaries, and ETF analysis; PostgreSQL stores the underlying records and historical prices.
 
-In the deployed application, the browser sends session cookies to Caddy. Caddy asks the auth service's `/validate` endpoint to check the session and forwards authenticated requests with `X-User-Id`. Google and GitHub login routes are handled by the auth service. Calculator routes are public as configured in [Caddyfile](Caddyfile).
+In the deployed application, the browser sends session cookies to Caddy. Caddy asks the auth service's `/validate` endpoint to check the session and forwards authenticated requests with `X-User-Id`. Google login routes are handled by the auth service. Calculator routes are public as configured in [Caddyfile](Caddyfile).
 
 Additional PlantUML reference diagrams are in [docs/architecture](docs/architecture). Their SVGs can be regenerated with:
 

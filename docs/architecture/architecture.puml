@@ -8,7 +8,6 @@
 !include ICONURL2/postgresql.puml
 !include ICONURL2/vuejs.puml
 !include ICONURL2/kotlin.puml
-!include ICONURL2/spring.puml
 !include ICONURL2/chrome.puml
 
 LAYOUT_WITH_LEGEND()
@@ -17,7 +16,7 @@ Person(user, "User", "End user of the Portfolio Management System")
 
 System_Boundary(portfolio_system, "Portfolio Management System") {
   Container(caddy, "Caddy", "Web Server", "Reverse proxy, routes auth and protected requests")
-  Container(auth, "Auth Service", "Kotlin, Spring Boot", "OAuth2 authentication, session management, email/login whitelist", $sprite="spring")
+  Container(auth, "Auth Service", "Kotlin, Klite, GraalVM native image", "Google OAuth2 sign-in, session management, email allowlist", $sprite="kotlin")
   Container(frontend, "Frontend", "Vue.js, Tailwind CSS", "Provides the user interface for managing portfolio and viewing data", $sprite="vuejs")
   Container(backend, "Backend", "Kotlin, Spring Boot", "Handles API requests, processes data, and manages business logic", $sprite="kotlin")
   ContainerDb(database, "Database", "PostgreSQL", "Stores portfolio and financial data", $sprite="postgresql")
@@ -35,7 +34,6 @@ System_Ext(openrouter, "OpenRouter API", "AI service for ETF sector classificati
 System_Ext(google_vision, "Google Cloud Vision", "OCR service for captcha solving", $sprite="cloud")
 System_Ext(telegram, "Telegram Bot API", "Notification service", $sprite="cloud")
 System_Ext(google_oauth, "Google OAuth", "External identity provider", $sprite="cloud")
-System_Ext(github_oauth, "GitHub OAuth", "External identity provider", $sprite="cloud")
 
 Container_Ext(browser, "Browser", "Chrome, LocalStorage, Cookies", "Stores auth session cookies", $sprite="chrome")
 
@@ -44,7 +42,6 @@ Rel(browser, caddy, "Accesses", "HTTP :80")
 Rel(caddy, auth, "Routes /login, /oauth2/*, /logout", "HTTP :8083")
 Rel(caddy, auth, "Validates requests via forward_auth", "HTTP :8083/validate")
 Rel(auth, google_oauth, "Delegates authentication", "OAuth2/OIDC")
-Rel(auth, github_oauth, "Delegates authentication", "OAuth2")
 Rel(auth, cache, "Stores sessions", "Redis protocol")
 Rel(caddy, backend, "Routes /api/*", "HTTP :8080")
 Rel(caddy, frontend, "Routes UI requests", "HTTP :80")

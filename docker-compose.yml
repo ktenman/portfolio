@@ -140,26 +140,22 @@ services:
   auth:
     logging: *logging
     container_name: auth
-    image: ktenman/auth:latest
+    image: ghcr.io/ktenman/klite-auth:latest
     environment:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       ALLOWED_EMAILS: ${ALLOWED_EMAILS}
-      ALLOWED_LOGINS: "ktenman"
       REDIRECT_URI: "https://fov.ee"
-      SPRING_REDIS_HOST: redis
-      SERVER_PORT: 8083
     depends_on:
       - redis
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
-      interval: 6s
+      interval: 30s
       timeout: 2s
-      retries: 18
-      start_period: 40s
+      retries: 3
+      start_period: 5s
+      start_interval: 1s
     mem_limit: 256m
 
   app:

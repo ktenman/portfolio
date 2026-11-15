@@ -14,7 +14,7 @@ Portfolio Management System - full-stack app for tracking investment portfolios 
 - Cache: Redis 8 (multi-level caching strategy)
 - Testing: Atrium 1.3 (Kotlin assertions), JUnit 5, MockK, Kotest (property-based), PITest (mutation), Selenide, Vitest
 - Build: Gradle 9.7 with Version Catalogs (libs.versions.toml)
-- Authentication: Custom Spring Boot auth service (https://github.com/ktenman/auth)
+- Authentication: Custom Klite auth service, a GraalVM native image (https://github.com/ktenman/klite-auth)
 - Infrastructure: Docker, Caddy reverse proxy
 - Additional Services: Google Cloud Vision API
 
