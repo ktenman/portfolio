@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.job
 
 import ch.tutteli.atrium.api.fluent.en_GB.inAnyOrder
+import ch.tutteli.atrium.api.fluent.en_GB.notToThrow
 import ch.tutteli.atrium.api.fluent.en_GB.only
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.values
@@ -22,19 +23,38 @@ class SkyplusScheduleJobIT : RadioScheduleTestBase() {
 
   @Test
   fun `should store the template rows as Sky Plus programmes`() {
-    wireMockServer.stubFor(
-      get(urlPathEqualTo("/api/radio-stations/1/schedule")).willReturn(
-        okJson(
-          """{"data":[{"id":4,"name":"Õhtune Äratus","description":null,"days":[1,2,3,4,5],""" +
-            """"start_time":"15:00","end_time":"18:00","show":null},""" +
-            """{"id":20,"name":"Õhtu Plus","description":null,"days":[1,2,3,4],""" +
-            """"start_time":"18:00","end_time":"22:00","show":null}]}""",
-        ),
-      ),
-    )
-    SkyplusScheduleJob(skyplusScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, radioProperties).execute()
+    schedule(row(4, "Õhtune Äratus", 1, 2, 3, 4, 5), row(20, "Õhtu Plus", 1, 2, 3, 4))
+    job().execute()
     expect(radioScheduleService.programmes().filter { it.station == Station.SKYPLUS }.map { it.name })
       .toContain.inAnyOrder.only
       .values("Õhtune Äratus", "Õhtu Plus")
+  }
+
+  @Test
+  fun `should succeed on a day when Sky Plus airs no shows`() {
+    schedule()
+    expect { job().execute() }.notToThrow()
+  }
+
+  @Test
+  fun `should keep the airings of a show that does not air today`() {
+    schedule(row(4, "Õhtune Äratus", day.dayOfWeek.value))
+    job().execute()
+    schedule(row(20, "Õhtu Plus", day.dayOfWeek.minus(1).value))
+    job().execute()
+    expect(radioAiringRepository.findAll().map { it.title }).toContain("Õhtune Äratus")
+  }
+
+  private fun job() = SkyplusScheduleJob(skyplusScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, radioProperties)
+
+  private fun row(
+    id: Long,
+    name: String,
+    vararg days: Int,
+  ) = """{"id":$id,"name":"$name","days":[${days.joinToString(",")}],"start_time":"15:00","end_time":"18:00"}"""
+
+  private fun schedule(vararg rows: String) {
+    val body = """{"data":[${rows.joinToString(",")}]}"""
+    wireMockServer.stubFor(get(urlPathEqualTo("/api/radio-stations/1/schedule")).willReturn(okJson(body)))
   }
 }
