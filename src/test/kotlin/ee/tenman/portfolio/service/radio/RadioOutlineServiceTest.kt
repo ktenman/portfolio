@@ -17,7 +17,7 @@ class RadioOutlineServiceTest {
   private val read =
     OutlineRead(
       listOf("Ainar Ruussaar"),
-      ShowStart(5.0, 50.0, true),
+      ShowStart(5.0, 50.0),
       emptyList(),
       ShowEnd(90.0),
       listOf(OutlineChapter(50.0, "Rahvusooper Estonia")),

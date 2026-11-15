@@ -17,12 +17,9 @@
         "firstSpeechTime": {
           "type": "number",
           "description": "start time in seconds, exactly as printed at the start of the transcript line"
-        },
-        "opensWithMusic": {
-          "type": "boolean"
         }
       },
-      "required": ["lastNonShowLineTime", "firstSpeechTime", "opensWithMusic"],
+      "required": ["lastNonShowLineTime", "firstSpeechTime"],
       "additionalProperties": false
     },
     "breaks": {

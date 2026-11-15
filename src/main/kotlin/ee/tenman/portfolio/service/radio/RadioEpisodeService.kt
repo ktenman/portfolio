@@ -224,12 +224,9 @@ class RadioEpisodeService(
     reviewed = false,
     renderedAt = now(),
     topics = topics.map { EpisodeChapter(rounded(it.time), it.title, it.label, it.summary) },
-    music = previous?.music.orEmpty() + findings.mapNotNull { music(it) },
+    music = previous?.music.orEmpty(),
     manual = previous?.manual.orEmpty(),
   )
-
-  private fun music(finding: Finding): KeptSpan? =
-    KeptSpan(finding.placed.first().seconds, finding.agreed.firstSpeechTime).takeIf { finding.agreed.opensWithMusic }
 
   private fun fail(
     directory: Path,
