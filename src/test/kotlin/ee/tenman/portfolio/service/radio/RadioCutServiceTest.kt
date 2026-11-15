@@ -51,27 +51,38 @@ class RadioCutServiceTest {
     TranscriptLine(start, start + 1, "Ja siinkohal väike paus.", listOf(TranscriptWord(start, start + 1, " paus.")))
 
   private fun outline(
-    before: Double,
     first: Double,
     breaks: List<Pair<Double, Double>>,
     end: Double,
-    music: Boolean,
-  ) = Consensus(emptyList(), music, before, first, breaks.map { Pause(it.first, it.second) }, end, emptyList(), 1)
+  ) = Consensus(emptyList(), first, breaks.map { Pause(it.first, it.second) }, end, emptyList(), 1)
 
   @Test
   fun `should start a break in the middle of the first silence`() {
+    val (_, db) = recording(noise(20.0, listOf(11.0)))
+    val (seconds, method) = leave(db, 10.0)
+    expect((abs(seconds - 11.15) <= 0.011) to method).toEqual(true to "digital silence")
+  }
+
+  @Test
+  fun `should start a break a moment into a long silence`() {
+    val (_, db) = recording(noise(20.0, listOf(10.5), gap = 4.0))
+    val (seconds, method) = leave(db, 10.0)
+    expect((abs(seconds - 10.8) <= 0.011) to method).toEqual(true to "digital silence")
+  }
+
+  @Test
+  fun `should start a break right after the last word when the silence comes later`() {
     val (_, db) = recording(noise(20.0, listOf(12.0)))
-    val (seconds, method) = leave(db, 10.0, 6.0)
-    expect((abs(seconds - 12.15) <= 0.011) to method).toEqual(true to "digital silence")
+    expect(leave(db, 10.0)).toEqual(10.2 to "transcript only")
   }
 
   @Test
   fun `should start a break at a level dip when there is no silence`() {
     val samples = noise(20.0)
-    (12 * RATE).until((12.2 * RATE).toInt()).forEach { samples[it] = (samples[it] / 100).toShort() }
+    (11 * RATE).until((11.2 * RATE).toInt()).forEach { samples[it] = (samples[it] / 100).toShort() }
     val (_, db) = recording(samples)
-    val (seconds, method) = leave(db, 10.0, 6.0)
-    expect((abs(seconds - 12.1) <= 0.1) to method).toEqual(true to "level dip")
+    val (seconds, method) = leave(db, 10.0)
+    expect((abs(seconds - 11.1) <= 0.1) to method).toEqual(true to "level dip")
   }
 
   @Test
@@ -95,7 +106,7 @@ class RadioCutServiceTest {
   @Test
   fun `should start a break from the transcript when the audio gives nothing`() {
     val (_, db) = recording(noise(20.0))
-    expect(leave(db, 10.0, 6.0)).toEqual(10.2 to "transcript only")
+    expect(leave(db, 10.0)).toEqual(10.2 to "transcript only")
   }
 
   @Test
@@ -127,20 +138,30 @@ class RadioCutServiceTest {
     expect(shared.map { abs((it?.start ?: 0.0) % 50.0 - 47.0) <= 0.06 }).toEqual(listOf(true, true))
   }
 
-  @Test
-  fun `should end a break at the last dip without a shared jingle`() {
+  private fun returned(
+    dip: Double,
+    starts: List<Double>,
+  ): Boundary {
     val samples = noise(60.0)
-    (38 * RATE).until((38.2 * RATE).toInt()).forEach { samples[it] = (samples[it] / 100).toShort() }
+    (dip * RATE).toInt().until(((dip + 0.2) * RATE).toInt()).forEach { samples[it] = (samples[it] / 100).toShort() }
     val (recorded, db) = recording(samples)
-    val found =
-      service.boundaries(
-        recorded,
-        db,
-        outline(1.0, 5.0, listOf(30.0 to 40.0), 50.0, false),
-        listOf(1.0, 5.0, 30.0, 40.0, 50.0).map(::line),
-        emptyList(),
-      ) { _, _ -> null }
-    expect(found[2].method to (abs(found[2].seconds - 38.1) <= 0.1)).toEqual("level dip" to true)
+    return service.boundaries(recorded, db, outline(5.0, listOf(30.0 to 40.0), 50.0), starts.map(::line), emptyList()) { _, _ -> null }[2]
+  }
+
+  @Test
+  fun `should end a break at the dip in the pause before the hosts return`() {
+    val found = returned(39.0, listOf(1.0, 5.0, 30.0, 40.0, 50.0))
+    expect(found.method to (abs(found.seconds - 39.1) <= 0.1)).toEqual("level dip" to true)
+  }
+
+  @Test
+  fun `should keep no more than a pause before the hosts return`() {
+    expect(returned(38.0, listOf(1.0, 5.0, 30.0, 40.0, 50.0))).toEqual(Boundary("break 1 ends", 39.7, "transcript only", true))
+  }
+
+  @Test
+  fun `should not keep the end of a line said before the hosts return`() {
+    expect(returned(39.0, listOf(1.0, 5.0, 30.0, 38.3, 40.0, 50.0))).toEqual(Boundary("break 1 ends", 39.7, "transcript only", true))
   }
 
   private fun paired(library: List<SavedJingle>): List<Boundary> {
@@ -149,7 +170,7 @@ class RadioCutServiceTest {
     return service.boundaries(
       recorded,
       db,
-      outline(1.0, 5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0, false),
+      outline(5.0, listOf(8.0 to 20.0, 30.0 to 45.0), 50.0),
       lines,
       library,
     ) { _, _ -> null }
@@ -165,23 +186,23 @@ class RadioCutServiceTest {
   fun `should start a show without music just before the first word`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 50.0).map(::line)
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, false), lines, emptyList()) { _, _ -> null }
+    val found = service.boundaries(recorded, db, outline(5.0, emptyList(), 50.0), lines, emptyList()) { _, _ -> null }
     expect(found.first()).toEqual(Boundary("show starts", 4.7, "transcript only", true))
   }
 
   @Test
-  fun `should start a show with music in the silence before the hosts`() {
+  fun `should leave out the music that opens a show`() {
     val (recorded, db) = recording(noise(60.0, listOf(3.0)))
     val lines = listOf(1.0, 5.0, 50.0).map(::line)
-    val found = service.boundaries(recorded, db, outline(1.0, 5.0, emptyList(), 50.0, true), lines, emptyList()) { _, _ -> null }
-    expect((abs(found.first().seconds - 3.15) <= 0.011) to found.first().review).toEqual(true to false)
+    val found = service.boundaries(recorded, db, outline(5.0, emptyList(), 50.0), lines, emptyList()) { _, _ -> null }
+    expect(found.first()).toEqual(Boundary("show starts", 4.7, "transcript only", true))
   }
 
   @Test
   fun `should refuse a break that ends before it starts`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 20.0, 30.0, 50.0).map(::line)
-    expect { service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 20.0), 50.0, false), lines, emptyList()) { _, _ -> null } }
+    expect { service.boundaries(recorded, db, outline(5.0, listOf(30.0 to 20.0), 50.0), lines, emptyList()) { _, _ -> null } }
       .toThrow<IllegalStateException>()
       .messageToContain("break 1 ends")
   }
@@ -198,13 +219,13 @@ class RadioCutServiceTest {
   private fun single(library: List<SavedJingle>): List<Boundary> {
     val (recorded, db) = recording(withJingles(noise(60.0), listOf(45.0)))
     val lines = listOf(1.0, 5.0, 30.0, 45.0, 50.0).map(::line)
-    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(30.0 to 45.0), 50.0, false), lines, library) { _, _ -> null }
+    return service.boundaries(recorded, db, outline(5.0, listOf(30.0 to 45.0), 50.0), lines, library) { _, _ -> null }
   }
 
   @Test
-  fun `should end a single break in the silence before a saved jingle`() {
+  fun `should cut a saved jingle out with the break it ends`() {
     val found = single(listOf(saved("2026-10-17-1", chirp(1.0))))
-    expect(found[2].method to (abs(found[2].seconds - 42.0) <= 0.02)).toEqual("station jingle, r=1.00" to true)
+    expect(found[2].seconds to found[2].method).toEqual(44.7 to "station jingle, r=1.00")
   }
 
   @Test
@@ -219,8 +240,8 @@ class RadioCutServiceTest {
   }
 
   @Test
-  fun `should end a single break with an unknown jingle at the last dip`() {
-    expect(single(listOf(saved("2026-10-10-1", tone(2000))))[2].method).toEqual("level dip")
+  fun `should end a single break with an unknown jingle just before the hosts return`() {
+    expect(single(listOf(saved("2026-10-10-1", tone(2000))))[2].method).toEqual("transcript only")
   }
 
   @Test
@@ -281,7 +302,7 @@ class RadioCutServiceTest {
   ): List<Boundary> {
     val (recorded, db) = recording(samples)
     val lines = listOf(1.0, 5.0, 10.0, 30.0, 50.0).map(::line)
-    return service.boundaries(recorded, db, outline(1.0, 5.0, listOf(10.0 to 30.0), 50.0, false), lines, emptyList(), repeated(recorded))
+    return service.boundaries(recorded, db, outline(5.0, listOf(10.0 to 30.0), 50.0), lines, emptyList(), repeated(recorded))
   }
 
   @Test
@@ -314,7 +335,7 @@ class RadioCutServiceTest {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(line(1.0), line(5.0), TranscriptLine(10.0, 11.0, "Ja siinkohal väike paus.", emptyList()), line(30.0), line(50.0))
     val found =
-      service.boundaries(recorded, db, outline(1.0, 5.0, listOf(10.0 to 30.0), 50.0, false), lines, emptyList()) { from, to ->
+      service.boundaries(recorded, db, outline(5.0, listOf(10.0 to 30.0), 50.0), lines, emptyList()) { from, to ->
         10.5.takeIf { from < it && it < to }
       }
     expect(found[1].seconds).toEqual(11.2)

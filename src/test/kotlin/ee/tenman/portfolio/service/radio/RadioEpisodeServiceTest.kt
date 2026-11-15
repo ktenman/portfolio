@@ -53,7 +53,7 @@ class RadioEpisodeServiceTest {
     end: Double,
   ) = OutlineRead(
     listOf("Ainar Ruussaar"),
-    ShowStart(before, first, false),
+    ShowStart(before, first),
     emptyList(),
     ShowEnd(end),
     listOf(OutlineChapter(first, "Ooperikriis", "Ooper", "Ooperi tüli.")),
@@ -103,7 +103,7 @@ class RadioEpisodeServiceTest {
     every { outlineService.reads(any(), any(), AiModel.GEMINI_4_CARBON, any(), any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
     service.make(directory)
     val found = edit()
-    expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 57.2) <= 0.05))
+    expect(Triple(found.outline, found.keep.first().start, abs(found.keep.first().end - 51.2) <= 0.05))
       .toEqual(Triple(OutlineSummary("google/gemini-4-carbon", 3, 3, 3), 4.7, true))
   }
 
@@ -354,7 +354,7 @@ class RadioEpisodeServiceTest {
     second(outline(65.0, 70.0, 110.0))
     service.make(directory)
     val between = cuts(edit(), 120.0).single { it.kind == CutKind.BETWEEN }
-    expect(between.start to between.end).toEqual(57.2 to 69.7)
+    expect(between.start to between.end).toEqual(51.2 to 69.7)
   }
 
   @Test

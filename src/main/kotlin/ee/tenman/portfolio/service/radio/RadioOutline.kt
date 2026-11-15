@@ -56,7 +56,6 @@ data class OutlineRead(
 data class ShowStart(
   val lastNonShowLineTime: Double,
   val firstSpeechTime: Double,
-  val opensWithMusic: Boolean,
 )
 
 data class OutlineBreak(
@@ -82,8 +81,6 @@ data class Pause(
 
 data class Consensus(
   val hosts: List<String>,
-  val opensWithMusic: Boolean,
-  val lastNonShowLineTime: Double,
   val firstSpeechTime: Double,
   val breaks: List<Pause>,
   val lastShowLineTime: Double,
@@ -207,7 +204,7 @@ fun match(
   runCatching {
     val snap = { time: Double -> checkNotNull(printed(lines, time)) { "No transcript line starts or ends within 1 s of $time" } }
     val opening = { show: ShowStart ->
-      lines.firstOrNull()?.start?.takeIf { !show.opensWithMusic && show.lastNonShowLineTime < it } ?: snap(show.lastNonShowLineTime)
+      lines.firstOrNull()?.start?.takeIf { show.lastNonShowLineTime < it } ?: snap(show.lastNonShowLineTime)
     }
     read.copy(
       showStart = with(read.showStart) { copy(lastNonShowLineTime = opening(this), firstSpeechTime = snap(firstSpeechTime)) },
@@ -234,8 +231,6 @@ fun consensus(reads: List<OutlineRead>): Consensus {
   val median = { pick: (OutlineRead) -> Double -> medianLow(voters.map(pick)) }
   return Consensus(
     hosts = voters.first().hosts,
-    opensWithMusic = majority(voters.map { it.showStart.opensWithMusic }),
-    lastNonShowLineTime = median { it.showStart.lastNonShowLineTime },
     firstSpeechTime = median { it.showStart.firstSpeechTime },
     breaks = List(count) { index -> Pause(median { it.breaks[index].lastShowLineTime }, median { it.breaks[index].firstShowLineTime }) },
     lastShowLineTime = median { it.showEnd.lastShowLineTime },

@@ -5,6 +5,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.round
 
 const val TRANSCRIPT = "transcript only"
@@ -32,11 +33,10 @@ fun cue(
 fun leave(
   db: DoubleArray,
   wordEnd: Double,
-  limit: Double,
 ): Pair<Double, String> {
-  val gap = silences(db, wordEnd - 0.5, wordEnd + limit).firstOrNull { it.first >= wordEnd - 0.5 }
-  if (gap != null) return (gap.first + gap.second) / 2 to DIGITAL
-  val dip = dips(db, wordEnd, wordEnd + limit).firstOrNull() ?: return wordEnd + 0.2 to TRANSCRIPT
+  val gap = silences(db, wordEnd - 0.5, wordEnd + PAUSE).firstOrNull { it.first >= wordEnd - 0.5 }
+  if (gap != null) return min((gap.first + gap.second) / 2, gap.first + 0.3) to DIGITAL
+  val dip = dips(db, wordEnd, wordEnd + PAUSE).firstOrNull() ?: return wordEnd + 0.2 to TRANSCRIPT
   return dip to DIP
 }
 
@@ -65,9 +65,9 @@ class RadioCutService {
     val returns = outline.breaks.map { firstWord(at(it.firstShowLineTime)) }
     val shared by lazy { jingle(timeline, returns) }
     val ends = returns.mapIndexed { index, back -> recognise(timeline, back, library) ?: shared?.get(index) }
-    val start = placed("show starts", start(db, outline, at))
-    val end = ended("show ends", db, at(outline.lastShowLineTime), 15.0, repeated)
-    return ordered(listOf(start) + pauses(db, outline, at, returns, ends, repeated) + end)
+    val start = placed("show starts", firstWord(at(outline.firstSpeechTime)) - 0.3 to TRANSCRIPT)
+    val end = ended("show ends", db, at(outline.lastShowLineTime), repeated)
+    return ordered(listOf(start) + pauses(db, outline, at, lines, ends, repeated) + end)
   }
 
   private fun placed(
@@ -79,10 +79,9 @@ class RadioCutService {
     label: String,
     db: DoubleArray,
     line: TranscriptLine,
-    limit: Double,
     repeated: (Double, Double) -> Double?,
   ): Boundary {
-    val cut = leave(db, lastWord(line), limit)
+    val cut = leave(db, lastWord(line))
     val start = repeated(line.words.lastOrNull()?.start ?: line.end, cut.first) ?: return placed(label, cut)
     return Boundary(label, rounded(start), BoundaryMethod.REPEATED_AUDIO.prefix, cut.second == TRANSCRIPT)
   }
@@ -91,14 +90,14 @@ class RadioCutService {
     db: DoubleArray,
     outline: Consensus,
     at: (Double) -> TranscriptLine,
-    returns: List<Double>,
+    lines: List<TranscriptLine>,
     ends: List<JingleMatch?>,
     repeated: (Double, Double) -> Double?,
   ): List<Boundary> =
     outline.breaks.flatMapIndexed { index, pause ->
       listOf(
-        ended("break ${index + 1} starts", db, at(pause.lastShowLineTime), 6.0, repeated),
-        back("break ${index + 1} ends", db, returns[index], ends[index]),
+        ended("break ${index + 1} starts", db, at(pause.lastShowLineTime), repeated),
+        back("break ${index + 1} ends", db, lines, firstWord(at(pause.firstShowLineTime)), ends[index]),
       )
     }
 
@@ -109,35 +108,27 @@ class RadioCutService {
     return found
   }
 
-  private fun start(
-    db: DoubleArray,
-    outline: Consensus,
-    at: (Double) -> TranscriptLine,
-  ): Pair<Double, String> {
-    val first = firstWord(at(outline.firstSpeechTime))
-    if (!outline.opensWithMusic) return first - 0.3 to TRANSCRIPT
-    val last = lastWord(at(outline.lastNonShowLineTime))
-    return leave(db, last, first - last)
-  }
-
   private fun back(
     label: String,
     db: DoubleArray,
+    lines: List<TranscriptLine>,
     word: Double,
     match: JingleMatch?,
   ): Boundary {
-    if (match != null) return jingled(label, db, match)
-    val dip = dips(db, word - 8, word - 0.3).lastOrNull() ?: return placed(label, word - 0.3 to TRANSCRIPT)
-    return placed(label, dip to DIP)
+    val after = lines.lastOrNull { lastWord(it) <= word }?.let(::lastWord) ?: 0.0
+    val dip = dips(db, max(after, word - PAUSE), word - 0.3).lastOrNull()
+    val cut = dip?.let { it to DIP } ?: (word - 0.3 to TRANSCRIPT)
+    if (match == null) return placed(label, cut)
+    return jingled(label, cut.first, match)
   }
 
   private fun jingled(
     label: String,
-    db: DoubleArray,
+    seconds: Double,
     match: JingleMatch,
   ): Boundary {
     val kept = match.copy(start = round(match.start * 1000) / 1000, r = rounded(match.r))
     val method = "${BoundaryMethod.STATION_JINGLE.prefix}, r=${BigDecimal(kept.r).setScale(2, RoundingMode.HALF_EVEN)}"
-    return Boundary(label, rounded(valley(db, match.start - 0.6, match.start + 0.05)), method, false, kept)
+    return Boundary(label, rounded(seconds), method, false, kept)
   }
 }

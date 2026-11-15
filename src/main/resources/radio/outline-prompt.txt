@@ -6,7 +6,6 @@ Return:
 - hosts: the show's presenters as they introduce themselves, with obvious recognition errors corrected.
 - showStart.lastNonShowLineTime: the last line before the show that is not part of it (news, weather, ads, promos).
 - showStart.firstSpeechTime: the hosts' first line in the show.
-- showStart.opensWithMusic: true if the show opens with a song or theme music between those two lines that belongs to the show; false if there is no such music or it is not part of the show.
 - breaks: every ad break inside the show, in order. lastShowLineTime = the hosts' last line before the break; firstShowLineTime = the hosts' first line after it. A rerun of a different programme played inside the recording is a break too.
 - showEnd.lastShowLineTime: the hosts' last line, their sign-off.
 - chapters: the show's topics in order, each with the line where it begins, a short Estonian title of at most 6 words, a label of 2 or 3 words for a timeline, and one Estonian sentence summarising what is said. The first chapter starts at the show start.

@@ -16,11 +16,10 @@ class RadioOutlineTest {
     first: Double,
     breaks: List<Pair<Double, Double>>,
     end: Double,
-    music: Boolean = true,
     hosts: List<String> = listOf("Ainar Ruussaar"),
   ) = OutlineRead(
     hosts,
-    ShowStart(before, first, music),
+    ShowStart(before, first),
     breaks.map { OutlineBreak(it.first, it.second) },
     ShowEnd(end),
     listOf(OutlineChapter(first, "Rahvusooper Estonia")),
@@ -58,17 +57,6 @@ class RadioOutlineTest {
       )
     val agreed = consensus(reads)
     expect(Triple(agreed.firstSpeechTime, agreed.breaks, agreed.voters)).toEqual(Triple(12.0, listOf(Pause(30.0, 40.0)), 1))
-  }
-
-  @Test
-  fun `should take the music flag of the majority`() {
-    val reads =
-      listOf(
-        outline(5.0, 10.0, emptyList(), 90.0, music = false),
-        outline(5.0, 10.0, emptyList(), 90.0),
-        outline(5.0, 10.0, emptyList(), 90.0),
-      )
-    expect(consensus(reads).opensWithMusic).toEqual(true)
   }
 
   @Test
@@ -113,13 +101,8 @@ class RadioOutlineTest {
   }
 
   @Test
-  fun `should take a show start before the first line as the first line when the show opens without music`() {
-    expect(match(outline(0.0, 23.9, emptyList(), 90.0, music = false), linesAt(23.9, 90.0))?.showStart?.lastNonShowLineTime).toEqual(23.9)
-  }
-
-  @Test
-  fun `should reject a show start before the first line when the show opens with music`() {
-    expect(match(outline(0.0, 23.9, emptyList(), 90.0), linesAt(23.9, 90.0))).toEqual(null)
+  fun `should take a show start before the first line as the first line`() {
+    expect(match(outline(0.0, 23.9, emptyList(), 90.0), linesAt(23.9, 90.0))?.showStart?.lastNonShowLineTime).toEqual(23.9)
   }
 
   @Test
