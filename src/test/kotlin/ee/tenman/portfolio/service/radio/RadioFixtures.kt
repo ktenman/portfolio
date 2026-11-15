@@ -130,10 +130,12 @@ fun editList(
   music = music,
 )
 
-fun ffmpeg(vararg arguments: String): ByteArray {
-  val process = ProcessBuilder(listOf("ffmpeg", "-v", "error", "-y") + arguments).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+fun ffmpeg(vararg arguments: String): ByteArray = execute(listOf("ffmpeg", "-v", "error", "-y") + arguments)
+
+private fun execute(command: List<String>): ByteArray {
+  val process = ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start()
   val output = process.inputStream.use { it.readBytes() }
-  check(process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0) { "ffmpeg failed for ${arguments.toList()}" }
+  check(process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0) { "${command.first()} failed for ${command.drop(1)}" }
   return output
 }
 
@@ -165,8 +167,6 @@ fun silent(
 fun decoded(path: Path): ShortArray = pcm(ffmpeg("-i", path.toString(), "-ac", "1", "-ar", "$RATE", "-f", "s16le", "pipe:1"))
 
 fun probe(path: Path): JsonNode {
-  val process = ProcessBuilder("ffprobe", "-v", "error", "-show_format", "-show_chapters", "-of", "json", path.toString()).start()
-  val output = process.inputStream.use { it.readBytes() }
-  check(process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0) { "ffprobe failed for $path" }
+  val output = execute(listOf("ffprobe", "-v", "error", "-show_format", "-show_chapters", "-of", "json", path.toString()))
   return JsonMapperFactory.instance.readTree(output)
 }

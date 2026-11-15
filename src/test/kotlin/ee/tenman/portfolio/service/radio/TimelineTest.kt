@@ -108,4 +108,9 @@ class TimelineTest {
     val db = loudness(timeline(directory))
     expect(db[1000].isNaN() to dips(db, 9.0, 12.0).map { it in 10.7..10.9 }).toEqual(false to listOf(true))
   }
+
+  @Test
+  fun `should find the runs that touch both ends of the mask`() {
+    expect(runs(booleanArrayOf(true, false, false, true, true))).toEqual(listOf(0 to 1, 3 to 5))
+  }
 }
