@@ -22,8 +22,8 @@ RUN apk update && \
 
 USER appuser
 
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseStringDeduplication -Duser.timezone=Europe/Tallinn -javaagent:/app/opentelemetry-javaagent.jar" \
-    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=80 -XX:+UseContainerSupport -XX:+ExitOnOutOfMemoryError" \
+ENV JAVA_OPTS="-Xmx1024m -XX:+UseSerialGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30 -XX:+UseCompactObjectHeaders -XX:TieredStopAtLevel=1 -Duser.timezone=Europe/Tallinn -javaagent:/app/opentelemetry-javaagent.jar" \
+    JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError" \
     OTEL_JAVAAGENT_ENABLED=false \
     SERVER_PORT=8080
 
