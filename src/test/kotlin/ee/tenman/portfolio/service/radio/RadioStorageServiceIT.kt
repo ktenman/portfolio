@@ -3,6 +3,8 @@ package ee.tenman.portfolio.service.radio
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.minio.GetObjectArgs
 import io.minio.ListObjectsArgs
 import io.minio.MinioClient
@@ -14,6 +16,8 @@ import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Clock
 import java.time.Instant
+import java.util.UUID
+import kotlin.random.Random
 
 @IntegrationTest
 class RadioStorageServiceIT {
@@ -28,6 +32,9 @@ class RadioStorageServiceIT {
 
   @Resource
   private lateinit var clock: Clock
+
+  @Resource
+  private lateinit var radioProgrammeRepository: RadioProgrammeRepository
 
   @BeforeEach
   fun setup() {
@@ -123,6 +130,22 @@ class RadioStorageServiceIT {
     Files.writeString(directory.resolve(EPISODE_FILE), "puhas saade")
     radioStorageService.store()
     expect(radioStorageService.resource(directory, "raw.mp3")).toEqual(null)
+  }
+
+  @Test
+  fun `should keep the raw audio in the bucket of an old recording whose show is kept uncut`() {
+    val show = "Eesti TOP 7 ${UUID.randomUUID()}"
+    radioProgrammeRepository.save(
+      RadioProgramme(Random.nextLong(1_000_000, Long.MAX_VALUE), show, "eesti-top-7", uncutSince = Instant.ofEpochSecond(1788250000)),
+    )
+    val directory = recording("2026-09-05-1200-eesti-top-7", startedAt = 1788253200.0, programmes = listOf(show))
+    Files.writeString(directory.resolve(EPISODE_FILE), "puhas saade")
+    radioStorageService.store()
+    expect(
+      keys("2026-09-05-1200-eesti-top-7").map {
+      it.substringAfter('/')
+    },
+        ).toEqual(listOf(EPISODE_FILE, "raw.mp3", STATUS_FILE, TRANSCRIPT_FILE))
   }
 
   @Test

@@ -38,6 +38,14 @@
                 </span>
               </span>
             </radio-record-every>
+            <radio-record-every
+              v-if="item.recordEvery"
+              :programme="item"
+              choice="uncut"
+              class="relative z-10 min-h-11 justify-between text-sm text-ink-soft"
+            >
+              Keep music and ads
+            </radio-record-every>
           </template>
           <template #cell-name="{ item }">
             <span class="font-semibold">{{ item.name }}</span>
@@ -57,6 +65,9 @@
           </template>
           <template #cell-recordEvery="{ item }">
             <radio-record-every :programme="item" />
+          </template>
+          <template #cell-uncut="{ item }">
+            <radio-record-every :programme="item" choice="uncut" />
           </template>
         </data-table>
       </section>
@@ -101,5 +112,6 @@ const columns: ColumnDefinition[] = [
   { key: 'slots', label: 'Airs', class: 'w-48' },
   { key: 'recordings', label: 'Archived', class: 'w-28' },
   { key: 'recordEvery', label: 'Record', class: 'w-24' },
+  { key: 'uncut', label: 'Uncut', class: 'w-24' },
 ]
 </script>

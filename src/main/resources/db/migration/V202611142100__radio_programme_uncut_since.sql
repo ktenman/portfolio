@@ -1,0 +1,1 @@
+ALTER TABLE radio_programme ADD COLUMN uncut_since TIMESTAMP WITH TIME ZONE;

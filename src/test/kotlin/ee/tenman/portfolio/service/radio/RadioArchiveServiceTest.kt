@@ -5,7 +5,9 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.exception.RecordingInProgressException
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -39,11 +41,14 @@ class RadioArchiveServiceTest {
       every { delete(any()) } just runs
     }
 
+  private val programmes = mockk<RadioProgrammeRepository> { every { findByUncutSinceNotNull() } returns emptyList() }
+
   private val service by lazy {
     RadioArchiveService(
       reviewService,
       storage,
       progress,
+      programmes,
       RadioProperties(recordings = recordings),
       clock,
     )
@@ -280,6 +285,22 @@ class RadioArchiveServiceTest {
   fun `should refuse a name that leaves the recordings directory`() {
     transcribed(recording("2026-10-17"))
     expect(service.transcript("../${recordings.fileName}/2026-10-17")).toEqual(null)
+  }
+
+  @Test
+  fun `should keep a recording uncut when its show was kept uncut before it started`() {
+    recording("2026-10-17", programmes = listOf("Eesti TOP 7"))
+    every { programmes.findByUncutSinceNotNull() } returns
+      listOf(RadioProgramme(7, "Eesti TOP 7", "eesti-top-7", uncutSince = Instant.ofEpochSecond(1792230000)))
+    expect(service.recordings().single().uncut).toEqual(true)
+  }
+
+  @Test
+  fun `should leave a recording cut when its show was kept uncut after it started`() {
+    recording("2026-10-17", programmes = listOf("Eesti TOP 7"))
+    every { programmes.findByUncutSinceNotNull() } returns
+      listOf(RadioProgramme(7, "Eesti TOP 7", "eesti-top-7", uncutSince = Instant.ofEpochSecond(1792231000)))
+    expect(service.recordings().single().uncut).toEqual(false)
   }
 
   @Test

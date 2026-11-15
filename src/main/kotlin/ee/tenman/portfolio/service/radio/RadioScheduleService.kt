@@ -65,6 +65,7 @@ class RadioScheduleService(
   ): Boolean {
     val programme = radioProgrammeRepository.findByExternalId(id) ?: return false
     programme.recordEvery = choice.recordEvery
+    programme.uncutSince = if (choice.uncut) programme.uncutSince ?: clock.instant() else null
     radioProgrammeRepository.save(programme)
     plan()
     return true
@@ -232,6 +233,7 @@ class RadioScheduleService(
       name = programme.name,
       description = programme.description,
       recordEvery = programme.recordEvery,
+      uncut = programme.uncutSince != null,
       slots = slots(airings.filter { it.originalId == null }.map { it.startsAt to it.endsAt }, clock.zone),
       recordings = recordings,
       station = programme.station,

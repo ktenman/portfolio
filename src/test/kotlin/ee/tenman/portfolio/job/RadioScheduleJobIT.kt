@@ -42,6 +42,13 @@ class RadioScheduleJobIT : RadioScheduleTestBase() {
   }
 
   @Test
+  fun `should list a show kept uncut once it is chosen so`() {
+    load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))
+    radioScheduleService.choose(175, ProgrammeChoice(true, uncut = true))
+    expect(radioScheduleService.programmes().single().uncut).toEqual(true)
+  }
+
+  @Test
   fun `should drop an airing that left the schedule`() {
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"), episode(3, 231, "Tarkade klubi", "13:00", "14:00"))
     load(episode(1, 175, "Keskpäevatund", "12:00", "13:00"))

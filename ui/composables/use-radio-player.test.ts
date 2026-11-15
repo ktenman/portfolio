@@ -665,6 +665,8 @@ describe('useRadioPlayer', () => {
     it.each([
       ['clean', { episodeBytes: 1000 }, 'episode'],
       ['raw', { editList: null, episodeBytes: null }, 'raw'],
+      ['uncut', { episodeBytes: 1000, uncut: true }, 'raw'],
+      ['clean, its raw audio gone,', { episodeBytes: 1000, uncut: true, sizeBytes: 0 }, 'episode'],
     ])('should open the %s version of a saved recording', async (_, fields, version) => {
       await bring({ recording: recording(fields) })
       expect(player.version.value).toBe(version)

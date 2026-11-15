@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.RadioProgramme
 import ee.tenman.portfolio.exception.RecordingInProgressException
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
@@ -16,14 +18,21 @@ class RadioArchiveService(
   private val radioReviewService: RadioReviewService,
   private val radioStorageService: RadioStorageService,
   private val radioProgressService: RadioProgressService,
+  private val radioProgrammeRepository: RadioProgrammeRepository,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun recordings(): List<RecordingSummary> = directories(radioProperties.recordings).mapNotNull { readable(it, ::summary) }
+  fun recordings(): List<RecordingSummary> {
+    val chosen = radioProgrammeRepository.findByUncutSinceNotNull()
+    return directories(radioProperties.recordings).mapNotNull { directory -> readable(directory) { summary(it, chosen) } }
+  }
 
-  fun recording(name: String): RecordingSummary? = directory(name, STATUS_FILE)?.let { readable(it, ::summary) }
+  fun recording(name: String): RecordingSummary? {
+    val chosen = radioProgrammeRepository.findByUncutSinceNotNull()
+    return directory(name, STATUS_FILE)?.let { directory -> readable(directory) { summary(it, chosen) } }
+  }
 
   fun statuses(): List<RecordingStatus> = directories(radioProperties.recordings).mapNotNull { readable(it, ::readStatus) }
 
@@ -56,7 +65,22 @@ class RadioArchiveService(
     file: String,
   ): Resource? {
     if (!AUDIO.matches(file)) return null
+    return directory(name, STATUS_FILE)?.let { audio(it, file) }
+  }
+
+  fun show(name: String): RadioShow? {
     val directory = directory(name, STATUS_FILE) ?: return null
+    val status = readStatus(directory)
+    val parts = status.parts.sortedBy { it.offsetSeconds }
+    if (parts.isEmpty()) return null
+    val found = parts.map { audio(directory, it.file) ?: return null }
+    return RadioShow(downloadName(name, status, SHOW_FILE, clock.zone), found.zip(inpoints(parts), ::ShowPart))
+  }
+
+  private fun audio(
+    directory: Path,
+    file: String,
+  ): Resource? {
     val path = inside(directory, file) ?: return null
     if (Files.isReadable(path)) return FileSystemResource(path)
     return radioStorageService.resource(directory, file)
@@ -168,7 +192,10 @@ class RadioArchiveService(
     return path
   }
 
-  private fun summary(directory: Path): RecordingSummary {
+  private fun summary(
+    directory: Path,
+    chosen: List<RadioProgramme>,
+  ): RecordingSummary {
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE))
     val decided = edit.decided(radioReviewService.pending(directory))
@@ -190,6 +217,7 @@ class RadioArchiveService(
       audible = audibleOf(directory, status, edit),
       format = formatOf(directory, status),
       programmeCuts = radioProgressService.programmeCuts(directory, status, edit, failure != null),
+      uncut = status.uncut(chosen),
     ).rendering()
   }
 
