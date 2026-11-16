@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import RadioPlayer from './radio-player.vue'
+import { digest } from './radio-digest-fixture'
 import { recording } from './radio-fixture'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer, type Version } from '../../composables/use-radio-player'
@@ -286,6 +287,11 @@ describe('RadioPlayer', () => {
     const wrapper = render('episode', recording({ sizeBytes: 0 }))
     const segment = wrapper.findAll('[role="group"][aria-label="Version"] button')[0]!
     expect([segment.attributes('disabled'), segment.text()]).toEqual(['', 'Raw'])
+  })
+
+  it('should hide the version switch when there is no raw audio', () => {
+    const wrapper = render('episode', digest().recording)
+    expect(wrapper.findAll('[aria-label="Version"]')).toHaveLength(0)
   })
 
   it('should keep the select for phones only', () => {

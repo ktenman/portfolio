@@ -12,6 +12,8 @@ import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioArchiveService
 import ee.tenman.portfolio.service.radio.RadioDay
 import ee.tenman.portfolio.service.radio.RadioDayService
+import ee.tenman.portfolio.service.radio.RadioDigest
+import ee.tenman.portfolio.service.radio.RadioDigestArchiveService
 import ee.tenman.portfolio.service.radio.RadioLiveService
 import ee.tenman.portfolio.service.radio.RadioPlayerChoice
 import ee.tenman.portfolio.service.radio.RadioPlayerDto
@@ -61,9 +63,13 @@ class RadioController(
   private val radioPositionService: RadioPositionService,
   private val radioPlayerService: RadioPlayerService,
   private val radioSearchService: RadioSearchService,
+  private val radioDigestArchiveService: RadioDigestArchiveService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
+
+  @GetMapping("/digests")
+  fun getDigests(): List<RadioDigest> = radioDigestArchiveService.digests()
 
   @GetMapping("/programmes")
   fun getProgrammes(): List<RadioProgrammeDto> = radioScheduleService.programmes()

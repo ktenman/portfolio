@@ -103,10 +103,26 @@ export const useRadioSearch = (
   return { ...result, loadMore }
 }
 
+export const useRadioDigests = (wanted: MaybeRefOrGetter<boolean> = true) => {
+  const { isAuthenticated } = useAuthState()
+  return useQuery({
+    queryKey: ['radio-digests'],
+    queryFn: radioService.digests,
+    enabled: computed(() => isAuthenticated.value && toValue(wanted)),
+  })
+}
+
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   const query = useRadioRecordings()
-  const recording = computed(() => query.data.value?.find(r => r.name === toValue(name)) ?? null)
-  return { ...query, recording }
+  const digests = useRadioDigests(() => toValue(name).startsWith('week-in-radio-'))
+  const recording = computed(
+    () =>
+      query.data.value?.find(r => r.name === toValue(name)) ??
+      digests.data.value?.find(d => d.recording.name === toValue(name))?.recording ??
+      null
+  )
+  const isLoading = computed(() => query.isLoading.value || digests.isLoading.value)
+  return { ...query, recording, isLoading }
 }
 
 const useTranscribed = <T>(

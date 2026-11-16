@@ -12,7 +12,7 @@ import kotlin.math.min
 @Service
 class RadioRenderService {
   fun render(
-    timeline: Timeline,
+    spans: List<Span>,
     keep: List<Pair<Double, Double>>,
     marks: List<Pair<Double, String>>,
     title: String,
@@ -20,7 +20,7 @@ class RadioRenderService {
     station: Station,
     progress: (Double) -> Unit = {},
   ) {
-    val found = pieces(timeline.spans, keep)
+    val found = pieces(spans, keep)
     val length = found.sumOf { it.end - it.start }
     val chapters = Files.createTempFile(target.parent, "chapters", ".txt")
     val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
@@ -28,10 +28,9 @@ class RadioRenderService {
       Files.writeString(chapters, metadata(marks, length))
       val graph = graph(found)
       val share = { seconds: Double -> min(1.0, seconds / length) }
-      run(measure(timeline, graph), log) { progress(MEASURE_SHARE * share(it)) }
-      val decibels = String.format(Locale.ROOT, "%.2f", gain(Files.readString(log)))
-      val volume = "$graph,volume=${decibels}dB[level]"
-      run(encode(timeline, volume, chapters, title, target, station), log) { progress(MEASURE_SHARE + (1 - MEASURE_SHARE) * share(it)) }
+      run(measure(spans, graph), log) { progress(MEASURE_SHARE * share(it)) }
+      val volume = "$graph,volume=${decibels(log)}dB[level]"
+      run(encode(spans, volume, chapters, title, target, station), log) { progress(MEASURE_SHARE + (1 - MEASURE_SHARE) * share(it)) }
     }.also {
       Files.deleteIfExists(chapters)
       Files.deleteIfExists(log)
@@ -48,18 +47,41 @@ class RadioRenderService {
     return trims.joinToString(";") + ";" + found.indices.joinToString("") { "[p$it]" } + "concat=n=${found.size}:v=0:a=1"
   }
 
+  fun clip(
+    source: Path,
+    start: Double,
+    end: Double,
+    target: Path,
+  ) {
+    val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
+    val input = FFMPEG + listOf("-ss", plain(start), "-t", plain(end - start), "-i", source.toString())
+    runCatching {
+      run(input + listOf("-af", LOUDNESS, "-f", "null", "-"), log) {}
+      val encode = listOf("-loglevel", "error", "-y", "-af", "volume=${decibels(log)}dB", "-c:a", "aac", "-b:a", CLIP_BITRATE)
+      run(input + encode + target.toString(), log) {}
+    }.also { Files.deleteIfExists(log) }.getOrThrow()
+  }
+
+  fun silence(
+    target: Path,
+    seconds: Double,
+  ) {
+    val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
+    val encode = listOf("-loglevel", "error", "-y", "-f", "lavfi", "-i", SILENCE, "-t", plain(seconds), "-c:a", "aac", "-b:a", CLIP_BITRATE)
+    runCatching { run(FFMPEG + encode + target.toString(), log) {} }.also { Files.deleteIfExists(log) }.getOrThrow()
+  }
+
   private fun ffmpeg(
-    timeline: Timeline,
+    spans: List<Span>,
     vararg flags: String,
-  ): List<String> =
-    listOf("ffmpeg", "-hide_banner", "-nostdin", "-nostats", "-progress", "pipe:1", *flags) +
-      timeline.spans.flatMap { listOf("-i", it.audio.toString()) }
+  ): List<String> = FFMPEG + listOf("-progress", "pipe:1", *flags) + spans.flatMap { listOf("-i", it.audio.toString()) }
 
   private fun measure(
-    timeline: Timeline,
+    spans: List<Span>,
     graph: String,
-  ): List<String> =
-    ffmpeg(timeline) + listOf("-filter_complex", "$graph,ebur128=peak=true:framelog=quiet[level]", "-map", "[level]", "-f", "null", "-")
+  ): List<String> = ffmpeg(spans) + listOf("-filter_complex", "$graph,$LOUDNESS[level]", "-map", "[level]", "-f", "null", "-")
+
+  private fun decibels(log: Path): String = String.format(Locale.ROOT, "%.2f", gain(Files.readString(log)))
 
   private fun gain(log: String): Double {
     val summaries = log.split("Summary:").drop(1)
@@ -78,15 +100,15 @@ class RadioRenderService {
   }
 
   private fun encode(
-    timeline: Timeline,
+    spans: List<Span>,
     graph: String,
     chapters: Path,
     title: String,
     target: Path,
     station: Station,
   ): List<String> {
-    val count = timeline.spans.size.toString()
-    return ffmpeg(timeline, "-loglevel", "error", "-y") +
+    val count = spans.size.toString()
+    return ffmpeg(spans, "-loglevel", "error", "-y") +
       listOf("-i", chapters.toString(), "-filter_complex", graph, "-map", "[level]", "-map_metadata", count, "-map_chapters", count) +
       listOf("-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart") +
       listOf("-metadata", "title=$title", "-metadata", "artist=${station.label}", target.toString())
@@ -122,5 +144,9 @@ class RadioRenderService {
     private const val CEILING_DBTP = -1.5
     private const val SILENCE_LUFS = -70.0
     private const val MEASURE_SHARE = 0.25
+    private const val CLIP_BITRATE = "192k"
+    private const val LOUDNESS = "ebur128=peak=true:framelog=quiet"
+    private const val SILENCE = "anullsrc=r=48000:cl=stereo"
+    private val FFMPEG = listOf("ffmpeg", "-hide_banner", "-nostdin", "-nostats")
   }
 }

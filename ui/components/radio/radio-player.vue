@@ -26,6 +26,7 @@
           </template>
         </p>
         <select
+          v-if="switchable"
           v-model="version"
           aria-label="Version"
           class="form-select form-select-sm min-h-11 w-auto rounded-full border-transparent bg-transparent bg-position-[right_1rem_center] py-2.5 pr-10 pl-4 text-base font-medium text-ink-soft md:hidden"
@@ -33,7 +34,7 @@
           <option v-if="original" value="raw">Raw</option>
           <option v-if="cleaned" value="episode">Clean</option>
         </select>
-        <div role="group" aria-label="Version" class="flex max-md:hidden">
+        <div v-if="switchable" role="group" aria-label="Version" class="flex max-md:hidden">
           <button
             v-for="option in VERSIONS"
             :key="option.value"
@@ -101,6 +102,7 @@ onBeforeUnmount(decisions.flush)
 const raw = computed(() => player.version.value === 'raw')
 const cleaned = computed(() => cleanable(props.recording))
 const original = computed(() => !pruned(props.recording))
+const switchable = computed(() => props.recording.status.parts.length > 0)
 const version = computed({
   get: () => player.version.value,
   set: (value: Version) => player.swap(value),

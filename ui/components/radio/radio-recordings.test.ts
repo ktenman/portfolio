@@ -3,6 +3,7 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
+import { digest } from './radio-digest-fixture'
 import { recording, station } from './radio-fixture'
 import {
   CutState,
@@ -18,6 +19,7 @@ const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
 vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
+    digests: vi.fn().mockResolvedValue([]),
     deleteRecording: vi.fn(),
     savePlayer: () => Promise.resolve(),
     stations: vi.fn().mockResolvedValue([]),
@@ -74,6 +76,11 @@ describe('RadioRecordings', () => {
         cutState: CutState.NONE,
       }),
     ])
+  })
+
+  it('should show the week in radio on the recordings tab', async () => {
+    vi.mocked(radioService.digests).mockResolvedValueOnce([digest()])
+    expect((await mount()).find('[data-testid="radio-digest"]').exists()).toBe(true)
   })
 
   it('should show when and how long the show was recorded', async () => {

@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "properties": {
+    "stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "short Estonian title of at most 6 words"
+          },
+          "summary": {
+            "type": "string",
+            "description": "one Estonian sentence saying what the story is"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "ids of every row that tells the story"
+          },
+          "best": {
+            "type": "string",
+            "description": "id of the row with the best take, one of rows"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["news", "idea"]
+          },
+          "importance": {
+            "type": "integer",
+            "enum": [1, 2, 3, 4, 5]
+          },
+          "interest": {
+            "type": "integer",
+            "enum": [1, 2, 3, 4, 5]
+          },
+          "repeat": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "description": "one short English sentence on why it matters"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "rows",
+          "best",
+          "kind",
+          "importance",
+          "interest",
+          "repeat",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["stories"],
+  "additionalProperties": false
+}

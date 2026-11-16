@@ -30,6 +30,7 @@ enum class AiModel(
 
 enum class AiPurpose {
   RADIO_OUTLINE,
+  RADIO_DIGEST,
   SECTOR,
   INDUSTRY,
   COUNTRY,

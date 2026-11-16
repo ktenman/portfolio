@@ -148,12 +148,16 @@ data class JingleMatch(
   val saved: String? = null,
 )
 
-fun directories(root: Path): List<Path> {
+fun directories(
+  root: Path,
+  pattern: Regex = NAME,
+  required: String = STATUS_FILE,
+): List<Path> {
   if (!Files.isDirectory(root)) return emptyList()
   return Files
     .list(root)
     .use { it.toList() }
-    .filter { NAME.matches(it.fileName.toString()) && Files.exists(it.resolve(STATUS_FILE)) }
+    .filter { pattern.matches(it.fileName.toString()) && Files.exists(it.resolve(required)) }
     .sortedDescending()
 }
 

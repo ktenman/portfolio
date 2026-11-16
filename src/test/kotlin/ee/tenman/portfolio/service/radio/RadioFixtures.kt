@@ -13,6 +13,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.exp
@@ -129,6 +130,58 @@ fun editList(
   topics = topics,
   music = music,
 )
+
+fun cutRecording(
+  name: String,
+  topics: List<EpisodeChapter>,
+  audible: List<KeptSpan> = listOf(KeptSpan(0.0, 3600.0)),
+  boundaries: List<Boundary> = emptyList(),
+  state: ProgrammeCutState = ProgrammeCutState.FOUND,
+  programme: String = "Keskpäevatund",
+  startedAt: Double = 1_794_650_400.0,
+  station: Station = Station.KUKU,
+) = RecordingSummary(
+  name = name,
+  programme = programme,
+  status = RecordingStatus(RecordingState.CAPTURED, startedAt, 3600.0, station = station),
+  sizeBytes = 0,
+  transcribed = true,
+  speech = null,
+  sounds = null,
+  editList = editList(keep = audible, boundaries = boundaries, topics = topics),
+  failure = null,
+  episodeBytes = 1,
+  cuts = emptyList(),
+  timeline = emptyList(),
+  audible = audible,
+  format = null,
+  programmeCuts = listOf(ProgrammeCuts(programme, state)),
+)
+
+fun writtenDigest(
+  recordings: Path,
+  date: LocalDate,
+  titles: List<String>,
+): Path {
+  val folder = Files.createDirectories(recordings.resolve(DIGEST_DIRECTORY).resolve(date.toString()))
+  val source = SectionSource("2026-11-14-1200-keskpaevatund", "Keskpäevatund", Station.KUKU, LocalDate.of(2026, 11, 14), 60.0, emptyList())
+  val stories =
+    titles.mapIndexed {
+    n,
+      title,
+    ->
+    DigestStory(title, "Kokkuvõte", n * 180.0, (n + 1) * 180.0, 5, 4, 14, "news", "Põhjus", source)
+  }
+  if (stories.isNotEmpty()) {
+    Files.writeString(folder.resolve(EPISODE_FILE), "Nädal raadios õ")
+    save(
+      folder.resolve(TRANSCRIPT_FILE),
+      stories.map { TranscriptSection(it.start, it.end, it.title, null, it.start, emptyList(), it.source) },
+    )
+  }
+  save(folder.resolve(DIGEST_FILE), Digest(date, "2026-11-16T10:00:00Z", stories.size * 180.0, "google/gemini-4-carbon", stories))
+  return folder
+}
 
 fun ffmpeg(vararg arguments: String): ByteArray = execute(listOf("ffmpeg", "-v", "error", "-y") + arguments)
 

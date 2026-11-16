@@ -21,6 +21,7 @@ class RadioArchiveService(
   private val radioProgrammeRepository: RadioProgrammeRepository,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
+  private val radioDigestArchiveService: RadioDigestArchiveService,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -32,6 +33,7 @@ class RadioArchiveService(
   fun recording(name: String): RecordingSummary? {
     val chosen = radioProgrammeRepository.findByUncutSinceNotNull()
     return directory(name, STATUS_FILE)?.let { directory -> readable(directory) { summary(it, chosen) } }
+      ?: radioDigestArchiveService.recording(name)
   }
 
   fun statuses(): List<RecordingStatus> = directories(radioProperties.recordings).mapNotNull { readable(it, ::readStatus) }
@@ -43,7 +45,7 @@ class RadioArchiveService(
   }
 
   fun sections(name: String): List<TranscriptSection>? {
-    val lines = transcript(name) ?: return null
+    val lines = transcript(name) ?: return radioDigestArchiveService.sections(name)
     val directory = directory(name, TRANSCRIPT_FILE) ?: return null
     val status = readStatus(directory)
     val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE))
@@ -53,7 +55,7 @@ class RadioArchiveService(
   }
 
   fun contexts(name: String): List<CutContext>? {
-    val directory = directory(name, TRANSCRIPT_FILE) ?: return null
+    val directory = directory(name, TRANSCRIPT_FILE) ?: return radioDigestArchiveService.recording(name)?.let { emptyList() }
     val cuts = cutsOf(directory)
     if (cuts.isEmpty()) return emptyList()
     val lines = lines(readTranscript(directory))
@@ -65,7 +67,7 @@ class RadioArchiveService(
     file: String,
   ): Resource? {
     if (!AUDIO.matches(file)) return null
-    val directory = directory(name, STATUS_FILE) ?: return null
+    val directory = directory(name, STATUS_FILE) ?: return radioDigestArchiveService.file(name, file)
     val path = inside(directory, file) ?: return null
     if (Files.isReadable(path)) return FileSystemResource(path)
     return radioStorageService.resource(directory, file)
@@ -74,7 +76,10 @@ class RadioArchiveService(
   fun downloadName(
     name: String,
     file: String,
-  ): String? = directory(name, STATUS_FILE)?.let { downloadName(name, readStatus(it), file, clock.zone) }
+  ): String? {
+    val status = directory(name, STATUS_FILE)?.let(::readStatus) ?: radioDigestArchiveService.recording(name)?.status ?: return null
+    return downloadName(name, status, file, clock.zone)
+  }
 
   fun review(
     name: String,

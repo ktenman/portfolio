@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "first": {
+      "type": "integer",
+      "description": "number of the first line of the stretch"
+    },
+    "last": {
+      "type": "integer",
+      "description": "number of the last line of the stretch"
+    }
+  },
+  "required": ["first", "last"],
+  "additionalProperties": false
+}

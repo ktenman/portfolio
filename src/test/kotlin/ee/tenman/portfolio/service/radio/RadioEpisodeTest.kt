@@ -27,6 +27,16 @@ class RadioEpisodeTest {
   }
 
   @Test
+  fun `should map a moment inside a removed stretch to the seam`() {
+    expect(episodeSeconds(50.0, listOf(0.0 to 40.0, 60.0 to 100.0))).toEqual(40.0)
+  }
+
+  @Test
+  fun `should map a moment after a removed stretch past the seam`() {
+    expect(episodeSeconds(70.0, listOf(0.0 to 40.0, 60.0 to 100.0))).toEqual(50.0)
+  }
+
+  @Test
   fun `should leave out a chapter that starts after the episode ends`() {
     expect(metadata(listOf(0.0 to "Soovide aeg", 596.67 to "Lõpusoov"), 596.666)).toEqual(
       ";FFMETADATA1\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=596666\ntitle=Soovide aeg\n",

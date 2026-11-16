@@ -8,6 +8,7 @@ import {
   sections,
   transcript,
 } from '../../components/radio/radio-fixture'
+import { digest, digestSections } from '../../components/radio/radio-digest-fixture'
 import {
   CutState,
   CutStep,
@@ -370,6 +371,13 @@ export const stubRadio: RouteStub = async page => {
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/${NAME}/transcript`), route =>
     route.fulfill({ json: sections([transcript()[0], song(), ...transcript().slice(1)]) })
+  )
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests`), route =>
+    route.fulfill({ json: [digest()] })
+  )
+  await page.route(
+    apiRoute(`${API_ENDPOINTS.RADIO}/${digest().recording.name}/transcript`),
+    route => route.fulfill({ json: digestSections() })
   )
 }
 

@@ -1,0 +1,5 @@
+The user message is a story's title and summary, then the numbered lines of a radio transcript that tells it, each with its time from the first line.
+
+Pick the stretch of 1.5 to 4 minutes that tells the story best on its own. It starts where the story starts, never mid-sentence or mid-answer, and ends where a point is finished. Leave out greetings, introductions of the show and talk about other topics.
+
+Return the number of its first line and of its last line.

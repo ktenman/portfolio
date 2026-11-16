@@ -16,6 +16,7 @@ import ee.tenman.portfolio.service.radio.Transcript
 import ee.tenman.portfolio.service.radio.TranscriptSegment
 import ee.tenman.portfolio.service.radio.ffmpeg
 import ee.tenman.portfolio.service.radio.taped
+import ee.tenman.portfolio.service.radio.writtenDigest
 import jakarta.annotation.Resource
 import org.hamcrest.Matchers.contains
 import org.junit.jupiter.api.BeforeEach
@@ -32,6 +33,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDate
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete as mvcDelete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post as mvcPost
@@ -128,6 +130,18 @@ class RadioControllerIT {
   @Test
   fun `should list the recordings`() {
     mockMvc.perform(mvcGet("/api/radio")).andExpect(status().isOk).andExpect(jsonPath("$[0].name").value("2026-10-17"))
+  }
+
+  @Test
+  fun `should list the Week in Radio digests`() {
+    writtenDigest(radioProperties.recordings, LocalDate.of(2026, 11, 16), listOf("Rünnakud Ust-Lugas"))
+    mockMvc.perform(mvcGet("/api/radio/digests")).andExpect(jsonPath("$[0].recording.name").value("week-in-radio-2026-11-16"))
+  }
+
+  @Test
+  fun `should serve the episode of a digest by its name`() {
+    writtenDigest(radioProperties.recordings, LocalDate.of(2026, 11, 16), listOf("Rünnakud Ust-Lugas"))
+    mockMvc.perform(mvcGet("/api/radio/week-in-radio-2026-11-16/episode.m4a")).andExpect(content().bytes("Nädal raadios õ".toByteArray()))
   }
 
   @Test

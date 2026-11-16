@@ -23,16 +23,20 @@ fun position(seconds: Double): String = "${(seconds / 60).toInt()}:${(seconds % 
 
 private fun joins(keep: List<Pair<Double, Double>>): List<Double> = keep.runningFold(0.0) { total, (a, b) -> total + b - a }.dropLast(1)
 
+fun episodeSeconds(
+  seconds: Double,
+  spans: List<Pair<Double, Double>>,
+): Double =
+  spans.zip(joins(spans)).firstOrNull { (span, _) -> seconds < span.second }?.let { (span, seam) -> seam + max(seconds - span.first, 0.0) }
+    ?: spans.sumOf { it.second - it.first }
+
 fun chapters(
   keep: List<Pair<Double, Double>>,
   topics: List<OutlineChapter>,
   title: String,
 ): List<Pair<Double, String>> {
   val seams = joins(keep)
-  val total = keep.sumOf { it.second - it.first }
-  val clean = { t: Double ->
-    keep.zip(seams).firstOrNull { (span, _) -> t < span.second }?.let { (span, seam) -> seam + max(t - span.first, 0.0) } ?: total
-  }
+  val clean = { t: Double -> episodeSeconds(t, keep) }
   val order = compareBy<Pair<Double, String>>({ it.first }, { it.second })
   val titled = topics.ifEmpty { listOf(OutlineChapter(0.0, title)) }.map { clean(it.time) to it.title }.sortedWith(order)
   val opened = listOf(0.0 to titled.first().second) + titled.drop(1)
