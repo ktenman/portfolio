@@ -90,6 +90,9 @@ data class Consensus(
 
 fun parse(text: String): OutlineRead? = runCatching { JsonMapperFactory.instance.readValue(text, OutlineRead::class.java) }.getOrNull()
 
+fun resource(path: String): String =
+  checkNotNull(OutlineRead::class.java.classLoader.getResource(path)) { "Missing resource $path" }.readText()
+
 fun lines(transcript: Transcript): List<TranscriptLine> {
   val starts = transcript.segments.map { it.start }
   val owners = transcript.words.groupBy { word -> maxOf(starts.indexOfLast { it <= word.start }, 0) }

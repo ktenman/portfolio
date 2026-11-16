@@ -94,12 +94,8 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Run secret scanning with unique output name per job
       - name: Run secret scanning
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        with:
-          report-format: sarif
-          report-path: gitleaks-${{ matrix.language }}-results.sarif
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true  # Don't fail the job if gitleaks fails
@@ -136,13 +132,3 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
-
-      # Upload Gitleaks results as artifact
-      - name: Upload Gitleaks results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: gitleaks-${{ matrix.language }}-results
-          path: gitleaks-${{ matrix.language }}-results.sarif
-          retention-days: 7
-          if-no-files-found: warn # Don't fail if no leaks found

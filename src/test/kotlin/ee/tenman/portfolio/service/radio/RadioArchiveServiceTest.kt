@@ -18,6 +18,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 
 class RadioArchiveServiceTest {
@@ -51,6 +52,7 @@ class RadioArchiveServiceTest {
       programmes,
       RadioProperties(recordings = recordings),
       clock,
+      RadioDigestArchiveService(RadioProperties(recordings = recordings)),
     )
   }
 
@@ -699,6 +701,24 @@ class RadioArchiveServiceTest {
     recording("2026-10-19-1023-kuku")
     service.delete("2026-10-19-1023-kuku")
     expect(recorded(recordings)).toContain("2026-10-19-1023-kuku")
+  }
+
+  @Test
+  fun `should not delete a digest through the recording endpoint`() {
+    writtenDigest(recordings, LocalDate.of(2026, 11, 16), listOf("Ust-Luga"))
+    expect(service.delete("week-in-radio-2026-11-16")).toEqual(false)
+  }
+
+  @Test
+  fun `should answer for a Week in Radio digest by name`() {
+    writtenDigest(recordings, LocalDate.of(2026, 11, 16), listOf("Ust-Luga"))
+    expect(service.recording("week-in-radio-2026-11-16")?.programme).toEqual("Week in Radio")
+  }
+
+  @Test
+  fun `should name a downloaded digest after its day`() {
+    writtenDigest(recordings, LocalDate.of(2026, 11, 16), listOf("Ust-Luga"))
+    expect(service.downloadName("week-in-radio-2026-11-16", EPISODE_FILE)).toEqual("Week in Radio 2026-11-16.m4a")
   }
 
   @Test

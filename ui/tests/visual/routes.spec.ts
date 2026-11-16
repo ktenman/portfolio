@@ -29,6 +29,7 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },
   { path: '/radio/catch-up?station=aripaev', name: 'radio-catch-up-aripaev', stub: stubRadio },
   { path: '/radio/2026-10-17', name: 'radio-listen', stub: stubRadio },
+  { path: '/radio/week-in-radio-2026-11-16', name: 'radio-digest', stub: stubRadio },
   { path: '/radio/2026-10-24', name: 'radio-find-cuts', stub: stubRadioStill },
   { path: '/radio/2026-10-23', name: 'radio-render-cuts', stub: stubRadioStill },
   { path: '/radio/2026-10-25', name: 'radio-wait-cuts', stub: stubRadio },

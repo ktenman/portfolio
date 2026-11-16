@@ -49,8 +49,6 @@ jobs:
       - name: Setup Gradle
         if: matrix.lint-type == 'backend'
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-        with:
-          gradle-home-cache-cleanup: true
       - name: Run ktlint check
         if: matrix.lint-type == 'backend'
         run: ./gradlew ktlintCheck
@@ -147,8 +145,6 @@ jobs:
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
-        with:
-          gradle-home-cache-cleanup: true
       - uses: actions/setup-node@v7
         if: matrix.type == 'frontend' || matrix.type == 'cloudflare'
         with:
@@ -244,13 +240,13 @@ jobs:
           timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
       - name: Run E2E tests
         if: matrix.type == 'e2e'
-        uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
-        with:
-          command: |
-            export E2E=true
-            ./gradlew :test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache
-          attempt_limit: 3
-          attempt_delay: 30000
+        run: |
+          export E2E=true
+          for _ in 1 2 3; do
+            ./gradlew :test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache && exit 0
+            sleep 30
+          done
+          exit 1
       - uses: actions/upload-artifact@v7
         if: failure() && matrix.type == 'backend'
         continue-on-error: true
@@ -435,8 +431,6 @@ jobs:
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         if: steps.check.outputs.should_build == 'true' && (matrix.name == 'backend' || matrix.name == 'radio-worker')
-        with:
-          gradle-home-cache-cleanup: true
       - run: ./gradlew bootJar --build-cache
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend'
       - run: ./gradlew :radio-worker:installDist --build-cache

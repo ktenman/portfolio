@@ -4,7 +4,7 @@
       <radio-tabs v-if="!route.params.name">
         <component :is="Component" />
       </radio-tabs>
-      <component :is="Component" v-else />
+      <component :is="Component" v-else :key="String(route.params.name)" />
     </router-view>
   </div>
 </template>

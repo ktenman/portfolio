@@ -1,0 +1,189 @@
+package ee.tenman.portfolio.service.radio
+
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Station
+import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.ZoneId
+
+class RadioDigestTest {
+  @Test
+  fun `should take a row per topic with the minutes left after cuts`() {
+    val topics = listOf(EpisodeChapter(100.0, "Ust-Luga"), EpisodeChapter(500.0, "Telia"))
+    val held = cutRecording(RECORDING, topics, listOf(KeptSpan(0.0, 200.0), KeptSpan(300.0, 900.0)))
+    expect(rows(held, TALLINN).map { it.title to it.kept }).toEqual(listOf("Ust-Luga" to 300.0, "Telia" to 400.0))
+  }
+
+  @Test
+  fun `should drop a topic with under a minute kept`() {
+    val held =
+      cutRecording(RECORDING, listOf(EpisodeChapter(100.0, "Saate algus"), EpisodeChapter(150.0, "Sõda")), listOf(KeptSpan(0.0, 900.0)))
+    expect(rows(held, TALLINN).map { it.title }).toEqual(listOf("Sõda"))
+  }
+
+  @Test
+  fun `should name the programme of the boundary a topic starts in`() {
+    val boundaries =
+      listOf(
+        Boundary("show starts", 0.0, "transcript", false, programme = "Uudised"),
+        Boundary("show starts", 400.0, "transcript", false, programme = "Kuum tool"),
+      )
+    val held = cutRecording(RECORDING, listOf(EpisodeChapter(100.0, "Ilm"), EpisodeChapter(500.0, "Tööturg")), boundaries = boundaries)
+    expect(rows(held, TALLINN).map { it.programme }).toEqual(listOf("Uudised", "Kuum tool"))
+  }
+
+  @Test
+  fun `should not count a recording whose cuts are still being found as finished`() {
+    expect(finished(cutRecording(RECORDING, emptyList(), state = ProgrammeCutState.QUEUED))).toEqual(false)
+  }
+
+  @Test
+  fun `should score importance twice and cap other shows at two`() {
+    val rows = table("Digitund", "Samost", "Kuum tool", "Tervisetark")
+    val found = ranked(Judgement(listOf(story("r1", listOf("r1", "r2", "r3", "r4"), 5, 3))), rows)
+    expect(found.map { it.score }).toEqual(listOf(15))
+  }
+
+  @Test
+  fun `should drop stories scoring under eight`() {
+    expect(ranked(Judgement(listOf(story("r1", listOf("r1"), 3, 1))), table("Digitund"))).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should keep at most four stories from one show`() {
+    val stories = (1..6).map { story("r$it", listOf("r$it"), 4, it % 5 + 1) }
+    val found = ranked(Judgement(stories), table(*Array(6) { "Samost ja Aaspõllu" }))
+    expect(found.map { it.story.interest }).toEqual(listOf(5, 4, 3, 2))
+  }
+
+  @Test
+  fun `should drop a story the judge marks as a repeat`() {
+    expect(ranked(Judgement(listOf(story("r1", listOf("r1"), 5, 5, repeat = true))), table("Digitund"))).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should drop unknown rows and a story whose best is not among its rows`() {
+    val stories = listOf(story("r1", listOf("r1", "r9"), 5, 5), story("r2", listOf("r1"), 5, 5))
+    expect(ranked(Judgement(stories), table("Digitund", "Kuum tool")).map { it.best.id to it.score }).toEqual(listOf("r1" to 15))
+  }
+
+  @Test
+  fun `should not play the same take for two stories`() {
+    val stories = listOf(story("r1", listOf("r1"), 5, 5), story("r1", listOf("r1", "r2"), 4, 4))
+    expect(ranked(Judgement(stories), table("Digitund", "Kuum tool")).map { it.score }).toEqual(listOf(15))
+  }
+
+  @Test
+  fun `should take the lines the model picks as the clip`() {
+    val lines = (0..9).map { line(1000.0 + it * 30, 1000.0 + it * 30 + 28) }
+    expect(clipped(ClipAnswer(2, 5), lines, row(1000.0, 1400.0), FULL)).toEqual(1030.0 to 1148.0)
+  }
+
+  @Test
+  fun `should fall back to the first three minutes when the answer is outside the bounds`() {
+    val lines = (0..19).map { line(1000.0 + it * 30, 1000.0 + it * 30 + 28) }
+    val answers = listOf(null, ClipAnswer(2, 2), ClipAnswer(1, 12), ClipAnswer(3, 21), ClipAnswer(5, 3))
+    expect(answers.map { clipped(it, lines, row(1000.0, 1600.0), FULL) }).toEqual(List(5) { 1000.0 to 1180.0 })
+  }
+
+  @Test
+  fun `should keep a clip that spans a removed ad break contiguous`() {
+    val lines = listOf(line(100.0, 140.0), line(200.0, 230.0), line(240.0, 300.0))
+    val audible = listOf(KeptSpan(0.0, 150.0), KeptSpan(200.0, 400.0))
+    expect(clipped(ClipAnswer(1, 3), lines, row(100.0, 400.0), audible)).toEqual(100.0 to 250.0)
+  }
+
+  @Test
+  fun `should skip a clip that would take the digest past an hour`() {
+    val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
+    val clips = listOf(1500.0, 1500.0, 900.0, 500.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips).map { it.length }).toEqual(listOf(1500.0, 1500.0, 500.0))
+  }
+
+  @Test
+  fun `should count the pause after each clip toward the hour`() {
+    val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
+    val clips = listOf(1800.0, 1800.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips).map { it.length }).toEqual(listOf(1800.0))
+  }
+
+  @Test
+  fun `should give the digest the station heard longest`() {
+    val stories = listOf(told(Station.KUKU, 0.0, 60.0), told(Station.ARIPAEV, 61.0, 161.0), told(Station.ARIPAEV, 162.0, 262.0))
+    val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 263.0, "google/gemini-4-carbon", stories)
+    expect(digestSummary(digest, 1).status.station).toEqual(Station.ARIPAEV)
+  }
+
+  @Test
+  fun `should place a line after a removed ad break at its place in the digest`() {
+    val lines = listOf(line(100.0, 140.0), line(200.0, 230.0))
+    val audible = listOf(KeptSpan(0.0, 150.0), KeptSpan(200.0, 400.0))
+    expect(shifted(lines, 100.0 to 250.0, audible, 600.0).map { it.start }).toEqual(listOf(600.0, 650.0))
+  }
+
+  @Test
+  fun `should not carry a cut's review mark into the digest transcript`() {
+    val split = Cut(CutKind.BREAK, "Reklaam", 120.0, 240.0, emptyList(), review = false, removed = true)
+    val lines = listOf(line(100.0, 140.0).copy(split = split))
+    expect(shifted(lines, 100.0 to 250.0, FULL, 0.0).map { it.split }).toEqual(listOf(null))
+  }
+
+  @Test
+  fun `should find the moment in the show a clip starts at`() {
+    expect(rawSeconds(50.0, listOf(KeptSpan(0.0, 40.0), KeptSpan(60.0, 100.0)))).toEqual(70.0)
+  }
+
+  @Test
+  fun `should not list the show a story was taken from among the others that told it`() {
+    val best = row(0.0, 600.0)
+    val other = best.copy(id = "r2", programme = "Samost ja Aaspõllu", day = LocalDate.of(2026, 11, 15))
+    val ranked = RankedStory(story("r1", listOf("r1", "r2", "r3"), 5, 5), best, listOf(best.copy(id = "r3"), other), 15)
+    val clip = DigestClip(ranked, cutRecording(RECORDING, emptyList()), 30.0, 210.0, emptyList())
+    expect(source(clip).also).toEqual(listOf(DigestMention("Samost ja Aaspõllu", Station.KUKU, LocalDate.of(2026, 11, 15))))
+  }
+
+  private fun story(
+    best: String,
+    rows: List<String>,
+    importance: Int,
+    interest: Int,
+    repeat: Boolean = false,
+  ) = JudgedStory("Lugu $best", "Kokkuvõte", rows, best, "news", importance, interest, repeat, "Põhjus")
+
+  private fun table(vararg programmes: String): Map<String, DigestRow> =
+    programmes.mapIndexed { index, programme -> row(0.0, 600.0).copy(id = "r${index + 1}", programme = programme) }.associateBy { it.id }
+
+  private fun row(
+    start: Double,
+    end: Double,
+  ) = DigestRow("r1", RECORDING, "Keskpäevatund", Station.KUKU, LocalDate.of(2026, 11, 14), "Ust-Luga", null, start, end, end - start)
+
+  private fun told(
+    station: Station,
+    start: Double,
+    end: Double,
+  ) = DigestStory(
+    "Lugu",
+    "Kokkuvõte",
+    start,
+    end,
+    5,
+    4,
+    14,
+    "news",
+    "Põhjus",
+    SectionSource(RECORDING, "Keskpäevatund", station, LocalDate.of(2026, 11, 14), 0.0, emptyList()),
+  )
+
+  private fun line(
+    start: Double,
+    end: Double,
+  ) = TranscriptLine(start, end, "Sõda on jõudnud lähedale.", emptyList())
+
+  companion object {
+    private val TALLINN = ZoneId.of("Europe/Tallinn")
+    private val FULL = listOf(KeptSpan(0.0, 3600.0))
+    private const val RECORDING = "2026-11-14-1200-keskpaevatund"
+  }
+}

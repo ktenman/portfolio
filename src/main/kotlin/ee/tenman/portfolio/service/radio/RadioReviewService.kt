@@ -146,7 +146,7 @@ class RadioReviewService(
     val marks = chapters(kept, topics, names(status, edit.found()))
     val temporary = directory.resolve(REVIEWED)
     val heading = title(status, edit.found(), clock.zone)
-    runCatching { radioRenderService.render(timeline, spans, marks, heading, temporary, status.station, progress) }
+    runCatching { radioRenderService.render(timeline.spans, spans, marks, heading, temporary, status.station, progress) }
       .onFailure { Files.deleteIfExists(temporary) }
       .getOrThrow()
     Files.move(temporary, directory.resolve(EPISODE_FILE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)

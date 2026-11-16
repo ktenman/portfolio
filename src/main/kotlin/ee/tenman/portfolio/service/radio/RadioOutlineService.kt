@@ -26,6 +26,4 @@ class RadioOutlineService(
     val first = List(OUTLINE_READS - 1) { ask() }
     return if (agreed(first)) first else first + ask()
   }
-
-  private fun resource(path: String): String = checkNotNull(javaClass.classLoader.getResource(path)) { "Missing resource $path" }.readText()
 }

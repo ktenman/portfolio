@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, RouterLinkStub } from '@vue/test-utils'
 import RadioSection from './radio-section.vue'
+import { digest, digestSections } from './radio-digest-fixture'
 import { recording, sections } from './radio-fixture'
 import type { TranscriptLine } from '../../models/generated/domain-models'
 
@@ -61,5 +62,42 @@ describe('RadioSection', () => {
 
   it("should name a line's play button by its time", () => {
     expect(lines(render(1))[0].get('button').text()).toBe('12:30:30')
+  })
+
+  const told = (section = digestSections()[0]) =>
+    mount(RadioSection, {
+      props: {
+        section,
+        startedAt: digest().recording.status.startedAt,
+        audible: digest().recording.audible,
+        raw: false,
+        playing: false,
+      },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+
+  it('should name the show a section was taken from and link to that moment', () => {
+    const source = told().get('[data-testid="radio-section-source"]')
+    expect([
+      source.text().replace(/\s+/g, ' '),
+      source.getComponent(RouterLinkStub).props('to'),
+    ]).toEqual([
+      'Keskpäevatund · Kuku · Sat 14.11 · Open in the show',
+      '/radio/2026-11-14-1200-keskpaevatund?t=845',
+    ])
+  })
+
+  it('should link to a whole second inside the stretch the clip starts in', () => {
+    const section = digestSections()[0]!
+    const source = told({ ...section, source: { ...section.source!, at: 1234.3 } })
+    expect(
+      source.get('[data-testid="radio-section-source"]').getComponent(RouterLinkStub).props('to')
+    ).toBe('/radio/2026-11-14-1200-keskpaevatund?t=1235')
+  })
+
+  it('should list the other shows that told it', () => {
+    expect(told().get('[data-testid="radio-section-also"]').text()).toBe(
+      'Also on Samost ja Aaspõllu, Sun 15.11 · Kuum tool, Mon 09.11'
+    )
   })
 })

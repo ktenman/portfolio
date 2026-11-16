@@ -74,7 +74,7 @@ class RadioEpisodeService(
     val temporary = directory.resolve(TEMPORARY)
     val marks = edit.chapters.map { it.start to it.title }
     val heading = title(status, edit.found(), clock.zone)
-    radioRenderService.render(timeline, edit.keep.map { it.start to it.end }, marks, heading, temporary, status.station)
+    radioRenderService.render(timeline.spans, edit.keep.map { it.start to it.end }, marks, heading, temporary, status.station)
     save(directory.resolve(EDIT_LIST_FILE), edit)
     Files.move(temporary, directory.resolve(EPISODE_FILE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
   }

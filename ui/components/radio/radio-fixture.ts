@@ -278,6 +278,7 @@ export const sections = (
     cut: entry.cut ? index(item, entry) : null,
     episodeStart: entry.cut ? null : (EPISODE[entry.start] ?? null),
     lines: lines.filter(l => entry.start <= l.start && l.start < entry.end),
+    source: null,
   }))
 
 const at = (hour: number, minute = 0) => Date.UTC(2026, 9, 17, hour - 3, minute) / 1000
@@ -478,13 +479,7 @@ export const radioSearch = (overrides: Partial<RadioSearch> = {}): RadioSearch =
 })
 
 export const nothingFound = (close: string[] = []): RadioSearch =>
-  radioSearch({
-    topics: [],
-    groups: [],
-    lines: 0,
-    recordings: 0,
-    suggestions: close,
-  })
+  radioSearch({ topics: [], groups: [], lines: 0, recordings: 0, suggestions: close })
 
 export const station = (overrides: Partial<RadioStation> = {}): RadioStation => ({
   station: Station.KUKU,

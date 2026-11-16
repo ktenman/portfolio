@@ -24,6 +24,22 @@
         {{ minutes(section.end - section.start) }}
       </span>
     </button>
+    <div v-if="section.source" class="mb-1 grid gap-0.5 px-2 text-sm text-ink-soft md:pl-19">
+      <p class="mb-0" data-testid="radio-section-source">
+        {{ section.source.programme }} · {{ STATIONS[section.source.station] }} ·
+        {{ dateDay(section.source.day) }} ·
+        <router-link
+          :to="`/radio/${section.source.recording}?t=${Math.ceil(section.source.at)}`"
+          class="font-medium text-brass-deep underline-offset-2 hover:underline"
+        >
+          Open in the show
+        </router-link>
+      </p>
+      <p v-if="section.source.also.length" class="mb-0" data-testid="radio-section-also">
+        Also on
+        {{ section.source.also.map(told => `${told.programme}, ${dateDay(told.day)}`).join(' · ') }}
+      </p>
+    </div>
     <ol class="mb-0 list-none p-0">
       <li
         v-for="line in visible"
@@ -81,13 +97,14 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import type {
   KeptSpan,
   TranscriptLine,
   TranscriptSection,
   TranscriptWord,
 } from '../../models/generated/domain-models'
-import { lineTime, minutes, sectionTime, splitNote } from '../../utils/radio'
+import { dateDay, lineTime, minutes, sectionTime, splitNote, STATIONS } from '../../utils/radio'
 import RadioBadge from './radio-badge.vue'
 
 const props = defineProps<{

@@ -26,7 +26,7 @@ class RadioRenderServiceTest {
     val keep = listOf(2.0 to 10.0, 15.0 to 25.0)
     val episode = directory.resolve("episode.m4a")
     service.render(
-      timeline(directory),
+      timeline(directory).spans,
       keep,
       chapters(keep, listOf(OutlineChapter(2.0, "Õhtu; uudised = #1")), PROGRAMME),
       "Keskpäevatund 17.10.2026",
@@ -42,7 +42,7 @@ class RadioRenderServiceTest {
   fun `should name the station of the recording as the artist`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10))))
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Kuum tool", episode, Station.ARIPAEV)
+    service.render(timeline(directory).spans, listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Kuum tool", episode, Station.ARIPAEV)
     expect(probe(episode)["format"]["tags"]["artist"].asString()).toEqual("Äripäev")
   }
 
@@ -55,7 +55,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     expect(abs(duration(episode) - 10.0) <= 0.1).toEqual(true)
   }
 
@@ -68,7 +68,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     val audio = decoded(episode)
     val loud = { start: Double, end: Double ->
       sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average())
@@ -85,7 +85,7 @@ class RadioRenderServiceTest {
       )
     writeRecording(directory, parts, "partial")
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(5.0 to 10.005), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     expect(abs(duration(episode) - 5.0) <= 0.05).toEqual(true)
   }
 
@@ -94,7 +94,7 @@ class RadioRenderServiceTest {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 30))))
     val shares = mutableListOf<Double>()
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(2.0 to 28.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU) {
+    service.render(timeline(directory).spans, listOf(2.0 to 28.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU) {
       shares += it
     }
     expect(shares.zipWithNext().all { (a, b) -> a <= b } to (shares.last() >= 0.9)).toEqual(true to true)
@@ -107,7 +107,7 @@ class RadioRenderServiceTest {
         val folder = Files.createDirectories(directory.resolve(name))
         writeRecording(folder, listOf(FixturePart("raw.mp3", 0.0, taped(folder, "raw", 20, "$amplitude*sin(2*PI*1000*t)"))))
         val episode = folder.resolve("episode.m4a")
-        service.render(timeline(folder), listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+        service.render(timeline(folder).spans, listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
         episode
       }
     expect(episodes.map { (abs(level(it).first + 14) <= 0.5) to probe(it)["streams"][0]["sample_rate"].asString() })
@@ -119,7 +119,7 @@ class RadioRenderServiceTest {
     val wave = "(0.02+0.28*lt(mod(t,2),0.1)*0.5*(1-cos(2*PI*t/0.1)))*sin(2*PI*1000*t)"
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 20, wave))))
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     val (loudness, peak) = level(episode)
     expect((abs(peak + 1.5) <= 0.5) to (loudness < -16)).toEqual(true to true)
   }
@@ -128,7 +128,7 @@ class RadioRenderServiceTest {
   fun `should leave a cut too quiet to measure at its level`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10, "0.0001*sin(2*PI*1000*t)"))))
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     expect(decoded(episode).maxOf { abs(it.toInt()) }).toBeLessThan(100)
   }
 
@@ -142,6 +142,46 @@ class RadioRenderServiceTest {
     expect(abs(level(switched(0.05, 0.0707)).first + 14) <= 0.5).toEqual(true)
   }
 
+  @Test
+  fun `should copy a clip out of an episode within a frame of the asked bounds`() {
+    val clip = directory.resolve("klipp.m4a")
+    service.clip(episode("saade", 30), 10.0, 20.0, clip)
+    expect(abs(duration(clip) - 10.0) <= 0.05).toEqual(true)
+  }
+
+  @Test
+  fun `should bring clips from a loud and a quiet episode to the same loudness`() {
+    val clips =
+      listOf("vali" to 0.4, "vaikne" to 0.05).map { (stem, amplitude) ->
+        directory.resolve("$stem-klipp.m4a").also { service.clip(episode(stem, 20, amplitude), 2.0, 18.0, it) }
+      }
+    expect(clips.map { abs(level(it).first + 14) <= 0.5 }).toEqual(listOf(true, true))
+  }
+
+  @Test
+  fun `should join clips from two episodes with a chapter per story`() {
+    val first = directory.resolve("esimene-klipp.m4a")
+    val second = directory.resolve("teine-klipp.m4a")
+    service.clip(episode("esimene", 30), 5.0, 15.0, first)
+    service.clip(episode("teine", 20), 2.0, 10.0, second)
+    val unused = directory.resolve("puudub.pcm")
+    val spans = listOf(Span(0.0, 10.0, unused, 0.0, first), Span(10.0, 18.0, unused, 10.0, second))
+    val digest = directory.resolve("nadal.m4a")
+    service.render(spans, listOf(0.0 to 10.0, 10.0 to 18.0), listOf(0.0 to "Ust-Luga", 10.0 to "Telia"), "Nädal", digest, Station.KUKU)
+    val titles = probe(digest)["chapters"].toList().map { it["tags"]["title"].asString() }
+    expect((abs(duration(digest) - 18.0) <= 0.1) to titles).toEqual(true to listOf("Ust-Luga", "Telia"))
+  }
+
+  private fun episode(
+    stem: String,
+    seconds: Int,
+    amplitude: Double = 0.3,
+  ): Path {
+    val path = directory.resolve("$stem.m4a")
+    ffmpeg("-f", "lavfi", "-i", "aevalsrc='$amplitude*sin(2*PI*440*t)':s=48000:d=$seconds", "-c:a", "aac", "-b:a", "96k", "$path")
+    return path
+  }
+
   private fun switched(
     first: Double,
     second: Double,
@@ -152,7 +192,7 @@ class RadioRenderServiceTest {
     Files.write(directory.resolve("raw.mp3"), Files.readAllBytes(directory.resolve("esimene.mp3")) + Files.readAllBytes(teine))
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, ShortArray(20 * RATE))))
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory), listOf(1.0 to 19.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    service.render(timeline(directory).spans, listOf(1.0 to 19.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     return episode
   }
 

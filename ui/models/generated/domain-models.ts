@@ -293,6 +293,12 @@ export interface TranscriptSection {
     cut: number | null;
     episodeStart: number | null;
     lines: TranscriptLine[];
+    source: SectionSource | null;
+}
+
+export interface RadioDigest {
+    recording: RecordingSummary;
+    stories: DigestStory[];
 }
 
 export interface CutReview {
@@ -562,6 +568,28 @@ export interface TranscriptWord {
     word: string;
 }
 
+export interface SectionSource {
+    recording: string;
+    programme: string;
+    station: Station;
+    day: DateAsString;
+    at: number;
+    also: DigestMention[];
+}
+
+export interface DigestStory {
+    title: string;
+    summary: string;
+    start: number;
+    end: number;
+    importance: number;
+    interest: number;
+    score: number;
+    kind: string;
+    reason: string;
+    source: SectionSource;
+}
+
 export interface AirSlot {
     days: DayOfWeek[];
     start: DateAsString;
@@ -712,6 +740,12 @@ export interface TranscriptProgress {
     totalSeconds: number;
     percent: number;
     secondsLeft: number;
+}
+
+export interface DigestMention {
+    programme: string;
+    station: Station;
+    day: DateAsString;
 }
 
 export interface DayAiring {

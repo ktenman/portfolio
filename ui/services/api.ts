@@ -25,6 +25,7 @@ import {
   type RadioDay,
   type RadioPlayerChoice,
   type RadioPlayerDto,
+  type RadioDigest,
   type RadioPositionDto,
   type RadioProgrammeDto,
   type RadioSearch,
@@ -241,6 +242,7 @@ export const poffService = {
 
 export const radioService = {
   recordings: () => httpClient.get<RecordingSummary[]>(API_ENDPOINTS.RADIO),
+  digests: () => httpClient.get<RadioDigest[]>(`${API_ENDPOINTS.RADIO}/digests`),
   transcript: (name: string) =>
     httpClient.get<TranscriptSection[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
   cuts: (name: string) => httpClient.get<CutContext[]>(`${API_ENDPOINTS.RADIO}/${name}/cuts`),

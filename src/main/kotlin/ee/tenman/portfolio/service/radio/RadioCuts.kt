@@ -71,6 +71,7 @@ data class TranscriptSection(
   @field:JsonInclude(JsonInclude.Include.ALWAYS)
   val episodeStart: Double?,
   val lines: List<TranscriptLine>,
+  val source: SectionSource? = null,
 )
 
 data class ManualCut(
@@ -254,13 +255,15 @@ fun heard(
   audible: List<KeptSpan>,
 ): List<TimelineEntry> =
   timeline
-    .mapNotNull { entry -> episodeStart(entry, audible)?.let { entry.copy(start = it, end = it + overlap(entry, audible)) } }
-    .fold(emptyList(), ::join)
+    .mapNotNull { entry ->
+      episodeStart(entry, audible)?.let { entry.copy(start = it, end = it + overlap(entry.start, entry.end, audible)) }
+    }.fold(emptyList(), ::join)
 
-private fun overlap(
-  entry: TimelineEntry,
+fun overlap(
+  start: Double,
+  end: Double,
   audible: List<KeptSpan>,
-): Double = audible.sumOf { maxOf(0.0, minOf(it.end, entry.end) - maxOf(it.start, entry.start)) }
+): Double = audible.sumOf { maxOf(0.0, minOf(it.end, end) - maxOf(it.start, start)) }
 
 private fun join(
   joined: List<TimelineEntry>,
