@@ -52,6 +52,25 @@ services:
     restart: always
     mem_limit: 512m
 
+  # Anything that can write to auth's Redis can create sessions, so only auth reaches it. In a flood of sign-in
+  # attempts, volatile-ttl evicts the 10-minute attempts before the 30-day sessions
+  auth-redis:
+    logging: *logging
+    container_name: auth-redis
+    image: redis:8-alpine
+    command: redis-server --maxmemory 32mb --maxmemory-policy volatile-ttl --save 3600 1 --stop-writes-on-bgsave-error no
+    volumes:
+      - auth_redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+    restart: always
+    mem_limit: 128m
+    networks:
+      - auth
+
   seaweedfs:
     logging: *logging
     container_name: seaweedfs
@@ -146,8 +165,13 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       ALLOWED_EMAILS: ${ALLOWED_EMAILS}
       REDIRECT_URI: "https://fov.ee"
+      REDIS_URL: redis://auth-redis:6379
     depends_on:
-      - redis
+      auth-redis:
+        condition: service_healthy
+    networks:
+      - default
+      - auth
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1" ]
@@ -547,6 +571,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  auth_redis_data:
   caddy_data:
   caddy_config:
   seaweedfs_data:
@@ -562,3 +587,5 @@ volumes:
 
 networks:
   radio:
+  auth:
+    internal: true
