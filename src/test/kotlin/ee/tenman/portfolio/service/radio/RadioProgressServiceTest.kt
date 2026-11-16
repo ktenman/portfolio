@@ -127,7 +127,7 @@ class RadioProgressServiceTest {
           CutStep.READ to 3.5,
           CutStep.READ to 3.5,
           CutStep.BOUNDARIES to 1.0,
-          CutStep.RENDER to 22.0,
+          CutStep.RENDER to 29.0,
         ),
       )
   }

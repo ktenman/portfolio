@@ -148,8 +148,8 @@ fun taped(
   directory: Path,
   stem: String,
   seconds: Int,
+  wave: String = "if(between(mod(t,10),7,7.4),0,0.3*sin(2*PI*440*t))",
 ): ShortArray {
-  val wave = "if(between(mod(t,10),7,7.4),0,0.3*sin(2*PI*440*t))"
   val mp3 = directory.resolve("$stem.mp3").toString()
   ffmpeg("-f", "lavfi", "-i", "aevalsrc='$wave|$wave':s=48000:d=$seconds", "-c:a", "libmp3lame", "-b:a", "256k", mp3)
   return pcm(ffmpeg("-i", mp3, "-ac", "1", "-ar", "$RATE", "-f", "s16le", "pipe:1"))
@@ -167,6 +167,6 @@ fun silent(
 fun decoded(path: Path): ShortArray = pcm(ffmpeg("-i", path.toString(), "-ac", "1", "-ar", "$RATE", "-f", "s16le", "pipe:1"))
 
 fun probe(path: Path): JsonNode {
-  val output = execute(listOf("ffprobe", "-v", "error", "-show_format", "-show_chapters", "-of", "json", path.toString()))
+  val output = execute(listOf("ffprobe", "-v", "error", "-show_format", "-show_streams", "-show_chapters", "-of", "json", path.toString()))
   return JsonMapperFactory.instance.readTree(output)
 }

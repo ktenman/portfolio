@@ -1,11 +1,14 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.Station
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -95,5 +98,71 @@ class RadioRenderServiceTest {
       shares += it
     }
     expect(shares.zipWithNext().all { (a, b) -> a <= b } to (shares.last() >= 0.9)).toEqual(true to true)
+  }
+
+  @Test
+  fun `should bring a loud and a quiet show to the same loudness`() {
+    val episodes =
+      listOf("vali" to 0.4, "vaikne" to 0.1).map { (name, amplitude) ->
+        val folder = Files.createDirectories(directory.resolve(name))
+        writeRecording(folder, listOf(FixturePart("raw.mp3", 0.0, taped(folder, "raw", 20, "$amplitude*sin(2*PI*1000*t)"))))
+        val episode = folder.resolve("episode.m4a")
+        service.render(timeline(folder), listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+        episode
+      }
+    expect(episodes.map { (abs(level(it).first + 14) <= 0.5) to probe(it)["streams"][0]["sample_rate"].asString() })
+      .toEqual(listOf(true to "48000", true to "48000"))
+  }
+
+  @Test
+  fun `should turn a quiet show up only until its peaks reach the ceiling`() {
+    val wave = "(0.02+0.28*lt(mod(t,2),0.1)*0.5*(1-cos(2*PI*t/0.1)))*sin(2*PI*1000*t)"
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 20, wave))))
+    val episode = directory.resolve("episode.m4a")
+    service.render(timeline(directory), listOf(2.0 to 18.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    val (loudness, peak) = level(episode)
+    expect((abs(peak + 1.5) <= 0.5) to (loudness < -16)).toEqual(true to true)
+  }
+
+  @Test
+  fun `should leave a cut too quiet to measure at its level`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10, "0.0001*sin(2*PI*1000*t)"))))
+    val episode = directory.resolve("episode.m4a")
+    service.render(timeline(directory), listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    expect(decoded(episode).maxOf { abs(it.toInt()) }).toBeLessThan(100)
+  }
+
+  @Test
+  fun `should not turn up a recording whose format changes partway`() {
+    expect(level(switched(0.4, 0.05)).second).toBeLessThan(-1.0)
+  }
+
+  @Test
+  fun `should bring a quiet recording whose format changes partway to the target loudness`() {
+    expect(abs(level(switched(0.05, 0.0707)).first + 14) <= 0.5).toEqual(true)
+  }
+
+  private fun switched(
+    first: Double,
+    second: Double,
+  ): Path {
+    val teine = directory.resolve("teine.mp3")
+    taped(directory, "esimene", 10, "$first*sin(2*PI*1000*t)")
+    ffmpeg("-f", "lavfi", "-i", "aevalsrc='$second*sin(2*PI*1000*t)':s=44100:d=10", "-c:a", "libmp3lame", "$teine")
+    Files.write(directory.resolve("raw.mp3"), Files.readAllBytes(directory.resolve("esimene.mp3")) + Files.readAllBytes(teine))
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, ShortArray(20 * RATE))))
+    val episode = directory.resolve("episode.m4a")
+    service.render(timeline(directory), listOf(1.0 to 19.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
+    return episode
+  }
+
+  private fun level(path: Path): Pair<Double, Double> {
+    val command = listOf("ffmpeg", "-hide_banner", "-nostats", "-i", "$path", "-af", "ebur128=peak=true:framelog=quiet", "-f", "null", "-")
+    val process = ProcessBuilder(command).redirectErrorStream(true).start()
+    val output = process.inputStream.use { it.readBytes().decodeToString() }
+    check(process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0) { "ffmpeg failed to measure $path" }
+    val summary = output.substringAfterLast("Summary:")
+    val read = { label: String -> checkNotNull(Regex("""\s$label:\s+(-?[\d.]+)""").find(summary)) { output }.groupValues[1].toDouble() }
+    return read("I") to read("Peak")
   }
 }
