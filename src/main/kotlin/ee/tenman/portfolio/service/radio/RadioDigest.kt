@@ -135,11 +135,17 @@ fun inStory(
 fun fitted(clips: List<DigestClip>): List<DigestClip> =
   clips.fold(emptyList()) { kept, clip -> if ((kept + clip).sumOf { it.length + PAUSE_SECONDS } <= DIGEST_SECONDS) kept + clip else kept }
 
-fun dominant(stories: List<DigestStory>): Station =
+fun dominant(stories: List<DigestStory>): Station = heard(stories).first()
+
+private fun heard(stories: List<DigestStory>): List<Station> =
   stories
     .groupBy { it.source.station }
-    .maxBy { (_, told) -> told.sumOf { it.end - it.start } }
-    .key
+    .entries
+    .sortedByDescending { (_, told) -> told.sumOf { it.end - it.start } }
+    .map { it.key }
+
+private fun stations(stories: List<DigestStory>): List<Station> =
+  (heard(stories) + stories.flatMap { story -> story.source.also.map { it.station } }).distinct()
 
 fun shifted(
   lines: List<TranscriptLine>,
@@ -211,6 +217,8 @@ fun digestSummary(
     audible = whole,
     format = null,
     programmeCuts = emptyList(),
+    stations = stations(digest.stories),
+    shows = digest.stories.map { it.source.programme }.distinct(),
   )
 }
 

@@ -44,14 +44,15 @@ const model = (label: string, version: ModelVersion | null): [string, string, st
 }
 
 const facts = computed<[string, string, string?][]>(() => {
-  const station: [string, string] = ['Station', STATIONS[props.recording.status.station]]
+  const { stations, shows } = props.recording
+  const station: [string, string] = ['Station', stations.map(it => STATIONS[it]).join(', ')]
   const models = [model('Speech', props.recording.speech), model('Sounds', props.recording.sounds)]
   const edit = props.recording.editList
   if (!edit) return [station, ...models]
   return [
     station,
     ['Analysis', edit.outline.model ?? '—'],
-    ['Hosts', edit.hosts.join(', ') || '—'],
+    shows.length ? ['Shows', shows.join(', ')] : ['Hosts', edit.hosts.join(', ') || '—'],
     ...models,
   ]
 })

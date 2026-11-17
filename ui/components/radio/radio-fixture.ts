@@ -214,6 +214,8 @@ export const recording = (overrides: Partial<RecordingSummary> = {}): RecordingS
   drops: 0,
   transcriptState: TranscriptState.TRANSCRIBED,
   cutState: CutState.SUGGESTED,
+  stations: [(overrides.status ?? captured()).station],
+  shows: [],
   ...overrides,
 })
 

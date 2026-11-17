@@ -133,6 +133,8 @@ export const digest = (count?: number): RadioDigest => {
       audible: whole,
       format: null,
       programmeCuts: [],
+      stations: [...new Set(stories.map(({ source }) => source.station))],
+      shows: [...new Set(stories.map(({ source }) => source.programme))],
       cutState: CutState.REVIEWED,
     }),
     stories,
