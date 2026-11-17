@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.Station
+import java.time.Instant
 import java.time.LocalDate
 
 data class DigestRow(
@@ -94,4 +95,34 @@ data class Digest(
 data class RadioDigest(
   val recording: RecordingSummary,
   val stories: List<DigestStory>,
+)
+
+enum class DigestStep {
+  STORIES,
+  CLIPS,
+  CUTTING,
+  MIXING,
+}
+
+data class DigestFailure(
+  val reason: String,
+  val tries: Int,
+  val attempts: Int,
+  val nextTry: String?,
+)
+
+data class DigestBuild(
+  val date: LocalDate,
+  val step: DigestStep?,
+  val titles: List<String> = emptyList(),
+  val done: Int = 0,
+  val percent: Int = 0,
+  val secondsLeft: Int = 0,
+  val failure: DigestFailure? = null,
+)
+
+data class DigestTrack(
+  val build: DigestBuild,
+  val startedAt: Instant,
+  val stepAt: Instant,
 )

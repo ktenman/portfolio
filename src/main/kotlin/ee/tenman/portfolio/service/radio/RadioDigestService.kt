@@ -2,7 +2,9 @@ package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.repository.JobExecutionRepository
+import org.springframework.scheduling.support.CronExpression
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
@@ -10,6 +12,7 @@ import java.nio.file.StandardCopyOption
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
@@ -20,26 +23,57 @@ class RadioDigestService(
   private val radioArchiveService: RadioArchiveService,
   private val radioDigestModelService: RadioDigestModelService,
   private val radioRenderService: RadioRenderService,
+  private val radioDigestProgressService: RadioDigestProgressService,
   private val radioProperties: RadioProperties,
   private val jobExecutionRepository: JobExecutionRepository,
   private val clock: Clock,
 ) {
-  fun due(date: LocalDate): Boolean = !Files.exists(target(date).resolve(DIGEST_FILE)) && failures(date) < ATTEMPTS
+  fun due(date: LocalDate): Boolean = !built(date) && failures(date) < ATTEMPTS
 
   fun build(date: LocalDate) {
     if (!due(date)) return
-    val target = target(date)
     val recordings = gathered()
     val rows = recordings.flatMap { rows(it, clock.zone) }.mapIndexed { index, row -> row.copy(id = "r${index + 1}") }
     if (rows.isEmpty()) return
+    radioDigestProgressService.started(date)
+    runCatching { make(date, recordings, rows) }.also { radioDigestProgressService.ended() }.getOrThrow()
+  }
+
+  fun building(): DigestBuild? = radioDigestProgressService.current() ?: failed(LocalDate.now(clock))
+
+  private fun make(
+    date: LocalDate,
+    recordings: List<RecordingSummary>,
+    rows: List<DigestRow>,
+  ) {
     val judgement =
       checkNotNull(radioDigestModelService.judge(rows, told())) { "The model gave no judgement for the $date radio digest" }
-    val clips = fitted(clips(ranked(judgement, rows.associateBy { it.id }), recordings.associateBy { it.name }))
+    val ranked = ranked(judgement, rows.associateBy { it.id })
+    radioDigestProgressService.judged(ranked.map { it.story.title })
+    val clips = fitted(clips(ranked, recordings.associateBy { it.name }))
+    radioDigestProgressService.fitted(clips.map { it.story.story.title })
     val work = root().resolve(BUILD).also { it.deleteRecursively() }
     write(Files.createDirectories(work), date, clips)
-    Files.move(work, target, StandardCopyOption.ATOMIC_MOVE)
+    Files.move(work, target(date), StandardCopyOption.ATOMIC_MOVE)
     digests(root()).drop(KEPT).forEach { it.deleteRecursively() }
   }
+
+  private fun failed(date: LocalDate): DigestBuild? {
+    if (built(date)) return null
+    val tries = failures(date)
+    if (tries == 0L) return null
+    val last = jobExecutionRepository.findFirstByJobNameAndStatusOrderByStartTimeDesc(JOB, JobStatus.FAILURE) ?: return null
+    val line = last.message.orEmpty().substringBefore('\n')
+    val reason = line.trim().ifBlank { UNKNOWN }
+    return DigestBuild(date, null, failure = DigestFailure(reason, tries.toInt(), ATTEMPTS, next(tries)))
+  }
+
+  private fun next(tries: Long): String? {
+    if (tries >= ATTEMPTS) return null
+    return NEXT_TRY.next(clock.instant().atZone(CRON_ZONE))?.toInstant()?.toString()
+  }
+
+  private fun built(date: LocalDate): Boolean = Files.exists(target(date).resolve(DIGEST_FILE))
 
   private fun failures(date: LocalDate): Long =
     jobExecutionRepository.countByJobNameAndStatusAndStartTimeAfter(JOB, JobStatus.FAILURE, date.atStartOfDay(clock.zone).toInstant())
@@ -73,7 +107,8 @@ class RadioDigestService(
     val all = radioArchiveService.transcript(recording.name).orEmpty()
     return stories.map { story ->
       val lines = all.filter { inStory(it, story.best, recording.audible) }
-      val (start, end) = clipped(radioDigestModelService.clip(story.story, lines), lines, story.best, recording.audible)
+      val answer = radioDigestModelService.clip(story.story, lines).also { radioDigestProgressService.chosen() }
+      val (start, end) = clipped(answer, lines, story.best, recording.audible)
       DigestClip(story, recording, start, end, lines)
     }
   }
@@ -102,7 +137,8 @@ class RadioDigestService(
     val spans = cut(work, clips, offsets)
     val marks = clips.mapIndexed { index, clip -> offsets[index] to clip.story.story.title }
     val title = "$DIGEST_TITLE ${date.format(TITLE)}"
-    radioRenderService.render(spans, spans.map { it.start to it.end }, marks, title, work.resolve(EPISODE_FILE), station)
+    val target = work.resolve(EPISODE_FILE)
+    radioRenderService.render(spans, spans.map { it.start to it.end }, marks, title, target, station, radioDigestProgressService::mixed)
     spans.map { it.audio }.distinct().forEach(Files::delete)
   }
 
@@ -115,6 +151,7 @@ class RadioDigestService(
     return clips.flatMapIndexed { index, clip ->
       val audio = work.resolve("clip-${index + 1}.m4a")
       radioRenderService.clip(episode(clip.recording.name), clip.start, clip.end, audio)
+      radioDigestProgressService.cut()
       val end = offsets[index] + clip.length
       listOf(Span(offsets[index], end, audio, offsets[index], audio), Span(end, offsets[index + 1], pause, end, pause))
     }
@@ -158,6 +195,9 @@ class RadioDigestService(
     private const val ATTEMPTS = 3
     private const val BUILD = "build.tmp"
     private const val JOB = "RadioDigestJob"
+    private const val UNKNOWN = "The digest build failed"
     private val TITLE = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    private val NEXT_TRY = CronExpression.parse(CollectionSchedules.RADIO_DIGEST_CRON)
+    private val CRON_ZONE = ZoneId.of(CollectionSchedules.TIME_ZONE)
   }
 }

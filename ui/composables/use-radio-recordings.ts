@@ -112,6 +112,16 @@ export const useRadioDigests = (wanted: MaybeRefOrGetter<boolean> = true) => {
   })
 }
 
+export const useRadioDigestBuild = () => {
+  const { isAuthenticated } = useAuthState()
+  return useQuery({
+    queryKey: ['radio-digests', 'build'],
+    queryFn: radioService.digestBuild,
+    enabled: isAuthenticated,
+    refetchInterval: query => (query.state.data?.step ? 60_000 : false),
+  })
+}
+
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   const query = useRadioRecordings()
   const digests = useRadioDigests(() => toValue(name).startsWith('week-in-radio-'))

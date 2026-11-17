@@ -303,6 +303,16 @@ export interface RadioDigest {
     stories: DigestStory[];
 }
 
+export interface DigestBuild {
+    date: DateAsString;
+    step: DigestStep | null;
+    titles: string[];
+    done: number;
+    percent: number;
+    secondsLeft: number;
+    failure: DigestFailure | null;
+}
+
 export interface CutReview {
     removed: number[];
 }
@@ -590,6 +600,13 @@ export interface DigestStory {
     kind: string;
     reason: string;
     source: SectionSource;
+}
+
+export interface DigestFailure {
+    reason: string;
+    tries: number;
+    attempts: number;
+    nextTry: string | null;
 }
 
 export interface AirSlot {
@@ -890,6 +907,7 @@ export enum LiveUpdate {
     PRICES = "PRICES",
     SUMMARY = "SUMMARY",
     RADIO = "RADIO",
+    DIGEST = "DIGEST",
 }
 
 export enum Station {
@@ -910,6 +928,13 @@ export enum TranscriptState {
     NONE = "NONE",
     RECORDING = "RECORDING",
     TRANSCRIBED = "TRANSCRIBED",
+}
+
+export enum DigestStep {
+    STORIES = "STORIES",
+    CLIPS = "CLIPS",
+    CUTTING = "CUTTING",
+    MIXING = "MIXING",
 }
 
 export enum RecorderState {

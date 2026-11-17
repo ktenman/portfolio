@@ -2,11 +2,14 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.JobExecution
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.domain.Station
 import ee.tenman.portfolio.repository.JobExecutionRepository
+import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -25,6 +28,102 @@ class RadioDigestServiceTest {
   private val archive = mockk<RadioArchiveService>()
   private val model = mockk<RadioDigestModelService>()
   private val jobs = mockk<JobExecutionRepository> { every { countByJobNameAndStatusAndStartTimeAfter(any(), any(), any()) } returns 0 }
+  private val progress = spyk(RadioDigestProgressService(LiveUpdateService(), Clock.fixed(Instant.parse(NOW), ZoneId.of("Europe/Tallinn"))))
+
+  @Test
+  fun `should report choosing the stories while the judge reads`() {
+    held()
+    var step: DigestStep? = null
+    every { model.judge(any(), any()) } answers {
+      step = progress.current()?.step
+      Judgement(emptyList())
+    }
+    service().build(TODAY)
+    expect(step).toEqual(DigestStep.STORIES)
+  }
+
+  @Test
+  fun `should list the stories picked while their clips are chosen`() {
+    held()
+    var titles: List<String>? = null
+    every { model.clip(any(), any()) } answers {
+      titles = progress.current()?.titles
+      null
+    }
+    service().build(TODAY)
+    expect(titles).toEqual(listOf("Rünnakud Ust-Lugas", "Valimised"))
+  }
+
+  @Test
+  fun `should count each clip as it is cut`() {
+    held()
+    service().build(TODAY)
+    verify(exactly = 2) { progress.cut() }
+  }
+
+  @Test
+  fun `should follow the mix`() {
+    held()
+    service().build(TODAY)
+    verify(atLeast = 1) { progress.mixed(any()) }
+  }
+
+  @Test
+  fun `should forget the build once it is written`() {
+    held()
+    service().build(TODAY)
+    expect(progress.current()).toEqual(null)
+  }
+
+  @Test
+  fun `should forget the build when it fails`() {
+    held()
+    every { model.judge(any(), any()) } returns null
+    runCatching { service().build(TODAY) }
+    expect(progress.current()).toEqual(null)
+  }
+
+  @Test
+  fun `should show the running build`() {
+    progress.started(TODAY)
+    expect(service().building()?.step).toEqual(DigestStep.STORIES)
+  }
+
+  @Test
+  fun `should show today's failure with the next hourly try`() {
+    failed(1)
+    expect(service().building()?.failure).toEqual(DigestFailure(REASON, 1, 3, "2026-11-16T11:00:00Z"))
+  }
+
+  @Test
+  fun `should give only the first line of a long failure`() {
+    failed(1, "FFmpeg exited with 1: \n[mp3 @ 0x1] Header missing õ\nError while decoding stream")
+    expect(service().building()?.failure?.reason).toEqual("FFmpeg exited with 1:")
+  }
+
+  @Test
+  fun `should name a failure without a message`() {
+    failed(1, " ")
+    expect(service().building()?.failure?.reason).toEqual("The digest build failed")
+  }
+
+  @Test
+  fun `should say it stopped for the day after three failures`() {
+    failed(3)
+    expect(service().building()?.failure?.nextTry).toEqual(null)
+  }
+
+  @Test
+  fun `should show no failure once today's digest is built`() {
+    failed(1)
+    writtenDigest(directory, TODAY, listOf("Valimised"))
+    expect(service().building()).toEqual(null)
+  }
+
+  @Test
+  fun `should show nothing on a day without a failure`() {
+    expect(service().building()).toEqual(null)
+  }
 
   @Test
   fun `should write a digest with a chapter per story`() {
@@ -154,11 +253,12 @@ class RadioDigestServiceTest {
 
   private fun service(
     localDays: Long = 7,
-    now: String = "2026-11-16T10:00:00Z",
+    now: String = NOW,
   ) = RadioDigestService(
     archive,
     model,
     RadioRenderService(),
+    progress,
     RadioProperties(recordings = directory, localDays = localDays),
     jobs,
     Clock.fixed(Instant.parse(now), ZoneId.of("Europe/Tallinn")),
@@ -187,6 +287,16 @@ class RadioDigestServiceTest {
     every { model.clip(any(), any()) } returns null
   }
 
+  private fun failed(
+    tries: Long,
+    message: String? = REASON,
+  ) {
+    every { jobs.countByJobNameAndStatusAndStartTimeAfter(any(), any(), any()) } returns tries
+    val at = Instant.parse("2026-11-16T09:00:00Z")
+    every { jobs.findFirstByJobNameAndStatusOrderByStartTimeDesc("RadioDigestJob", JobStatus.FAILURE) } returns
+      JobExecution("RadioDigestJob", at, at.plusSeconds(69), 69_000, JobStatus.FAILURE, message)
+  }
+
   private fun story(
     title: String,
     row: String,
@@ -202,6 +312,8 @@ class RadioDigestServiceTest {
 
   companion object {
     private val TODAY = LocalDate.of(2026, 11, 16)
+    private const val NOW = "2026-11-16T10:00:00Z"
+    private const val REASON = "The model gave no judgement for the 2026-11-16 radio digest"
     private const val KESKPAEVATUND = "2026-11-14-1200-keskpaevatund"
     private const val SAMOST = "2026-11-15-1200-samost-ja-aaspollu"
     private const val SUNDAY_NOON = 1_794_736_800.0
