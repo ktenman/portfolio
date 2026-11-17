@@ -165,11 +165,11 @@ describe('RadioPlayer', () => {
     const wrapper = render()
     player.rate.value = 1
     const rates = []
-    for (let tap = 0; tap < 4; tap++) {
+    for (let tap = 0; tap < 5; tap++) {
       await wrapper.get('[data-testid="radio-speed"]').trigger('click')
       rates.push(player.rate.value)
     }
-    expect(rates).toEqual([1.25, 1.5, 2, 1])
+    expect(rates).toEqual([1.1, 1.25, 1.5, 2, 1])
   })
 
   it('should step an unlisted speed back to normal', async () => {
