@@ -270,11 +270,13 @@ export interface RecordingSummary {
     render: RenderProgress | null;
     renderFailure: EpisodeFailure | null;
     uncut: boolean;
-    drops: number;
-    span: Slot;
-    topics: TimelineEntry[];
-    transcriptState: TranscriptState;
+    stations: Station[];
+    shows: string[];
     cutState: CutState;
+    drops: number;
+    transcriptState: TranscriptState;
+    topics: TimelineEntry[];
+    span: Slot;
 }
 
 export interface TranscriptLine {
@@ -890,10 +892,11 @@ export enum LiveUpdate {
     RADIO = "RADIO",
 }
 
-export enum TranscriptState {
-    NONE = "NONE",
-    RECORDING = "RECORDING",
-    TRANSCRIBED = "TRANSCRIBED",
+export enum Station {
+    KUKU = "KUKU",
+    ARIPAEV = "ARIPAEV",
+    ELMAR = "ELMAR",
+    SKYPLUS = "SKYPLUS",
 }
 
 export enum CutState {
@@ -903,11 +906,10 @@ export enum CutState {
     REVIEWED = "REVIEWED",
 }
 
-export enum Station {
-    KUKU = "KUKU",
-    ARIPAEV = "ARIPAEV",
-    ELMAR = "ELMAR",
-    SKYPLUS = "SKYPLUS",
+export enum TranscriptState {
+    NONE = "NONE",
+    RECORDING = "RECORDING",
+    TRANSCRIBED = "TRANSCRIBED",
 }
 
 export enum RecorderState {

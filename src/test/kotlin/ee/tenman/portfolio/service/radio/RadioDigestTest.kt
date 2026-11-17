@@ -116,6 +116,26 @@ class RadioDigestTest {
   }
 
   @Test
+  fun `should list every station in the digest with the longest heard first`() {
+    val mention = DigestMention("Hommikuprogramm", Station.SKYPLUS, LocalDate.of(2026, 11, 15))
+    val stories = listOf(told(Station.KUKU, 0.0, 60.0, also = listOf(mention)), told(Station.ARIPAEV, 61.0, 161.0))
+    val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 162.0, "google/gemini-4-carbon", stories)
+    expect(digestSummary(digest, 1).stations).toEqual(listOf(Station.ARIPAEV, Station.KUKU, Station.SKYPLUS))
+  }
+
+  @Test
+  fun `should list the shows the clips come from in digest order`() {
+    val stories =
+      listOf(
+        told(Station.KUKU, 0.0, 60.0, "Sihik"),
+        told(Station.ARIPAEV, 61.0, 161.0, "Kuum tool"),
+        told(Station.KUKU, 162.0, 200.0, "Sihik"),
+      )
+    val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 201.0, "google/gemini-4-carbon", stories)
+    expect(digestSummary(digest, 1).shows).toEqual(listOf("Sihik", "Kuum tool"))
+  }
+
+  @Test
   fun `should place a line after a removed ad break at its place in the digest`() {
     val lines = listOf(line(100.0, 140.0), line(200.0, 230.0))
     val audible = listOf(KeptSpan(0.0, 150.0), KeptSpan(200.0, 400.0))
@@ -163,6 +183,8 @@ class RadioDigestTest {
     station: Station,
     start: Double,
     end: Double,
+    programme: String = "Keskpäevatund",
+    also: List<DigestMention> = emptyList(),
   ) = DigestStory(
     "Lugu",
     "Kokkuvõte",
@@ -173,7 +195,7 @@ class RadioDigestTest {
     14,
     "news",
     "Põhjus",
-    SectionSource(RECORDING, "Keskpäevatund", station, LocalDate.of(2026, 11, 14), 0.0, emptyList()),
+    SectionSource(RECORDING, programme, station, LocalDate.of(2026, 11, 14), 0.0, also),
   )
 
   private fun line(

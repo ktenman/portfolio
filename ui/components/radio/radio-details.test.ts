@@ -127,6 +127,27 @@ describe('RadioDetails', () => {
     expect((await opened(recording({ status }))).text()).toContain('StationÄripäev')
   })
 
+  it('should name every station a digest plays', async () => {
+    const item = recording({ stations: [Station.KUKU, Station.ARIPAEV] })
+    expect(await rows(item)).toContainEqual(['Station', 'Kuku, Äripäev'])
+  })
+
+  it('should list the shows of a digest in place of its hosts', async () => {
+    const item = recording({ shows: ['Sihik', 'Kuum tool'] })
+    expect((await rows(item)).map(([label]) => label)).toEqual([
+      'Station',
+      'Analysis',
+      'Shows',
+      'Speech',
+      'Sounds',
+    ])
+  })
+
+  it('should name the shows a digest takes its clips from', async () => {
+    const item = recording({ shows: ['Sihik', 'Kuum tool'] })
+    expect(await rows(item)).toContainEqual(['Shows', 'Sihik, Kuum tool'])
+  })
+
   it('should name the station before the show has been analyzed', async () => {
     expect((await opened(recording({ editList: null }))).text()).toContain('StationKuku')
   })
