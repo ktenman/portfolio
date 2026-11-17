@@ -39,13 +39,21 @@ class RadioEpisodeServiceTest {
 
   private val service by lazy { service(clock = Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC)) }
 
+  private val quiet by lazy { service(clock = Clock.fixed(Instant.parse("2026-10-17T11:10:00Z"), ZoneOffset.UTC), renderer = written()) }
+
+  private fun written() =
+    mockk<RadioRenderService> {
+      every { render(any(), any(), any(), any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(4)) }
+    }
+
   private fun service(
     airings: RadioAiringRepository = airings(),
     programmes: RadioProgrammeRepository = programmes(),
     properties: RadioProperties = RadioProperties(recordings = directory.resolve("arhiiv")),
     clock: Clock = Clock.systemUTC(),
+    renderer: RadioRenderService = RadioRenderService(),
   ): RadioEpisodeService =
-    RadioEpisodeService(outlineService, RadioCutService(), RadioRenderService(), progress, airings, programmes, properties, clock)
+    RadioEpisodeService(outlineService, RadioCutService(), renderer, progress, airings, programmes, properties, clock)
 
   private fun outline(
     before: Double,
@@ -111,7 +119,7 @@ class RadioEpisodeServiceTest {
   fun `should keep the fingerprints of a recording it cuts`() {
     show()
     every { outlineService.reads(any(), any(), any(), any(), any()) } returns List(3) { outline(1.0, 5.0, 50.0) }
-    service.make(directory)
+    quiet.make(directory)
     expect(readFingerprints(directory)).notToEqualNull()
   }
 
@@ -123,7 +131,7 @@ class RadioEpisodeServiceTest {
       seen = progress.progress(directory.fileName.toString())
       List(3) { outline(1.0, 5.0, 50.0) }
     }
-    service.make(directory)
+    quiet.make(directory)
     expect(seen[PROGRAMME]?.let { it.step to it.read }).toEqual(CutStep.READ to 1)
   }
 
@@ -136,7 +144,7 @@ class RadioEpisodeServiceTest {
       repeat(2) { arg<() -> Unit>(4).invoke() }
       List(2) { outline(1.0, 5.0, 50.0) }
     }
-    service.make(directory)
+    quiet.make(directory)
     expect(steps).toContain(CutStep.BOUNDARIES)
   }
 
@@ -162,7 +170,7 @@ class RadioEpisodeServiceTest {
   fun `should reuse saved reads instead of asking again`() {
     show()
     saved(outline(1.0, 5.0, 50.0))
-    service.make(directory)
+    quiet.make(directory)
     verify(exactly = 0) { outlineService.reads(any(), any(), any(), any(), any()) }
   }
 
@@ -170,7 +178,7 @@ class RadioEpisodeServiceTest {
   fun `should vote with the reads that came back when one request fails`() {
     show()
     every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(null, outline(1.0, 5.0, 50.0), outline(1.0, 5.0, 50.0))
-    service.make(directory)
+    quiet.make(directory)
     val reads = JsonMapperFactory.instance.readValue<List<OutlineRead?>>(Files.readString(directory.resolve("outline.json")))
     expect(Triple(reads.first(), edit().outline.matched, Files.exists(directory.resolve("episode.m4a")))).toEqual(Triple(null, 2, true))
   }
@@ -250,7 +258,7 @@ class RadioEpisodeServiceTest {
     listOf("status.json", "raw.pcm").forEach { Files.copy(directory.resolve(it), earlier.resolve(it)) }
     Files.writeString(earlier.resolve("raw.mp3"), "katkine")
     writeFingerprints(earlier, fingerprint(timeline(directory)).filter { it.toInt() >= 3000 }.toLongArray())
-    service.make(directory)
+    quiet.make(directory)
     expect(Files.exists(directory.resolve("episode.m4a"))).toEqual(true)
   }
 
@@ -261,14 +269,14 @@ class RadioEpisodeServiceTest {
     val earlier = Files.createDirectories(directory.resolve("arhiiv").resolve("2026-10-26-1200-kuku"))
     Files.writeString(earlier.resolve("status.json"), "{ katkine")
     writeFingerprints(earlier, longArrayOf(42))
-    service.make(directory)
+    quiet.make(directory)
     expect(Files.exists(directory.resolve("episode.m4a"))).toEqual(true)
   }
 
   private fun rendered(): EditList {
     show()
     saved(outline(1.0, 5.0, 50.0))
-    service.make(directory)
+    quiet.make(directory)
     return edit()
   }
 
@@ -282,7 +290,7 @@ class RadioEpisodeServiceTest {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, noisy("raw", 60))))
     transcribed(1.0, 8.0, 50.0)
     saved(outline(1.0, 8.0, 50.0))
-    service.make(directory)
+    quiet.make(directory)
     expect(edit().topics.single().start in 7.0..7.4).toEqual(true)
   }
 
@@ -291,7 +299,7 @@ class RadioEpisodeServiceTest {
     show()
     saved(outline(1.0, 5.0, 50.0))
     save(directory.resolve(SOUNDS_FILE), Sounds(heard(0.0, 20.0, 0.98, 0.0) + heard(20.0, 35.0, 0.0, 0.9) + heard(35.0, 60.0, 0.98, 0.0)))
-    service.make(directory)
+    quiet.make(directory)
     expect(edit().keep.map { it.start }).toEqual(listOf(4.7, 34.5))
   }
 
@@ -300,7 +308,7 @@ class RadioEpisodeServiceTest {
     show()
     saved(outline(1.0, 5.0, 50.0))
     save(directory.resolve(SOUNDS_FILE), Sounds(heard(0.0, 20.0, 0.98, 0.0) + heard(20.0, 35.0, 0.0, 0.9) + heard(35.0, 60.0, 0.98, 0.0)))
-    service.make(directory)
+    quiet.make(directory)
     val song = cuts(edit(), 60.0).single { it.kind == CutKind.MUSIC }
     expect(song.start to song.end).toEqual(20.0 to 34.5)
   }
@@ -312,7 +320,7 @@ class RadioEpisodeServiceTest {
     saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 30.0))))
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
-    service(properties = properties).make(directory)
+    service(properties = properties, renderer = written()).make(directory)
     expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
   }
 
@@ -331,7 +339,7 @@ class RadioEpisodeServiceTest {
   fun `should find the cuts of every programme in a recording without being asked`() {
     shared()
     second(outline(65.0, 70.0, 110.0))
-    service.make(directory)
+    quiet.make(directory)
     expect(edit().found() to Files.exists(directory.resolve("episode.m4a"))).toEqual(setOf(PROGRAMME, "Tarkade klubi") to true)
   }
 
@@ -352,7 +360,7 @@ class RadioEpisodeServiceTest {
   fun `should cut between two programmes found in one recording`() {
     shared()
     second(outline(65.0, 70.0, 110.0))
-    service.make(directory)
+    quiet.make(directory)
     val between = cuts(edit(), 120.0).single { it.kind == CutKind.BETWEEN }
     expect(between.start to between.end).toEqual(51.2 to 69.7)
   }
@@ -380,7 +388,7 @@ class RadioEpisodeServiceTest {
     val klubi = RadioProgramme(231, "Tarkade klubi", "tarkade-klubi").apply { id = 7 }
     val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
     every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
-    service(airings(airing), programmes(klubi)).make(directory)
+    service(airings(airing), programmes(klubi), renderer = written()).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
   }
 
@@ -392,7 +400,7 @@ class RadioEpisodeServiceTest {
     val other = RadioAiring(10, 8, "Tarkade klubi", Instant.ofEpochSecond(30), Instant.ofEpochSecond(50), station = Station.ARIPAEV)
     val airing = RadioAiring(9, 7, "Tarkade klubi", Instant.ofEpochSecond(60), Instant.ofEpochSecond(115))
     every { outlineService.reads(any(), any(), any(), any(), any()) } returns listOf(outline(65.0, 70.0, 110.0))
-    service(airings(other, airing), programmes(klubi, namesake)).make(directory)
+    service(airings(other, airing), programmes(klubi, namesake), renderer = written()).make(directory)
     verify { outlineService.reads(Show("Tarkade klubi", Slot(60, 115), 0.0, 120.0), any(), any(), any(), any()) }
   }
 }

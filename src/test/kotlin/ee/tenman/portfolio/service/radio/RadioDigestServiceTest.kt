@@ -32,7 +32,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should report choosing the stories while the judge reads`() {
-    held()
+    held(audio = false)
     var step: DigestStep? = null
     every { model.judge(any(), any()) } answers {
       step = progress.current()?.step
@@ -44,40 +44,40 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should list the stories picked while their clips are chosen`() {
-    held()
+    held(audio = false)
     var titles: List<String>? = null
     every { model.clip(any(), any()) } answers {
       titles = progress.current()?.titles
       null
     }
-    service().build(TODAY)
+    service(renderer = silent()).build(TODAY)
     expect(titles).toEqual(listOf("Rünnakud Ust-Lugas", "Valimised"))
   }
 
   @Test
   fun `should count each clip as it is cut`() {
-    held()
-    service().build(TODAY)
+    held(audio = false)
+    service(renderer = silent()).build(TODAY)
     verify(exactly = 2) { progress.cut() }
   }
 
   @Test
   fun `should follow the mix`() {
-    held()
-    service().build(TODAY)
+    held(audio = false)
+    service(renderer = silent()).build(TODAY)
     verify(atLeast = 1) { progress.mixed(any()) }
   }
 
   @Test
   fun `should forget the build once it is written`() {
-    held()
-    service().build(TODAY)
+    held(audio = false)
+    service(renderer = silent()).build(TODAY)
     expect(progress.current()).toEqual(null)
   }
 
   @Test
   fun `should forget the build when it fails`() {
-    held()
+    held(audio = false)
     every { model.judge(any(), any()) } returns null
     runCatching { service().build(TODAY) }
     expect(progress.current()).toEqual(null)
@@ -135,25 +135,25 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should keep the stories in rank order when two shows take turns`() {
-    held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")))
+    held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")), audio = false)
     every { model.judge(any(), any()) } returns
       Judgement(listOf(story("Rünnakud Ust-Lugas", "r1", 5), story("Valimised", "r3", 4), story("Telia koondab", "r2", 3)))
-    service().build(TODAY)
+    service(renderer = silent()).build(TODAY)
     expect(read<Digest>(digest().resolve(DIGEST_FILE))?.stories?.map { it.title })
       .toEqual(listOf("Rünnakud Ust-Lugas", "Valimised", "Telia koondab"))
   }
 
   @Test
   fun `should start each story's transcript at its place in the digest`() {
-    held()
-    service().build(TODAY)
+    held(audio = false)
+    service(renderer = silent()).build(TODAY)
     val second = read<List<TranscriptSection>>(digest().resolve(TRANSCRIPT_FILE)).orEmpty()[1]
     expect(second.lines.first().start to second.start).toEqual(181.0 to 181.0)
   }
 
   @Test
   fun `should leave the previous digest when the judge does not answer`() {
-    held()
+    held(audio = false)
     writtenDigest(directory, TODAY.minusDays(1), emptyList())
     every { model.judge(any(), any()) } returns null
     runCatching { service().build(TODAY) }
@@ -175,7 +175,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should mark a day without a story as built without audio`() {
-    held()
+    held(audio = false)
     every { model.judge(any(), any()) } returns Judgement(emptyList())
     service().build(TODAY)
     val stories = read<Digest>(digest().resolve(DIGEST_FILE))?.stories
@@ -184,7 +184,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should keep the newest seven digests`() {
-    held()
+    held(audio = false)
     (1L..8L).forEach { writtenDigest(directory, TODAY.minusDays(it), emptyList()) }
     every { model.judge(any(), any()) } returns Judgement(emptyList())
     service().build(TODAY)
@@ -194,7 +194,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should leave out a recording whose episode is not on disk`() {
-    held()
+    held(audio = false)
     Files.delete(directory.resolve(SAMOST).resolve(EPISODE_FILE))
     every { model.judge(any(), any()) } returns Judgement(emptyList())
     service().build(TODAY)
@@ -211,7 +211,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should judge only the shows of the days kept on disk`() {
-    held()
+    held(audio = false)
     every { model.judge(any(), any()) } returns Judgement(emptyList())
     service(localDays = 2, now = "2026-11-16T12:00:00Z").build(TODAY)
     verify { model.judge(match { rows -> rows.map { it.recording } == listOf(SAMOST) }, any()) }
@@ -254,19 +254,31 @@ class RadioDigestServiceTest {
   private fun service(
     localDays: Long = 7,
     now: String = NOW,
+    renderer: RadioRenderService = RadioRenderService(),
   ) = RadioDigestService(
     archive,
     model,
-    RadioRenderService(),
+    renderer,
     progress,
     RadioProperties(recordings = directory, localDays = localDays),
     jobs,
     Clock.fixed(Instant.parse(now), ZoneId.of("Europe/Tallinn")),
   )
 
+  private fun silent() =
+    mockk<RadioRenderService> {
+      every { silence(any(), any()) } answers { Files.createFile(firstArg<Path>()) }
+      every { clip(any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(3)) }
+      every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
+        lastArg<(Double) -> Unit>()(1.0)
+        Files.createFile(arg<Path>(4))
+      }
+    }
+
   private fun held(
     chapters: List<EpisodeChapter> = listOf(EpisodeChapter(0.0, "Ust-Luga")),
     station: Station = Station.KUKU,
+    audio: Boolean = true,
   ) {
     val audible = listOf(KeptSpan(0.0, 300.0))
     val first = cutRecording(KESKPAEVATUND, chapters, audible)
@@ -279,7 +291,7 @@ class RadioDigestServiceTest {
         startedAt = SUNDAY_NOON,
         station = station,
       )
-    listOf(first, second).forEach { episode(it.name) }
+    listOf(first, second).forEach { if (audio) episode(it.name) else stub(it.name) }
     every { archive.recordings() } returns listOf(second, first)
     every { archive.transcript(KESKPAEVATUND) } returns listOf(TranscriptLine(0.0, 5.0, "Sõda on lähedal.", emptyList()))
     every { archive.transcript(SAMOST) } returns listOf(TranscriptLine(0.0, 5.0, "Valimised tulevad.", emptyList()))
@@ -306,6 +318,10 @@ class RadioDigestServiceTest {
   private fun episode(name: String) {
     val path = Files.createDirectories(directory.resolve(name)).resolve(EPISODE_FILE)
     ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.3*sin(2*PI*440*t)':s=48000:d=300", "-c:a", "aac", "-b:a", "96k", "$path")
+  }
+
+  private fun stub(name: String) {
+    Files.writeString(Files.createDirectories(directory.resolve(name)).resolve(EPISODE_FILE), "Pole heli õ")
   }
 
   private fun digest(date: LocalDate = TODAY): Path = directory.resolve(DIGEST_DIRECTORY).resolve(date.toString())
