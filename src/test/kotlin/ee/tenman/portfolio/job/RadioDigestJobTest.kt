@@ -1,5 +1,8 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.RadioDigestService
 import io.mockk.every
@@ -8,6 +11,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.springframework.scheduling.support.CronExpression
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -38,5 +42,13 @@ class RadioDigestJobTest {
     val job = RadioDigestJob(service, executions, clock)
     job.runScheduledJob()
     verify { executions.executeJob(job) }
+  }
+
+  @Test
+  fun `should try the digest every hour from noon to the end of the day`() {
+    val cron = CronExpression.parse(CollectionSchedules.RADIO_DIGEST_CRON)
+    val day = LocalDate.of(2026, 11, 17)
+    val hours = generateSequence(cron.next(day.atStartOfDay().minusSeconds(1))) { cron.next(it) }.takeWhile { it.toLocalDate() == day }
+    expect(hours.map { it.hour }.toList()).toEqual((12..23).toList())
   }
 }
