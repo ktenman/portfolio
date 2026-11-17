@@ -90,9 +90,21 @@ class RadioDigestServiceTest {
   }
 
   @Test
+  fun `should name the week in the running build`() {
+    progress.started(TODAY)
+    expect(service().building()?.title).toEqual("Week in Radio 09.11–15.11.2026")
+  }
+
+  @Test
   fun `should show today's failure with the next hourly try`() {
     failed(1)
-    expect(service().building()?.failure).toEqual(DigestFailure(REASON, 1, 3, "2026-11-16T11:00:00Z"))
+    expect(service(now = "2026-11-16T04:30:00Z").building()?.failure).toEqual(DigestFailure(REASON, 1, 3, "2026-11-16T05:00:00Z"))
+  }
+
+  @Test
+  fun `should say it stopped for the day after the last hourly try`() {
+    failed(1)
+    expect(service(now = "2026-11-16T07:30:00Z").building()?.failure?.nextTry).toEqual(null)
   }
 
   @Test
@@ -110,7 +122,7 @@ class RadioDigestServiceTest {
   @Test
   fun `should say it stopped for the day after three failures`() {
     failed(3)
-    expect(service().building()?.failure?.nextTry).toEqual(null)
+    expect(service(now = "2026-11-16T04:30:00Z").building()?.failure).toEqual(DigestFailure(REASON, 3, 3, null))
   }
 
   @Test
@@ -131,6 +143,13 @@ class RadioDigestServiceTest {
     service().build(TODAY)
     val titles = probe(digest().resolve(EPISODE_FILE))["chapters"].toList().map { it["tags"]["title"].asString() }
     expect(titles).toEqual(listOf("Rünnakud Ust-Lugas", "Valimised"))
+  }
+
+  @Test
+  fun `should title the digest audio with the week it covers`() {
+    held()
+    service().build(TODAY)
+    expect(probe(digest().resolve(EPISODE_FILE))["format"]["tags"]["title"].asString()).toEqual("Week in Radio 09.11–15.11.2026")
   }
 
   @Test
@@ -215,6 +234,16 @@ class RadioDigestServiceTest {
     every { model.judge(any(), any()) } returns Judgement(emptyList())
     service(localDays = 2, now = "2026-11-16T12:00:00Z").build(TODAY)
     verify { model.judge(match { rows -> rows.map { it.recording } == listOf(SAMOST) }, any()) }
+  }
+
+  @Test
+  fun `should tell the judge only the stories of earlier weeks`() {
+    held()
+    writtenDigest(directory, TODAY.minusWeeks(1), listOf("Valimised"))
+    writtenDigest(directory, TODAY.minusDays(3), listOf("Telia koondab"))
+    every { model.judge(any(), any()) } returns Judgement(emptyList())
+    service().build(TODAY)
+    verify { model.judge(any(), listOf(TODAY.minusWeeks(1) to "Valimised")) }
   }
 
   @Test

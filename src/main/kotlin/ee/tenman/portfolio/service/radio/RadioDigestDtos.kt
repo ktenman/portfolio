@@ -119,7 +119,10 @@ data class DigestBuild(
   val percent: Int = 0,
   val secondsLeft: Int = 0,
   val failure: DigestFailure? = null,
-)
+) {
+  val title: String
+    get() = digestTitle(date)
+}
 
 data class DigestTrack(
   val build: DigestBuild,

@@ -32,8 +32,9 @@ describe('RadioDigestBuild', () => {
     expect((await mount(null)).find('[data-testid="radio-digest-build"]').exists()).toBe(false)
   })
 
-  it('should name the digest by its day', async () => {
-    expect((await mount()).get('h3').text()).toBe('Week in Radio 16.11.2026')
+  it('should show the title the build is given', async () => {
+    const found = digestBuild({ title: 'Week in Radio 12.10–18.10.2026' })
+    expect((await mount(found)).get('h3').text()).toBe('Week in Radio 12.10–18.10.2026')
   })
 
   it('should hold four places while the stories are chosen', async () => {
@@ -97,6 +98,14 @@ describe('RadioDigestBuild', () => {
     const wrapper = await mount(digestBuild({ step: null, titles: [], failure }))
     expect(wrapper.get('[data-testid="radio-digest-build-failure"]').text()).toContain(
       'Stopped for today after 3 tries'
+    )
+  })
+
+  it('should name a single try', async () => {
+    const failure = digestFailure({ tries: 1, nextTry: null })
+    const wrapper = await mount(digestBuild({ step: null, titles: [], failure }))
+    expect(wrapper.get('[data-testid="radio-digest-build-failure"]').text()).toContain(
+      'Stopped for today after 1 try'
     )
   })
 })

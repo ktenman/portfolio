@@ -9,6 +9,11 @@ import java.time.ZoneId
 
 class RadioDigestTest {
   @Test
+  fun `should name the digest after the week before it was built`() {
+    expect(digestTitle(LocalDate.of(2026, 11, 16))).toEqual("Week in Radio 09.11–15.11.2026")
+  }
+
+  @Test
   fun `should take a row per topic with the minutes left after cuts`() {
     val topics = listOf(EpisodeChapter(100.0, "Ust-Luga"), EpisodeChapter(500.0, "Telia"))
     val held = cutRecording(RECORDING, topics, listOf(KeptSpan(0.0, 200.0), KeptSpan(300.0, 900.0)))

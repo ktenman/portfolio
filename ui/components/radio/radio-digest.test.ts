@@ -56,14 +56,14 @@ describe('RadioDigest', () => {
 
   it('should play the digest from its play button', async () => {
     const wrapper = await mount()
-    await wrapper.get('button[aria-label="Play: Week in Radio"]').trigger('click')
+    await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
     expect(player.load).toHaveBeenCalledWith(digest().recording, 'episode')
   })
 
   it('should resume the digest where it was left', async () => {
     vi.clearAllMocks()
     const wrapper = await mount()
-    await wrapper.get('button[aria-label="Play: Week in Radio"]').trigger('click')
+    await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
     expect([player.playFrom.mock.calls.length, player.toggle.mock.calls.length]).toEqual([0, 1])
   })
 

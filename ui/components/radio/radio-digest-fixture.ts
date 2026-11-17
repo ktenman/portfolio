@@ -99,6 +99,7 @@ export const digestBuild = (overrides: Partial<DigestBuild> = {}): DigestBuild =
   percent: 58,
   secondsLeft: 300,
   failure: null,
+  title: 'Week in Radio 09.11–15.11.2026',
   ...overrides,
 })
 
@@ -130,7 +131,7 @@ export const digest = (count?: number): RadioDigest => {
   return {
     recording: recording({
       name: 'week-in-radio-2026-11-16',
-      programme: 'Week in Radio',
+      programme: 'Week in Radio 09.11–15.11.2026',
       status,
       span: { start: status.startedAt, end: status.startedAt + seconds },
       sizeBytes: 0,

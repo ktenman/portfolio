@@ -13,7 +13,6 @@ import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
 
@@ -47,7 +46,7 @@ class RadioDigestService(
     rows: List<DigestRow>,
   ) {
     val judgement =
-      checkNotNull(radioDigestModelService.judge(rows, told())) { "The model gave no judgement for the $date radio digest" }
+      checkNotNull(radioDigestModelService.judge(rows, told(date))) { "The model gave no judgement for the $date radio digest" }
     val ranked = ranked(judgement, rows.associateBy { it.id })
     radioDigestProgressService.judged(ranked.map { it.story.title })
     val clips = fitted(clips(ranked, recordings.associateBy { it.name }))
@@ -70,7 +69,12 @@ class RadioDigestService(
 
   private fun next(tries: Long): String? {
     if (tries >= ATTEMPTS) return null
-    return NEXT_TRY.next(clock.instant().atZone(CRON_ZONE))?.toInstant()?.toString()
+    val now = clock.instant().atZone(CRON_ZONE)
+    return NEXT_TRY
+      .next(now)
+      ?.takeIf { it.toLocalDate() == now.toLocalDate() }
+      ?.toInstant()
+      ?.toString()
   }
 
   private fun built(date: LocalDate): Boolean = Files.exists(target(date).resolve(DIGEST_FILE))
@@ -86,10 +90,12 @@ class RadioDigestService(
       .sortedBy { it.status.startedAt }
   }
 
-  private fun told(): List<Pair<LocalDate, String>> =
-    digests(root()).take(KEPT).flatMap { folder ->
-      read<Digest>(folder.resolve(DIGEST_FILE))?.let { digest -> digest.stories.map { digest.date to it.title } }.orEmpty()
-    }
+  private fun told(date: LocalDate): List<Pair<LocalDate, String>> =
+    digests(root())
+      .take(KEPT)
+      .mapNotNull { read<Digest>(it.resolve(DIGEST_FILE)) }
+      .filter { it.date <= date.minusWeeks(1) }
+      .flatMap { digest -> digest.stories.map { digest.date to it.title } }
 
   private fun clips(
     ranked: List<RankedStory>,
@@ -136,7 +142,7 @@ class RadioDigestService(
   ) {
     val spans = cut(work, clips, offsets)
     val marks = clips.mapIndexed { index, clip -> offsets[index] to clip.story.story.title }
-    val title = "$DIGEST_TITLE ${date.format(TITLE)}"
+    val title = digestTitle(date)
     val target = work.resolve(EPISODE_FILE)
     radioRenderService.render(spans, spans.map { it.start to it.end }, marks, title, target, station, radioDigestProgressService::mixed)
     spans.map { it.audio }.distinct().forEach(Files::delete)
@@ -196,7 +202,6 @@ class RadioDigestService(
     private const val BUILD = "build.tmp"
     private const val JOB = "RadioDigestJob"
     private const val UNKNOWN = "The digest build failed"
-    private val TITLE = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     private val NEXT_TRY = CronExpression.parse(CollectionSchedules.RADIO_DIGEST_CRON)
     private val CRON_ZONE = ZoneId.of(CollectionSchedules.TIME_ZONE)
   }

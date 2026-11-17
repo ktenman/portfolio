@@ -22,6 +22,7 @@ import ee.tenman.portfolio.service.radio.taped
 import ee.tenman.portfolio.service.radio.writtenDigest
 import jakarta.annotation.Resource
 import org.hamcrest.Matchers.contains
+import org.hamcrest.Matchers.startsWith
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders.CONTENT_DISPOSITION
@@ -160,6 +161,14 @@ class RadioControllerIT {
     val now = clock.instant()
     jobExecutionRepository.save(JobExecution("RadioDigestJob", now, now, 0, JobStatus.FAILURE, "The model gave no judgement õ"))
     mockMvc.perform(mvcGet("/api/radio/digests/build")).andExpect(jsonPath("$.failure.reason").value("The model gave no judgement õ"))
+  }
+
+  @Test
+  fun `should title a failed digest build with its week`() {
+    jobExecutionRepository.deleteAll()
+    val now = clock.instant()
+    jobExecutionRepository.save(JobExecution("RadioDigestJob", now, now, 0, JobStatus.FAILURE, "Mudel ei vastanud"))
+    mockMvc.perform(mvcGet("/api/radio/digests/build")).andExpect(jsonPath("$.title").value(startsWith("Week in Radio ")))
   }
 
   @Test

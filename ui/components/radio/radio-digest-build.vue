@@ -7,7 +7,7 @@
     <div class="flex items-center gap-4 px-5 py-4">
       <span class="size-13 shrink-0 rounded-full bg-hairline" aria-hidden="true" />
       <div class="grid min-w-0 grow gap-1.5">
-        <h3 class="mb-0 text-heading">{{ title }}</h3>
+        <h3 class="mb-0 text-heading">{{ build.title }}</h3>
         <p
           v-if="build.failure"
           class="mb-0 flex items-center gap-1.5 text-sm"
@@ -82,8 +82,6 @@ const BARS = [72, 58, 66, 49]
 const { data: build } = useRadioDigestBuild()
 const elapsed = useElapsed(build)
 
-const title = computed(() => `Week in Radio ${build.value?.date.split('-').reverse().join('.')}`)
-
 const stepLabel = ({ step, done, titles }: DigestBuild): string => {
   if (step === DigestStep.CLIPS) return `Choosing the clips · ${done} of ${titles.length}`
   if (step === DigestStep.CUTTING) return `Cutting the clips · ${done} of ${titles.length}`
@@ -114,5 +112,5 @@ const more = computed(() => Math.max(0, (build.value?.titles.length ?? 0) - SHOW
 const next = ({ tries, attempts, nextTry }: DigestFailure) =>
   nextTry
     ? `Next try at ${clock(Date.parse(nextTry) / 1000, 0)} (${tries + 1} of ${attempts})`
-    : `Stopped for today after ${tries} tries`
+    : `Stopped for today after ${tries} ${tries === 1 ? 'try' : 'tries'}`
 </script>
