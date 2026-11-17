@@ -3,7 +3,8 @@
     <div class="min-w-0">
       <radio-on-air class="mb-8 lg:hidden" />
       <radio-digest-build class="mb-8" />
-      <radio-digest class="mb-8" />
+      <radio-digest :show="DigestShow.DAY" class="mb-8" />
+      <radio-digest :show="DigestShow.WEEK" class="mb-8" />
       <data-table
         :items="shown"
         :columns="columns"
@@ -94,6 +95,7 @@
 import { computed } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import {
+  DigestShow,
   RecordingState,
   type RecordingSummary,
   type Station,

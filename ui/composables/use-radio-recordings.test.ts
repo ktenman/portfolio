@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
-import { digest, digestBuild, digestFailure } from '../components/radio/radio-digest-fixture'
+import {
+  dayDigest,
+  digest,
+  digestBuild,
+  digestFailure,
+} from '../components/radio/radio-digest-fixture'
 import { type DigestBuild, type RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
@@ -72,6 +77,19 @@ describe('useRadioRecording', () => {
     })
     await flushPromises()
     expect(found.recording?.programme).toBe('Week in Radio 09.11–15.11.2026')
+  })
+
+  it('should find a day show by its name', async () => {
+    vi.mocked(radioService.digests).mockResolvedValue([dayDigest(), digest()])
+    const found: { recording?: RecordingSummary | null } = {}
+    renderWithProviders({
+      setup: () => {
+        const { recording } = useRadioRecording('day-in-radio-2026-11-16')
+        return () => (found.recording = recording.value) && null
+      },
+    })
+    await flushPromises()
+    expect(found.recording?.programme).toBe('Day in Radio')
   })
 
   it('should not ask for digests on a recording', async () => {

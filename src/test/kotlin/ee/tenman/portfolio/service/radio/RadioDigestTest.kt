@@ -10,7 +10,12 @@ import java.time.ZoneId
 class RadioDigestTest {
   @Test
   fun `should name the digest after the week before it was built`() {
-    expect(digestTitle(LocalDate.of(2026, 11, 16))).toEqual("Week in Radio 09.11–15.11.2026")
+    expect(digestTitle(DigestShow.WEEK, LocalDate.of(2026, 11, 16))).toEqual("Week in Radio 09.11–15.11.2026")
+  }
+
+  @Test
+  fun `should name the day show after the day it is built`() {
+    expect(digestTitle(DigestShow.DAY, LocalDate.of(2026, 11, 17))).toEqual("Day in Radio 17.11.2026")
   }
 
   @Test
@@ -103,21 +108,28 @@ class RadioDigestTest {
   fun `should skip a clip that would take the digest past an hour`() {
     val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
     val clips = listOf(1500.0, 1500.0, 900.0, 500.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
-    expect(fitted(clips).map { it.length }).toEqual(listOf(1500.0, 1500.0, 500.0))
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1500.0, 1500.0, 500.0))
+  }
+
+  @Test
+  fun `should skip a clip that would take the day show past half an hour`() {
+    val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
+    val clips = listOf(900.0, 900.0, 600.0, 400.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips, DigestShow.DAY.seconds).map { it.length }).toEqual(listOf(900.0, 600.0))
   }
 
   @Test
   fun `should count the pause after each clip toward the hour`() {
     val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
     val clips = listOf(1800.0, 1800.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
-    expect(fitted(clips).map { it.length }).toEqual(listOf(1800.0))
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1800.0))
   }
 
   @Test
   fun `should give the digest the station heard longest`() {
     val stories = listOf(told(Station.KUKU, 0.0, 60.0), told(Station.ARIPAEV, 61.0, 161.0), told(Station.ARIPAEV, 162.0, 262.0))
     val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 263.0, "google/gemini-4-carbon", stories)
-    expect(digestSummary(digest, 1).status.station).toEqual(Station.ARIPAEV)
+    expect(digestSummary(DigestShow.WEEK, digest, 1).status.station).toEqual(Station.ARIPAEV)
   }
 
   @Test
@@ -125,7 +137,7 @@ class RadioDigestTest {
     val mention = DigestMention("Hommikuprogramm", Station.SKYPLUS, LocalDate.of(2026, 11, 15))
     val stories = listOf(told(Station.KUKU, 0.0, 60.0, also = listOf(mention)), told(Station.ARIPAEV, 61.0, 161.0))
     val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 162.0, "google/gemini-4-carbon", stories)
-    expect(digestSummary(digest, 1).stations).toEqual(listOf(Station.ARIPAEV, Station.KUKU, Station.SKYPLUS))
+    expect(digestSummary(DigestShow.WEEK, digest, 1).stations).toEqual(listOf(Station.ARIPAEV, Station.KUKU, Station.SKYPLUS))
   }
 
   @Test
@@ -137,7 +149,7 @@ class RadioDigestTest {
         told(Station.KUKU, 162.0, 200.0, "Sihik"),
       )
     val digest = Digest(LocalDate.of(2026, 11, 16), "2026-11-16T10:00:00Z", 201.0, "google/gemini-4-carbon", stories)
-    expect(digestSummary(digest, 1).shows).toEqual(listOf("Sihik", "Kuum tool"))
+    expect(digestSummary(DigestShow.WEEK, digest, 1).shows).toEqual(listOf("Sihik", "Kuum tool"))
   }
 
   @Test

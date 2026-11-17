@@ -124,7 +124,7 @@ export const useRadioDigestBuild = () => {
 
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   const query = useRadioRecordings()
-  const digests = useRadioDigests(() => toValue(name).startsWith('week-in-radio-'))
+  const digests = useRadioDigests(() => /^(day|week)-in-radio-/.test(toValue(name)))
   const recording = computed(
     () =>
       query.data.value?.find(r => r.name === toValue(name)) ??

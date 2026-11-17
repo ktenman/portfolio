@@ -21,9 +21,12 @@ class RadioDigestProgressService(
 
   fun current(): DigestBuild? = tracked.get()?.build
 
-  fun started(date: LocalDate) {
+  fun started(
+    show: DigestShow,
+    date: LocalDate,
+  ) {
     val now = clock.instant()
-    tracked.set(estimated(DigestTrack(DigestBuild(date, DigestStep.STORIES), now, now), now))
+    tracked.set(estimated(DigestTrack(DigestBuild(show, date, DigestStep.STORIES), now, now), now))
     liveUpdateService.publish(LiveUpdate.DIGEST)
   }
 
@@ -81,14 +84,16 @@ class RadioDigestProgressService(
   private fun remaining(
     build: DigestBuild,
     spent: Double,
-  ): Double =
-    when (build.step) {
-      DigestStep.STORIES -> max(0.0, JUDGE_SECONDS - spent) + (TYPICAL_STORIES * (CLIP_SECONDS + CUT_SECONDS) + MIX_SECONDS)
-      DigestStep.CLIPS -> paced(build, spent, CLIP_SECONDS) + (build.titles.size * CUT_SECONDS + MIX_SECONDS)
-      DigestStep.CUTTING -> paced(build, spent, CUT_SECONDS) + MIX_SECONDS
-      DigestStep.MIXING -> if (build.done > 0) spent * (100 - build.done) / build.done else MIX_SECONDS
+  ): Double {
+    val mix = RENDER_PACE * build.show.seconds / 60
+    return when (build.step) {
+      DigestStep.STORIES -> max(0.0, JUDGE_SECONDS - spent) + (build.show.seconds / STORY_SECONDS * (CLIP_SECONDS + CUT_SECONDS) + mix)
+      DigestStep.CLIPS -> paced(build, spent, CLIP_SECONDS) + (build.titles.size * CUT_SECONDS + mix)
+      DigestStep.CUTTING -> paced(build, spent, CUT_SECONDS) + mix
+      DigestStep.MIXING -> if (build.done > 0) spent * (100 - build.done) / build.done else mix
       null -> 0.0
     }
+  }
 
   private fun paced(
     build: DigestBuild,
@@ -105,8 +110,7 @@ class RadioDigestProgressService(
     private const val JUDGE_SECONDS = 70.0
     private const val CLIP_SECONDS = 7.0
     private const val CUT_SECONDS = 17.0
-    private const val MIX_SECONDS = RENDER_PACE * 60
-    private const val TYPICAL_STORIES = 20
+    private const val STORY_SECONDS = 180.0
     private const val MOST = 99
     private const val TENTH = 10
   }

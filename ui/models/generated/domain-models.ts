@@ -299,11 +299,13 @@ export interface TranscriptSection {
 }
 
 export interface RadioDigest {
+    show: DigestShow;
     recording: RecordingSummary;
     stories: DigestStory[];
 }
 
 export interface DigestBuild {
+    show: DigestShow;
     date: DateAsString;
     step: DigestStep | null;
     titles: string[];
@@ -929,6 +931,11 @@ export enum TranscriptState {
     NONE = "NONE",
     RECORDING = "RECORDING",
     TRANSCRIBED = "TRANSCRIBED",
+}
+
+export enum DigestShow {
+    DAY = "DAY",
+    WEEK = "WEEK",
 }
 
 export enum DigestStep {

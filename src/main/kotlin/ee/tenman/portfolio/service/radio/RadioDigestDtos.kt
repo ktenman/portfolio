@@ -1,8 +1,10 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.model.CollectionSchedules
 import java.time.Instant
 import java.time.LocalDate
+import java.time.Period
 
 data class DigestRow(
   val id: String,
@@ -15,6 +17,7 @@ data class DigestRow(
   val start: Double,
   val end: Double,
   val kept: Double,
+  val earlier: Boolean = false,
 )
 
 data class JudgedStory(
@@ -92,7 +95,43 @@ data class Digest(
   val stories: List<DigestStory>,
 )
 
+enum class DigestShow(
+  val title: String,
+  val directory: String,
+  val prefix: String,
+  val seconds: Double,
+  val cron: String,
+  val job: String,
+  val period: Period,
+  val reach: Period,
+  val prompt: String,
+) {
+  DAY(
+    "Day in Radio",
+    ".digest-day",
+    "day-in-radio-",
+    1800.0,
+    CollectionSchedules.RADIO_DAY_DIGEST_CRON,
+    "RadioDayDigestJob",
+    Period.ofDays(1),
+    Period.ofDays(2),
+    "radio/digest-day-judge-prompt.txt",
+  ),
+  WEEK(
+    "Week in Radio",
+    ".digest",
+    "week-in-radio-",
+    3600.0,
+    CollectionSchedules.RADIO_DIGEST_CRON,
+    "RadioDigestJob",
+    Period.ofWeeks(1),
+    Period.ofWeeks(1),
+    "radio/digest-judge-prompt.txt",
+  ),
+}
+
 data class RadioDigest(
+  val show: DigestShow,
   val recording: RecordingSummary,
   val stories: List<DigestStory>,
 )
@@ -112,6 +151,7 @@ data class DigestFailure(
 )
 
 data class DigestBuild(
+  val show: DigestShow,
   val date: LocalDate,
   val step: DigestStep?,
   val titles: List<String> = emptyList(),
@@ -121,7 +161,7 @@ data class DigestBuild(
   val failure: DigestFailure? = null,
 ) {
   val title: String
-    get() = digestTitle(date)
+    get() = digestTitle(show, date)
 }
 
 data class DigestTrack(

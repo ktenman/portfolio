@@ -14,18 +14,22 @@ class RadioDigestModelService(
   private val openRouterClient: OpenRouterClient,
   private val radioProperties: RadioProperties,
 ) {
-  private val judgePrompt: String = resource("radio/digest-judge-prompt.txt").trimEnd()
+  private val judgePrompts: Map<DigestShow, String> = DigestShow.entries.associateWith { resource(it.prompt).trimEnd() }
   private val judgeSchema: Map<String, Any> = JsonMapperFactory.instance.readValue(resource("radio/digest-judge-schema.json"))
   private val clipPrompt: String = resource("radio/digest-clip-prompt.txt").trimEnd()
   private val clipSchema: Map<String, Any> = JsonMapperFactory.instance.readValue(resource("radio/digest-clip-schema.json"))
 
   fun judge(
+    show: DigestShow,
     rows: List<DigestRow>,
     told: List<Pair<LocalDate, String>>,
   ): Judgement? {
-    val listed = rows.joinToString("\n", transform = ::listed)
+    val (earlier, news) = rows.partition { it.earlier }
+    val listed = news.joinToString("\n", transform = ::listed)
+    val before = if (earlier.isEmpty()) "" else "\n\nEarlier:\n${earlier.joinToString("\n", transform = ::listed)}"
     val history = told.joinToString("\n") { (day, title) -> "${day.format(TOLD)} $title" }
-    return ask(judgePrompt, "$listed\n\nTold before:\n$history", judgeSchema)?.let { read(it, Judgement::class.java) }
+    val user = "$listed$before\n\nTold before:\n$history"
+    return ask(judgePrompts.getValue(show), user, judgeSchema)?.let { read(it, Judgement::class.java) }
   }
 
   fun clip(

@@ -7,13 +7,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-const val DIGEST_DIRECTORY = ".digest"
 const val DIGEST_FILE = "digest.json"
-const val DIGEST_PREFIX = "week-in-radio-"
-private const val DIGEST_TITLE = "Week in Radio"
 const val PAUSE_SECONDS = 1.0
 private const val ROW_SECONDS = 60.0
-private const val DIGEST_SECONDS = 3600.0
 private val DAY_NAME = Regex("""\d{4}-\d{2}-\d{2}""")
 private const val SCORE_FLOOR = 8
 private const val PER_PROGRAMME = 4
@@ -135,8 +131,11 @@ fun inStory(
   audible: List<KeptSpan>,
 ): Boolean = !line.music && line.start >= row.start && line.start < row.end && audible.any { line.start >= it.start && line.start < it.end }
 
-fun fitted(clips: List<DigestClip>): List<DigestClip> =
-  clips.fold(emptyList()) { kept, clip -> if ((kept + clip).sumOf { it.length + PAUSE_SECONDS } <= DIGEST_SECONDS) kept + clip else kept }
+fun fitted(
+  clips: List<DigestClip>,
+  seconds: Double,
+): List<DigestClip> =
+  clips.fold(emptyList()) { kept, clip -> if ((kept + clip).sumOf { it.length + PAUSE_SECONDS } <= seconds) kept + clip else kept }
 
 fun dominant(stories: List<DigestStory>): Station = heard(stories).first()
 
@@ -198,18 +197,30 @@ fun source(clip: DigestClip): SectionSource {
 
 fun digests(root: Path): List<Path> = directories(root, DAY_NAME, DIGEST_FILE)
 
-fun digestTitle(date: LocalDate): String = "$DIGEST_TITLE ${date.minusWeeks(1).format(WEEK_START)}–${date.minusDays(1).format(FULL_DATE)}"
+fun digestTitle(
+  show: DigestShow,
+  date: LocalDate,
+): String =
+  when (show) {
+    DigestShow.DAY -> "${show.title} ${date.format(FULL_DATE)}"
+    DigestShow.WEEK -> "${show.title} ${date.minusWeeks(1).format(WEEK_START)}–${date.minusDays(1).format(FULL_DATE)}"
+  }
 
 fun digestSummary(
+  show: DigestShow,
   digest: Digest,
   bytes: Long,
 ): RecordingSummary {
   val whole = listOf(KeptSpan(0.0, digest.seconds))
   val timeline = digest.stories.map { TimelineEntry(it.start, it.end, it.title, false, summary = it.summary) }
   return RecordingSummary(
-    name = "$DIGEST_PREFIX${digest.date}",
-    programme = digestTitle(digest.date),
-    status = status(digest),
+    name = "${show.prefix}${digest.date}",
+    programme =
+      when (show) {
+        DigestShow.DAY -> show.title
+        DigestShow.WEEK -> digestTitle(show, digest.date)
+      },
+    status = status(show, digest),
     sizeBytes = 0,
     transcribed = true,
     speech = null,
@@ -227,12 +238,14 @@ fun digestSummary(
   )
 }
 
-private fun status(digest: Digest) =
-  RecordingStatus(
+private fun status(
+  show: DigestShow,
+  digest: Digest,
+) = RecordingStatus(
     RecordingState.CAPTURED,
     Instant.parse(digest.builtAt).epochSecond.toDouble(),
     digest.seconds,
-    programmes = listOf(DIGEST_TITLE),
+    programmes = listOf(show.title),
     station = dominant(digest.stories),
   )
 

@@ -18,7 +18,8 @@ class RadioDigestModelServiceTest {
   fun `should ask the digest purpose with the judge schema`() {
     val client = mockk<OpenRouterClient>()
     every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns null
-    RadioDigestModelService(client, RadioProperties()).judge(listOf(ROW), listOf(LocalDate.of(2026, 11, 15) to "Telia koondamised"))
+    val told = listOf(LocalDate.of(2026, 11, 15) to "Telia koondamised")
+    RadioDigestModelService(client, RadioProperties()).judge(DigestShow.WEEK, listOf(ROW), told)
     verify {
       client.complete(
         AiPurpose.RADIO_DIGEST,
@@ -37,14 +38,42 @@ class RadioDigestModelServiceTest {
     val judgement = Judgement(listOf(STORY))
     every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns
       JsonMapperFactory.instance.writeValueAsString(judgement)
-    expect(RadioDigestModelService(client, RadioProperties()).judge(listOf(ROW), emptyList())).toEqual(judgement)
+    expect(RadioDigestModelService(client, RadioProperties()).judge(DigestShow.WEEK, listOf(ROW), emptyList())).toEqual(judgement)
   }
 
   @Test
   fun `should return no judgement when the answer is not json`() {
     val client = mockk<OpenRouterClient>()
     every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns "Vabandust, ei saa."
-    expect(RadioDigestModelService(client, RadioProperties()).judge(listOf(ROW), emptyList())).toEqual(null)
+    expect(RadioDigestModelService(client, RadioProperties()).judge(DigestShow.WEEK, listOf(ROW), emptyList())).toEqual(null)
+  }
+
+  @Test
+  fun `should list the earlier rows apart from the day's news`() {
+    val client = mockk<OpenRouterClient>()
+    every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns null
+    val earlier = ROW.copy(id = "r2", title = "Telia koondab", summary = "Koondatakse 300 töötajat.", earlier = true)
+    RadioDigestModelService(client, RadioProperties())
+      .judge(DigestShow.DAY, listOf(earlier, ROW), listOf(LocalDate.of(2026, 11, 15) to "Telia koondamised"))
+    verify {
+      client.complete(
+        AiPurpose.RADIO_DIGEST,
+        AiModel.GEMINI_4_CARBON,
+        any(),
+        "r1 | Sat 14.11 | Keskpäevatund (Kuku) | 6.5 min | Rünnakud Ust-Lugas | Droonid tabasid sadamat.\n\n" +
+          "Earlier:\nr2 | Sat 14.11 | Keskpäevatund (Kuku) | 6.5 min | Telia koondab | Koondatakse 300 töötajat.\n\n" +
+          "Told before:\n15.11 Telia koondamised",
+        any(),
+      )
+    }
+  }
+
+  @Test
+  fun `should ask the day judge with the day prompt`() {
+    val client = mockk<OpenRouterClient>()
+    every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns null
+    RadioDigestModelService(client, RadioProperties()).judge(DigestShow.DAY, listOf(ROW), emptyList())
+    verify { client.complete(AiPurpose.RADIO_DIGEST, any(), match { "daily show of at most 30 minutes" in it }, any(), any()) }
   }
 
   @Test

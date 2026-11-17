@@ -29,20 +29,26 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should start at choosing the stories with the judge's pace left`() {
-    progress.started(DAY)
-    expect(progress.current()).toEqual(DigestBuild(DAY, DigestStep.STORIES, secondsLeft = 724))
+    progress.started(DigestShow.WEEK, DAY)
+    expect(progress.current()).toEqual(DigestBuild(DigestShow.WEEK, DAY, DigestStep.STORIES, secondsLeft = 724))
+  }
+
+  @Test
+  fun `should expect half the stories and mix for the day show`() {
+    progress.started(DigestShow.DAY, DAY)
+    expect(progress.current()?.secondsLeft).toEqual(397)
   }
 
   @Test
   fun `should list the picked titles while the clips are chosen`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.judged(listOf("Rünnakud Ust-Lugas", "Valimised"))
     expect(progress.current()?.let { it.step to it.titles }).toEqual(DigestStep.CLIPS to listOf("Rünnakud Ust-Lugas", "Valimised"))
   }
 
   @Test
   fun `should count the clips chosen`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.judged(listOf("Üks", "Kaks", "Kolm"))
     progress.chosen()
     progress.chosen()
@@ -51,7 +57,7 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should keep only the fitted titles while cutting`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.judged(listOf("Üks", "Kaks", "Kolm"))
     progress.fitted(listOf("Üks", "Kolm"))
     expect(progress.current()?.let { listOf(it.step, it.titles, it.done) }).toEqual(listOf(DigestStep.CUTTING, listOf("Üks", "Kolm"), 0))
@@ -59,7 +65,7 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should estimate the rest of a step from its pace so far`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.judged(listOf("Üks", "Kaks", "Kolm", "Neli"))
     now = now.plusSeconds(20)
     progress.chosen()
@@ -68,7 +74,7 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should fill the meter by the share of the build's time spent`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     now = now.plusSeconds(70)
     progress.judged((1..20).map { "Lugu $it" })
     expect(progress.current()?.percent).toEqual(10)
@@ -76,7 +82,7 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should show the mix percent while mixing`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.fitted(listOf("Üks"))
     progress.mixed(0.45)
     expect(progress.current()?.let { it.step to it.done }).toEqual(DigestStep.MIXING to 45)
@@ -84,14 +90,14 @@ class RadioDigestProgressServiceTest {
 
   @Test
   fun `should announce the mix only at each tenth`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     listOf(0.02, 0.05, 0.11, 0.15, 0.21).forEach(progress::mixed)
     verify(exactly = 4) { live.publish(LiveUpdate.DIGEST) }
   }
 
   @Test
   fun `should forget the build once it ends`() {
-    progress.started(DAY)
+    progress.started(DigestShow.WEEK, DAY)
     progress.ended()
     expect(progress.current()).toEqual(null)
   }

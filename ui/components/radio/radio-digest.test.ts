@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { h } from 'vue'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { DigestShow } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioDigest from './radio-digest.vue'
-import { digest } from './radio-digest-fixture'
+import { dayDigest, digest } from './radio-digest-fixture'
 
 const player = vi.hoisted(() => ({
   load: vi.fn(),
@@ -22,14 +24,25 @@ vi.mock('../../composables/use-auth-state', async () => {
 
 enableAutoUnmount(afterEach)
 
-const mount = async (digests = [digest()]) => {
+const mount = async (digests = [digest()], show = DigestShow.WEEK) => {
   vi.mocked(radioService.digests).mockResolvedValue(digests)
-  const wrapper = renderWithProviders(RadioDigest)
+  const wrapper = renderWithProviders({ render: () => h(RadioDigest, { show }) })
   await flushPromises()
   return wrapper
 }
 
 describe('RadioDigest', () => {
+  it('should show the newest digest of its own show', async () => {
+    expect((await mount([digest(), dayDigest()], DigestShow.DAY)).get('h3').text()).toBe(
+      'Day in Radio'
+    )
+  })
+
+  it('should show nothing before its show has a digest', async () => {
+    const wrapper = await mount([digest()], DigestShow.DAY)
+    expect(wrapper.find('[data-testid="radio-digest"]').exists()).toBe(false)
+  })
+
   it('should show the first four stories and how many more', async () => {
     const wrapper = await mount()
     expect([
