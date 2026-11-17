@@ -71,7 +71,7 @@ describe('useRadioRecording', () => {
       },
     })
     await flushPromises()
-    expect(found.recording?.programme).toBe('Week in Radio')
+    expect(found.recording?.programme).toBe('Week in Radio 09.11–15.11.2026')
   })
 
   it('should not ask for digests on a recording', async () => {

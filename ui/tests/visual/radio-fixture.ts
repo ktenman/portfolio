@@ -395,29 +395,26 @@ export const stubRadioOnAir: RouteStub = async page => {
   await stubRadio(page)
 }
 
-const stubDigestBuild = async (page: Page, build: DigestBuild) => {
+const stubDigestBuild = async (page: Page, build: Partial<DigestBuild>) => {
   await stubRadioOnAir(page)
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests/build`), route =>
-    route.fulfill({ json: build })
+    route.fulfill({
+      json: digestBuild({ date: '2026-10-24', title: 'Week in Radio 17.10–23.10.2026', ...build }),
+    })
   )
 }
 
-export const stubRadioDigestBuilding: RouteStub = page =>
-  stubDigestBuild(page, digestBuild({ date: '2026-10-24', done: 2 }))
+export const stubRadioDigestBuilding: RouteStub = page => stubDigestBuild(page, { done: 2 })
 
 export const stubRadioDigestFailed: RouteStub = page =>
-  stubDigestBuild(
-    page,
-    digestBuild({
-      date: '2026-10-24',
-      step: null,
-      titles: [],
-      failure: digestFailure({
-        reason: 'The model gave no judgement for the 2026-10-24 radio digest',
-        nextTry: '2026-10-24T11:00:00Z',
-      }),
-    })
-  )
+  stubDigestBuild(page, {
+    step: null,
+    titles: [],
+    failure: digestFailure({
+      reason: 'The model gave no judgement for the 2026-10-24 radio digest',
+      nextTry: '2026-10-24T11:00:00Z',
+    }),
+  })
 
 export const stubRadioOneStationIdle: RouteStub = async page => {
   await stubRadioOnAir(page)

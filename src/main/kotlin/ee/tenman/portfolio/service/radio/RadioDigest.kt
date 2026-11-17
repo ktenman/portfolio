@@ -3,12 +3,14 @@ package ee.tenman.portfolio.service.radio
 import ee.tenman.portfolio.domain.Station
 import java.nio.file.Path
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 const val DIGEST_DIRECTORY = ".digest"
 const val DIGEST_FILE = "digest.json"
 const val DIGEST_PREFIX = "week-in-radio-"
-const val DIGEST_TITLE = "Week in Radio"
+private const val DIGEST_TITLE = "Week in Radio"
 const val PAUSE_SECONDS = 1.0
 private const val ROW_SECONDS = 60.0
 private const val DIGEST_SECONDS = 3600.0
@@ -18,6 +20,7 @@ private const val PER_PROGRAMME = 4
 private const val OTHER_PROGRAMMES = 2
 private const val FALLBACK_SECONDS = 180.0
 private val CLIP_SECONDS = 90.0..240.0
+private val WEEK_START = DateTimeFormatter.ofPattern("dd.MM")
 
 fun finished(recording: RecordingSummary): Boolean =
   recording.episodeBytes != null &&
@@ -195,6 +198,8 @@ fun source(clip: DigestClip): SectionSource {
 
 fun digests(root: Path): List<Path> = directories(root, DAY_NAME, DIGEST_FILE)
 
+fun digestTitle(date: LocalDate): String = "$DIGEST_TITLE ${date.minusWeeks(1).format(WEEK_START)}–${date.minusDays(1).format(FULL_DATE)}"
+
 fun digestSummary(
   digest: Digest,
   bytes: Long,
@@ -203,7 +208,7 @@ fun digestSummary(
   val timeline = digest.stories.map { TimelineEntry(it.start, it.end, it.title, false, summary = it.summary) }
   return RecordingSummary(
     name = "$DIGEST_PREFIX${digest.date}",
-    programme = DIGEST_TITLE,
+    programme = digestTitle(digest.date),
     status = status(digest),
     sizeBytes = 0,
     transcribed = true,

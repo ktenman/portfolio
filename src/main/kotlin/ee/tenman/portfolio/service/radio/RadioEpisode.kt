@@ -10,7 +10,7 @@ import kotlin.math.round
 
 const val FADE = 0.015
 private const val ESCAPED = "\\=;#"
-private val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+val FULL_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
 data class Piece(
   val index: Int,
@@ -146,4 +146,4 @@ fun title(
   status: RecordingStatus,
   done: Set<String>,
   zone: ZoneId,
-): String = "${names(status, done)} ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).format(DAY)}"
+): String = "${names(status, done)} ${Instant.ofEpochMilli((status.startedAt * 1000).toLong()).atZone(zone).format(FULL_DATE)}"

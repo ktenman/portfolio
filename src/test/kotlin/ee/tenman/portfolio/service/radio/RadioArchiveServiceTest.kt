@@ -712,7 +712,7 @@ class RadioArchiveServiceTest {
   @Test
   fun `should answer for a Week in Radio digest by name`() {
     writtenDigest(recordings, LocalDate.of(2026, 11, 16), listOf("Ust-Luga"))
-    expect(service.recording("week-in-radio-2026-11-16")?.programme).toEqual("Week in Radio")
+    expect(service.recording("week-in-radio-2026-11-16")?.programme).toEqual("Week in Radio 09.11–15.11.2026")
   }
 
   @Test

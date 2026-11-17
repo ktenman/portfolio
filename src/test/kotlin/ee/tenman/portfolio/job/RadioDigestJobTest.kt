@@ -16,6 +16,7 @@ import io.mockk.verifyOrder
 import org.junit.jupiter.api.Test
 import org.springframework.scheduling.support.CronExpression
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -48,11 +49,11 @@ class RadioDigestJobTest {
   }
 
   @Test
-  fun `should try the digest every hour from noon to the end of the day`() {
+  fun `should try the digest every hour from five to nine on Monday`() {
     val cron = CronExpression.parse(CollectionSchedules.RADIO_DIGEST_CRON)
-    val day = LocalDate.of(2026, 11, 17)
-    val hours = generateSequence(cron.next(day.atStartOfDay().minusSeconds(1))) { cron.next(it) }.takeWhile { it.toLocalDate() == day }
-    expect(hours.map { it.hour }.toList()).toEqual((12..23).toList())
+    val monday = LocalDate.of(2026, 11, 16).atStartOfDay()
+    val tries = generateSequence(cron.next(monday.minusSeconds(1))) { cron.next(it) }.takeWhile { it < monday.plusWeeks(1) }
+    expect(tries.map { it.dayOfWeek to it.hour }.toList()).toEqual((5..9).map { DayOfWeek.MONDAY to it })
   }
 
   @Test

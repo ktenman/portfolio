@@ -311,6 +311,7 @@ export interface DigestBuild {
     percent: number;
     secondsLeft: number;
     failure: DigestFailure | null;
+    title: string;
 }
 
 export interface CutReview {
