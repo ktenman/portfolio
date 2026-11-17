@@ -35,12 +35,41 @@ fun songs(
   frames: List<SoundFrame>,
   keep: List<Pair<Double, Double>>,
   words: List<TranscriptWord>,
-): List<Pair<Double, Double>> =
-  bridged(runs(frames).filter { length(it) >= SEED }, frames.filter { it.speech >= SPEECH }.map { it.at })
-    .filter { length(it) >= SONG }
-    .map { unsplit(it, words.filter { word -> word.end - word.start <= WORD }) }
+): List<Pair<Double, Double>> {
+  val spoken = words.filter { word -> word.end - word.start <= WORD }
+  val sung =
+    bridged(runs(frames).filter { length(it) >= SEED }, frames.filter { it.speech >= SPEECH }.map { it.at })
+      .filter { length(it) >= SONG }
+      .map { unsplit(it, spoken) }
+  return merged(sung + jingles(frames.sortedBy { it.at }, spoken))
     .flatMap { song -> keep.map { maxOf(song.first, it.first) to minOf(song.second, it.second) } }
     .filter { it.second - it.first >= SLIVER }
+}
+
+private fun jingles(
+  frames: List<SoundFrame>,
+  words: List<TranscriptWord>,
+): List<Pair<Double, Double>> =
+  words
+    .sortedBy { it.start }
+    .zipWithNext { said, next -> said.end to next.start }
+    .filter { it.second - it.first >= SLIVER }
+    .mapNotNull { gap -> jingle(frames.filter { it.at >= gap.first && it.at < gap.second }) }
+
+private fun jingle(frames: List<SoundFrame>): Pair<Double, Double>? {
+  val first = frames.indexOfFirst(::musical)
+  if (first < 0) return null
+  val music = frames.subList(first, frames.indexOfLast(::musical) + 1)
+  if (music.count(::musical) * 2 < music.size) return null
+  return music.first().at to music.last().at
+}
+
+private fun merged(cuts: List<Pair<Double, Double>>): List<Pair<Double, Double>> =
+  cuts.sortedBy { it.first }.fold(emptyList()) { found, cut ->
+    val last = found.lastOrNull()
+    if (last == null || cut.first > last.second) return@fold found + cut
+    found.dropLast(1) + (last.first to maxOf(last.second, cut.second))
+  }
 
 fun without(
   keep: List<Pair<Double, Double>>,
