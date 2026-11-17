@@ -108,6 +108,12 @@ describe('useLiveUpdates', () => {
     ])
   })
 
+  it('refreshes the digests and their build when a digest build changes', async () => {
+    const invalidate = render()
+    await push(LiveUpdate.DIGEST)
+    expect(invalidate.mock.calls).toEqual([[{ queryKey: ['radio-digests'] }]])
+  })
+
   it('marks the radio search results stale when radio progress changes', async () => {
     const { queryClient } = mountUpdates()
     queryClient.setQueryDefaults(['radio', 'search'], { gcTime: Infinity })

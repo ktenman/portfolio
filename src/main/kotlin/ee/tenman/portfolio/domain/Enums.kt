@@ -57,6 +57,7 @@ enum class LiveUpdate {
   PRICES,
   SUMMARY,
   RADIO,
+  DIGEST,
 }
 
 enum class SectorSource {

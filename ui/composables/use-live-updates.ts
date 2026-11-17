@@ -25,6 +25,7 @@ const QUERIES: Record<LiveUpdate, InvalidateQueryFilters[]> = {
     { queryKey: ['radio'], exact: true },
     { queryKey: ['radio', 'search'], refetchType: 'none' },
   ],
+  [LiveUpdate.DIGEST]: [{ queryKey: ['radio-digests'] }],
 }
 
 export function useLiveUpdates() {

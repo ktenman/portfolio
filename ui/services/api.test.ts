@@ -313,6 +313,16 @@ describe('api services', () => {
     expect(httpClient.put).toHaveBeenCalledWith('/radio/2026-10-17/cuts', { removed: [0, 2, 3] })
   })
 
+  it('should ask for the digest build', async () => {
+    await radioService.digestBuild()
+    expect(httpClient.get).toHaveBeenCalledWith('/radio/digests/build')
+  })
+
+  it('should read no content as no digest build', async () => {
+    vi.mocked(httpClient.get).mockResolvedValueOnce(undefined as never)
+    expect(await radioService.digestBuild()).toBeNull()
+  })
+
   it('should build the address of a radio file', () => {
     expect(radioService.fileUrl('2026-10-17', 'raw.mp3')).toBe('/api/radio/2026-10-17/raw.mp3')
   })

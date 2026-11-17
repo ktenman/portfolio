@@ -1,10 +1,15 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
-import { digest } from '../components/radio/radio-digest-fixture'
-import { type RecordingSummary, Station } from '../models/generated/domain-models'
+import { digest, digestBuild, digestFailure } from '../components/radio/radio-digest-fixture'
+import { type DigestBuild, type RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
 import { renderWithProviders } from '../tests/test-utils'
-import { useRadioDay, useRadioRecording, useRadioSearch } from './use-radio-recordings'
+import {
+  useRadioDay,
+  useRadioDigestBuild,
+  useRadioRecording,
+  useRadioSearch,
+} from './use-radio-recordings'
 
 vi.mock('../services/api', () => ({
   radioService: {
@@ -12,6 +17,7 @@ vi.mock('../services/api', () => ({
     search: vi.fn().mockResolvedValue({ next: null }),
     recordings: vi.fn().mockResolvedValue([]),
     digests: vi.fn(),
+    digestBuild: vi.fn(),
   },
 }))
 vi.mock('./use-auth-state', async () => {
@@ -78,5 +84,36 @@ describe('useRadioRecording', () => {
     })
     await flushPromises()
     expect(radioService.digests).not.toHaveBeenCalled()
+  })
+})
+
+describe('useRadioDigestBuild', () => {
+  const asked = async (found: DigestBuild) => {
+    vi.mocked(radioService.digestBuild).mockReset().mockResolvedValue(found)
+    renderWithProviders({ setup: () => (useRadioDigestBuild(), () => null) })
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(60_000)
+    return vi.mocked(radioService.digestBuild).mock.calls.length
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('should keep the build under the digests key', async () => {
+    vi.mocked(radioService.digestBuild).mockResolvedValue(null)
+    expect(await keys(useRadioDigestBuild)).toEqual([['radio-digests', 'build']])
+  })
+
+  it('should ask again each minute while the digest builds', async () => {
+    expect(await asked(digestBuild())).toBe(2)
+  })
+
+  it('should not ask again while a failed digest waits for its next try', async () => {
+    expect(await asked(digestBuild({ step: null, failure: digestFailure() }))).toBe(1)
   })
 })

@@ -2,6 +2,7 @@
   <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
     <div class="min-w-0">
       <radio-on-air class="mb-8 lg:hidden" />
+      <radio-digest-build class="mb-8" />
       <radio-digest class="mb-8" />
       <data-table
         :items="shown"
@@ -106,6 +107,7 @@ import { clock, day, length, ROW_LINK, span, STATES, STATIONS } from '../../util
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import type { BadgeTone } from './radio-badge.vue'
 import RadioDigest from './radio-digest.vue'
+import RadioDigestBuild from './radio-digest-build.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioOnAir from './radio-on-air.vue'
 import RadioStation from './radio-station.vue'

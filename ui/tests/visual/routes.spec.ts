@@ -9,7 +9,13 @@ import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
 import { stubMonitoring } from './monitoring-fixture'
 import { stubPoff } from './poff-fixture'
-import { stubRadio, stubRadioOnAir, stubRadioStill } from './radio-fixture'
+import {
+  stubRadio,
+  stubRadioDigestBuilding,
+  stubRadioDigestFailed,
+  stubRadioOnAir,
+  stubRadioStill,
+} from './radio-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 import { stubTransactions } from './transactions-fixture'
 
@@ -25,6 +31,8 @@ const ROUTES: { path: string; name: string; stub: RouteStub }[] = [
   { path: '/calculator', name: 'calculator', stub: stubCalculator },
   { path: '/monitoring', name: 'monitoring', stub: stubMonitoring },
   { path: '/radio', name: 'radio', stub: stubRadioOnAir },
+  { path: '/radio', name: 'radio-digest-building', stub: stubRadioDigestBuilding },
+  { path: '/radio', name: 'radio-digest-failed', stub: stubRadioDigestFailed },
   { path: '/radio/shows', name: 'radio-shows', stub: stubRadioOnAir },
   { path: '/radio/catch-up', name: 'radio-catch-up', stub: stubRadio },
   { path: '/radio/catch-up?station=aripaev', name: 'radio-catch-up-aripaev', stub: stubRadio },

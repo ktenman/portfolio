@@ -4,6 +4,9 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.configuration.JsonMapperFactory
+import ee.tenman.portfolio.domain.JobExecution
+import ee.tenman.portfolio.domain.JobStatus
+import ee.tenman.portfolio.repository.JobExecutionRepository
 import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.OutlineSummary
@@ -33,6 +36,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Clock
 import java.time.LocalDate
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete as mvcDelete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get as mvcGet
@@ -49,6 +53,12 @@ class RadioControllerIT {
 
   @Resource
   private lateinit var radioStorageService: RadioStorageService
+
+  @Resource
+  private lateinit var jobExecutionRepository: JobExecutionRepository
+
+  @Resource
+  private lateinit var clock: Clock
 
   private lateinit var directory: Path
 
@@ -136,6 +146,20 @@ class RadioControllerIT {
   fun `should list the Week in Radio digests`() {
     writtenDigest(radioProperties.recordings, LocalDate.of(2026, 11, 16), listOf("Rünnakud Ust-Lugas"))
     mockMvc.perform(mvcGet("/api/radio/digests")).andExpect(jsonPath("$[0].recording.name").value("week-in-radio-2026-11-16"))
+  }
+
+  @Test
+  fun `should answer no content while no digest builds`() {
+    jobExecutionRepository.deleteAll()
+    mockMvc.perform(mvcGet("/api/radio/digests/build")).andExpect(status().isNoContent)
+  }
+
+  @Test
+  fun `should return today's failed digest build`() {
+    jobExecutionRepository.deleteAll()
+    val now = clock.instant()
+    jobExecutionRepository.save(JobExecution("RadioDigestJob", now, now, 0, JobStatus.FAILURE, "The model gave no judgement õ"))
+    mockMvc.perform(mvcGet("/api/radio/digests/build")).andExpect(jsonPath("$.failure.reason").value("The model gave no judgement õ"))
   }
 
   @Test

@@ -8,11 +8,17 @@ import {
   sections,
   transcript,
 } from '../../components/radio/radio-fixture'
-import { digest, digestSections } from '../../components/radio/radio-digest-fixture'
+import {
+  digest,
+  digestBuild,
+  digestFailure,
+  digestSections,
+} from '../../components/radio/radio-digest-fixture'
 import {
   CutState,
   CutStep,
   DayOfWeek,
+  type DigestBuild,
   ProgrammeCutState,
   type RadioDay,
   type RadioSpot,
@@ -375,6 +381,9 @@ export const stubRadio: RouteStub = async page => {
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests`), route =>
     route.fulfill({ json: [digest()] })
   )
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests/build`), route =>
+    route.fulfill({ status: 204 })
+  )
   await page.route(
     apiRoute(`${API_ENDPOINTS.RADIO}/${digest().recording.name}/transcript`),
     route => route.fulfill({ json: digestSections() })
@@ -385,6 +394,30 @@ export const stubRadioOnAir: RouteStub = async page => {
   await page.clock.setFixedTime((SATURDAY_ONE + 37 * 60) * 1000)
   await stubRadio(page)
 }
+
+const stubDigestBuild = async (page: Page, build: DigestBuild) => {
+  await stubRadioOnAir(page)
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests/build`), route =>
+    route.fulfill({ json: build })
+  )
+}
+
+export const stubRadioDigestBuilding: RouteStub = page =>
+  stubDigestBuild(page, digestBuild({ date: '2026-10-24', done: 2 }))
+
+export const stubRadioDigestFailed: RouteStub = page =>
+  stubDigestBuild(
+    page,
+    digestBuild({
+      date: '2026-10-24',
+      step: null,
+      titles: [],
+      failure: digestFailure({
+        reason: 'The model gave no judgement for the 2026-10-24 radio digest',
+        nextTry: '2026-10-24T11:00:00Z',
+      }),
+    })
+  )
 
 export const stubRadioOneStationIdle: RouteStub = async page => {
   await stubRadioOnAir(page)

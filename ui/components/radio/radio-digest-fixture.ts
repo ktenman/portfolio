@@ -1,6 +1,9 @@
 import {
   CutState,
+  type DigestBuild,
+  type DigestFailure,
   type DigestMention,
+  DigestStep,
   type DigestStory,
   type RadioDigest,
   Station,
@@ -79,6 +82,25 @@ const digestStories = (count = STORIES.length): DigestStory[] =>
     reason: 'Julgeolek',
     source: { ...source, recording: name, at: 845 + index * 100, also },
   }))
+
+export const digestFailure = (overrides: Partial<DigestFailure> = {}): DigestFailure => ({
+  reason: 'The model gave no judgement',
+  tries: 1,
+  attempts: 3,
+  nextTry: '2026-11-16T23:00:00Z',
+  ...overrides,
+})
+
+export const digestBuild = (overrides: Partial<DigestBuild> = {}): DigestBuild => ({
+  date: '2026-11-16',
+  step: DigestStep.CUTTING,
+  titles: digestStories().map(story => story.title),
+  done: 1,
+  percent: 58,
+  secondsLeft: 300,
+  failure: null,
+  ...overrides,
+})
 
 export const digest = (count?: number): RadioDigest => {
   const stories = digestStories(count)

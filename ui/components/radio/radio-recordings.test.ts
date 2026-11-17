@@ -3,10 +3,11 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
-import { digest } from './radio-digest-fixture'
+import { digest, digestBuild } from './radio-digest-fixture'
 import { recording, station } from './radio-fixture'
 import {
   CutState,
+  DigestStep,
   RecordingState,
   Station,
   TranscriptState,
@@ -20,6 +21,7 @@ vi.mock('../../services/api', () => ({
   radioService: {
     recordings: vi.fn(),
     digests: vi.fn().mockResolvedValue([]),
+    digestBuild: vi.fn().mockResolvedValue(null),
     deleteRecording: vi.fn(),
     savePlayer: () => Promise.resolve(),
     stations: vi.fn().mockResolvedValue([]),
@@ -47,6 +49,21 @@ const remove = async () => {
 }
 
 describe('RadioRecordings', () => {
+  it('should show the digest being built above the latest digest', async () => {
+    vi.mocked(radioService.digests).mockResolvedValueOnce([digest()])
+    vi.mocked(radioService.digestBuild).mockResolvedValueOnce(
+      digestBuild({ step: DigestStep.STORIES })
+    )
+    const wrapper = await mount()
+    const cards = wrapper.findAll(
+      '[data-testid="radio-digest-build"], [data-testid="radio-digest"]'
+    )
+    expect(cards.map(card => card.attributes('data-testid'))).toEqual([
+      'radio-digest-build',
+      'radio-digest',
+    ])
+  })
+
   beforeEach(() => {
     confirm.mockReset().mockResolvedValue(true)
     vi.mocked(radioService.deleteRecording).mockReset().mockResolvedValue()
