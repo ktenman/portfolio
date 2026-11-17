@@ -177,12 +177,6 @@ class RadioCutServiceTest {
   }
 
   @Test
-  fun `should end breaks that share a jingle at it`() {
-    val found = paired(emptyList())
-    expect(found.map { it.method.startsWith("station jingle") }).toEqual(listOf(false, false, true, false, true, false))
-  }
-
-  @Test
   fun `should start a show without music just before the first word`() {
     val (recorded, db) = recording(noise(60.0))
     val lines = listOf(1.0, 5.0, 50.0).map(::line)
@@ -253,8 +247,8 @@ class RadioCutServiceTest {
   @Test
   fun `should compare the breaks when no saved jingle matches them`() {
     val found = paired(listOf(saved("2026-10-10-1", tone(2000))))
-    expect(listOf(found[2], found[4]).map { it.method.substringBefore(",") to it.jingle?.saved })
-      .toEqual(listOf("station jingle" to null, "station jingle" to null))
+    expect(found.map { it.method.startsWith("station jingle") && it.jingle?.saved == null })
+      .toEqual(listOf(false, false, true, false, true, false))
   }
 
   private fun levels(vararg quiet: Pair<Int, Double>): DoubleArray =

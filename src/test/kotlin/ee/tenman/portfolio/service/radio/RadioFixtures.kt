@@ -57,6 +57,8 @@ fun ShortArray.aired(
   audio: ShortArray = melody(),
 ): ShortArray = also { audio.copyInto(it, sample(at).toInt()) }
 
+private val lame = arrayOf("-c:a", "libmp3lame", "-b:a", "256k", "-compression_level", "9")
+
 fun encoded(
   directory: Path,
   stem: String,
@@ -65,7 +67,7 @@ fun encoded(
   val raw = directory.resolve("$stem.raw")
   val mp3 = directory.resolve("$stem.mp3")
   Files.write(raw, bytes(samples))
-  ffmpeg("-f", "s16le", "-ar", "$RATE", "-ac", "1", "-i", "$raw", "-ar", "48000", "-ac", "2", "-c:a", "libmp3lame", "-b:a", "256k", "$mp3")
+  ffmpeg("-f", "s16le", "-ar", "$RATE", "-ac", "1", "-i", "$raw", "-ar", "48000", "-ac", "2", *lame, "$mp3")
   Files.delete(raw)
   return decoded(mp3)
 }
@@ -204,7 +206,7 @@ fun taped(
   wave: String = "if(between(mod(t,10),7,7.4),0,0.3*sin(2*PI*440*t))",
 ): ShortArray {
   val mp3 = directory.resolve("$stem.mp3").toString()
-  ffmpeg("-f", "lavfi", "-i", "aevalsrc='$wave|$wave':s=48000:d=$seconds", "-c:a", "libmp3lame", "-b:a", "256k", mp3)
+  ffmpeg("-f", "lavfi", "-i", "aevalsrc='$wave|$wave':s=48000:d=$seconds", *lame, mp3)
   return pcm(ffmpeg("-i", mp3, "-ac", "1", "-ar", "$RATE", "-f", "s16le", "pipe:1"))
 }
 
