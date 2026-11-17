@@ -109,4 +109,37 @@ class SongsTest {
   fun `should cut nothing without sound frames`() {
     expect(songs(emptyList(), show, emptyList())).toEqual(emptyList())
   }
+
+  @Test
+  fun `should cut a jingle a voice talks over between two sentences`() {
+    val frames = talk(0.0, 100.0) + song(100.0, 102.0) + heard(102.0, 103.5, 0.42, 0.71) + song(103.5, 106.5) + talk(106.5, 400.0)
+    val words = listOf(TranscriptWord(99.2, 99.9, " noh"), TranscriptWord(106.6, 106.9, " Nii"))
+    expect(songs(frames, show, words)).toEqual(listOf(100.0 to 106.0))
+  }
+
+  @Test
+  fun `should keep talk the transcript has no words for`() {
+    val words = listOf(TranscriptWord(99.2, 99.9, " ja"), TranscriptWord(112.0, 112.4, " öö"))
+    expect(songs(talk(0.0, 400.0), show, words)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should keep a jingle shorter than three seconds`() {
+    val frames = talk(0.0, 100.0) + song(100.0, 102.5) + talk(102.5, 400.0)
+    expect(songs(frames, show, listOf(TranscriptWord(99.2, 99.9, " noh"), TranscriptWord(102.6, 102.9, " Nii")))).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should keep the talk the transcript missed beside a jingle`() {
+    val frames = talk(0.0, 100.0) + song(100.0, 106.0) + talk(106.0, 400.0)
+    val words = listOf(TranscriptWord(99.2, 99.9, " noh"), TranscriptWord(139.5, 139.9, " Nii"))
+    expect(songs(frames, show, words)).toEqual(listOf(100.0 to 105.5))
+  }
+
+  @Test
+  fun `should cut a song between two words once`() {
+    val frames = talk(0.0, 100.0) + song(100.0, 300.0) + talk(300.0, 400.0)
+    val words = listOf(TranscriptWord(99.2, 99.9, " lõpp"), TranscriptWord(300.2, 300.5, " Tere"))
+    expect(songs(frames, show, words)).toEqual(listOf(100.0 to 299.5))
+  }
 }
