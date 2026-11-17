@@ -35,18 +35,19 @@ const props = defineProps<{ recording: RecordingSummary }>()
 
 const url = (file: string) => radioService.fileUrl(props.recording.name, file)
 
-const model = (label: string, version: ModelVersion | null): [string, string, string?] => {
-  if (version) return [label, version.label, `${version.model} at ${version.revision}`]
-  return [
-    label,
-    props.recording.transcriptState === TranscriptState.RECORDING ? 'In progress' : '—',
-  ]
+const model = (label: string, version: ModelVersion | null): [string, string, string?][] => {
+  if (version) return [[label, version.label, `${version.model} at ${version.revision}`]]
+  if (props.recording.transcriptState === TranscriptState.RECORDING) return [[label, 'In progress']]
+  return []
 }
 
 const facts = computed<[string, string, string?][]>(() => {
   const { stations, shows } = props.recording
   const station: [string, string] = ['Station', stations.map(it => STATIONS[it]).join(', ')]
-  const models = [model('Speech', props.recording.speech), model('Sounds', props.recording.sounds)]
+  const models = [
+    ...model('Speech', props.recording.speech),
+    ...model('Sounds', props.recording.sounds),
+  ]
   const edit = props.recording.editList
   if (!edit) return [station, ...models]
   return [

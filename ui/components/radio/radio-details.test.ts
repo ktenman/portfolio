@@ -97,8 +97,9 @@ describe('RadioDetails', () => {
     )
   })
 
-  it('should show a dash for a model recorded before revisions were kept', async () => {
-    expect(await rows(recording({ speech: null }))).toContainEqual(['Speech', '—'])
+  it('should leave out the models a recording does not name', async () => {
+    const item = recording({ speech: null, sounds: null })
+    expect((await rows(item)).map(([label]) => label)).toEqual(['Station', 'Analysis', 'Hosts'])
   })
 
   it('should say the models are still at work while the show records', async () => {
