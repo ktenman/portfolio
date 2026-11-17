@@ -9,6 +9,7 @@ import {
   transcript,
 } from '../../components/radio/radio-fixture'
 import {
+  dayDigest,
   digest,
   digestBuild,
   digestFailure,
@@ -379,7 +380,7 @@ export const stubRadio: RouteStub = async page => {
     route.fulfill({ json: sections([transcript()[0], song(), ...transcript().slice(1)]) })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests`), route =>
-    route.fulfill({ json: [digest()] })
+    route.fulfill({ json: [dayDigest(), digest()] })
   )
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/digests/build`), route =>
     route.fulfill({ status: 204 })

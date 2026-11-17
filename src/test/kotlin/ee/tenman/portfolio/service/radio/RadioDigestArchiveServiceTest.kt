@@ -19,6 +19,20 @@ class RadioDigestArchiveServiceTest {
   }
 
   @Test
+  fun `should list the day show beside the week`() {
+    writtenDigest(recordings, MONDAY, listOf("Ust-Luga"))
+    writtenDigest(recordings, MONDAY, listOf("Valimised"), DigestShow.DAY)
+    expect(service().digests().map { it.show to it.recording.name })
+      .toEqual(listOf(DigestShow.DAY to "day-in-radio-2026-11-16", DigestShow.WEEK to "week-in-radio-2026-11-16"))
+  }
+
+  @Test
+  fun `should find a day show by its name`() {
+    writtenDigest(recordings, MONDAY, listOf("Valimised"), DigestShow.DAY)
+    expect(service().recording("day-in-radio-2026-11-16")?.programme).toEqual("Day in Radio")
+  }
+
+  @Test
   fun `should skip a day without stories`() {
     writtenDigest(recordings, SUNDAY, listOf("Valimised"))
     writtenDigest(recordings, MONDAY, emptyList())

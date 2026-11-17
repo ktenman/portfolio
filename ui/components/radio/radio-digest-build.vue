@@ -23,7 +23,7 @@
           </div>
           <div
             role="progressbar"
-            aria-label="Week in Radio"
+            :aria-label="build.title"
             aria-valuemin="0"
             aria-valuemax="100"
             :aria-valuenow="meter.percent"

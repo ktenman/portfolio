@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.LiveUpdate
 import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
+import ee.tenman.portfolio.service.radio.DigestShow
 import ee.tenman.portfolio.service.radio.RadioDigestService
 import io.mockk.every
 import io.mockk.just
@@ -26,14 +27,14 @@ class RadioDigestJobTest {
 
   @Test
   fun `should build the digest for today in Tallinn`() {
-    val service = mockk<RadioDigestService> { every { build(any()) } just runs }
+    val service = mockk<RadioDigestService> { every { build(any(), any()) } just runs }
     RadioDigestJob(service, mockk<JobExecutionService>(), mockk<LiveUpdateService>(), clock).execute()
-    verify { service.build(LocalDate.of(2026, 11, 17)) }
+    verify { service.build(DigestShow.WEEK, LocalDate.of(2026, 11, 17)) }
   }
 
   @Test
   fun `should not record a run when today's digest is built`() {
-    val service = mockk<RadioDigestService> { every { due(any()) } returns false }
+    val service = mockk<RadioDigestService> { every { due(any(), any()) } returns false }
     val executions = mockk<JobExecutionService>(relaxed = true)
     RadioDigestJob(service, executions, mockk<LiveUpdateService>(relaxed = true), clock).runScheduledJob()
     verify(exactly = 0) { executions.executeJob(any()) }
@@ -41,7 +42,7 @@ class RadioDigestJobTest {
 
   @Test
   fun `should record a run while today's digest is missing`() {
-    val service = mockk<RadioDigestService> { every { due(LocalDate.of(2026, 11, 17)) } returns true }
+    val service = mockk<RadioDigestService> { every { due(DigestShow.WEEK, LocalDate.of(2026, 11, 17)) } returns true }
     val executions = mockk<JobExecutionService>(relaxed = true)
     val job = RadioDigestJob(service, executions, mockk<LiveUpdateService>(relaxed = true), clock)
     job.runScheduledJob()
@@ -57,8 +58,23 @@ class RadioDigestJobTest {
   }
 
   @Test
+  fun `should build the day show for today in Tallinn`() {
+    val service = mockk<RadioDigestService> { every { build(any(), any()) } just runs }
+    RadioDayDigestJob(service, mockk<JobExecutionService>(), mockk<LiveUpdateService>(), clock).execute()
+    verify { service.build(DigestShow.DAY, LocalDate.of(2026, 11, 17)) }
+  }
+
+  @Test
+  fun `should try the day show every hour from half past noon`() {
+    val cron = CronExpression.parse(CollectionSchedules.RADIO_DAY_DIGEST_CRON)
+    val day = LocalDate.of(2026, 11, 17).atStartOfDay()
+    val tries = generateSequence(cron.next(day.minusSeconds(1))) { cron.next(it) }.takeWhile { it < day.plusDays(1) }
+    expect(tries.map { it.hour to it.minute }.toList()).toEqual((12..23).map { it to 30 })
+  }
+
+  @Test
   fun `should refresh the digest once a failed run is recorded`() {
-    val service = mockk<RadioDigestService> { every { due(any()) } returns true }
+    val service = mockk<RadioDigestService> { every { due(any(), any()) } returns true }
     val executions = mockk<JobExecutionService> { every { executeJob(any()) } throws IllegalStateException("Mudel ei vastanud") }
     val updates = mockk<LiveUpdateService>(relaxed = true)
     val job = RadioDigestJob(service, executions, updates, clock)
@@ -71,7 +87,7 @@ class RadioDigestJobTest {
 
   @Test
   fun `should leave the refresh to the build after a run that succeeded`() {
-    val service = mockk<RadioDigestService> { every { due(any()) } returns true }
+    val service = mockk<RadioDigestService> { every { due(any(), any()) } returns true }
     val updates = mockk<LiveUpdateService>(relaxed = true)
     RadioDigestJob(service, mockk<JobExecutionService>(relaxed = true), updates, clock).runScheduledJob()
     verify(exactly = 0) { updates.publish(any()) }

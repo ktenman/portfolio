@@ -50,6 +50,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type {
+  DigestShow,
   DigestStory,
   RadioDigest,
   RecordingSummary,
@@ -63,10 +64,12 @@ const SHOWN = 4
 const STRETCHED =
   'after:absolute after:inset-0 after:rounded-container underline-offset-2 hover:underline'
 
+const props = defineProps<{ show: DigestShow }>()
+
 const { data } = useRadioDigests()
 const player = useRadioPlayer()
 
-const latest = computed(() => data.value?.[0] ?? null)
+const latest = computed(() => data.value?.find(found => found.show === props.show) ?? null)
 const loaded = computed(() => player.recording.value?.name === latest.value?.recording.name)
 const on = computed(() => loaded.value && player.playing.value)
 

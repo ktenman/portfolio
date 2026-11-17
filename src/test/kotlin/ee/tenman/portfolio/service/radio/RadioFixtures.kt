@@ -164,8 +164,9 @@ fun writtenDigest(
   recordings: Path,
   date: LocalDate,
   titles: List<String>,
+  show: DigestShow = DigestShow.WEEK,
 ): Path {
-  val folder = Files.createDirectories(recordings.resolve(DIGEST_DIRECTORY).resolve(date.toString()))
+  val folder = Files.createDirectories(recordings.resolve(show.directory).resolve(date.toString()))
   val source = SectionSource("2026-11-14-1200-keskpaevatund", "Keskpäevatund", Station.KUKU, LocalDate.of(2026, 11, 14), 60.0, emptyList())
   val stories =
     titles.mapIndexed {

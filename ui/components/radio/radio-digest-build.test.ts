@@ -32,6 +32,12 @@ describe('RadioDigestBuild', () => {
     expect((await mount(null)).find('[data-testid="radio-digest-build"]').exists()).toBe(false)
   })
 
+  it('should name the show it builds on the progress bar', async () => {
+    const found = digestBuild({ title: 'Day in Radio 16.11.2026' })
+    const bar = (await mount(found)).get('[role="progressbar"]')
+    expect(bar.attributes('aria-label')).toBe('Day in Radio 16.11.2026')
+  })
+
   it('should show the title the build is given', async () => {
     const found = digestBuild({ title: 'Week in Radio 12.10–18.10.2026' })
     expect((await mount(found)).get('h3').text()).toBe('Week in Radio 12.10–18.10.2026')

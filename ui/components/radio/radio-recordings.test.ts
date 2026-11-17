@@ -3,7 +3,7 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioRecordings from './radio-recordings.vue'
-import { digest, digestBuild } from './radio-digest-fixture'
+import { dayDigest, digest, digestBuild } from './radio-digest-fixture'
 import { recording, station } from './radio-fixture'
 import {
   CutState,
@@ -92,6 +92,15 @@ describe('RadioRecordings', () => {
         transcriptState: TranscriptState.RECORDING,
         cutState: CutState.NONE,
       }),
+    ])
+  })
+
+  it('should show the day show above the week', async () => {
+    vi.mocked(radioService.digests).mockResolvedValueOnce([digest(), dayDigest()])
+    const headings = (await mount()).findAll('[data-testid="radio-digest"] h3')
+    expect(headings.map(heading => heading.text())).toEqual([
+      'Day in Radio',
+      'Week in Radio 09.11–15.11.2026',
     ])
   })
 

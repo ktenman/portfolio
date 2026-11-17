@@ -3,6 +3,7 @@ import {
   type DigestBuild,
   type DigestFailure,
   type DigestMention,
+  DigestShow,
   DigestStep,
   type DigestStory,
   type RadioDigest,
@@ -92,6 +93,7 @@ export const digestFailure = (overrides: Partial<DigestFailure> = {}): DigestFai
 })
 
 export const digestBuild = (overrides: Partial<DigestBuild> = {}): DigestBuild => ({
+  show: DigestShow.WEEK,
   date: '2026-11-16',
   step: DigestStep.CUTTING,
   titles: digestStories().map(story => story.title),
@@ -129,6 +131,7 @@ export const digest = (count?: number): RadioDigest => {
     summary,
   }))
   return {
+    show: DigestShow.WEEK,
     recording: recording({
       name: 'week-in-radio-2026-11-16',
       programme: 'Week in Radio 09.11–15.11.2026',
@@ -161,6 +164,22 @@ export const digest = (count?: number): RadioDigest => {
       cutState: CutState.REVIEWED,
     }),
     stories,
+  }
+}
+
+export const dayDigest = (): RadioDigest => {
+  const week = digest(3)
+  const startedAt = Date.UTC(2026, 10, 16, 10, 30) / 1000
+  return {
+    ...week,
+    show: DigestShow.DAY,
+    recording: {
+      ...week.recording,
+      name: 'day-in-radio-2026-11-16',
+      programme: 'Day in Radio',
+      status: { ...week.recording.status, programmes: ['Day in Radio'], startedAt },
+      span: { start: startedAt, end: startedAt + week.recording.status.seconds },
+    },
   }
 }
 

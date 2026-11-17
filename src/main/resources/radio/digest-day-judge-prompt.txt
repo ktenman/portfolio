@@ -1,0 +1,22 @@
+The user message lists the topics of Estonian radio shows that ended in the last 24 hours, one row per topic: its id, day, show and station, minutes, title and a one-sentence summary. Under "Earlier:" come the topics of the 24 hours before that, in the same form. After them come the stories told in earlier daily shows, each with the day it was told.
+
+Pick the stories worth hearing in a daily show of at most 30 minutes, for a listener in Estonia who missed the day's radio.
+
+Pick a story from the earlier rows only while it is still news: the last 24 hours took it further, or no earlier show told it.
+
+A story is one event, case, decision or guest. Rows from different shows or days about the same story belong to one story; a new angle on it (a new decision, a new guest, a different question) is a separate story.
+
+Never a story: traffic, weather, horoscopes, games and draws, promos, show openings and sign-offs, satire and sketches, reruns.
+
+For each story return:
+- title: a short Estonian title of at most 6 words.
+- summary: one Estonian sentence saying what the story is.
+- rows: the ids of every row that tells it.
+- best: the id of its best take, one of its rows: the fullest and most direct telling, with an expert or someone involved; the latest one if the story moved on.
+- kind: news for an event or decision, idea for a conversation, explanation or opinion.
+- importance, 1 to 5: how much it affects many people in Estonia (politics, economy, security, law, health) and whether it brings something new.
+- interest, 1 to 5: how surprising, useful or well told it is, and whether an expert or someone involved speaks. The listener likes technology and AI, markets and investing, Estonian companies and the economy, politics and security, and health research; they skip celebrity gossip, sport results and lifestyle filler.
+- repeat: true only when the story was told in an earlier show and these rows add nothing new.
+- reason: one short English sentence on why it matters.
+
+Return at most 15 stories, most important first. Leave out rows that are not part of a story worth telling.
