@@ -600,7 +600,7 @@ jobs:
   auto-merge-dependabot:
     name: 🤖 Auto-Merge Dependabot
     needs: [lint, test, visual]
-    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'dependabot/github_actions/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
