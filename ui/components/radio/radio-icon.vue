@@ -31,15 +31,18 @@ export type IconName =
   | 'close'
   | 'search'
   | 'filter'
+  | 'refresh'
 
 defineProps<{ name: IconName }>()
 
 const SOLID = new Set<IconName>(['play', 'pause'])
 
+const CLOCKWISE = ['M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8', 'M21 3v5h-5']
+
 const PATHS: Record<IconName, string[]> = {
   filter: ['M3 6h18', 'M7 12h10', 'M10 18h4'],
   back: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'],
-  forward: ['M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8', 'M21 3v5h-5'],
+  forward: CLOCKWISE,
   play: ['M7 4v16l13-8z'],
   pause: ['M6 4h4v16H6z', 'M14 4h4v16h-4z'],
   left: ['m15 18-6-6 6-6'],
@@ -49,6 +52,7 @@ const PATHS: Record<IconName, string[]> = {
   open: ['M7 17 17 7', 'M7 7h10v10'],
   close: ['M18 6 6 18', 'm6 6 12 12'],
   search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16', 'm21 21-4.3-4.3'],
+  refresh: CLOCKWISE,
   alert: ['M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', 'M12 8v4', 'M12 16h.01'],
   trash: [
     'M3 6h18',

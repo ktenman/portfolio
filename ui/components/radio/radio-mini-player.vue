@@ -61,13 +61,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onScopeDispose, useTemplateRef, watchEffect } from 'vue'
+import { computed, onScopeDispose, useTemplateRef, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { clamp, useDraggable, useElementSize, useMediaQuery, useWindowSize } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { useRailStations } from '../../composables/use-radio-recordings'
-import { episodeParts, fullDay, position, rawParts, STATIONS } from '../../utils/radio'
+import { useRadioDigests, useRailStations } from '../../composables/use-radio-recordings'
+import { episodeParts, fullDay, isDigest, position, rawParts, STATIONS } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioScrubber from './radio-scrubber.vue'
@@ -82,6 +82,12 @@ const player = useRadioPlayer()
 const { recording, spot } = player
 const stations = useRailStations()
 const decisions = useRadioDecisions(() => recording.value!)
+const { data: digests } = useRadioDigests(() => isDigest(recording.value?.name ?? ''))
+
+watch(digests, list => {
+  const fresh = list?.find(found => found.recording.name === recording.value?.name)?.recording
+  if (fresh) player.load(fresh, 'episode')
+})
 
 const card = useTemplateRef('card')
 const handle = useTemplateRef('handle')

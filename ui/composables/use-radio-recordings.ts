@@ -4,7 +4,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery, useQueryClient } from '@t
 import { useRoute, useRouter } from 'vue-router'
 import { type RecordingSummary, Station } from '../models/generated/domain-models'
 import { radioService } from '../services/api'
-import { poll } from '../utils/radio'
+import { isDigest, poll } from '../utils/radio'
 import { useAuthState } from './use-auth-state'
 
 export const useRadioRecordings = () => {
@@ -118,13 +118,14 @@ export const useRadioDigestBuild = () => {
     queryKey: ['radio-digests', 'build'],
     queryFn: radioService.digestBuild,
     enabled: isAuthenticated,
+    staleTime: 5_000,
     refetchInterval: query => (query.state.data?.step ? 60_000 : false),
   })
 }
 
 export const useRadioRecording = (name: MaybeRefOrGetter<string>) => {
   const query = useRadioRecordings()
-  const digests = useRadioDigests(() => /^(day|week)-in-radio-/.test(toValue(name)))
+  const digests = useRadioDigests(() => isDigest(toValue(name)))
   const recording = computed(
     () =>
       query.data.value?.find(r => r.name === toValue(name)) ??

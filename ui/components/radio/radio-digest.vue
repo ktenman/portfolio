@@ -46,6 +46,7 @@
         </span>
       </li>
     </ol>
+    <radio-digest-rebuild v-if="open" :show="show" class="relative z-10" />
   </section>
 </template>
 
@@ -62,6 +63,7 @@ import type {
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests } from '../../composables/use-radio-recordings'
 import { clock, day, minutes, PLAY, ROUND } from '../../utils/radio'
+import RadioDigestRebuild from './radio-digest-rebuild.vue'
 import RadioIcon from './radio-icon.vue'
 
 const STRETCHED =
@@ -90,7 +92,7 @@ const told = ({ source }: DigestStory) =>
   source.also.length ? `${source.programme} +${source.also.length}` : source.programme
 
 const play = (target: RecordingSummary) => {
-  if (!loaded.value) player.load(target, 'episode')
+  player.load(target, 'episode')
   player.toggle()
 }
 </script>

@@ -15,7 +15,13 @@ const player = vi.hoisted(() => ({
   recording: { value: null as { name: string } | null },
 }))
 
-vi.mock('../../services/api', () => ({ radioService: { digests: vi.fn() } }))
+vi.mock('../../services/api', () => ({
+  radioService: {
+    digests: vi.fn(),
+    digestBuild: vi.fn().mockResolvedValue(null),
+  },
+}))
+vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm: vi.fn() }) }))
 vi.mock('../../composables/use-radio-player', () => ({ useRadioPlayer: () => player }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
@@ -37,8 +43,16 @@ const unfold = async (digests = [digest()]) => {
   return wrapper
 }
 
+const play = async () => {
+  const wrapper = await mount()
+  await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
+}
+
 describe('RadioDigest', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+  })
 
   it('should show the newest digest of its own show', async () => {
     expect((await mount([digest(), dayDigest()], DigestShow.DAY)).get('h3').text()).toBe(
@@ -78,6 +92,16 @@ describe('RadioDigest', () => {
     expect(day.findAll('[data-testid="radio-digest-story"]')).toHaveLength(0)
   })
 
+  it('should offer no rebuild while the stories are folded away', async () => {
+    expect((await mount()).find('[data-testid="radio-digest-rebuild"]').exists()).toBe(false)
+  })
+
+  it('should offer to rebuild the week under its stories', async () => {
+    expect((await unfold()).get('[data-testid="radio-digest-rebuild"]').text()).toBe(
+      'Rebuild from the last 7 days'
+    )
+  })
+
   it('should name the show each story was taken from and how many others told it', async () => {
     const story = (await unfold()).findAll('[data-testid="radio-digest-story"]')[2]!
     expect(story.text()).toBe('3Telia koondamised ja tehisaruDigitund +1')
@@ -95,15 +119,12 @@ describe('RadioDigest', () => {
   })
 
   it('should play the digest from its play button', async () => {
-    const wrapper = await mount()
-    await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
+    await play()
     expect(player.load).toHaveBeenCalledWith(digest().recording, 'episode')
   })
 
   it('should resume the digest where it was left', async () => {
-    vi.clearAllMocks()
-    const wrapper = await mount()
-    await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
+    await play()
     expect([player.playFrom.mock.calls.length, player.toggle.mock.calls.length]).toEqual([0, 1])
   })
 

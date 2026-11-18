@@ -292,6 +292,8 @@ export const audioFormat = (format: AudioFormat | null): string =>
 export const span = ({ span: { start, end } }: RecordingSummary): string =>
   range(start, 0, end - start)
 
+export const isDigest = (name: string): boolean => /^(day|week)-in-radio-/.test(name)
+
 export const HATCH =
   'bg-[repeating-linear-gradient(135deg,var(--color-hairline-strong)_0_1px,transparent_1px_6px)]'
 

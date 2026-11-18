@@ -1,6 +1,10 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
+import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.JobExecution
 import ee.tenman.portfolio.domain.JobStatus
@@ -278,6 +282,12 @@ class RadioDigestServiceTest {
   }
 
   @Test
+  fun `should show a failed rebuild while no digest builds`() {
+    progress.failed(DigestShow.DAY, TODAY, "Mudel ei vastanud õigel ajal")
+    expect(service().building()?.failure?.reason).toEqual("Mudel ei vastanud õigel ajal")
+  }
+
+  @Test
   fun `should show the running build before the day show's failure`() {
     failed(1, show = DigestShow.DAY)
     progress.started(DigestShow.WEEK, TODAY)
@@ -339,6 +349,87 @@ class RadioDigestServiceTest {
     val midnight = Instant.parse("2026-11-15T22:00:00Z")
     every { jobs.countByJobNameAndStatusAndStartTimeAfter("RadioDigestJob", JobStatus.FAILURE, midnight) } returns 3
     expect(service().due(DigestShow.WEEK, TODAY)).toEqual(false)
+  }
+
+  @Test
+  fun `should replace today's digest when it is rebuilt`() {
+    held(audio = false)
+    writtenDigest(directory, TODAY, listOf("Vana lugu"))
+    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    expect(Files.readString(digest().resolve(DIGEST_FILE))).notToContain("Vana lugu")
+  }
+
+  @Test
+  fun `should rebuild after today's tries are used up`() {
+    held(audio = false)
+    failed(3)
+    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    expect(Files.exists(digest().resolve(DIGEST_FILE))).toEqual(true)
+  }
+
+  @Test
+  fun `should keep today's digest when the rebuild fails`() {
+    held(audio = false)
+    writtenDigest(directory, TODAY, listOf("Vana lugu"))
+    val renderer = mockk<RadioRenderService> { every { silence(any(), any()) } throws IllegalStateException("FFmpeg lõpetas veaga") }
+    runCatching { service(renderer = renderer).rebuild(DigestShow.WEEK, TODAY) }
+    expect(Files.readString(digest().resolve(DIGEST_FILE))).toContain("Vana lugu")
+  }
+
+  @Test
+  fun `should say that no recordings are ready to rebuild from`() {
+    every { archive.recordings() } returns emptyList()
+    expect { service().rebuild(DigestShow.WEEK, TODAY) }
+      .toThrow<IllegalStateException>()
+      .messageToContain("No recordings are ready for the 2026-11-16 radio digest")
+  }
+
+  @Test
+  fun `should keep the earlier week's digest beside a midweek rebuild`() {
+    held(audio = false)
+    writtenDigest(directory, TODAY.minusDays(2), listOf("Eelmine nädal"))
+    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    expect(Files.exists(digest(TODAY.minusDays(2)).resolve(DIGEST_FILE))).toEqual(true)
+  }
+
+  @Test
+  fun `should leave the running build alone when a scheduled one is refused`() {
+    held(audio = false)
+    progress.started(DigestShow.DAY, TODAY)
+    service().build(DigestShow.WEEK, TODAY)
+    expect(progress.current()?.show).toEqual(DigestShow.DAY)
+  }
+
+  @Test
+  fun `should not be due while another digest builds`() {
+    progress.started(DigestShow.DAY, TODAY)
+    expect(service().due(DigestShow.WEEK, TODAY)).toEqual(false)
+  }
+
+  @Test
+  fun `should be due while only a failed rebuild is held`() {
+    progress.started(DigestShow.DAY, TODAY)
+    progress.failed(DigestShow.DAY, TODAY, "Mudel ei vastanud õigel ajal")
+    expect(service().due(DigestShow.WEEK, TODAY)).toEqual(true)
+  }
+
+  @Test
+  fun `should keep today's digest when the rebuild finds no story`() {
+    held(audio = false)
+    writtenDigest(directory, TODAY, listOf("Vana lugu"))
+    every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
+    runCatching { service().rebuild(DigestShow.WEEK, TODAY) }
+    expect(Files.readString(digest().resolve(DIGEST_FILE))).toContain("Vana lugu")
+  }
+
+  @Test
+  fun `should say that no story made the rebuilt digest`() {
+    held(audio = false)
+    writtenDigest(directory, TODAY, listOf("Vana lugu"))
+    every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
+    expect { service().rebuild(DigestShow.WEEK, TODAY) }
+      .toThrow<IllegalStateException>()
+      .messageToContain("No story made the 2026-11-16 radio digest")
   }
 
   private fun service(

@@ -115,14 +115,17 @@ const place = (at: number) => {
 }
 
 const restore = (target: RecordingSummary) => {
-  if (opened === target.name) return place(heard)
-  opened = target.name
+  const key = `${target.name}|${target.status.startedAt}`
+  if (opened === key) return place(heard)
+  const rebuilt = opened.startsWith(`${target.name}|`)
+  opened = key
   heard = 0
-  saved = null
+  saved = rebuilt ? 0 : null
   moved = false
+  if (rebuilt) return
   radioService.position(target.name).then(
     position => {
-      if (opened !== target.name) return
+      if (opened !== key) return
       saved = position.seconds
       if (!moved) place(position.seconds)
     },

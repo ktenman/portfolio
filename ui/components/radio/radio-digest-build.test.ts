@@ -7,6 +7,7 @@ import RadioDigestBuild from './radio-digest-build.vue'
 import { digestBuild, digestFailure } from './radio-digest-fixture'
 
 vi.mock('../../services/api', () => ({ radioService: { digestBuild: vi.fn() } }))
+vi.mock('../../composables/use-confirm', () => ({ useConfirm: () => ({ confirm: vi.fn() }) }))
 vi.mock('../../composables/use-auth-state', async () => {
   const { ref } = await import('vue')
   return { useAuthState: () => ({ isAuthenticated: ref(true) }) }
@@ -113,5 +114,27 @@ describe('RadioDigestBuild', () => {
     expect(wrapper.get('[data-testid="radio-digest-build-failure"]').text()).toContain(
       'Stopped for today after 1 try'
     )
+  })
+
+  it('should offer to try a failed digest again', async () => {
+    const wrapper = await mount(digestBuild({ step: null, titles: [], failure: digestFailure() }))
+    expect(wrapper.get('[data-testid="radio-digest-rebuild"]').text()).toBe('Try again')
+  })
+
+  it('should give only the reason of a rebuild that failed', async () => {
+    const failure = digestFailure({
+      reason: 'No recordings are ready for the 2026-11-16 radio digest',
+      tries: 0,
+      attempts: 0,
+      nextTry: null,
+    })
+    const wrapper = await mount(digestBuild({ step: null, titles: [], failure }))
+    expect(wrapper.get('[data-testid="radio-digest-build-failure"]').text()).toBe(
+      'Could not make the digest: No recordings are ready for the 2026-11-16 radio digest'
+    )
+  })
+
+  it('should offer no second try while a digest builds', async () => {
+    expect((await mount()).find('[data-testid="radio-digest-rebuild"]').exists()).toBe(false)
   })
 })

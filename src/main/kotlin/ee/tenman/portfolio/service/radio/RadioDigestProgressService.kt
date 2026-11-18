@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.LiveUpdate
+import ee.tenman.portfolio.exception.DigestBuildInProgressException
 import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import org.springframework.stereotype.Service
 import java.time.Clock
@@ -18,16 +19,30 @@ class RadioDigestProgressService(
   private val clock: Clock,
 ) {
   private val tracked = AtomicReference<DigestTrack?>()
+  private val failure = AtomicReference<DigestBuild?>()
 
   fun current(): DigestBuild? = tracked.get()?.build
+
+  fun held(): DigestBuild? = failure.get()?.takeIf { it.date == LocalDate.now(clock) }
 
   fun started(
     show: DigestShow,
     date: LocalDate,
   ) {
     val now = clock.instant()
-    tracked.set(estimated(DigestTrack(DigestBuild(show, date, DigestStep.STORIES), now, now), now))
+    val track = estimated(DigestTrack(DigestBuild(show, date, DigestStep.STORIES), now, now), now)
+    if (!tracked.compareAndSet(null, track)) throw DigestBuildInProgressException(show.title)
+    failure.set(null)
     liveUpdateService.publish(LiveUpdate.DIGEST)
+  }
+
+  fun failed(
+    show: DigestShow,
+    date: LocalDate,
+    reason: String,
+  ) {
+    failure.set(DigestBuild(show, date, null, failure = DigestFailure(reason, 0, 0, null)))
+    ended()
   }
 
   fun judged(titles: List<String>) = moved(DigestStep.CLIPS, titles)

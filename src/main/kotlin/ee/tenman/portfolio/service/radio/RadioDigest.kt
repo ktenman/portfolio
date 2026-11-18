@@ -197,6 +197,19 @@ fun source(clip: DigestClip): SectionSource {
 
 fun digests(root: Path): List<Path> = directories(root, DAY_NAME, DIGEST_FILE)
 
+fun firstLine(
+  message: String?,
+  fallback: String,
+): String {
+  val line = message.orEmpty().substringBefore('\n')
+  return line.trim().ifBlank { fallback }
+}
+
+fun digestName(
+  show: DigestShow,
+  date: LocalDate,
+): String = "${show.prefix}$date"
+
 fun digestTitle(
   show: DigestShow,
   date: LocalDate,
@@ -214,7 +227,7 @@ fun digestSummary(
   val whole = listOf(KeptSpan(0.0, digest.seconds))
   val timeline = digest.stories.map { TimelineEntry(it.start, it.end, it.title, false, summary = it.summary) }
   return RecordingSummary(
-    name = "${show.prefix}${digest.date}",
+    name = digestName(show, digest.date),
     programme =
       when (show) {
         DigestShow.DAY -> show.title

@@ -30,3 +30,7 @@ class LogoSearchUnavailableException(
 class RecordingInProgressException(
   name: String,
 ) : IllegalStateException("Recording $name is still being recorded")
+
+class DigestBuildInProgressException(
+  title: String,
+) : IllegalStateException("A radio digest is building, so $title was not built")
