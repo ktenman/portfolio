@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { DigestShow } from '../../models/generated/domain-models'
@@ -31,7 +31,15 @@ const mount = async (digests = [digest()], show = DigestShow.WEEK) => {
   return wrapper
 }
 
+const unfold = async (digests = [digest()]) => {
+  const wrapper = await mount(digests)
+  await wrapper.get('button[aria-expanded]').trigger('click')
+  return wrapper
+}
+
 describe('RadioDigest', () => {
+  beforeEach(() => localStorage.clear())
+
   it('should show the newest digest of its own show', async () => {
     expect((await mount([digest(), dayDigest()], DigestShow.DAY)).get('h3').text()).toBe(
       'Day in Radio'
@@ -43,22 +51,41 @@ describe('RadioDigest', () => {
     expect(wrapper.find('[data-testid="radio-digest"]').exists()).toBe(false)
   })
 
-  it('should show the first four stories and how many more', async () => {
-    const wrapper = await mount()
-    expect([
-      wrapper.findAll('[data-testid="radio-digest-story"]').length,
-      wrapper.get('[data-testid="radio-digest-more"]').text(),
-    ]).toEqual([4, '2 more stories'])
+  it('should keep the stories folded away until they are asked for', async () => {
+    expect((await mount()).findAll('[data-testid="radio-digest-story"]')).toHaveLength(0)
+  })
+
+  it('should list every story once unfolded', async () => {
+    expect((await unfold()).findAll('[data-testid="radio-digest-story"]')).toHaveLength(6)
+  })
+
+  it('should fold the stories away again', async () => {
+    const wrapper = await unfold()
+    await wrapper
+      .get('button[aria-label="Stories: Week in Radio 09.11–15.11.2026"]')
+      .trigger('click')
+    expect(wrapper.findAll('[data-testid="radio-digest-story"]')).toHaveLength(0)
+  })
+
+  it('should stay unfolded on the next visit', async () => {
+    ;(await unfold()).unmount()
+    expect((await mount()).findAll('[data-testid="radio-digest-story"]')).toHaveLength(6)
+  })
+
+  it('should fold each show on its own', async () => {
+    ;(await unfold()).unmount()
+    const day = await mount([digest(), dayDigest()], DigestShow.DAY)
+    expect(day.findAll('[data-testid="radio-digest-story"]')).toHaveLength(0)
   })
 
   it('should name the show each story was taken from and how many others told it', async () => {
-    const story = (await mount()).findAll('[data-testid="radio-digest-story"]')[2]!
+    const story = (await unfold()).findAll('[data-testid="radio-digest-story"]')[2]!
     expect(story.text()).toBe('3Telia koondamised ja tehisaruDigitund +1')
   })
 
   it('should say when it was built, how many stories it tells and for how long', async () => {
     expect((await mount()).get('[data-testid="radio-digest-meta"]').text()).toBe(
-      'Mon 16.11 · 12:00 · 6 stories · 20 min'
+      'Mon 16.11\u00a0· 12:00\u00a0· 6 stories\u00a0· 20 min'
     )
   })
 

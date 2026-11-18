@@ -9,7 +9,7 @@
       >
         <radio-icon :name="on ? 'pause' : 'play'" />
       </button>
-      <div class="grid min-w-0 gap-0.5">
+      <div class="grid min-w-0 grow gap-0.5">
         <h3 class="mb-0 text-heading">
           <router-link :to="`/radio/${latest.recording.name}`" :class="STRETCHED">
             {{ latest.recording.programme }}
@@ -17,15 +17,24 @@
         </h3>
         <p class="mb-0 text-sm text-ink-soft" data-testid="radio-digest-meta">
           <template v-for="(part, index) in meta(latest)" :key="part">
-            <template v-if="index">{{ ' · ' }}</template>
+            <template v-if="index">{{ '\u00a0· ' }}</template>
             <span class="whitespace-nowrap">{{ part }}</span>
           </template>
         </p>
       </div>
+      <button
+        type="button"
+        :class="[ROUND, 'relative z-10 size-11']"
+        :aria-expanded="open"
+        :aria-label="`Stories: ${latest.recording.programme}`"
+        @click="open = !open"
+      >
+        <radio-icon name="down" :class="{ 'rotate-180': open }" />
+      </button>
     </div>
-    <ol class="mb-0 list-none p-0">
+    <ol v-if="open" class="mb-0 list-none p-0">
       <li
-        v-for="(story, index) in latest.stories.slice(0, SHOWN)"
+        v-for="(story, index) in latest.stories"
         :key="story.start"
         class="flex items-baseline gap-4 border-t border-hairline px-5 py-3"
         data-testid="radio-digest-story"
@@ -37,18 +46,13 @@
         </span>
       </li>
     </ol>
-    <p
-      v-if="latest.stories.length > SHOWN"
-      class="mb-0 border-t border-hairline px-5 py-3 text-sm text-ink-soft"
-      data-testid="radio-digest-more"
-    >
-      {{ latest.stories.length - SHOWN }} more {{ noun(latest.stories.length - SHOWN) }}
-    </p>
   </section>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
+import { STORAGE_KEYS } from '../../constants'
 import type {
   DigestShow,
   DigestStory,
@@ -57,10 +61,9 @@ import type {
 } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests } from '../../composables/use-radio-recordings'
-import { clock, day, minutes, PLAY } from '../../utils/radio'
+import { clock, day, minutes, PLAY, ROUND } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 
-const SHOWN = 4
 const STRETCHED =
   'after:absolute after:inset-0 after:rounded-container underline-offset-2 hover:underline'
 
@@ -68,6 +71,7 @@ const props = defineProps<{ show: DigestShow }>()
 
 const { data } = useRadioDigests()
 const player = useRadioPlayer()
+const open = useLocalStorage(`${STORAGE_KEYS.RADIO_DIGEST_OPEN}_${props.show.toLowerCase()}`, false)
 
 const latest = computed(() => data.value?.find(found => found.show === props.show) ?? null)
 const loaded = computed(() => player.recording.value?.name === latest.value?.recording.name)

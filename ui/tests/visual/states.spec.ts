@@ -411,6 +411,22 @@ test('radio recorders with one station idle', async ({ page }) => {
   ).toHaveScreenshot('radio-recorders-idle.png')
 })
 
+test('an unfolded radio digest lists every story across the page', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: `${STORAGE_KEYS.RADIO_DIGEST_OPEN}_week`,
+    value: 'true',
+  })
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio')
+  await freeze(page)
+  await expect(page.getByTestId('radio-digest').first().locator('xpath=..')).toHaveScreenshot(
+    'radio-digest-unfolded.png'
+  )
+})
+
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
   await stubBuildInfo(page)
