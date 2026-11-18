@@ -7,9 +7,12 @@ import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.JobExecution
 import ee.tenman.portfolio.domain.JobStatus
 import ee.tenman.portfolio.repository.JobExecutionRepository
+import ee.tenman.portfolio.service.radio.DigestShow
 import ee.tenman.portfolio.service.radio.EditList
 import ee.tenman.portfolio.service.radio.KeptSpan
 import ee.tenman.portfolio.service.radio.OutlineSummary
+import ee.tenman.portfolio.service.radio.RadioDigestProgressService
+import ee.tenman.portfolio.service.radio.RadioPositionService
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.RadioStorageService
 import ee.tenman.portfolio.service.radio.RecordingPart
@@ -61,10 +64,17 @@ class RadioControllerIT {
   @Resource
   private lateinit var clock: Clock
 
+  @Resource
+  private lateinit var radioDigestProgressService: RadioDigestProgressService
+
+  @Resource
+  private lateinit var radioPositionService: RadioPositionService
+
   private lateinit var directory: Path
 
   @BeforeEach
   fun setup() {
+    radioDigestProgressService.ended()
     radioProperties.recordings.toFile().deleteRecursively()
     directory = Files.createDirectories(radioProperties.recordings.resolve("2026-10-17"))
     val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, listOf(RecordingPart("raw.mp3", 0.0)))
@@ -169,6 +179,17 @@ class RadioControllerIT {
     val now = clock.instant()
     jobExecutionRepository.save(JobExecution("RadioDigestJob", now, now, 0, JobStatus.FAILURE, "Mudel ei vastanud"))
     mockMvc.perform(mvcGet("/api/radio/digests/build")).andExpect(jsonPath("$.title").value(startsWith("Week in Radio ")))
+  }
+
+  @Test
+  fun `should refuse a digest rebuild while a digest builds`() {
+    radioDigestProgressService.started(DigestShow.WEEK, LocalDate.now(clock))
+    mockMvc.perform(mvcPost("/api/radio/digests/DAY/build")).andExpect(status().isConflict)
+  }
+
+  @Test
+  fun `should reject a rebuild of an unknown show`() {
+    mockMvc.perform(mvcPost("/api/radio/digests/MONTH/build")).andExpect(status().isBadRequest)
   }
 
   @Test
@@ -374,6 +395,13 @@ class RadioControllerIT {
   fun `should keep where each listener left a recording apart`() {
     leave("mari.tamm@näide.ee", 1400.5)
     place("jüri.kask@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
+  }
+
+  @Test
+  fun `should forget where every listener left a replaced recording`() {
+    leave("mari.tamm@näide.ee", 1400.5)
+    radioPositionService.forget("2026-10-17")
+    place("mari.tamm@näide.ee").andExpect(jsonPath("$.seconds").value(0.0))
   }
 
   @Test

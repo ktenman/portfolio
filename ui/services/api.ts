@@ -26,6 +26,7 @@ import {
   type RadioPlayerChoice,
   type RadioPlayerDto,
   type DigestBuild,
+  type DigestShow,
   type RadioDigest,
   type RadioPositionDto,
   type RadioProgrammeDto,
@@ -248,6 +249,8 @@ export const radioService = {
     httpClient
       .get<DigestBuild | undefined>(`${API_ENDPOINTS.RADIO}/digests/build`)
       .then(build => build ?? null),
+  rebuildDigest: (show: DigestShow) =>
+    httpClient.post<void>(`${API_ENDPOINTS.RADIO}/digests/${show}/build`),
   transcript: (name: string) =>
     httpClient.get<TranscriptSection[]>(`${API_ENDPOINTS.RADIO}/${name}/transcript`),
   cuts: (name: string) => httpClient.get<CutContext[]>(`${API_ENDPOINTS.RADIO}/${name}/cuts`),

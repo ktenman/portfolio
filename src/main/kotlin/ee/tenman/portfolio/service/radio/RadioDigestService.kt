@@ -30,22 +30,30 @@ class RadioDigestService(
   fun due(
     show: DigestShow,
     date: LocalDate,
-  ): Boolean = !built(show, date) && failures(show, date) < ATTEMPTS
+  ): Boolean = radioDigestProgressService.current() == null && !built(show, date) && failures(show, date) < ATTEMPTS
 
   fun build(
     show: DigestShow,
     date: LocalDate,
   ) {
     if (!due(show, date)) return
-    val recordings = gathered(show)
-    val rows = marked(show, recordings)
-    if (rows.all { it.earlier }) return
+    val (recordings, rows) = ready(show) ?: return
     radioDigestProgressService.started(show, date)
     runCatching { make(show, date, recordings, rows) }.also { radioDigestProgressService.ended() }.getOrThrow()
   }
 
+  fun rebuild(
+    show: DigestShow,
+    date: LocalDate,
+  ) {
+    val (recordings, rows) = checkNotNull(ready(show)) { "No recordings are ready for the $date radio digest" }
+    make(show, date, recordings, rows)
+  }
+
   fun building(): DigestBuild? =
-    radioDigestProgressService.current() ?: DigestShow.entries.firstNotNullOfOrNull { failed(it, LocalDate.now(clock)) }
+    radioDigestProgressService.current()
+      ?: radioDigestProgressService.held()
+      ?: DigestShow.entries.firstNotNullOfOrNull { failed(it, LocalDate.now(clock)) }
 
   private fun make(
     show: DigestShow,
@@ -58,9 +66,19 @@ class RadioDigestService(
     val ranked = ranked(judgement, rows.associateBy { it.id })
     radioDigestProgressService.judged(ranked.map { it.story.title })
     val clips = fitted(clips(ranked, recordings.associateBy { it.name }), show.seconds)
+    check(clips.isNotEmpty() || !built(show, date)) { "No story made the $date radio digest" }
     radioDigestProgressService.fitted(clips.map { it.story.story.title })
     val work = root(show).resolve(BUILD).also { it.deleteRecursively() }
     write(Files.createDirectories(work), digestTitle(show, date), date, clips)
+    replace(show, date, work)
+  }
+
+  private fun replace(
+    show: DigestShow,
+    date: LocalDate,
+    work: Path,
+  ) {
+    target(show, date).deleteRecursively()
     Files.move(work, target(show, date), StandardCopyOption.ATOMIC_MOVE)
     digests(root(show)).drop(KEPT).forEach { it.deleteRecursively() }
   }
@@ -73,8 +91,7 @@ class RadioDigestService(
     val tries = failures(show, date)
     if (tries == 0L) return null
     val last = jobExecutionRepository.findFirstByJobNameAndStatusOrderByStartTimeDesc(show.job, JobStatus.FAILURE) ?: return null
-    val line = last.message.orEmpty().substringBefore('\n')
-    val reason = line.trim().ifBlank { UNKNOWN }
+    val reason = firstLine(last.message, UNKNOWN)
     return DigestBuild(show, date, null, failure = DigestFailure(reason, tries.toInt(), ATTEMPTS, next(show, tries)))
   }
 
@@ -102,6 +119,12 @@ class RadioDigestService(
     date: LocalDate,
   ): Long =
     jobExecutionRepository.countByJobNameAndStatusAndStartTimeAfter(show.job, JobStatus.FAILURE, date.atStartOfDay(clock.zone).toInstant())
+
+  private fun ready(show: DigestShow): Pair<List<RecordingSummary>, List<DigestRow>>? {
+    val recordings = gathered(show)
+    val rows = marked(show, recordings)
+    return (recordings to rows).takeUnless { rows.all { it.earlier } }
+  }
 
   private fun gathered(show: DigestShow): List<RecordingSummary> {
     val now = clock.instant()

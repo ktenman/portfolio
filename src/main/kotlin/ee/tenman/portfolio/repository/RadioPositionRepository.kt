@@ -14,6 +14,10 @@ interface RadioPositionRepository : JpaRepository<RadioPosition, Long> {
   ): RadioPosition?
 
   @Modifying
+  @Query("DELETE FROM RadioPosition p WHERE p.recording = :recording")
+  fun deleteByRecording(recording: String)
+
+  @Modifying
   @Query(
     """
     INSERT INTO radio_position (listener, recording, seconds)

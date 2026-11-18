@@ -7,12 +7,14 @@ import type { RecordingSummary } from '../../models/generated/domain-models'
 import { RecorderState, Station } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { recording } from './radio-fixture'
+import { digest } from './radio-digest-fixture'
 import RadioMiniPlayer from './radio-mini-player.vue'
 
 vi.mock('../../services/api', () => ({
   radioService: {
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
     liveUrl: '/api/radio/live',
+    digests: vi.fn(),
     position: vi.fn(),
     savePosition: vi.fn(),
     savePlayer: () => Promise.resolve(),
@@ -130,6 +132,16 @@ describe('RadioMiniPlayer', () => {
     await play(recording(), 'raw', 1000)
     return { ...lock, wrapper: await open() }
   }
+
+  it('should swap in a rebuilt digest for the one it holds', async () => {
+    const held = digest().recording
+    const rebuilt = { ...held, editList: { ...held.editList!, renderedAt: '2026-11-16T13:00:00Z' } }
+    vi.mocked(radioService.digests).mockResolvedValue([{ ...digest(), recording: rebuilt }])
+    await open()
+    await play(held, 'episode')
+    await flushPromises()
+    expect(player.recording.value?.editList?.renderedAt).toBe('2026-11-16T13:00:00Z')
+  })
 
   it('should name the show, station and topic on the lock screen', async () => {
     const { session } = await playLocked()

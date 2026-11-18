@@ -20,4 +20,7 @@ class RadioPositionService(
     recording: String,
     position: RadioPositionDto,
   ) = radioPositionRepository.upsert(listener, recording, position.seconds)
+
+  @Transactional
+  fun forget(recording: String) = radioPositionRepository.deleteByRecording(recording)
 }

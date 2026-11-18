@@ -1,12 +1,14 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.exception.DigestBuildInProgressException
 import ee.tenman.portfolio.exception.RecordingInProgressException
 import ee.tenman.portfolio.service.radio.AiringChoice
 import ee.tenman.portfolio.service.radio.CutChoice
 import ee.tenman.portfolio.service.radio.CutContext
 import ee.tenman.portfolio.service.radio.CutReview
 import ee.tenman.portfolio.service.radio.DigestBuild
+import ee.tenman.portfolio.service.radio.DigestShow
 import ee.tenman.portfolio.service.radio.JingleReview
 import ee.tenman.portfolio.service.radio.ManualCut
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
@@ -15,6 +17,7 @@ import ee.tenman.portfolio.service.radio.RadioDay
 import ee.tenman.portfolio.service.radio.RadioDayService
 import ee.tenman.portfolio.service.radio.RadioDigest
 import ee.tenman.portfolio.service.radio.RadioDigestArchiveService
+import ee.tenman.portfolio.service.radio.RadioDigestRebuildService
 import ee.tenman.portfolio.service.radio.RadioDigestService
 import ee.tenman.portfolio.service.radio.RadioLiveService
 import ee.tenman.portfolio.service.radio.RadioPlayerChoice
@@ -67,6 +70,7 @@ class RadioController(
   private val radioSearchService: RadioSearchService,
   private val radioDigestArchiveService: RadioDigestArchiveService,
   private val radioDigestService: RadioDigestService,
+  private val radioDigestRebuildService: RadioDigestRebuildService,
 ) {
   @GetMapping
   fun getRecordings(): List<RecordingSummary> = radioArchiveService.recordings()
@@ -77,6 +81,12 @@ class RadioController(
   @GetMapping("/digests/build")
   fun getDigestBuild(): ResponseEntity<DigestBuild> =
     radioDigestService.building()?.let { ResponseEntity.ok(it) } ?: ResponseEntity.noContent().build()
+
+  @PostMapping("/digests/{show}/build")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun postDigestBuild(
+    @PathVariable show: DigestShow,
+  ) = radioDigestRebuildService.rebuild(show)
 
   @GetMapping("/programmes")
   fun getProgrammes(): List<RadioProgrammeDto> = radioScheduleService.programmes()
@@ -203,8 +213,8 @@ class RadioController(
     @PathVariable name: String,
   ): ResponseEntity<Void> = done(radioArchiveService.delete(name))
 
-  @ExceptionHandler(RecordingInProgressException::class)
-  fun handleRecordingInProgress(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.CONFLICT).build()
+  @ExceptionHandler(RecordingInProgressException::class, DigestBuildInProgressException::class)
+  fun handleConflict(): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.CONFLICT).build()
 
   private fun done(found: Boolean): ResponseEntity<Void> =
     if (found) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()

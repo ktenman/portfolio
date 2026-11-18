@@ -14,7 +14,7 @@
           data-testid="radio-digest-build-failure"
         >
           <radio-icon name="alert" />
-          Could not make the digest: {{ build.failure.reason }} · {{ next(build.failure) }}
+          Could not make the digest: {{ reason(build.failure) }}
         </p>
         <template v-else-if="meter">
           <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
@@ -62,6 +62,7 @@
     >
       {{ more }} more {{ more === 1 ? 'story' : 'stories' }}
     </p>
+    <radio-digest-rebuild v-if="build.failure" :show="build.show" label="Try again" />
   </section>
 </template>
 
@@ -74,6 +75,7 @@ import {
 } from '../../models/generated/domain-models'
 import { useElapsed, useRadioDigestBuild } from '../../composables/use-radio-recordings'
 import { advance, clock, left } from '../../utils/radio'
+import RadioDigestRebuild from './radio-digest-rebuild.vue'
 import RadioIcon from './radio-icon.vue'
 
 const SHOWN = 4
@@ -113,4 +115,7 @@ const next = ({ tries, attempts, nextTry }: DigestFailure) =>
   nextTry
     ? `Next try at ${clock(Date.parse(nextTry) / 1000, 0)} (${tries + 1} of ${attempts})`
     : `Stopped for today after ${tries} ${tries === 1 ? 'try' : 'tries'}`
+
+const reason = (failure: DigestFailure) =>
+  failure.tries > 0 ? `${failure.reason} · ${next(failure)}` : failure.reason
 </script>

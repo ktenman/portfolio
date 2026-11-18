@@ -345,6 +345,32 @@ describe('useRadioPlayer', () => {
     expect(player.seconds.value).toBe(0)
   })
 
+  const rebuild = async () => {
+    player.load(recording(), 'episode')
+    await flushPromises()
+    const { status, editList } = recording()
+    player.load(
+      recording({
+        status: { ...status, startedAt: status.startedAt + 3600 },
+        editList: { ...editList!, renderedAt: '2026-10-18T09:00:00Z' },
+      }),
+      'episode'
+    )
+    await flushPromises()
+  }
+
+  it('should start a rebuilt recording from its beginning', async () => {
+    positions.find.mockResolvedValue({ seconds: 2296.5 })
+    await rebuild()
+    expect(player.seconds.value).toBe(0)
+  })
+
+  it('should keep saving where the listener is in a rebuilt recording', async () => {
+    await rebuild()
+    tick(10)
+    expect(positions.save.mock.calls).toHaveLength(1)
+  })
+
   it('should not move a recording opened before the place of the previous one arrived', async () => {
     const answer = deferred<RadioPositionDto>()
     positions.find.mockReturnValueOnce(answer.promise)
