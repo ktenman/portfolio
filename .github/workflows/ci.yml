@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 1
       - name: Set up JDK 21
         if: matrix.lint-type == 'backend'
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@v6.3.0
         with:
           java-version: '25'
           distribution: 'temurin'
@@ -138,7 +138,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
-      - uses: actions/setup-java@v6.1.0
+      - uses: actions/setup-java@v6.3.0
         if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
         with:
           java-version: '25'
@@ -424,7 +424,7 @@ jobs:
         if: steps.check.outputs.should_build == 'true'
         with:
           fetch-depth: 1
-      - uses: actions/setup-java@v6.1.0
+      - uses: actions/setup-java@v6.3.0
         if: steps.check.outputs.should_build == 'true' && (matrix.name == 'backend' || matrix.name == 'radio-worker')
         with:
           java-version: '25'
