@@ -3,8 +3,12 @@
     <div class="min-w-0">
       <radio-on-air class="mb-8 lg:hidden" />
       <radio-digest-build class="mb-8" />
-      <radio-digest :show="DigestShow.DAY" class="mb-8" />
-      <radio-digest :show="DigestShow.WEEK" class="mb-8" />
+      <div
+        class="mb-8 grid grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))] gap-4 empty:hidden has-[[aria-expanded=true]]:grid-cols-1"
+      >
+        <radio-digest :show="DigestShow.DAY" class="mb-0" />
+        <radio-digest :show="DigestShow.WEEK" class="mb-0" />
+      </div>
       <data-table
         :items="shown"
         :columns="columns"
