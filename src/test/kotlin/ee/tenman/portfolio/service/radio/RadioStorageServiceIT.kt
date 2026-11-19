@@ -278,6 +278,14 @@ class RadioStorageServiceIT {
   }
 
   @Test
+  fun `should drop the raw audio left only in the bucket a day after the recording ended`() {
+    val directory = uploaded("2026-10-24-1200-tarkade-klubi")
+    Files.delete(directory.resolve("raw.mp3"))
+    sweep(dropRaw = true)
+    expect(keys("2026-10-24-1200-tarkade-klubi")).notToContain("2026-10-24-1200-tarkade-klubi/raw.mp3")
+  }
+
+  @Test
   fun `should keep the raw audio of a cut recording younger than a day`() {
     val directory = cut("2026-10-13-1200-tarkade-klubi", hours = 23)
     sweep(dropRaw = true)

@@ -208,7 +208,7 @@ class RadioStorageService(
     directory: Path,
     programmes: List<RadioProgramme>,
   ): Boolean {
-    if (parts(directory).isEmpty()) return false
+    if (parts(directory).isEmpty() && saved(directory).keys.none(::raw)) return false
     val status = readStatus(directory)
     val cutoff = Instant.now(clock).minus(RAW_HOURS, ChronoUnit.HOURS)
     return status.state != RecordingState.RECORDING &&
