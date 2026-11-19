@@ -55,16 +55,11 @@ class RadioStorageService(
   }
 
   @Synchronized
-  fun drop() {
-    val writer = lock.writeLock()
-    if (!writer.tryLock()) return
-    try {
+  fun drop() =
+    claim {
       val failed = due().filterNot(::dropped)
       check(failed.isEmpty()) { "Cannot drop the raw audio of radio recordings ${failed.map { it.fileName }}" }
-    } finally {
-      writer.unlock()
     }
-  }
 
   fun <T> hold(block: () -> T): T = lock.read(block)
 
@@ -80,15 +75,27 @@ class RadioStorageService(
     minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build())
   }
 
+  private fun claim(block: () -> Unit) {
+    val writer = lock.writeLock()
+    if (!writer.tryLock()) return
+    try {
+      block()
+    } finally {
+      writer.unlock()
+    }
+  }
+
   private fun store(
     directory: Path,
     programmes: List<RadioProgramme>,
   ) {
     val status = readStatus(directory)
     if (status.state == RecordingState.RECORDING) return
-    sync(directory, !radioProperties.dropRaw || keeps(status, programmes))
-    if (processed(directory)) pcm(directory).forEach(Files::delete)
-    if (old(status)) offload(directory)
+    sync(directory, !radioProperties.dropRaw || keeps(status, programmes) || old(status))
+    claim {
+      if (processed(directory)) pcm(directory).forEach(Files::delete)
+      if (old(status)) offload(directory)
+    }
   }
 
   private fun sync(
@@ -108,14 +115,14 @@ class RadioStorageService(
   private fun offload(directory: Path) {
     val saved = saved(directory)
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
-    release(directory, audio)
+    release(directory, saved, audio)
   }
 
   private fun release(
     directory: Path,
+    saved: Map<String, StoredFile>,
     audio: List<Path>,
   ) {
-    val saved = saved(directory)
     if (EPISODE_FILE in saved) forget(directory, saved)
     (audio + pcm(directory)).forEach(Files::delete)
     Files.deleteIfExists(directory.resolve(FINGERPRINTS))
@@ -192,8 +199,10 @@ class RadioStorageService(
     programmes: List<RadioProgramme>,
   ): Boolean =
     runCatching { ripe(directory, programmes) }
-      .onFailure { log.warn("Cannot tell whether radio recording $directory holds raw audio to drop", it) }
-      .getOrDefault(false)
+      .onFailure {
+        failures[directory] = Instant.now(clock)
+        log.warn("Cannot tell whether radio recording $directory holds raw audio to drop", it)
+      }.getOrDefault(false)
 
   private fun ripe(
     directory: Path,
@@ -206,8 +215,8 @@ class RadioStorageService(
       !keeps(status, programmes) &&
       ended(status).isBefore(cutoff) &&
       EPISODE_FILE in saved(directory) &&
-      !reviewing(directory.resolve(REVIEW_FILE), cutoff) &&
-      (status.programmes - read<EditList>(directory.resolve(EDIT_LIST_FILE)).found()).isEmpty()
+      Files.notExists(directory.resolve(REVIEW_FILE)) &&
+      read<EditList>(directory.resolve(EDIT_LIST_FILE)).found().containsAll(status.programmes)
   }
 
   private fun keeps(
@@ -215,25 +224,16 @@ class RadioStorageService(
     programmes: List<RadioProgramme>,
   ): Boolean = status.uncut(programmes) || status.unlisted(programmes)
 
-  private fun reviewing(
-    review: Path,
-    cutoff: Instant,
-  ): Boolean = Files.exists(review) && Files.getLastModifiedTime(review).toInstant().isAfter(cutoff)
-
   private fun paused(directory: Path): Boolean =
     failures[directory]?.isAfter(Instant.now(clock).minus(PAUSE_HOURS, ChronoUnit.HOURS)) ?: false
 
   private fun dropped(directory: Path): Boolean =
-    runCatching { drop(directory) }
+    runCatching { release(directory, saved(directory), parts(directory)) }
+      .onSuccess { log.info("Dropped the raw audio of radio recording ${directory.fileName}") }
       .onFailure {
         failures[directory] = Instant.now(clock)
         log.error("Cannot drop the raw audio of radio recording $directory", it)
       }.isSuccess
-
-  private fun drop(directory: Path) {
-    release(directory, parts(directory))
-    log.info("Dropped the raw audio of radio recording ${directory.fileName}")
-  }
 
   companion object {
     private const val RAW_HOURS = 24L
