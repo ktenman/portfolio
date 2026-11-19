@@ -154,7 +154,7 @@ describe('RadioOnAir', () => {
     const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
     expect([classes.includes('border'), classes]).toEqual([
       false,
-      expect.arrayContaining(['rounded-[50%]', 'bg-surface-sunken', 'size-11']),
+      expect.arrayContaining(['rounded-full', 'bg-surface-sunken', 'size-11']),
     ])
   })
 
@@ -170,27 +170,15 @@ describe('RadioOnAir', () => {
     ])
   })
 
-  it('should turn the live station that plays into a rounded square', async () => {
-    const player = useRadioPlayer()
-    player.tuned.value = Station.KUKU
-    player.playing.value = true
-    const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
-    player.close()
-    expect(classes).toContain('rounded-[33%]')
-  })
-
   it('should draw a full ring around the station that plays', async () => {
     const player = useRadioPlayer()
     player.tuned.value = Station.KUKU
     player.playing.value = true
-    const arc = (await mount({ ...idle, onAir: broadcast })).get(
-      '[data-testid="radio-ring"] rect:last-child'
-    )
+    const dash = (await mount({ ...idle, onAir: broadcast }))
+      .get('[data-testid="radio-ring"] circle:last-child')
+      .attributes('stroke-dasharray')
     player.close()
-    expect([arc.attributes('stroke-dasharray'), arc.classes()]).toEqual([
-      undefined,
-      expect.arrayContaining(['[stroke-dashoffset:-5.2]']),
-    ])
+    expect(dash).toBeUndefined()
   })
 
   it('should draw no ring around a station that was hung up', async () => {

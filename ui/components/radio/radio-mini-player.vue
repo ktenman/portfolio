@@ -23,7 +23,7 @@
           v-if="recording"
           type="button"
           data-testid="radio-play"
-          :class="[disc(true, player.playing.value), 'size-11 [&>svg]:size-5']"
+          :class="[LOADED, 'size-11 [&>svg]:size-5']"
           :aria-label="player.playing.value ? 'Pause' : 'Play'"
           @click="player.toggle()"
         >
@@ -108,10 +108,10 @@ import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests, useRailStations } from '../../composables/use-radio-recordings'
 import type { RadioSpot } from '../../models/generated/domain-models'
 import {
-  disc,
   episodeParts,
   fullDay,
   isDigest,
+  LOADED,
   position,
   rawParts,
   ROUND,
