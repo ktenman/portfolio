@@ -15,7 +15,7 @@
         data-testid="radio-speed"
         :class="[ROUND, large ? SUNKEN : 'size-11', 'text-sm font-medium']"
         :aria-label="`Speed ${player.rate.value}×, change`"
-        @click="step"
+        @click="player.step()"
       >
         {{ player.rate.value }}×
       </button>
@@ -83,7 +83,7 @@
 </template>
 
 <script lang="ts" setup>
-import { RATES, useRadioPlayer } from '../../composables/use-radio-player'
+import { useRadioPlayer } from '../../composables/use-radio-player'
 import { PLAY, ROUND } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 
@@ -92,9 +92,4 @@ defineProps<{ large?: boolean }>()
 const SUNKEN = 'h-11 w-12 bg-surface-sunken'
 
 const player = useRadioPlayer()
-
-const step = () => {
-  const next = RATES.indexOf(player.rate.value) + 1
-  player.rate.value = RATES[next] ?? RATES[0]!
-}
 </script>
