@@ -108,6 +108,8 @@
   --shadow-overlay: 0 0.5rem 1.5rem oklch(0.24 0.012 60 / 0.14);
 
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: linear(0, 0.36 7%, 0.86 17%, 1.1 27%, 1.04 38%, 0.985 52%, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 
   --animate-btn-spin: btn-spin 0.75s linear infinite;
 
