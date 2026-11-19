@@ -37,6 +37,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class Trading212DataRetrievalJobTest {
   private val fixedInstant: Instant = Instant.parse("2026-04-17T01:30:00Z")
@@ -153,7 +154,7 @@ class Trading212HoldingsRetrievalJobTest {
     Trading212ScrapingProperties().apply {
       symbols.add(Trading212SymbolEntry(symbol = "BNKE:PAR:EUR", ticker = "BNKEp_EQ"))
     }
-  private val clock = Clock.fixed(Instant.parse("2026-04-16T23:40:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-04-16T23:40:00Z"), ZoneOffset.UTC)
   private val job =
     Trading212HoldingsRetrievalJob(
       jobTransactionService = jobTransactionService,

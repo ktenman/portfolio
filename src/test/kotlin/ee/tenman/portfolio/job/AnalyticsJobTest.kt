@@ -31,7 +31,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class CurrentDaySummaryRefreshJobTest {
   private val currentDayCache = mockk<CurrentDaySummaryCacheService>(relaxed = true)
@@ -186,7 +186,7 @@ class CurrentDaySummaryRefreshJobTest {
 
 class InstrumentXirrJobTest {
   private val fixedInstant: Instant = Instant.parse("2025-06-15T10:00:00Z")
-  private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
+  private val clock: Clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
   private val instrumentService: InstrumentService = mockk(relaxed = true)
   private val dailyPriceService: DailyPriceService = mockk()
   private val xirrCalculationService: XirrCalculationService = XirrCalculationService(clock)

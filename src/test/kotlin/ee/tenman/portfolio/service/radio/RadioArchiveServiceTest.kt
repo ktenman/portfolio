@@ -12,6 +12,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -40,6 +41,7 @@ class RadioArchiveServiceTest {
     mockk<RadioStorageService> {
       every { resource(any(), any()) } returns null
       every { delete(any()) } just runs
+      every { hold(any<() -> Any?>()) } answers { firstArg<() -> Any?>().invoke() }
     }
 
   private val programmes = mockk<RadioProgrammeRepository> { every { findByUncutSinceNotNull() } returns emptyList() }
@@ -324,6 +326,15 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should hold the raw audio while it reviews the cuts`() {
+    val directory = recording("2026-10-17")
+    edited(directory)
+    every { reviewService.review(directory, listOf(KeptSpan(761.5, 4200.0))) } returns true
+    service.review("2026-10-17", CutReview(listOf(0)))
+    verify { storage.hold(any<() -> Any?>()) }
+  }
+
+  @Test
   fun `should keep what lies between the removed cuts`() {
     val directory = recording("2026-10-17")
     edited(directory)
@@ -492,6 +503,13 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should hold the raw audio while it saves a jingle`() {
+    jingled()
+    service.jingle("2026-10-17", 1, JingleReview(true))
+    verify { storage.hold(any<() -> Any?>()) }
+  }
+
+  @Test
   fun `should name a saved jingle after its recording and cut`() {
     jingled()
     service.jingle("2026-10-17", 1, JingleReview(true))
@@ -569,6 +587,13 @@ class RadioArchiveServiceTest {
     quiet()
     service.add("2026-10-24", ManualCut(19.0, 41.0))
     expect(manual()).toEqual(listOf(ManualCut(20.15, 40.15)))
+  }
+
+  @Test
+  fun `should hold the raw audio while it adds a cut by hand`() {
+    quiet()
+    service.add("2026-10-24", ManualCut(19.0, 41.0))
+    verify { storage.hold(any<() -> Any?>()) }
   }
 
   @Test

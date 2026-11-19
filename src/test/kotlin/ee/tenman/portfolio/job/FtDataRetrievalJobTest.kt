@@ -28,7 +28,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.TreeMap
 
 class FtDataRetrievalJobTest {
@@ -38,7 +38,7 @@ class FtDataRetrievalJobTest {
   private val jobExecutionService = mockk<JobExecutionService>(relaxed = true)
   private val priceSnapshotService = mockk<PriceSnapshotService>()
   private val taskScheduler = mockk<TaskScheduler>(relaxed = true)
-  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneOffset.UTC)
   private val collections = mutableListOf<CollectionRunResult>()
   private val monitor = monitorForTests(collections)
 

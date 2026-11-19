@@ -50,6 +50,7 @@ export GRADLE_OPTS="--enable-native-access=ALL-UNNAMED"
 - Prefer functional transformations (`map`, `filter`, `fold`) over imperative loops
 - Use `generateSequence` instead of while loops with mutable state
 - Never write fully qualified names in code — import the type or function the common way: `method: Method`, not `method: java.lang.reflect.Method`; `BigDecimal`, not `java.math.BigDecimal`; `nullValue()` or `Matchers.nullValue()`, not `org.hamcrest.Matchers.nullValue()`. Alias a clashing import with `import ... as ...`
+- Write the UTC zone as `ZoneOffset.UTC`, never `ZoneId.of("UTC")`, in main code and tests: the constant can't be misspelled, and the two are different zones, so a `ZonedDateTime` in one never equals the same instant in the other
 
 ## Spring Framework Guidelines
 

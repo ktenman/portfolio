@@ -27,12 +27,12 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class PriceSnapshotCleanupJobTest {
   private val jobExecutionService = mockk<JobExecutionService>()
   private val priceSnapshotService = mockk<PriceSnapshotService>()
-  private val clock = Clock.fixed(Instant.parse("2024-02-15T03:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2024-02-15T03:00:00Z"), ZoneOffset.UTC)
 
   @BeforeEach
   fun setUp() {
@@ -66,7 +66,7 @@ class IntradaySummaryCleanupJobTest {
   private val jobExecutionService = mockk<JobExecutionService>()
   private val intradaySummaryService = mockk<IntradaySummaryService>()
   private val instrumentMinutePriceService = mockk<InstrumentMinutePriceService>()
-  private val clock = Clock.fixed(Instant.parse("2026-09-20T04:30:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-09-20T04:30:00Z"), ZoneOffset.UTC)
 
   @Test
   fun `should delete intraday summaries older than 30 days by default`() {
@@ -268,7 +268,7 @@ class DataProcessingUtilTest {
   private val dailyPriceService: DailyPriceService = mockk(relaxed = true)
   private val instrumentService: InstrumentService = mockk()
   private val cacheInvalidationService: CacheInvalidationService = mockk(relaxed = true)
-  private val clock = Clock.fixed(Instant.parse("2026-09-25T02:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-09-25T02:00:00Z"), ZoneOffset.UTC)
   private val util = DataProcessingUtil(dailyPriceService, instrumentService, TransactionRunner(), cacheInvalidationService, clock)
 
   @Test

@@ -26,7 +26,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class HoldingReconciliationJobTest {
   private val holdingReconciliationService: HoldingReconciliationService = mockk(relaxed = true)
@@ -82,7 +82,7 @@ class CsusHoldingsRetrievalJobTest {
   private val blackRockHoldingsService = mockk<BlackRockHoldingsService>()
   private val etfHoldingService = mockk<EtfHoldingService>()
   private val etfBreakdownService = mockk<EtfBreakdownService>(relaxed = true)
-  private val clock = Clock.fixed(LocalDate.of(2026, 6, 13).atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(LocalDate.of(2026, 6, 13).atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
   private val job =
     CsusHoldingsRetrievalJob(
       jobTransactionService,

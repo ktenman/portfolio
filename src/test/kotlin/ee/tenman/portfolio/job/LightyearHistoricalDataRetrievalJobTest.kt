@@ -25,7 +25,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class LightyearHistoricalDataRetrievalJobTest {
   private val instrumentService: InstrumentService = mockk()
@@ -35,7 +35,7 @@ class LightyearHistoricalDataRetrievalJobTest {
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val taskScheduler: TaskScheduler = mockk(relaxed = true)
   private val lightyearProperties: LightyearScrapingProperties = mockk()
-  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-17T10:00:00Z"), ZoneId.of("UTC"))
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-07-17T10:00:00Z"), ZoneOffset.UTC)
   private val runs = mutableListOf<CollectionRunResult>()
   private val monitor = monitorForTests(runs)
 

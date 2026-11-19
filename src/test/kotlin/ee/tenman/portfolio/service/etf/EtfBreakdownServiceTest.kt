@@ -28,7 +28,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class EtfBreakdownServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -37,7 +37,7 @@ class EtfBreakdownServiceTest {
   private val dailyPriceService = mockk<DailyPriceService>()
   private val cacheInvalidationService = mockk<CacheInvalidationService>(relaxed = true)
   private val holdingAggregationService = HoldingAggregationService()
-  private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T12:00:00Z"), ZoneOffset.UTC)
   private val transactionCalculationService = TransactionCalculationService(transactionRepository, clock)
   private val syntheticEtfCalculationService =
     SyntheticEtfCalculationService(

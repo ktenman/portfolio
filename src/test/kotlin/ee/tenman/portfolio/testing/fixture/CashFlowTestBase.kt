@@ -7,10 +7,10 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 abstract class CashFlowTestBase {
-  protected val clock: Clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  protected val clock: Clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneOffset.UTC)
   protected val testDate: LocalDate = TransactionFixtures.DEFAULT_DATE
   protected val testInstrument: Instrument = TransactionFixtures.createInstrument()
 

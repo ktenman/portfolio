@@ -21,7 +21,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.TreeMap
 
 class BinanceDataRetrievalJobTest {
@@ -33,7 +33,7 @@ class BinanceDataRetrievalJobTest {
   private val priceSnapshotService: PriceSnapshotService = mockk(relaxed = true)
   private val priceSnapshotBackfillService: PriceSnapshotBackfillService = mockk(relaxed = true)
   private val fixedInstant: Instant = Instant.parse("2025-12-23T10:00:00Z")
-  private val clock: Clock = Clock.fixed(fixedInstant, ZoneId.of("UTC"))
+  private val clock: Clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
   private val runs = mutableListOf<CollectionRunResult>()
 
   private val job =

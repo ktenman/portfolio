@@ -31,7 +31,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class PortfolioXirrWindowServiceTest {
   private val summaryRepository = mockk<PortfolioDailySummaryRepository>()
@@ -39,7 +39,7 @@ class PortfolioXirrWindowServiceTest {
   private val summaryService = mockk<SummaryService>()
   private val xirrCalculationService = mockk<XirrCalculationService>()
   private val today = LocalDate.of(2026, 5, 6)
-  private val clock = Clock.fixed(Instant.parse("2026-05-06T12:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-05-06T12:00:00Z"), ZoneOffset.UTC)
   private val service =
     PortfolioXirrWindowService(
       summaryRepository,
@@ -108,7 +108,7 @@ class PortfolioXirrWindowServiceTest {
     date: LocalDate,
     start: LocalDate,
   ) {
-    val calendar = Clock.fixed(date.atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+    val calendar = Clock.fixed(date.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
     val calculator = PortfolioXirrWindowService(summaryRepository, transactionRepository, summaryService, xirrCalculationService, calendar)
     every { summaryService.getCurrentDaySummary() } returns summary(date, BigDecimal("11000"))
     every { summaryRepository.findFirstByEntryDateLessThanEqualOrderByEntryDateDesc(any()) } returns null
@@ -164,7 +164,7 @@ class PortfolioXirrWindowServiceTest {
     date: LocalDate,
     persisted: LocalDate,
   ) {
-    val calendar = Clock.fixed(date.atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+    val calendar = Clock.fixed(date.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
     val calculator =
       PortfolioXirrWindowService(summaryRepository, transactionRepository, summaryService, xirrCalculationService, calendar)
     every { summaryService.getCurrentDaySummary() } returns summary(date, BigDecimal("10100"))
@@ -195,7 +195,7 @@ class PortfolioAnnualWindowServiceTest {
   private val instrumentSnapshotService = mockk<InstrumentSnapshotService>()
   private val dailyPriceRepository = mockk<DailyPriceRepository>()
   private val today = LocalDate.of(2026, 5, 6)
-  private val clock = Clock.fixed(Instant.parse("2026-05-06T12:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-05-06T12:00:00Z"), ZoneOffset.UTC)
   private val service = PortfolioAnnualWindowService(instrumentSnapshotService, dailyPriceRepository, clock)
 
   @Test
@@ -302,7 +302,7 @@ class PortfolioAnnualWindowServiceTest {
     start: LocalDate,
     expected: BigDecimal,
   ) {
-    val calendar = Clock.fixed(date.atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+    val calendar = Clock.fixed(date.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
     val calculator = PortfolioAnnualWindowService(instrumentSnapshotService, dailyPriceRepository, calendar)
     val instrument = makeInstrument(BigDecimal("110"))
     val snapshot = makeSnapshot(instrument, BigDecimal("10"), BigDecimal("1100"))
@@ -323,7 +323,7 @@ class PortfolioAnnualWindowServiceTest {
     date: LocalDate,
     opening: LocalDate,
   ) {
-    val calendar = Clock.fixed(date.atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+    val calendar = Clock.fixed(date.atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
     val calculator = PortfolioAnnualWindowService(instrumentSnapshotService, dailyPriceRepository, calendar)
     val instrument = makeInstrument(BigDecimal("110"))
     val snapshot = makeSnapshot(instrument, BigDecimal("10"), BigDecimal("1100"))

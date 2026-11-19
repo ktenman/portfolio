@@ -22,7 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.stream.Stream
 
 class HistoricalPricesDataValidationTest {
@@ -40,8 +40,8 @@ class HistoricalPricesDataValidationTest {
     every { currencyConversionService.convertDailyPricesToEur(any(), any()) } answers { firstArg() }
     clock =
       Clock.fixed(
-      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
-      ZoneId.of("UTC"),
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneOffset.UTC).toInstant(),
+      ZoneOffset.UTC,
     )
     service = HistoricalPricesService(historicalPricesClient, currencyConversionService, clock)
   }

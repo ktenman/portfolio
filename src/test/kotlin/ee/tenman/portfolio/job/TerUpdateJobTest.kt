@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class TerUpdateJobTest {
   private val jobTransactionService = mockk<JobTransactionService>()
@@ -36,7 +36,7 @@ class TerUpdateJobTest {
   private val trading212HoldingsService = mockk<Trading212HoldingsService>()
   private val scrapingProperties = Trading212ScrapingProperties()
   private val fundCurrencyResolver = mockk<FundCurrencyResolverService>()
-  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T10:00:00Z"), ZoneOffset.UTC)
   private lateinit var job: TerUpdateJob
 
   @BeforeEach

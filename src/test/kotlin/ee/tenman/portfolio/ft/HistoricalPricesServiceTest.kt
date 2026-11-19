@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class HistoricalPricesServiceTest {
   private lateinit var historicalPricesClient: HistoricalPricesClient
@@ -39,8 +39,8 @@ class HistoricalPricesServiceTest {
     every { currencyConversionService.convertDailyPricesToEur(any(), any()) } answers { firstArg() }
     val clock =
       Clock.fixed(
-      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
-      ZoneId.of("UTC"),
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneOffset.UTC).toInstant(),
+      ZoneOffset.UTC,
     )
     service = HistoricalPricesService(historicalPricesClient, currencyConversionService, clock)
   }
@@ -370,7 +370,7 @@ class HistoricalPricesServiceTest {
     } returns listOf(ExchangeRate(LocalDate.of(2025, 1, 17), Currency.EUR, Currency.GBP, BigDecimal("0.85")))
     val realConversionService = CurrencyConversionService(exchangeRateRepository)
     val gbpClock =
-      Clock.fixed(LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
+      Clock.fixed(LocalDate.of(2025, 1, 20).atStartOfDay(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC)
     val serviceWithRealConversion = HistoricalPricesService(historicalPricesClient, realConversionService, gbpClock)
     every {
       historicalPricesClient.getHistoricalPrices(any(), any(), "543017012")

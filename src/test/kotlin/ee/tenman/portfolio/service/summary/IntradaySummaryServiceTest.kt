@@ -23,12 +23,12 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class IntradaySummaryServiceTest {
   private val portfolioIntradaySummaryRepository = mockk<PortfolioIntradaySummaryRepository>()
   private val transactionService = mockk<TransactionService>()
-  private val clock = Clock.fixed(Instant.parse("2026-09-20T12:34:56Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-09-20T12:34:56Z"), ZoneOffset.UTC)
   private val replay = mockk<IntradaySummaryReplayService>()
   private val service = IntradaySummaryService(portfolioIntradaySummaryRepository, transactionService, clock, replay)
 

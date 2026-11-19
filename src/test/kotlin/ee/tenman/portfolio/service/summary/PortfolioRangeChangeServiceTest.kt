@@ -17,14 +17,14 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class PortfolioRangeChangeServiceTest {
   private val seriesService = mockk<PortfolioSummarySeriesService>()
   private val currentDaySummaryCacheService = mockk<CurrentDaySummaryCacheService>()
   private val platformSummaryCacheService = mockk<PlatformSummaryCacheService>()
   private val transactionService = mockk<TransactionService>()
-  private val clock = Clock.fixed(Instant.parse("2026-08-14T12:00:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2026-08-14T12:00:00Z"), ZoneOffset.UTC)
   private val instrument = TransactionFixtures.createInstrument("TÖÖ:TLN", "Tööstus", "ETF", "EUR")
   private val service =
     PortfolioRangeChangeService(

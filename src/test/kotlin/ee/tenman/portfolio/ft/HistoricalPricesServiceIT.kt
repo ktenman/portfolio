@@ -26,7 +26,7 @@ import tools.jackson.databind.ObjectMapper
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 @IntegrationTest
 class HistoricalPricesServiceIT {
@@ -45,8 +45,8 @@ class HistoricalPricesServiceIT {
 
     val fixedClock =
       Clock.fixed(
-      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneId.of("UTC")).toInstant(),
-      ZoneId.of("UTC"),
+      LocalDate.of(2025, 1, 20).atStartOfDay(ZoneOffset.UTC).toInstant(),
+      ZoneOffset.UTC,
     )
     every { clock.instant() } returns fixedClock.instant()
     every { clock.zone } returns fixedClock.zone
