@@ -19,12 +19,12 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.TreeMap
 
 class PriceSnapshotServiceTest {
   private val priceSnapshotRepository = mockk<PriceSnapshotRepository>()
-  private val clock = Clock.fixed(Instant.parse("2024-01-15T14:35:00Z"), ZoneId.of("UTC"))
+  private val clock = Clock.fixed(Instant.parse("2024-01-15T14:35:00Z"), ZoneOffset.UTC)
   private val deletionService = mockk<PriceSnapshotDeletionService>()
   private val service = PriceSnapshotService(priceSnapshotRepository, clock, deletionService)
 

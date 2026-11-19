@@ -88,7 +88,7 @@ class RadioArchiveService(
     val directory = directory(name, STATUS_FILE) ?: return false
     val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: return false
     val total = readStatus(directory).seconds
-    return radioReviewService.review(directory, keep(cuts(edit, total), review.removed, total))
+    return radioStorageService.hold { radioReviewService.review(directory, keep(cuts(edit, total), review.removed, total)) }
   }
 
   fun jingle(
@@ -102,7 +102,7 @@ class RadioArchiveService(
     val path = stored(directory, index, match)
     when {
       !review.saved -> Files.deleteIfExists(path)
-      Files.notExists(path) -> store(path, template(Timeline(directory, status.parts), match.start))
+      Files.notExists(path) -> store(path, radioStorageService.hold { template(Timeline(directory, status.parts), match.start) })
     }
     return true
   }
@@ -114,7 +114,7 @@ class RadioArchiveService(
     val directory = directory(name, EDIT_LIST_FILE) ?: return false
     val edit = read<EditList>(directory.resolve(EDIT_LIST_FILE)) ?: return false
     val status = readStatus(directory)
-    val db = loudness(Timeline(directory, status.parts))
+    val db = radioStorageService.hold { loudness(Timeline(directory, status.parts)) }
     val snapped = ManualCut(rounded(snap(db, cut.start)), rounded(snap(db, cut.end)))
     require(snapped.start >= 0 && snapped.start < snapped.end && snapped.end <= status.seconds) {
       "Manual cut $snapped of $name is not a span within 0-${status.seconds} s"

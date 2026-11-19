@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 @IntegrationTest
 class JobExecutionServiceIT {
@@ -38,7 +38,7 @@ class JobExecutionServiceIT {
   fun `should save job execution`() {
     val startInstant = Instant.parse("2024-07-06T16:23:00Z")
     val endInstant = startInstant.plusSeconds(2)
-    fixedClock = Clock.fixed(startInstant, ZoneId.of("UTC"))
+    fixedClock = Clock.fixed(startInstant, ZoneOffset.UTC)
 
     every { clock.instant() } answers { fixedClock.instant() }
     every { clock.zone } returns fixedClock.zone
@@ -46,7 +46,7 @@ class JobExecutionServiceIT {
     val testJob =
       object : Job {
         override fun execute() {
-          fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
+          fixedClock = Clock.fixed(endInstant, ZoneOffset.UTC)
         }
 
         override fun getName(): String = "TestJob"
@@ -67,7 +67,7 @@ class JobExecutionServiceIT {
   fun `should handle job execution failure`() {
     val startInstant = Instant.parse("2024-07-06T16:23:00Z")
     val endInstant = startInstant.plusSeconds(1)
-    fixedClock = Clock.fixed(startInstant, ZoneId.of("UTC"))
+    fixedClock = Clock.fixed(startInstant, ZoneOffset.UTC)
 
     every { clock.instant() } answers { fixedClock.instant() }
     every { clock.zone } returns fixedClock.zone
@@ -75,7 +75,7 @@ class JobExecutionServiceIT {
     val failingJob =
       object : Job {
         override fun execute() {
-          fixedClock = Clock.fixed(endInstant, ZoneId.of("UTC"))
+          fixedClock = Clock.fixed(endInstant, ZoneOffset.UTC)
           throw TestJobException("Test exception")
         }
 

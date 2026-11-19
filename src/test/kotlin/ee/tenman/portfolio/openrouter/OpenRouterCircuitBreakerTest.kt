@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class OpenRouterCircuitBreakerTest {
   private lateinit var circuitBreaker: OpenRouterCircuitBreaker
@@ -343,7 +344,7 @@ class OpenRouterCircuitBreakerTest {
 
     override fun withZone(zone: ZoneId?): Clock = this
 
-    override fun getZone(): ZoneId = ZoneId.of("UTC")
+    override fun getZone(): ZoneId = ZoneOffset.UTC
 
     fun advance(millis: Long) {
       instant = instant.plusMillis(millis)

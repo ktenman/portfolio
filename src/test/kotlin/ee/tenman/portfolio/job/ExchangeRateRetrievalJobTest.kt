@@ -15,14 +15,14 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class ExchangeRateRetrievalJobTest {
   private val ecbClient: EcbClient = mockk()
   private val exchangeRateService: ExchangeRateService = mockk(relaxed = true)
   private val jobExecutionService: JobExecutionService = mockk(relaxed = true)
   private val taskScheduler: TaskScheduler = mockk(relaxed = true)
-  private val clock: Clock = Clock.fixed(Instant.parse("2026-06-11T17:00:00Z"), ZoneId.of("UTC"))
+  private val clock: Clock = Clock.fixed(Instant.parse("2026-06-11T17:00:00Z"), ZoneOffset.UTC)
 
   private val job =
     ExchangeRateRetrievalJob(

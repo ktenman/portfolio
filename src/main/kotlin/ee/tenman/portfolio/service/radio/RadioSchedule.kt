@@ -46,6 +46,9 @@ data class ProgrammeChoice(
 fun RecordingStatus.uncut(chosen: List<RadioProgramme>): Boolean =
   chosen.any { it.station == station && it.name in programmes && (it.uncutSince?.epochSecond ?: Long.MAX_VALUE) <= startedAt }
 
+fun RecordingStatus.unlisted(listed: List<RadioProgramme>): Boolean =
+  programmes.any { name -> listed.none { it.station == station && it.name == name } }
+
 data class ScheduledShow(
   val externalId: Long,
   val name: String,

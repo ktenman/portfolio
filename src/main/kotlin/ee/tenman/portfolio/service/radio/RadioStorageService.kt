@@ -1,5 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
+import ee.tenman.portfolio.domain.RadioProgramme
+import ee.tenman.portfolio.repository.RadioProgrammeRepository
 import io.minio.BucketExistsArgs
 import io.minio.MakeBucketArgs
 import io.minio.MinioClient
@@ -13,6 +15,9 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 
 @Service
 class RadioStorageService(
@@ -20,13 +25,18 @@ class RadioStorageService(
   private val radioEpisodeService: RadioEpisodeService,
   private val radioProperties: RadioProperties,
   private val clock: Clock,
+  private val radioProgrammeRepository: RadioProgrammeRepository,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
+  private val lock = ReentrantReadWriteLock()
+  private val failures = ConcurrentHashMap<Path, Instant>()
 
+  @Synchronized
   fun store() {
     prepare()
+    val programmes = radioProgrammeRepository.findAll()
     directories(radioProperties.recordings).forEach { directory ->
-      runCatching { store(directory) }.onFailure { log.error("Cannot store radio recording $directory", it) }
+      runCatching { store(directory, programmes) }.onFailure { log.error("Cannot store radio recording $directory", it) }
     }
   }
 
@@ -44,23 +54,49 @@ class RadioStorageService(
     (upload.files.keys + "").forEach { remove(directory, it) }
   }
 
+  @Synchronized
+  fun drop() {
+    val writer = lock.writeLock()
+    if (!writer.tryLock()) return
+    try {
+      val failed = due().filterNot(::dropped)
+      check(failed.isEmpty()) { "Cannot drop the raw audio of radio recordings ${failed.map { it.fileName }}" }
+    } finally {
+      writer.unlock()
+    }
+  }
+
+  fun <T> hold(block: () -> T): T = lock.read(block)
+
+  fun due(): List<Path> {
+    if (!radioProperties.dropRaw) return emptyList()
+    val programmes = radioProgrammeRepository.findAll()
+    return directories(radioProperties.recordings).filter { !paused(it) && due(it, programmes) }
+  }
+
   private fun prepare() {
     val bucket = radioProperties.bucket
     if (minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) return
     minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build())
   }
 
-  private fun store(directory: Path) {
+  private fun store(
+    directory: Path,
+    programmes: List<RadioProgramme>,
+  ) {
     val status = readStatus(directory)
     if (status.state == RecordingState.RECORDING) return
-    sync(directory)
+    sync(directory, !radioProperties.dropRaw || keeps(status, programmes))
     if (processed(directory)) pcm(directory).forEach(Files::delete)
     if (old(status)) offload(directory)
   }
 
-  private fun sync(directory: Path) {
-    val saved = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
-    val local = local(directory)
+  private fun sync(
+    directory: Path,
+    withRaw: Boolean,
+  ) {
+    val saved = saved(directory)
+    val local = local(directory).filterKeys { withRaw || !raw(it) }
     val changed = local.filter { saved[it.key] != it.value }.keys
     val gone = (saved.keys - local.keys).filterNot(AUDIO::matches)
     if (changed.isEmpty() && gone.isEmpty()) return
@@ -70,21 +106,29 @@ class RadioStorageService(
   }
 
   private fun offload(directory: Path) {
-    val saved = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
+    val saved = saved(directory)
     val audio = files(directory).filter { AUDIO.matches(it.fileName.toString()) && saved[it.fileName.toString()] == stored(it) }
+    release(directory, audio)
+  }
+
+  private fun release(
+    directory: Path,
+    audio: List<Path>,
+  ) {
+    val saved = saved(directory)
+    if (EPISODE_FILE in saved) forget(directory, saved)
     (audio + pcm(directory)).forEach(Files::delete)
     Files.deleteIfExists(directory.resolve(FINGERPRINTS))
-    if (EPISODE_FILE in saved) forget(directory, saved)
   }
 
   private fun forget(
     directory: Path,
     saved: Map<String, StoredFile>,
   ) {
-    val raw = saved.keys.filter { AUDIO.matches(it) && it != EPISODE_FILE }
-    if (raw.isEmpty()) return
-    raw.forEach { remove(directory, it) }
-    save(directory.resolve(UPLOAD), Upload(radioProperties.bucket, saved - raw.toSet()))
+    val parts = saved.keys.filter(::raw)
+    if (parts.isEmpty()) return
+    parts.forEach { remove(directory, it) }
+    save(directory.resolve(UPLOAD), Upload(radioProperties.bucket, saved - parts.toSet()))
   }
 
   private fun upload(
@@ -120,6 +164,12 @@ class RadioStorageService(
 
   private fun kept(file: String): Boolean = AUDIO.matches(file) || file.endsWith(".json") && file != UPLOAD
 
+  private fun raw(file: String): Boolean = AUDIO.matches(file) && file != EPISODE_FILE
+
+  private fun saved(directory: Path): Map<String, StoredFile> = read<Upload>(directory.resolve(UPLOAD))?.files.orEmpty()
+
+  private fun parts(directory: Path): List<Path> = files(directory).filter { raw(it.fileName.toString()) }
+
   private fun pcm(directory: Path): List<Path> = files(directory).filter { it.fileName.toString().endsWith(".pcm") }
 
   private fun files(directory: Path): List<Path> = Files.list(directory).use { it.toList() }
@@ -132,8 +182,61 @@ class RadioStorageService(
   private fun processed(directory: Path): Boolean =
     Files.exists(directory.resolve(TRANSCRIPT_FILE)) && radioEpisodeService.todo(directory).isEmpty()
 
-  private fun old(status: RecordingStatus): Boolean {
-    val ended = Instant.ofEpochMilli(((status.startedAt + status.seconds) * 1000).toLong())
-    return ended.isBefore(Instant.now(clock).minus(radioProperties.localDays, ChronoUnit.DAYS))
+  private fun old(status: RecordingStatus): Boolean =
+    ended(status).isBefore(Instant.now(clock).minus(radioProperties.localDays, ChronoUnit.DAYS))
+
+  private fun ended(status: RecordingStatus): Instant = Instant.ofEpochMilli(((status.startedAt + status.seconds) * 1000).toLong())
+
+  private fun due(
+    directory: Path,
+    programmes: List<RadioProgramme>,
+  ): Boolean =
+    runCatching { ripe(directory, programmes) }
+      .onFailure { log.warn("Cannot tell whether radio recording $directory holds raw audio to drop", it) }
+      .getOrDefault(false)
+
+  private fun ripe(
+    directory: Path,
+    programmes: List<RadioProgramme>,
+  ): Boolean {
+    if (parts(directory).isEmpty()) return false
+    val status = readStatus(directory)
+    val cutoff = Instant.now(clock).minus(RAW_HOURS, ChronoUnit.HOURS)
+    return status.state != RecordingState.RECORDING &&
+      !keeps(status, programmes) &&
+      ended(status).isBefore(cutoff) &&
+      EPISODE_FILE in saved(directory) &&
+      !reviewing(directory.resolve(REVIEW_FILE), cutoff) &&
+      (status.programmes - read<EditList>(directory.resolve(EDIT_LIST_FILE)).found()).isEmpty()
+  }
+
+  private fun keeps(
+    status: RecordingStatus,
+    programmes: List<RadioProgramme>,
+  ): Boolean = status.uncut(programmes) || status.unlisted(programmes)
+
+  private fun reviewing(
+    review: Path,
+    cutoff: Instant,
+  ): Boolean = Files.exists(review) && Files.getLastModifiedTime(review).toInstant().isAfter(cutoff)
+
+  private fun paused(directory: Path): Boolean =
+    failures[directory]?.isAfter(Instant.now(clock).minus(PAUSE_HOURS, ChronoUnit.HOURS)) ?: false
+
+  private fun dropped(directory: Path): Boolean =
+    runCatching { drop(directory) }
+      .onFailure {
+        failures[directory] = Instant.now(clock)
+        log.error("Cannot drop the raw audio of radio recording $directory", it)
+      }.isSuccess
+
+  private fun drop(directory: Path) {
+    release(directory, parts(directory))
+    log.info("Dropped the raw audio of radio recording ${directory.fileName}")
+  }
+
+  companion object {
+    private const val RAW_HOURS = 24L
+    private const val PAUSE_HOURS = 1L
   }
 }

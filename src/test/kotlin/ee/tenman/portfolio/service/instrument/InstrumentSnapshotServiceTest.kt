@@ -36,7 +36,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 
 class InstrumentSnapshotServiceTest {
   private val instrumentRepository = mockk<InstrumentRepository>()
@@ -66,7 +66,7 @@ class InstrumentSnapshotServiceTest {
       ).apply { id = 1L }
 
     every { clock.instant() } returns fixedInstant
-    every { clock.zone } returns ZoneId.of("UTC")
+    every { clock.zone } returns ZoneOffset.UTC
 
     every { xirrCalculationService.convertToCashFlow(any()) } returns CashFlow(-1000.0, testDate)
     every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.15

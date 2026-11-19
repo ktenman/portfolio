@@ -36,6 +36,7 @@ data class RadioProperties(
   val skyplusLive: String = "https://stream.skymedia.ee/live/SKYPLUS",
   val bucket: String = "radio",
   val localDays: Long = 7,
+  val dropRaw: Boolean = true,
   val stations: List<Station> = Station.entries,
 ) {
   val jingles: Path
