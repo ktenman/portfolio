@@ -123,6 +123,7 @@ val test by tasks.getting(Test::class) {
     configureE2ETestEnvironment()
   } else {
     exclude("**/e2e/**")
+    maxParallelForks = 2
   }
   finalizedBy(":jacocoTestReport")
 
