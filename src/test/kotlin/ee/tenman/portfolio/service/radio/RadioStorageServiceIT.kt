@@ -103,6 +103,10 @@ class RadioStorageServiceIT {
     return directory
   }
 
+  private fun uploaded(name: String): Path = cut(name).also { storage(dropRaw = false).store() }
+
+  private fun failing(clock: Clock = this.clock) = storage(dropRaw = true, bucket = "puudub", clock = clock)
+
   private fun keys(name: String): List<String> =
     minioClient
       .listObjects(
@@ -243,6 +247,20 @@ class RadioStorageServiceIT {
   }
 
   @Test
+  fun `should delete the local audio of an old recording that has no episode while raw audio is dropped`() {
+    val directory = recording("2026-09-05-1200-tarkade-klubi", startedAt = 1788253200.0)
+    storage(dropRaw = true).store()
+    expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(false)
+  }
+
+  @Test
+  fun `should keep the raw audio of an old recording that has no episode in the bucket while raw audio is dropped`() {
+    recording("2026-09-06-1200-tarkade-klubi", startedAt = 1788253200.0)
+    storage(dropRaw = true).store()
+    expect(keys("2026-09-06-1200-tarkade-klubi").map { it.substringAfter('/') }).toEqual(listOf("raw.mp3", STATUS_FILE, TRANSCRIPT_FILE))
+  }
+
+  @Test
   fun `should upload the raw audio of a programme kept with music and ads`() {
     programme { uncutSince = Instant.EPOCH }
     recording("2026-10-10-1200-tarkade-klubi")
@@ -275,21 +293,13 @@ class RadioStorageServiceIT {
   }
 
   @Test
-  fun `should keep the raw audio while a review render is pending`() {
-    val directory = cut("2026-10-15-1200-tarkade-klubi")
-    Files.writeString(directory.resolve(REVIEW_FILE), "{}")
-    sweep(dropRaw = true)
-    expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(true)
-  }
-
-  @Test
-  fun `should drop the raw audio behind a review render abandoned a day ago`() {
+  fun `should keep the raw audio behind a review render left pending for a day`() {
     val directory = cut("2026-10-22-1200-tarkade-klubi", hours = 50)
     val review = directory.resolve(REVIEW_FILE)
     Files.writeString(review, "[]")
     Files.setLastModifiedTime(review, FileTime.from(Instant.now(clock).minus(25, ChronoUnit.HOURS)))
     sweep(dropRaw = true)
-    expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(false)
+    expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(true)
   }
 
   @Test
@@ -324,8 +334,7 @@ class RadioStorageServiceIT {
 
   @Test
   fun `should remove the raw audio already in the bucket when it drops a recording`() {
-    cut("2026-10-19-1200-tarkade-klubi")
-    storage(dropRaw = false).store()
+    uploaded("2026-10-19-1200-tarkade-klubi")
     storage(dropRaw = true).drop()
     val stored = keys("2026-10-19-1200-tarkade-klubi").map { it.substringAfter('/') }
     expect(stored).toEqual(listOf(EDIT_LIST_FILE, EPISODE_FILE, STATUS_FILE, TRANSCRIPT_FILE))
@@ -343,38 +352,45 @@ class RadioStorageServiceIT {
 
   @Test
   fun `should remove the raw audio from the bucket when it drops again after a failed drop`() {
-    cut("2026-10-24-1200-tarkade-klubi")
-    storage(dropRaw = false).store()
-    runCatching { storage(dropRaw = true, bucket = "puudub").drop() }
+    uploaded("2026-10-24-1200-tarkade-klubi")
+    runCatching { failing().drop() }
     storage(dropRaw = true).drop()
     expect(keys("2026-10-24-1200-tarkade-klubi")).notToContain("2026-10-24-1200-tarkade-klubi/raw.mp3")
   }
 
   @Test
   fun `should fail when it cannot drop the raw audio of a recording`() {
-    cut("2026-10-25-1200-tarkade-klubi")
-    storage(dropRaw = false).store()
-    expect { storage(dropRaw = true, bucket = "puudub").drop() }.toThrow<IllegalStateException>()
+    uploaded("2026-10-25-1200-tarkade-klubi")
+    expect { failing().drop() }.toThrow<IllegalStateException>()
   }
 
   @Test
   fun `should wait before it tries again to drop raw audio it could not drop`() {
-    cut("2026-10-26-1200-tarkade-klubi")
-    storage(dropRaw = false).store()
-    val storage = storage(dropRaw = true, bucket = "puudub")
+    uploaded("2026-10-26-1200-tarkade-klubi")
+    val storage = failing()
     runCatching { storage.drop() }
     expect(storage.due()).toEqual(emptyList())
   }
 
   @Test
   fun `should try again an hour later to drop raw audio it could not drop`() {
-    val directory = cut("2026-10-27-1200-tarkade-klubi")
-    storage(dropRaw = false).store()
+    val directory = uploaded("2026-10-27-1200-tarkade-klubi")
     now = Instant.now(clock)
-    val storage = storage(dropRaw = true, bucket = "puudub", clock = moving)
+    val storage = failing(moving)
     runCatching { storage.drop() }
     now = now.plus(1, ChronoUnit.HOURS)
     expect(storage.due()).toEqual(listOf(directory))
+  }
+
+  @Test
+  fun `should wait before it reads again a recording it could not read`() {
+    val directory = cut("2026-10-30-1200-tarkade-klubi")
+    val storage = storage(dropRaw = true).apply { store() }
+    val status = Files.readString(directory.resolve(STATUS_FILE))
+    Files.writeString(directory.resolve(STATUS_FILE), "{")
+    storage.due()
+    Files.writeString(directory.resolve(STATUS_FILE), status)
+    expect(storage.due()).toEqual(emptyList())
   }
 
   @Test
@@ -383,5 +399,14 @@ class RadioStorageServiceIT {
     val storage = storage(dropRaw = true).apply { store() }
     storage.hold { storage.drop() }
     expect(Files.exists(directory.resolve("raw.mp3"))).toEqual(true)
+  }
+
+  @Test
+  fun `should keep the pcm of a recording that is being read`() {
+    val directory = recording("2026-10-29-1200-tarkade-klubi")
+    Files.writeString(directory.resolve("episode-failed.json"), "{}")
+    val storage = storage(dropRaw = true)
+    storage.hold { storage.store() }
+    expect(Files.exists(directory.resolve("raw.pcm"))).toEqual(true)
   }
 }
