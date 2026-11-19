@@ -77,10 +77,11 @@ jobs:
         uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.FOV_SSH_PRIVATE_KEY }}
-      - name: Add fov.ee SSH fingerprint to known hosts
+      - name: Configure SSH for fov.ee
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H fov.ee >> ~/.ssh/known_hosts
+          printf 'Host fov.ee\n  ControlMaster auto\n  ControlPath ~/.ssh/control-%%C\n  ControlPersist 10m\n  ServerAliveInterval 15\n  ServerAliveCountMax 4\n' >> ~/.ssh/config
       - name: Create .env file
         run: |
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > .env

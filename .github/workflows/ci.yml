@@ -170,7 +170,7 @@ jobs:
           sudo chown -R "$USER" ~/ffmpeg-debs
       - name: Run backend tests
         if: matrix.type == 'backend'
-        run: ./gradlew :test --info -x bootJar --build-cache
+        run: ./gradlew :test -x bootJar --build-cache
       - name: Build JAR
         if: matrix.type == 'backend'
         run: ./gradlew bootJar --build-cache
@@ -182,10 +182,10 @@ jobs:
         working-directory: ${{ matrix.type == 'cloudflare' && 'cloudflare-bypass-proxy' || '.' }}
       - name: Run frontend tests
         if: matrix.type == 'frontend'
-        run: npm run test:run && npm run test:coverage
+        run: npm run test:coverage
       - name: Run cloudflare tests
         if: matrix.type == 'cloudflare'
-        run: npm test && npm run test:coverage
+        run: npm run test:coverage
         working-directory: cloudflare-bypass-proxy
       - name: Run monitoring tests
         if: matrix.type == 'monitoring'

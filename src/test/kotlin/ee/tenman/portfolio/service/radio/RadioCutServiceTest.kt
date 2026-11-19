@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.messageToContain
+import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toThrow
 import ch.tutteli.atrium.api.verbs.expect
@@ -55,6 +56,24 @@ class RadioCutServiceTest {
     breaks: List<Pair<Double, Double>>,
     end: Double,
   ) = Consensus(emptyList(), first, breaks.map { Pause(it.first, it.second) }, end, emptyList(), 1)
+
+  @Test
+  fun `should give back the signal after a forward and an inverse transform`() {
+    val signal = DoubleArray(1024) { sin(2 * PI * 5 * it / 1024) + 0.25 * sin(2 * PI * 113 * it / 1024) }
+    val re = signal.copyOf()
+    val im = DoubleArray(re.size)
+    fft(re, im)
+    fft(re, im, inverse = true)
+    expect(re.indices.maxOf { abs(re[it] - signal[it]) }).toBeLessThan(1e-9)
+  }
+
+  @Test
+  fun `should find the frequency of a tone in its spectrum`() {
+    val re = DoubleArray(1024) { sin(2 * PI * 37 * it / 1024) }
+    val im = DoubleArray(re.size)
+    fft(re, im)
+    expect((0 until 512).maxBy { re[it] * re[it] + im[it] * im[it] }).toEqual(37)
+  }
 
   @Test
   fun `should start a break in the middle of the first silence`() {

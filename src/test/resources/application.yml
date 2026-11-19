@@ -1,9 +1,4 @@
 spring:
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
   profiles:
     active: test
   jackson:
@@ -52,9 +47,9 @@ youtube:
   thumbnail-url: http://localhost:${wiremock.server.port}
 
 radio:
-  recordings: ${java.io.tmpdir}/radio-it
-  live: ${java.io.tmpdir}/radio-it-live/stream.m3u8
-  aripaev-live: ${java.io.tmpdir}/radio-it-live/aripaev.mp3
+  recordings: ${java.io.tmpdir}/radio-it-${org.gradle.test.worker:0}
+  live: ${java.io.tmpdir}/radio-it-live-${org.gradle.test.worker:0}/stream.m3u8
+  aripaev-live: ${java.io.tmpdir}/radio-it-live-${org.gradle.test.worker:0}/aripaev.mp3
 
 ecb:
   url: http://localhost:${wiremock.server.port}

@@ -6,6 +6,7 @@ import java.nio.ShortBuffer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -18,6 +19,7 @@ private const val WINDOW = 10.0
 private const val LONGEST = 8.0
 private const val STRIDE = 0.25
 private const val PCM = ".pcm"
+private val twiddles = ConcurrentHashMap<Pair<Int, Boolean>, Pair<DoubleArray, DoubleArray>>()
 
 class Spectrum(
   val re: DoubleArray,
@@ -57,11 +59,17 @@ fun fft(
       im[i] = im[j].also { im[j] = im[i] }
     }
   }
-  val turn = if (inverse) 2 * PI / n else -2 * PI / n
-  val wr = DoubleArray(n / 2) { cos(turn * it) }
-  val wi = DoubleArray(n / 2) { sin(turn * it) }
+  val (wr, wi) = twiddles.computeIfAbsent(n to inverse) { twiddle(n, inverse) }
   generateSequence(2) { it shl 1 }.takeWhile { it <= n }.forEach { butterflies(re, im, it, wr, wi) }
   if (inverse) re.indices.forEach { re[it] /= n.toDouble() }
+}
+
+private fun twiddle(
+  size: Int,
+  inverse: Boolean,
+): Pair<DoubleArray, DoubleArray> {
+  val turn = if (inverse) 2 * PI / size else -2 * PI / size
+  return DoubleArray(size / 2) { cos(turn * it) } to DoubleArray(size / 2) { sin(turn * it) }
 }
 
 private fun butterflies(
