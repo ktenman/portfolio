@@ -96,6 +96,7 @@ function formatDate(dateString: string): string {
 .navbar-scroll-container {
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
