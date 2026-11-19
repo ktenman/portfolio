@@ -48,7 +48,7 @@ const mount = async (digests = [digest()], show = DigestShow.WEEK) => {
 const load = () => (player.recording.value = { name: digest().recording.name })
 
 const arc = (wrapper: ReturnType<typeof renderWithProviders>) =>
-  wrapper.get('[data-testid="radio-ring"] rect:last-child')
+  wrapper.get('[data-testid="radio-ring"] circle:last-child').attributes('stroke-dasharray')
 
 const unfold = async (digests = [digest()]) => {
   const wrapper = await mount(digests)
@@ -147,32 +147,14 @@ describe('RadioDigest', () => {
   })
 
   it.each([
-    [0.25, '25 75'],
-    [0.75, '75 25'],
+    [0, '0 100'],
+    [0.5, '50 100'],
     [1, undefined],
   ])('should draw the arc of a digest heard to %s', async (share, dash) => {
     load()
     player.playing.value = true
     player.progress.value = share
-    expect(arc(await mount()).attributes('stroke-dasharray')).toBe(dash)
-  })
-
-  it('should draw no arc on a digest not yet heard', async () => {
-    load()
-    expect(arc(await mount()).classes()).toContain('invisible')
-  })
-
-  it("should draw the ring of a digest that plays as a rounded square from 12 o'clock", async () => {
-    load()
-    player.playing.value = true
-    player.progress.value = 0.5
-    expect(arc(await mount()).classes()).toContain('[stroke-dashoffset:-5.2]')
-  })
-
-  it('should draw the ring of a paused digest as a circle', async () => {
-    load()
-    player.progress.value = 0.5
-    expect(arc(await mount()).classes()).toContain('[rx:50%]')
+    expect(arc(await mount())).toBe(dash)
   })
 
   it('should draw no ring around a digest that is not in the player', async () => {
@@ -193,21 +175,6 @@ describe('RadioDigest', () => {
     player.playing.value = true
     const classes = (await mount()).get('button').classes()
     expect([classes.includes('bg-surface'), classes.includes('bg-brass')]).toEqual([true, false])
-  })
-
-  it('should spring a digest that plays into a rounded square', async () => {
-    load()
-    player.playing.value = true
-    expect((await mount()).get('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-[33%]', '[--morph:500ms_var(--ease-spring)]'])
-    )
-  })
-
-  it('should settle a paused digest in the player back into a circle', async () => {
-    load()
-    expect((await mount()).get('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-[50%]', '[--morph:380ms_var(--ease-settle)]'])
-    )
   })
 
   it('should hide the ring from screen readers', async () => {

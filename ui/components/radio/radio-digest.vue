@@ -3,7 +3,7 @@
     <div class="flex items-center gap-3.5 px-5 py-4">
       <button
         type="button"
-        :class="[disc(loaded, on), 'relative z-10 size-11 [&>svg]:size-5']"
+        :class="[loaded ? LOADED : LISTEN, 'relative z-10 size-11 [&>svg]:size-5']"
         :aria-label="`${on ? 'Pause' : 'Play'}: ${latest.recording.programme}`"
         @click="play(latest.recording)"
       >
@@ -122,7 +122,16 @@ import type {
 } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests } from '../../composables/use-radio-recordings'
-import { clock, day, disc, episodeParts, minutes, position, ROUND } from '../../utils/radio'
+import {
+  clock,
+  day,
+  episodeParts,
+  LISTEN,
+  LOADED,
+  minutes,
+  position,
+  ROUND,
+} from '../../utils/radio'
 import RadioDigestRebuild from './radio-digest-rebuild.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioRing from './radio-ring.vue'
