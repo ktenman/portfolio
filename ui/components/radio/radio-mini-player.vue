@@ -131,8 +131,13 @@ const place = computed(() => {
 const lifted = computed(() => route.name === 'Calculator')
 
 const shown = computed(() => {
-  if (recording.value) return route.params.name !== recording.value.name
-  const onPage = ON_AIR_PAGES.includes(String(route.name)) && !route.query.q
+  const searching = Boolean(route.query.q)
+  if (recording.value) {
+    const { name } = recording.value
+    const beside = route.name === 'Radio' && !searching && isDigest(name)
+    return route.params.name !== name && !beside
+  }
+  const onPage = ON_AIR_PAGES.includes(String(route.name)) && !searching
   return !onPage || !stations.value.some(s => s.onAir && s.station === player.tuned.value)
 })
 

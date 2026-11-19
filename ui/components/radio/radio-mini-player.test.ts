@@ -233,6 +233,26 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open('/radio', BROADCAST)).exists()).toBe(true)
   })
 
+  const playDigest = async () => {
+    vi.mocked(radioService.digests).mockResolvedValue([digest()])
+    await play(digest().recording, 'episode')
+  }
+
+  it('should stay away from the Radio page while a digest plays', async () => {
+    await playDigest()
+    expect(card(await open('/radio')).exists()).toBe(false)
+  })
+
+  it('should show a digest on other pages', async () => {
+    await playDigest()
+    expect(card(await open('/radio/catch-up')).exists()).toBe(true)
+  })
+
+  it('should show a digest while the Radio page shows search results', async () => {
+    await playDigest()
+    expect(card(await open('/radio?q=kuku')).exists()).toBe(true)
+  })
+
   it('should show Kuku and Live for the live stream', async () => {
     listen()
     expect(card(await open()).text()).toContain('KukuLive')
