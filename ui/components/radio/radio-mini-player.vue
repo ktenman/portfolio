@@ -11,11 +11,12 @@
       class="fixed right-2.5 bottom-2.5 z-(--z-player) overflow-hidden rounded-xl border border-hairline bg-surface py-1.5 pr-1.5 shadow-overlay md:right-6 md:bottom-6"
       :class="[
         recording ? 'pl-1.5 max-md:left-2.5 md:w-93' : 'w-max pl-3.5',
-        { 'max-md:bottom-22': lifted, [SETTLE]: !moving },
+        { 'max-md:bottom-22': lifted, [SETTLE]: dropped },
       ]"
       :style="place"
       aria-label="Radio player"
       data-testid="radio-mini-player"
+      @transitionend.self="dropped = false"
     >
       <div class="flex items-center">
         <button
@@ -125,6 +126,8 @@ const ON_AIR_PAGES = ['Radio', 'RadioShows']
 
 const EDGE = 24
 
+const SLOP = 4
+
 const SETTLE =
   'md:transition-[left,top] md:duration-500 md:ease-(--ease-spring) motion-reduce:transition-none'
 
@@ -166,12 +169,19 @@ const share = (at: number, free: number) => (free ? clamp(at / free, 0, 1) : 0)
 const corner = ({ x, y }: RadioSpot): RadioSpot => ({ x: Math.round(x), y: Math.round(y) })
 
 const moving = ref(false)
+const dropped = ref(false)
+let origin = { x: 0, y: 0 }
 let held = false
 
 useDraggable(card, {
   handle,
   disabled: phone,
-  onMove: ({ x, y }) => {
+  onStart: (_, { clientX, clientY }) => {
+    origin = { x: clientX, y: clientY }
+    dropped.value = false
+  },
+  onMove: ({ x, y }, { clientX, clientY }) => {
+    if (!moving.value && Math.hypot(clientX - origin.x, clientY - origin.y) < SLOP) return
     moving.value = true
     spot.value = { x: share(x - EDGE, room.value.x), y: share(y - top.value, room.value.y) }
   },
@@ -179,6 +189,7 @@ useDraggable(card, {
     if (moving.value && spot.value) {
       spot.value = corner(spot.value)
       player.pin(spot.value)
+      dropped.value = true
       held = true
       setTimeout(() => (held = false))
     }
@@ -201,13 +212,19 @@ const place = computed(() => {
   }
 })
 
+const newest = (name: string) => {
+  const list = digests.value ?? []
+  const show = list.find(found => found.recording.name === name)?.show
+  return Boolean(show) && list.find(found => found.show === show)?.recording.name === name
+}
+
 const lifted = computed(() => route.name === 'Calculator')
 
 const shown = computed(() => {
   const searching = Boolean(route.query.q)
   if (recording.value) {
     const { name } = recording.value
-    const beside = route.name === 'Radio' && !searching && isDigest(name)
+    const beside = route.name === 'Radio' && !searching && newest(name)
     return route.params.name !== name && !beside
   }
   const onPage = ON_AIR_PAGES.includes(String(route.name)) && !searching

@@ -7,7 +7,7 @@ import type { RecordingSummary } from '../../models/generated/domain-models'
 import { RecorderState, Station } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { recording } from './radio-fixture'
-import { digest } from './radio-digest-fixture'
+import { dayDigest, digest } from './radio-digest-fixture'
 import RadioMiniPlayer from './radio-mini-player.vue'
 
 vi.mock('../../services/api', () => ({
@@ -239,6 +239,16 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open('/radio')).exists()).toBe(false)
   })
 
+  it('should show an older digest on the Radio page, whose card shows a newer one', async () => {
+    const older = {
+      ...digest(),
+      recording: { ...digest().recording, name: 'week-in-radio-2026-11-09' },
+    }
+    vi.mocked(radioService.digests).mockResolvedValue([digest(), older, dayDigest()])
+    await play(older.recording, 'episode')
+    expect(card(await open('/radio')).exists()).toBe(true)
+  })
+
   it('should show a digest on other pages', async () => {
     await playDigest()
     expect(card(await open('/radio/catch-up')).exists()).toBe(true)
@@ -355,6 +365,12 @@ describe('RadioMiniPlayer', () => {
     await play()
     player.spot.value = spot
     expect(card(await open()).attributes('style')).toContain(style)
+  })
+
+  it('should not spring into its spot when it appears', async () => {
+    await play()
+    player.spot.value = { x: 1, y: 1 }
+    expect(card(await open()).classes()).not.toContain('md:transition-[left,top]')
   })
 
   it('should stay in its corner without a spot', async () => {

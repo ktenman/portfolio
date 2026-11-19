@@ -768,13 +768,21 @@ test.describe('saved radio mini player', () => {
     expect(saves()).toBe(0)
   })
 
-  test('stays on its page after a drag', async ({ page }) => {
+  test('opens the episode from a click that drifts a pixel or two', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
-    await dragRadioCard(page, { x: -2000, y: -2000 })
+    await dragRadioCard(page, { x: 2, y: 1 })
+    await expect(page.getByTestId('radio-player')).toBeVisible()
+    expect(saves()).toBe(0)
+  })
+
+  test('stays on its page after a drag that ends on its title', async ({ page }) => {
+    const saves = countSpotSaves(page)
+    await playRadio(page)
+    await dragRadioCard(page)
     await expect.poll(saves).toBe(1)
-    await expect(page.getByTestId('radio-mini-player')).toBeVisible()
-    await expect(page).not.toHaveURL(/\/radio\//)
+    await page.waitForLoadState('networkidle')
+    expect(new URL(page.url()).pathname).toBe('/')
   })
 })
 
