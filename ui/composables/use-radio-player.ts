@@ -18,7 +18,7 @@ const version = ref<Version>('raw')
 const part = ref(0)
 const current = ref(0)
 const playing = ref(false)
-export const RATES = [1, 1.1, 1.25, 1.5, 2]
+const RATES = [1, 1.1, 1.25, 1.5, 2]
 
 const rate = ref(1)
 const volume = ref(1)
@@ -219,6 +219,10 @@ const toggle = () => {
 
 const skip = (by: number) => pick(seconds.value + by)
 
+const step = () => {
+  rate.value = RATES[RATES.indexOf(rate.value) + 1] ?? RATES[0]!
+}
+
 const playFrom = (at: number, wanted: Version = 'raw') => {
   const target = recording.value
   if (target && wanted === 'raw' && pruned(target))
@@ -382,6 +386,7 @@ export const useRadioPlayer = () => ({
   toggle,
   seek: pick,
   skip,
+  step,
   playFrom,
   preview,
 })

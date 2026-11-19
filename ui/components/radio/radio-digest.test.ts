@@ -5,14 +5,21 @@ import { DigestShow } from '../../models/generated/domain-models'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioDigest from './radio-digest.vue'
+import RadioScrubber from './radio-scrubber.vue'
 import { dayDigest, digest } from './radio-digest-fixture'
 
 const player = vi.hoisted(() => ({
   load: vi.fn(),
   playFrom: vi.fn(),
   toggle: vi.fn(),
+  skip: vi.fn(),
+  seek: vi.fn(),
+  step: vi.fn(),
   playing: { value: false },
   progress: { value: 0 },
+  seconds: { value: 0 },
+  total: { value: 0 },
+  rate: { value: 1 },
   recording: { value: null as { name: string } | null },
 }))
 
@@ -61,6 +68,8 @@ describe('RadioDigest', () => {
     player.recording.value = null
     player.playing.value = false
     player.progress.value = 0
+    player.seconds.value = 0
+    player.total.value = 0
   })
 
   it('should show the newest digest of its own show', async () => {
@@ -208,5 +217,88 @@ describe('RadioDigest', () => {
 
   it('should hide the card when there is no digest', async () => {
     expect((await mount([])).find('[data-testid="radio-digest"]').exists()).toBe(false)
+  })
+
+  const transport = (wrapper: ReturnType<typeof renderWithProviders>) =>
+    wrapper.find('[data-testid="radio-digest-transport"]')
+
+  const stories = (wrapper: ReturnType<typeof renderWithProviders>) =>
+    wrapper.findAll('[data-testid="radio-digest-story"] button')
+
+  it('should show no transport while another recording is in the player', async () => {
+    player.recording.value = { name: '2026-10-17' }
+    expect(transport(await mount()).exists()).toBe(false)
+  })
+
+  it('should show the transport while its digest is in the player', async () => {
+    load()
+    expect(transport(await mount()).exists()).toBe(true)
+  })
+
+  it('should show the time heard and the time left', async () => {
+    load()
+    player.seconds.value = 200
+    player.total.value = 1200
+    expect(transport(await mount()).text()).toContain('3:20\u221216:40')
+  })
+
+  it.each([
+    ['Back 15 s', -15],
+    ['Forward 30 s', 30],
+  ])('should skip from the card with %s', async (label, by) => {
+    load()
+    await (await mount()).get(`button[aria-label="${label}"]`).trigger('click')
+    expect(player.skip).toHaveBeenCalledWith(by)
+  })
+
+  it("should seek from the card's timeline", async () => {
+    load()
+    player.total.value = 1200
+    ;(await mount()).getComponent(RadioScrubber).vm.$emit('seek', 600)
+    expect(player.seek).toHaveBeenCalledWith(600)
+  })
+
+  it('should change the speed from the card', async () => {
+    load()
+    await (await mount()).get('[data-testid="radio-speed"]').trigger('click')
+    expect(player.step).toHaveBeenCalled()
+  })
+
+  it('should unfold the stories when the digest is played', async () => {
+    const wrapper = await mount()
+    await wrapper.get('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').trigger('click')
+    expect(wrapper.findAll('[data-testid="radio-digest-story"]')).toHaveLength(6)
+  })
+
+  it('should leave the stories folded when the digest is paused', async () => {
+    load()
+    player.playing.value = true
+    const wrapper = await mount()
+    await wrapper.get('button[aria-label="Pause: Week in Radio 09.11–15.11.2026"]').trigger('click')
+    expect(wrapper.findAll('[data-testid="radio-digest-story"]')).toHaveLength(0)
+  })
+
+  it('should mark the story that plays', async () => {
+    load()
+    player.seconds.value = 450
+    const marks = stories(await unfold()).map(story => story.attributes('aria-current'))
+    expect(marks).toEqual([undefined, undefined, 'true', undefined, undefined, undefined])
+  })
+
+  it('should play a story from its start', async () => {
+    load()
+    await stories(await unfold())[1]!.trigger('click')
+    expect([player.load.mock.calls.length, player.playFrom.mock.calls]).toEqual([
+      0,
+      [[200, 'episode']],
+    ])
+  })
+
+  it('should play a story of a digest not yet in the player', async () => {
+    await stories(await unfold())[1]!.trigger('click')
+    expect([player.load.mock.calls, player.playFrom.mock.calls]).toEqual([
+      [[digest().recording, 'episode']],
+      [[200, 'episode']],
+    ])
   })
 })
