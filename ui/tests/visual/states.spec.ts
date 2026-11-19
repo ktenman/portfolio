@@ -427,6 +427,21 @@ test('an unfolded radio digest lists every story across the page', async ({ page
   )
 })
 
+test('a radio digest in the player becomes the player', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'tablet')
+  await stubBuildInfo(page)
+  await stubEnums(page)
+  await stubRadio(page)
+  await openRoute(page, '/radio')
+  await page.getByRole('button', { name: 'Play: Day in Radio' }).click()
+  await expect(page.getByTestId('radio-digest-transport')).toBeVisible()
+  await expect(page.getByTestId('radio-mini-player')).toHaveCount(0)
+  await settleAndFreeze(page)
+  await expect(page.getByTestId('radio-digest').first().locator('xpath=..')).toHaveScreenshot(
+    'radio-digest-playing.png'
+  )
+})
+
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
   await stubBuildInfo(page)
@@ -600,7 +615,7 @@ test('the radio mini player keeps its controls inside when names run long', asyn
   await expect(card).toContainText('Keskpäevatund, Tarkade klubi')
   const { x, width } = (await card.boundingBox())!
   const edges = await Promise.all(
-    ['Open the episode', 'Stop and close', 'Mute'].map(async name => {
+    ['Back 15 s', 'Forward 30 s', 'Stop and close'].map(async name => {
       const box = (await card.getByLabel(name).boundingBox())!
       return box.x + box.width
     })
@@ -625,7 +640,7 @@ test('the radio mini player opens its episode without loading the audio again', 
   await page.locator('audio').evaluate(audio => {
     audio.addEventListener('loadstart', () => audio.setAttribute('data-loaded-again', ''))
   })
-  await card.getByRole('link', { name: 'Open the episode' }).click()
+  await card.getByRole('link').click()
   await expect(page.getByTestId('radio-player')).toBeVisible()
   await expect(card).toHaveCount(0)
   await expect(page.locator('audio')).not.toHaveAttribute('data-loaded-again')
@@ -643,22 +658,22 @@ test('the radio mini player waits for something to play', async ({ page }, testI
   await expect(page.getByTestId('radio-mini-player')).toHaveCount(0)
 })
 
-test('a dragged radio mini player stays where it was left after a reload', async ({
+test('a dragged radio mini player stays in the corner it was dropped in after a reload', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await playRadio(page)
   const card = page.getByTestId('radio-mini-player')
-  const { x, y } = (await card.boundingBox())!
-  await dragRadioCard(page)
+  await dragRadioCard(page, { x: -2000, y: -2000 })
   await page.reload()
   await expect(card).toBeVisible()
+  const navbar = (await page.locator('.navbar').boundingBox())!
   await expect
     .poll(async () => {
       const box = (await card.boundingBox())!
       return [Math.round(box.x), Math.round(box.y)]
     })
-    .toEqual([Math.round(x - 40), Math.round(y - 40)])
+    .toEqual([24, Math.round(navbar.height + 24)])
 })
 
 test('phones keep the radio bar wherever the spot was left', async ({ page }, testInfo) => {
@@ -709,7 +724,7 @@ test.describe('saved radio mini player', () => {
   test('stays after a reload on its own episode', async ({ page }) => {
     await playRadio(page)
     const card = page.getByTestId('radio-mini-player')
-    await card.getByRole('link', { name: 'Open the episode' }).click()
+    await card.getByRole('link').click()
     await page.reload()
     await page.locator('.nav-link[href="/"]').click()
     await expect(card).toBeVisible()
@@ -735,7 +750,7 @@ test.describe('saved radio mini player', () => {
         ])
         return [edges[0]! - box.x - box.width, edges[1]! - box.y - box.height].map(Math.round)
       })
-      .toEqual([0, 0])
+      .toEqual([24, 24])
   })
 
   test('saves its spot once per drag', async ({ page }) => {
@@ -745,16 +760,21 @@ test.describe('saved radio mini player', () => {
     await expect.poll(saves).toBe(1)
   })
 
-  test('saves no spot on a click', async ({ page }) => {
+  test('opens the episode from its title without saving a spot', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
-    const card = page.getByTestId('radio-mini-player')
-    await dragRadioCard(page)
+    await page.getByTestId('radio-mini-player').locator('p').first().click()
+    await expect(page.getByTestId('radio-player')).toBeVisible()
+    expect(saves()).toBe(0)
+  })
+
+  test('stays on its page after a drag', async ({ page }) => {
+    const saves = countSpotSaves(page)
+    await playRadio(page)
+    await dragRadioCard(page, { x: -2000, y: -2000 })
     await expect.poll(saves).toBe(1)
-    const before = await card.boundingBox()
-    await card.locator('p').first().click()
-    await page.evaluate(() => new Promise(requestAnimationFrame))
-    expect([saves(), await card.boundingBox()]).toEqual([1, before])
+    await expect(page.getByTestId('radio-mini-player')).toBeVisible()
+    await expect(page).not.toHaveURL(/\/radio\//)
   })
 })
 
@@ -787,7 +807,7 @@ test('the radio mini player rests at the top of a window shorter than itself', a
   test.skip(testInfo.project.name !== 'desktop')
   await playRadio(page)
   await dragRadioCard(page)
-  await page.setViewportSize({ width: 800, height: 100 })
+  await page.setViewportSize({ width: 800, height: 40 })
   await expect
     .poll(async () => (await page.getByTestId('radio-mini-player').boundingBox())!.y)
     .toBe(0)

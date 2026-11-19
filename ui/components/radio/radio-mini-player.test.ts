@@ -184,17 +184,19 @@ describe('RadioMiniPlayer', () => {
     expect([session.metadata, handlers.play]).toEqual([null, null])
   })
 
-  it('should show the programme and the topic at the position', async () => {
+  it('should show the topic at the position above the programme and the time', async () => {
     await play(recording(), 'raw', 1000)
-    expect(card(await open()).text()).toContain('KeskpäevatundRahvusooperi tüli')
+    expect(card(await open()).text()).toContain(
+      'Rahvusooperi tüliKeskpäevatund\u00a0· 16:40 / 1:10:00'
+    )
   })
 
-  it('should write the topic of the mini player in ink', async () => {
+  it('should cut a long programme name short before the time', async () => {
     await play(recording(), 'raw', 1000)
-    const topic = card(await open())
-      .findAll('p')
-      .find(line => line.text() === 'Rahvusooperi tüli')
-    expect(topic?.classes()).toContain('text-ink')
+    const time = card(await open())
+      .findAll('span')
+      .find(part => part.text() === '· 16:40 / 1:10:00')
+    expect(time?.classes()).toContain('shrink-0')
   })
 
   it('should show the topic of the clean version at its own position', async () => {
@@ -210,12 +212,6 @@ describe('RadioMiniPlayer', () => {
   it('should show the day where no part covers the position', async () => {
     await play(recording({ timeline: [] }), 'raw', 1000)
     expect(card(await open()).text()).toContain('Saturday, 17.10')
-  })
-
-  it('should show elapsed and total time around the scrubber', async () => {
-    await play(recording(), 'raw', 1000)
-    const times = card(await open()).findAll('span')
-    expect(times.map(time => time.text())).toEqual(expect.arrayContaining(['16:40', '1:10:00']))
   })
 
   it('should stay away from the page of the playing recording', async () => {
@@ -281,7 +277,7 @@ describe('RadioMiniPlayer', () => {
     listen()
     expect(
       card(await open())
-        .find('[aria-label="Open the episode"]')
+        .find('a')
         .exists()
     ).toBe(false)
   })
@@ -304,10 +300,32 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open('/radio', null)).exists()).toBe(true)
   })
 
-  it('should link to the episode', async () => {
+  it('should link its title to the episode', async () => {
     await play()
-    const link = card(await open()).find('[aria-label="Open the episode"]')
-    expect(link.attributes('href')).toBe('/radio/2026-10-17')
+    expect(
+      card(await open())
+        .get('a')
+        .attributes('href')
+    ).toBe('/radio/2026-10-17')
+  })
+
+  it('should leave speed and mute to the episode page', async () => {
+    await play()
+    const wrapper = card(await open())
+    expect([
+      wrapper.find('[data-testid="radio-speed"]').exists(),
+      wrapper.find('[aria-label="Mute"]').exists(),
+    ]).toEqual([false, false])
+  })
+
+  it('should ring its play button as the cards do', async () => {
+    await play()
+    expect(
+      card(await open())
+        .get('[data-testid="radio-play"]')
+        .find('[data-testid="radio-ring"]')
+        .exists()
+    ).toBe(true)
   })
 
   it('should save the position when closed', async () => {
@@ -322,9 +340,16 @@ describe('RadioMiniPlayer', () => {
   })
 
   it.each([
-    ['by its share of the free room', 1000, 800, { x: 0.5, y: 0.25 }, 'left: 500px; top: 200px'],
-    ['at the top left of a window with no free room', 0, 0, { x: 1, y: 1 }, 'left: 0px; top: 0px'],
-  ])('should rest %s', async (_, width, height, spot, style) => {
+    ['top right corner nearest its spot', 1000, 800, { x: 0.7, y: 0.2 }, 'left: 976px; top: 24px'],
+    [
+      'bottom left corner nearest its spot',
+      1000,
+      800,
+      { x: 0.2, y: 0.9 },
+      'left: 24px; top: 776px',
+    ],
+    ['top of a window shorter than itself', 0, 0, { x: 1, y: 1 }, 'left: 24px; top: 0px'],
+  ])('should rest in the %s', async (_, width, height, spot, style) => {
     vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(width)
     vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(height)
     await play()
@@ -355,12 +380,9 @@ describe('RadioMiniPlayer', () => {
   })
 
   it.each([
-    '[data-testid="radio-speed"]',
     '[aria-label="Back 15 s"]',
     '[data-testid="radio-play"]',
     '[aria-label="Forward 30 s"]',
-    '[aria-label="Mute"]',
-    '[aria-label="Open the episode"]',
     '[aria-label="Stop and close"]',
   ])('should give %s a 44 px target', async selector => {
     await play()
