@@ -44,7 +44,7 @@
         type="button"
         :class="[
           action.icon
-            ? [action.icon === 'pause' ? PLAY : LISTEN, 'size-11 md:size-9']
+            ? [ringed ? LOADED : LISTEN, 'size-11 md:size-9 [&>svg]:size-5 md:[&>svg]:size-4']
             : [LINK, 'bg-surface max-md:min-h-11'],
           'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"
@@ -52,6 +52,7 @@
         :aria-label="`${action.label}: ${airing.name} ${clock(airing.start, 0)} · ${station}`"
         @click="action.run?.()"
       >
+        <radio-ring v-if="ringed" />
         <radio-icon v-if="action.icon" :name="action.icon" />
         <template v-else>{{ action.label }}</template>
       </button>
@@ -76,11 +77,12 @@ import {
   coversEnd,
   LINK,
   LISTEN,
-  PLAY,
+  LOADED,
   ROW_LINK,
   STATIONS,
 } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
+import RadioRing from './radio-ring.vue'
 
 const props = defineProps<{ airing: DayAiring }>()
 const player = useRadioPlayer()
@@ -106,14 +108,15 @@ const summary = computed(() => {
 })
 const page = computed(() => summary.value && `/radio/${summary.value.name}`)
 
-const hearing = computed(() => {
+const inside = computed(() => {
   const heard = recording.value
-  if (!heard || !player.playing.value || player.recording.value?.name !== heard.name) return false
+  if (!heard || player.recording.value?.name !== heard.name) return false
   const at = heard.start + player.recordingSeconds.value
   return heard.from <= at && at < heard.to
 })
 
 const listen = () => {
+  if (inside.value) return player.toggle
   const heard = recording.value
   const found = summary.value
   if (!heard || !found) return undefined
@@ -138,7 +141,8 @@ const record = (value: boolean) => () =>
 
 const action = computed(() => {
   const airing = props.airing
-  if (hearing.value) return { label: 'Pause', run: player.toggle, icon: 'pause' as const }
+  if (inside.value && player.playing.value)
+    return { label: 'Pause', run: player.toggle, icon: 'pause' as const }
   switch (airing.state) {
     case AiringState.RECORDED:
     case AiringState.ARCHIVED:
@@ -151,6 +155,7 @@ const action = computed(() => {
       }
     case AiringState.ON_AIR:
     case AiringState.RECORDING:
+      if (inside.value) return { label: 'Listen', run: player.toggle, icon: 'play' as const }
       return player.tuned.value === airing.station && player.playing.value
         ? { label: 'Pause', run: player.toggle, icon: 'pause' as const }
         : {
@@ -166,4 +171,6 @@ const action = computed(() => {
       return null
   }
 })
+
+const ringed = computed(() => action.value?.run === player.toggle)
 </script>

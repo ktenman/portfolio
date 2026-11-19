@@ -4,8 +4,8 @@
     class="card relative overflow-hidden bg-surface-sunken"
     data-testid="radio-digest-build"
   >
-    <div class="flex items-center gap-4 px-5 py-4">
-      <span class="size-13 shrink-0 rounded-full bg-hairline" aria-hidden="true" />
+    <div class="flex items-center gap-3.5 px-5 py-4">
+      <span class="size-11 shrink-0 rounded-full bg-hairline" aria-hidden="true" />
       <div class="grid min-w-0 grow gap-1.5">
         <h3 class="mb-0 text-heading">{{ build.title }}</h3>
         <p

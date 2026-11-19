@@ -4,6 +4,7 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioOnAir from './radio-on-air.vue'
+import RadioIcon from './radio-icon.vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { RecorderState, Station } from '../../models/generated/domain-models'
 
@@ -146,22 +147,46 @@ describe('RadioOnAir', () => {
 
   it('should show the play icon on the live button', async () => {
     const wrapper = await mount({ ...idle, onAir: broadcast })
-    expect(wrapper.find('button').find('path').attributes('d')).toBe('M7 4v16l13-8z')
+    expect(wrapper.find('button').findComponent(RadioIcon).props('name')).toBe('play')
   })
 
-  it('should give the station on air a quiet round play button', async () => {
-    expect((await mount({ ...idle, onAir: broadcast })).find('button').classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'border', 'bg-surface', 'size-11'])
-    )
+  it('should give the station on air a borderless sunken play disc', async () => {
+    const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
+    expect([classes.includes('border'), classes]).toEqual([
+      false,
+      expect.arrayContaining(['rounded-full', 'bg-surface-sunken', 'size-11']),
+    ])
   })
 
-  it('should turn the station playing into a brass pause button', async () => {
+  it('should turn the station playing into a quiet disc with a brass pause glyph', async () => {
     const player = useRadioPlayer()
     player.tuned.value = Station.KUKU
     player.playing.value = true
     const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
     player.close()
-    expect(classes).toContain('bg-brass')
+    expect([classes.includes('bg-brass'), classes]).toEqual([
+      false,
+      expect.arrayContaining(['bg-surface', 'text-brass-deep']),
+    ])
+  })
+
+  it('should draw a full ring around the station that plays', async () => {
+    const player = useRadioPlayer()
+    player.tuned.value = Station.KUKU
+    player.playing.value = true
+    const dash = (await mount({ ...idle, onAir: broadcast }))
+      .get('[data-testid="radio-ring"] circle:last-child')
+      .attributes('stroke-dasharray')
+    player.close()
+    expect(dash).toBeUndefined()
+  })
+
+  it('should draw no ring around a station that was hung up', async () => {
+    const player = useRadioPlayer()
+    player.tuned.value = Station.KUKU
+    const wrapper = await mount({ ...idle, onAir: broadcast })
+    player.close()
+    expect(wrapper.find('[data-testid="radio-ring"]').exists()).toBe(false)
   })
 
   it('should show only the icon on the live button', async () => {
