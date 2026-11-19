@@ -95,6 +95,7 @@ rounded:
   control: '0.25rem'
   container: '0.5rem'
   circle: '50%'
+  playing: '33%'
 container:
   app: 'min(1350px, 91vw)'
 shadows:
@@ -597,12 +598,15 @@ Hairline-first, shadow-second — printed paper does not float.
 alerts, toasts, and small input-group addons; `--radius-container: 0.5rem` for full-size buttons, cards, table
 wrappers, inputs and selects, modals, dropdown menus, and the base skeleton class. The control radius tightened
 from `0.375rem` in this phase: crisper edges read as printed rather than as app chrome. A `50%` produces the
-handful of true circles — spinners, the legend swatch, the flag glyphs. A `0.75rem` one-off survives on
-`.mobile-card` (`mobile-cards.css:6`), but `data-table.vue:206` overrides it back to `--radius-container` for
-every card the shared table renders — which is all of them today, so the one-off is currently unreachable.
-Treat it as debt, not as scale. Two skeleton variants in `skeleton-loader.vue:80,118` override the base to
-`--radius-control`, and being unlayered scoped styles they win — so a skeleton cell is not reliably the
-container radius.
+handful of true circles — spinners, the legend swatch, the flag glyphs. The radio play buttons are the one shape
+that changes: `50%` at rest and paused, `33%` while their item plays (`PLAYING` in `utils/radio.ts`), with the
+progress ring a concentric `rect` 1.25px inside the edge (`radio-ring.vue`), so the item that plays reads at a
+glance. They take `50%`, never `rounded-full`, because an infinite radius cannot interpolate to `33%`. A
+`0.75rem` one-off survives on `.mobile-card` (`mobile-cards.css:6`), but `data-table.vue:206` overrides it back
+to `--radius-container` for every card the shared table renders — which is all of them today, so the one-off is
+currently unreachable. Treat it as debt, not as scale. Two skeleton variants in `skeleton-loader.vue:80,118`
+override the base to `--radius-control`, and being unlayered scoped styles they win — so a skeleton cell is not
+reliably the container radius.
 
 **Borders are 1px, always.** The table header's old 2px rule is gone; header and body cells now share a single
 `--color-hairline-strong` bottom border. Generic cards take a `rgb(0 0 0 / 0.05)` hairline, data containers
@@ -695,6 +699,14 @@ animates `pulse-increase` or `pulse-decrease` — a 3s ease-in-out background wa
 or `--color-loss-wash` at the midpoint and returning to transparent. It is deliberately exempted from
 `prefers-reduced-motion`, alongside the spinners, because it is information rather than decoration. It is mixed
 from the exact semantic washes, never from an approximation of them.
+
+**The play-button morph** confirms that playback started or stopped. The button and its ring spring into the
+rounded square over 0.5s on `--ease-spring` and settle back into the circle over 0.38s on `--ease-settle`: a radius
+cannot overshoot a circle, so a spring on the way back stops dead at the circle. The button sets that timing as
+`--morph` (`utils/radio.ts`) and the ring inherits it, so a ring outside a play button changes shape without
+moving. The glyph morphs play into pause over 0.45s on `--ease-settle` through CSS `d`; WebKit has no CSS `d` and
+swaps it. Unlike the value flash it is not exempted from `prefers-reduced-motion` — the shape already carries the
+state, so it changes at once.
 
 ## Charts
 
@@ -907,7 +919,8 @@ consumers. Until then:
 - **Don't** introduce a second text face. One is declared, on `body`, and everything inherits it. The serif was
   built and removed; rebuilding it needs a rendered screenshot, not a rationale. Geist Mono is the single
   sanctioned exception and it is confined to the Monaco config editor.
-- **Don't** add a radius value. Controls are `0.25rem`, containers are `0.5rem`. A container inside a container
+- **Don't** add a radius value. Controls are `0.25rem`, containers are `0.5rem`, and the radio play buttons take
+  `33%` while their item plays, because there the change of shape is the state. A container inside a container
   does not get a smaller radius — it gets a hairline. One `0.375rem` radius predates the rule and still stands,
   at `allocation-table.vue:712`; the two that used to sit beside it in `etf-breakdown.vue` and
   `instruments-view.vue` are gone. It is debt, not precedent. (`0.375rem` as padding or gap is fine and
@@ -920,8 +933,8 @@ consumers. Until then:
 - **Don't** build a custom listbox, popover, or modal. `<select>` is styled through `::picker(select)` and the
   dialogs are native `<dialog>`; both give you the top layer, the keyboard model, and scroll containment for
   free. A hand-rolled replacement has to reimplement all three and will get one of them wrong.
-- **Don't** animate anything that isn't confirming a state change. The value flash, the spinners, and the
-  select picker's 150ms open are the whole motion budget.
+- **Don't** animate anything that isn't confirming a state change. The value flash, the spinners, the select
+  picker's 150ms open, and the radio play-button morph are the whole motion budget.
 - **Don't** put a `<style scoped>` block in a component to override a `components.css` rule and expect the
   layer order to explain it. Scoped styles are injected unlayered and therefore beat every `@layer`; that is
   why an override "works" and why it is invisible to anyone reading the cascade.

@@ -6,7 +6,7 @@
         <div class="flex items-center gap-3.5 px-5 py-3">
           <button
             type="button"
-            :class="[on(station) ? LOADED : LISTEN, 'size-11 [&>svg]:size-5']"
+            :class="[on(station) ? PLAYING : LISTEN, 'size-11 [&>svg]:size-5']"
             :aria-label="`${on(station) ? 'Pause' : 'Listen live'}: ${STATIONS[station]}`"
             @click="on(station) ? player.toggle() : player.listen(station)"
           >
@@ -44,7 +44,7 @@ import { useIntervalFn, useNow } from '@vueuse/core'
 import type { Station, StationAiring } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRailStations } from '../../composables/use-radio-recordings'
-import { clock, LISTEN, LOADED, range, STATIONS } from '../../utils/radio'
+import { clock, LISTEN, PLAYING, range, STATIONS } from '../../utils/radio'
 import RadioIcon from './radio-icon.vue'
 import RadioRing from './radio-ring.vue'
 

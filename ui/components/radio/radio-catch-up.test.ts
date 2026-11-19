@@ -281,7 +281,7 @@ describe('RadioCatchUp', () => {
     const classes = (await button(label)).classes()
     expect([classes.includes('border'), classes]).toEqual([
       false,
-      expect.arrayContaining(['rounded-full', 'bg-surface-sunken']),
+      expect.arrayContaining(['rounded-[50%]', 'bg-surface-sunken']),
     ])
   })
 
@@ -308,6 +308,19 @@ describe('RadioCatchUp', () => {
       true,
       expect.arrayContaining(['text-brass-deep']),
     ])
+  })
+
+  it('should turn the schedule row that plays into a rounded square', async () => {
+    hear(1000)
+    expect((await button('Pause: Keskpäevatund 12:00')).classes()).toEqual(
+      expect.arrayContaining(['rounded-[33%]', 'md:size-9'])
+    )
+  })
+
+  it('should keep a paused schedule row round', async () => {
+    hear(1000)
+    player.playing.value = false
+    expect((await button('Listen: Keskpäevatund 12:00')).classes()).toContain('rounded-[50%]')
   })
 
   it('should keep the ring and the play glyph on a recorded airing that is paused', async () => {

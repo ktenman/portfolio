@@ -44,7 +44,10 @@
         type="button"
         :class="[
           action.icon
-            ? [ringed ? LOADED : LISTEN, 'size-11 md:size-9 [&>svg]:size-5 md:[&>svg]:size-4']
+            ? [
+                disc(ringed, player.playing.value),
+                'size-11 md:size-9 [&>svg]:size-5 md:[&>svg]:size-4',
+              ]
             : [LINK, 'bg-surface max-md:min-h-11'],
           'relative z-10 cursor-pointer disabled:cursor-default disabled:opacity-50',
         ]"
@@ -75,9 +78,8 @@ import {
   airLength,
   clock,
   coversEnd,
+  disc,
   LINK,
-  LISTEN,
-  LOADED,
   ROW_LINK,
   STATIONS,
 } from '../../utils/radio'

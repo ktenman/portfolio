@@ -76,13 +76,26 @@ export const PLAY =
   'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
 
 const DISC =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+  'inline-flex shrink-0 cursor-pointer items-center justify-center hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
-export const ROUND = `${DISC} text-ink`
+export const ROUND = `${DISC} rounded-full text-ink transition-colors`
 
-export const LISTEN = `${ROUND} bg-surface-sunken focus-visible:outline-offset-2`
+const MORPH = `${DISC} focus-visible:outline-offset-2 [transition:color_var(--transition-fast),background-color_var(--transition-fast),border-radius_var(--morph)]`
 
-export const LOADED = `${DISC} relative bg-surface text-brass-deep focus-visible:outline-offset-2`
+const SETTLE = `${MORPH} rounded-[50%] [--morph:380ms_var(--ease-settle)]`
+
+const HELD = 'relative bg-surface text-brass-deep'
+
+export const LISTEN = `${SETTLE} bg-surface-sunken text-ink`
+
+const LOADED = `${SETTLE} ${HELD}`
+
+export const PLAYING = `${MORPH} ${HELD} rounded-[33%] [--morph:500ms_var(--ease-spring)]`
+
+export const disc = (held: boolean, playing: boolean): string => {
+  if (!held) return LISTEN
+  return playing ? PLAYING : LOADED
+}
 
 const DOT =
   "before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:align-middle before:content-['']"
