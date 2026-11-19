@@ -1,12 +1,13 @@
 <template>
   <section v-if="latest" class="card relative overflow-hidden" data-testid="radio-digest">
-    <div class="flex items-center gap-4 px-5 py-4">
+    <div class="flex items-center gap-3.5 px-5 py-4">
       <button
         type="button"
-        :class="[PLAY, 'relative z-10 size-13 [&>svg]:size-5']"
+        :class="[loaded ? LOADED : LISTEN, 'relative z-10 size-11 [&>svg]:size-5']"
         :aria-label="`${on ? 'Pause' : 'Play'}: ${latest.recording.programme}`"
         @click="play(latest.recording)"
       >
+        <radio-ring v-if="loaded" />
         <radio-icon :name="on ? 'pause' : 'play'" />
       </button>
       <div class="grid min-w-0 grow gap-0.5">
@@ -62,9 +63,10 @@ import type {
 } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests } from '../../composables/use-radio-recordings'
-import { clock, day, minutes, PLAY, ROUND } from '../../utils/radio'
+import { clock, day, LISTEN, LOADED, minutes, ROUND } from '../../utils/radio'
 import RadioDigestRebuild from './radio-digest-rebuild.vue'
 import RadioIcon from './radio-icon.vue'
+import RadioRing from './radio-ring.vue'
 
 const STRETCHED =
   'after:absolute after:inset-0 after:rounded-container underline-offset-2 hover:underline'

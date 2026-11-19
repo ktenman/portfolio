@@ -128,6 +128,39 @@ describe('useRadioPlayer', () => {
     expect(player.seconds.value).toBe(2510)
   })
 
+  it('should have heard nothing of a recording at its start', () => {
+    player.load(split())
+    expect(player.progress.value).toBe(0)
+  })
+
+  it('should have heard half of a recording at its midpoint', () => {
+    player.load(split())
+    player.seek(2100)
+    expect(player.progress.value).toBe(0.5)
+  })
+
+  it('should have heard all of a recording at its end', () => {
+    player.load(split())
+    player.seek(4200)
+    expect(player.progress.value).toBe(1)
+  })
+
+  it('should stop the share at the whole when the audio runs past the length', () => {
+    player.load(split())
+    player.seek(4100)
+    tick(2300)
+    expect(player.progress.value).toBe(1)
+  })
+
+  it('should count a live station as heard in full', () => {
+    player.listen(Station.KUKU)
+    expect(player.progress.value).toBe(1)
+  })
+
+  it('should have heard nothing with nothing loaded', () => {
+    expect(player.progress.value).toBe(0)
+  })
+
   it('should move on to the next part when a part ends', () => {
     player.load(split())
     audio.dispatchEvent(new Event('ended'))

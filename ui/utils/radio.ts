@@ -75,10 +75,14 @@ export const ROW_LINK = 'font-semibold after:absolute after:inset-0 after:rounde
 export const PLAY =
   'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
 
-export const ROUND =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
+const DISC =
+  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
 
-export const LISTEN = `${ROUND} border border-control-border bg-surface shadow-control focus-visible:outline-offset-2`
+export const ROUND = `${DISC} text-ink`
+
+export const LISTEN = `${ROUND} bg-surface-sunken focus-visible:outline-offset-2`
+
+export const LOADED = `${DISC} relative bg-surface text-brass-deep focus-visible:outline-offset-2`
 
 const DOT =
   "before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:align-middle before:content-['']"

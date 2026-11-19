@@ -12,6 +12,7 @@ const player = vi.hoisted(() => ({
   playFrom: vi.fn(),
   toggle: vi.fn(),
   playing: { value: false },
+  progress: { value: 0 },
   recording: { value: null as { name: string } | null },
 }))
 
@@ -37,6 +38,11 @@ const mount = async (digests = [digest()], show = DigestShow.WEEK) => {
   return wrapper
 }
 
+const load = () => (player.recording.value = { name: digest().recording.name })
+
+const arc = (wrapper: ReturnType<typeof renderWithProviders>) =>
+  wrapper.get('[data-testid="radio-ring"] circle:last-child').attributes('stroke-dasharray')
+
 const unfold = async (digests = [digest()]) => {
   const wrapper = await mount(digests)
   await wrapper.get('button[aria-expanded]').trigger('click')
@@ -52,6 +58,9 @@ describe('RadioDigest', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    player.recording.value = null
+    player.playing.value = false
+    player.progress.value = 0
   })
 
   it('should show the newest digest of its own show', async () => {
@@ -126,6 +135,42 @@ describe('RadioDigest', () => {
   it('should resume the digest where it was left', async () => {
     await play()
     expect([player.playFrom.mock.calls.length, player.toggle.mock.calls.length]).toEqual([0, 1])
+  })
+
+  it.each([
+    [0, '0 100'],
+    [0.5, '50 100'],
+    [1, undefined],
+  ])('should draw the arc of a digest heard to %s', async (share, dash) => {
+    load()
+    player.playing.value = true
+    player.progress.value = share
+    expect(arc(await mount())).toBe(dash)
+  })
+
+  it('should draw no ring around a digest that is not in the player', async () => {
+    expect((await mount()).find('[data-testid="radio-ring"]').exists()).toBe(false)
+  })
+
+  it('should keep the ring and the play glyph on a paused digest', async () => {
+    load()
+    const wrapper = await mount()
+    expect([
+      wrapper.find('[data-testid="radio-ring"]').exists(),
+      wrapper.find('button[aria-label="Play: Week in Radio 09.11–15.11.2026"]').exists(),
+    ]).toEqual([true, true])
+  })
+
+  it('should keep the digest in the player off solid brass', async () => {
+    load()
+    player.playing.value = true
+    const classes = (await mount()).get('button').classes()
+    expect([classes.includes('bg-surface'), classes.includes('bg-brass')]).toEqual([true, false])
+  })
+
+  it('should hide the ring from screen readers', async () => {
+    load()
+    expect((await mount()).get('[data-testid="radio-ring"]').attributes('aria-hidden')).toBe('true')
   })
 
   it('should hide the card when there is no digest', async () => {

@@ -4,6 +4,7 @@ import { radioService } from '../../services/api'
 import { renderWithProviders } from '../../tests/test-utils'
 import RadioBadge from './radio-badge.vue'
 import RadioCatchUp from './radio-catch-up.vue'
+import RadioIcon from './radio-icon.vue'
 import { airing, radioDay, recording } from './radio-fixture'
 import { AiringState, Station } from '../../models/generated/domain-models'
 
@@ -14,6 +15,7 @@ const player = vi.hoisted(() => ({
   toggle: vi.fn(),
   tuned: { value: null as string | null },
   playing: { value: false },
+  progress: { value: 0 },
   recording: { value: null as { name: string } | null },
   recordingSeconds: { value: 0 },
 }))
@@ -58,6 +60,7 @@ describe('RadioCatchUp', () => {
     player.playing.value = false
     player.recording.value = null
     player.recordingSeconds.value = 0
+    player.progress.value = 0
     vi.mocked(radioService.day).mockResolvedValue(radioDay())
     vi.mocked(radioService.recordings).mockResolvedValue([recording()])
     vi.mocked(radioService.record).mockResolvedValue()
@@ -253,13 +256,13 @@ describe('RadioCatchUp', () => {
   })
 
   it('should show the play icon on the live button of an airing on air', async () => {
-    expect((await button('Listen live')).find('path').attributes('d')).toBe('M7 4v16l13-8z')
+    expect((await button('Listen live')).findComponent(RadioIcon).props('name')).toBe('play')
   })
 
   it('should show the pause icon on the stop button of an airing on air', async () => {
     player.tuned.value = Station.KUKU
     player.playing.value = true
-    expect((await button('Pause')).find('path').attributes('d')).toBe('M6 4h4v16H6z')
+    expect((await button('Pause')).findComponent(RadioIcon).props('name')).toBe('pause')
   })
 
   it('should stop the live radio from an airing on air', async () => {
@@ -274,9 +277,17 @@ describe('RadioCatchUp', () => {
     ['a partly recorded airing', 'Hear the end'],
     ['an archived repeat', 'Listen: Keskpäevatund 18:00'],
     ['an airing on air', 'Listen live'],
-  ])('should give %s a quiet round play button', async (_, label) => {
-    expect((await button(label)).classes()).toEqual(
-      expect.arrayContaining(['rounded-full', 'border', 'bg-surface'])
+  ])('should give %s a borderless sunken play disc', async (_, label) => {
+    const classes = (await button(label)).classes()
+    expect([classes.includes('border'), classes]).toEqual([
+      false,
+      expect.arrayContaining(['rounded-full', 'bg-surface-sunken']),
+    ])
+  })
+
+  it('should draw the glyph of a schedule row at 20 px on a phone and 16 px from 768 px', async () => {
+    expect((await button('Listen: Keskpäevatund 12:00')).classes()).toEqual(
+      expect.arrayContaining(['[&>svg]:size-5', 'md:[&>svg]:size-4'])
     )
   })
 
@@ -290,9 +301,59 @@ describe('RadioCatchUp', () => {
     player.playing.value = true
   }
 
-  it('should turn a recorded airing that plays into the brass pause button', async () => {
+  it('should ring a recorded airing that plays', async () => {
     hear(1000)
-    expect((await button('Pause: Keskpäevatund 12:00')).classes()).toContain('bg-brass')
+    const pause = await button('Pause: Keskpäevatund 12:00')
+    expect([pause.find('[data-testid="radio-ring"]').exists(), pause.classes()]).toEqual([
+      true,
+      expect.arrayContaining(['text-brass-deep']),
+    ])
+  })
+
+  it('should keep the ring and the play glyph on a recorded airing that is paused', async () => {
+    hear(1000)
+    player.playing.value = false
+    const listen = await button('Listen: Keskpäevatund 12:00')
+    expect([
+      listen.find('[data-testid="radio-ring"]').exists(),
+      listen.findComponent(RadioIcon).props('name'),
+    ]).toEqual([true, 'play'])
+  })
+
+  it('should resume a paused recorded airing from its row', async () => {
+    hear(1000)
+    player.playing.value = false
+    await (await button('Listen: Keskpäevatund 12:00')).trigger('click')
+    expect([player.toggle.mock.calls.length, player.playFrom.mock.calls.length]).toEqual([1, 0])
+  })
+
+  const pauseBeingRecorded = () => {
+    const day = radioDay()
+    const taken = day.recorded.find(r => r.programme === 'Tööandjate tund')!
+    const kept = { ...taken, from: taken.start, to: taken.end }
+    day.day[1]!.airings = day.day[1]!.airings.map(a =>
+      a.name === 'Tööandjate tund' ? { ...a, recording: kept } : a
+    )
+    vi.mocked(radioService.day).mockResolvedValue(day)
+    player.recording.value = { name: taken.name }
+    player.recordingSeconds.value = 60
+  }
+
+  it('should resume the paused recording of an airing still being recorded from its row', async () => {
+    pauseBeingRecorded()
+    await (await button('Listen: Tööandjate tund')).trigger('click')
+    expect([player.toggle.mock.calls.length, player.listen.mock.calls.length]).toEqual([1, 0])
+  })
+
+  it('should keep the ring on the paused recording of an airing still being recorded', async () => {
+    pauseBeingRecorded()
+    const listen = await button('Listen: Tööandjate tund')
+    expect(listen.find('[data-testid="radio-ring"]').exists()).toBe(true)
+  })
+
+  it('should draw no ring on an airing whose part of the recording is not in the player', async () => {
+    hear(1000)
+    expect((await button('Hear the end')).find('[data-testid="radio-ring"]').exists()).toBe(false)
   })
 
   it('should pause a recorded airing that plays from its row', async () => {
@@ -310,10 +371,10 @@ describe('RadioCatchUp', () => {
     expect((await button('Record: Ilmaparandaja')).classes()).toContain('max-md:min-h-11')
   })
 
-  it('should give a playing airing the brass pause button', async () => {
+  it('should ring an airing on air while its station plays', async () => {
     player.tuned.value = Station.KUKU
     player.playing.value = true
-    expect((await button('Pause')).classes()).toContain('bg-brass')
+    expect((await button('Pause')).find('[data-testid="radio-ring"]').exists()).toBe(true)
   })
 
   it('should show only the icon on the play button of a partly recorded airing', async () => {

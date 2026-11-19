@@ -51,6 +51,10 @@ const total = computed(() =>
     ? (recording.value?.status.seconds ?? 0)
     : (recording.value?.editList?.durationSeconds ?? 0)
 )
+const progress = computed(() => {
+  if (live.value) return 1
+  return total.value ? Math.min(1, seconds.value / total.value) : 0
+})
 
 const url = (target: RecordingSummary, file: string) => radioService.fileUrl(target.name, file)
 
@@ -358,6 +362,7 @@ export const useRadioPlayer = () => ({
   seconds,
   recordingSeconds,
   total,
+  progress,
   playing,
   rate,
   volume,
