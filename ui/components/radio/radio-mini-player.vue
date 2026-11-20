@@ -10,9 +10,9 @@
       ref="card"
       class="fixed right-2.5 bottom-2.5 z-(--z-player) rounded-xl border border-hairline bg-surface pr-1.5 pb-1.5 shadow-overlay md:right-6 md:bottom-6"
       :class="[
-        recording ? 'max-md:left-2.5 md:w-93' : 'w-max',
-        compact ? 'overflow-hidden pl-1.5' : 'pl-3.5',
-        recording && !compact ? 'pt-0.5' : 'pt-1.5',
+        recording
+          ? ['max-md:left-2.5 md:w-93', phone ? 'overflow-hidden pt-1.5 pl-1.5' : 'pt-0.5 pl-3.5']
+          : 'w-max pt-1.5 pl-3.5',
         { 'max-md:bottom-22': lifted, [SETTLE]: dropped },
       ]"
       :style="place"
@@ -20,27 +20,21 @@
       data-testid="radio-mini-player"
       @transitionend.self="dropped = false"
     >
-      <div class="flex items-center">
-        <button
-          v-if="compact"
-          type="button"
-          data-testid="radio-play"
-          :class="[LOADED, 'size-11 [&>svg]:size-5']"
-          :aria-label="player.playing.value ? 'Pause' : 'Play'"
-          @click="player.toggle()"
-        >
-          <radio-ring />
-          <radio-icon :name="player.playing.value ? 'pause' : 'play'" />
-        </button>
-        <div
-          ref="handle"
-          class="min-w-0 grow md:cursor-grab md:touch-none md:select-none md:active:cursor-grabbing"
-        >
+      <template v-if="phone && recording">
+        <div class="flex items-center">
+          <button
+            type="button"
+            data-testid="radio-play"
+            :class="[LOADED, 'size-11 [&>svg]:size-5']"
+            :aria-label="player.playing.value ? 'Pause' : 'Play'"
+            @click="player.toggle()"
+          >
+            <radio-ring />
+            <radio-icon :name="player.playing.value ? 'pause' : 'play'" />
+          </button>
           <router-link
-            v-if="compact && recording"
             :to="`/radio/${recording.name}`"
-            draggable="false"
-            class="group block rounded-control px-2 text-ink no-underline focus-visible:outline-2 focus-visible:outline-brass-deep"
+            class="group block min-w-0 grow rounded-control px-2 text-ink no-underline focus-visible:outline-2 focus-visible:outline-brass-deep"
           >
             <p class="mb-0 truncate text-sm/4.5 font-semibold group-hover:underline">
               {{ topic }}
@@ -50,14 +44,6 @@
               <span class="shrink-0">{{ time }}</span>
             </p>
           </router-link>
-          <template v-else>
-            <p class="mb-0 truncate text-sm/4.5 font-semibold">
-              {{ recording?.programme ?? STATIONS[player.tuned.value!] }}
-            </p>
-            <p class="mb-0 truncate text-label/4 text-ink">{{ topic }}</p>
-          </template>
-        </div>
-        <template v-if="compact">
           <button
             type="button"
             :class="[ROUND, 'size-11 flex-col text-label']"
@@ -76,45 +62,61 @@
             30
             <radio-icon name="forward" />
           </button>
+          <button type="button" :class="ICON" aria-label="Stop and close" @click="player.close()">
+            <radio-icon name="close" />
+          </button>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 flex h-0.75 gap-px" aria-hidden="true">
+          <div
+            v-for="part in parts"
+            :key="part.start"
+            class="min-w-0 basis-0 bg-hairline"
+            :style="{ flexGrow: part.end - part.start }"
+          >
+            <div class="h-full bg-brass" :style="{ width: `${played(part)}%` }" />
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div class="flex items-center">
+          <div
+            ref="handle"
+            class="min-w-0 grow md:cursor-grab md:touch-none md:select-none md:active:cursor-grabbing"
+          >
+            <p class="mb-0 truncate text-sm/4.5 font-semibold">
+              {{ recording?.programme ?? STATIONS[player.tuned.value!] }}
+            </p>
+            <p class="mb-0 truncate text-label/4 text-ink">{{ topic }}</p>
+          </div>
+          <router-link
+            v-if="recording"
+            :to="`/radio/${recording.name}`"
+            :class="ICON"
+            aria-label="Open the episode"
+          >
+            <radio-icon name="open" />
+          </router-link>
+          <radio-controls v-else class="ml-3" />
+          <button type="button" :class="ICON" aria-label="Stop and close" @click="player.close()">
+            <radio-icon name="close" />
+          </button>
+        </div>
+        <template v-if="recording">
+          <div class="mb-0.5 flex items-center gap-2 pr-2 text-label text-ink-soft tabular-nums">
+            <span>{{ position(player.seconds.value) }}</span>
+            <radio-scrubber
+              class="min-w-0 grow"
+              bare
+              :value="player.seconds.value"
+              :total="player.total.value"
+              :parts="parts"
+              label="Position in the recording"
+              @seek="player.seek"
+            />
+            <span>{{ position(player.total.value) }}</span>
+          </div>
+          <radio-controls class="pr-2" />
         </template>
-        <router-link
-          v-else-if="recording"
-          :to="`/radio/${recording.name}`"
-          :class="ICON"
-          aria-label="Open the episode"
-        >
-          <radio-icon name="open" />
-        </router-link>
-        <radio-controls v-else class="ml-3" />
-        <button type="button" :class="ICON" aria-label="Stop and close" @click="player.close()">
-          <radio-icon name="close" />
-        </button>
-      </div>
-      <div v-if="compact" class="absolute inset-x-0 bottom-0 flex h-0.75 gap-px" aria-hidden="true">
-        <div
-          v-for="part in parts"
-          :key="part.start"
-          class="min-w-0 basis-0 bg-hairline"
-          :style="{ flexGrow: part.end - part.start }"
-        >
-          <div class="h-full bg-brass" :style="{ width: `${played(part)}%` }" />
-        </div>
-      </div>
-      <template v-else-if="recording">
-        <div class="mb-0.5 flex items-center gap-2 pr-2 text-label text-ink-soft tabular-nums">
-          <span>{{ position(player.seconds.value) }}</span>
-          <radio-scrubber
-            class="min-w-0 grow"
-            bare
-            :value="player.seconds.value"
-            :total="player.total.value"
-            :parts="parts"
-            label="Position in the recording"
-            @seek="player.seek"
-          />
-          <span>{{ position(player.total.value) }}</span>
-        </div>
-        <radio-controls class="pr-2" />
       </template>
     </section>
   </template>
@@ -170,8 +172,7 @@ watch(digests, list => {
 
 const card = useTemplateRef('card')
 const handle = useTemplateRef('handle')
-const phone = useMediaQuery('(max-width: 767px)')
-const compact = computed(() => phone.value && Boolean(recording.value))
+const phone = useMediaQuery('(width < 768px)')
 const { width, height } = useWindowSize({ includeScrollbar: false })
 const size = useElementSize(card, undefined, { box: 'border-box' })
 const navbar = useElementSize(() => document.querySelector<HTMLElement>('.navbar'), undefined, {

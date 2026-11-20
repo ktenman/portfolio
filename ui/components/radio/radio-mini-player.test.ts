@@ -197,10 +197,26 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open()).text()).toContain('KeskpäevatundRahvusooperi tüli')
   })
 
+  it('should write the topic in ink on a desktop', async () => {
+    await play(recording(), 'raw', 1000)
+    const topic = card(await open())
+      .findAll('p')
+      .find(line => line.text() === 'Rahvusooperi tüli')
+    expect(topic?.classes()).toContain('text-ink')
+  })
+
   it('should show elapsed and total time around the scrubber on a desktop', async () => {
     await play(recording(), 'raw', 1000)
     const times = card(await open()).findAll('span')
     expect(times.map(time => time.text())).toEqual(expect.arrayContaining(['16:40', '1:10:00']))
+  })
+
+  it('should seek from the scrubber on a desktop', async () => {
+    await play(recording(), 'raw', 1000)
+    await card(await open())
+      .get('input')
+      .setValue(600)
+    expect(player.seconds.value).toBe(600)
   })
 
   it('should show the topic at the position above the programme and the time on a phone', async () => {
