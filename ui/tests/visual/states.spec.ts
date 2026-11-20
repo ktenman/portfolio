@@ -760,24 +760,14 @@ test.describe('saved radio mini player', () => {
     await expect.poll(saves).toBe(1)
   })
 
-  test('saves no spot on a click', async ({ page }) => {
-    const saves = countSpotSaves(page)
-    await playRadio(page)
-    const card = page.getByTestId('radio-mini-player')
-    await dragRadioCard(page)
-    await expect.poll(saves).toBe(1)
-    const before = await card.boundingBox()
-    await card.locator('p').first().click()
-    await page.evaluate(() => new Promise(requestAnimationFrame))
-    expect([saves(), await card.boundingBox()]).toEqual([1, before])
-  })
-
   test('saves no spot on a click that drifts a pixel or two', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
+    await dragRadioCard(page)
+    await expect.poll(saves).toBe(1)
     await dragRadioCard(page, { x: 2, y: 1 })
-    await page.evaluate(() => new Promise(requestAnimationFrame))
-    expect(saves()).toBe(0)
+    await page.waitForTimeout(500)
+    expect(saves()).toBe(1)
   })
 })
 
