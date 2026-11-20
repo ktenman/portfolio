@@ -44,6 +44,7 @@ class RadioEpisodeServiceTest {
   private fun written() =
     mockk<RadioRenderService> {
       every { render(any(), any(), any(), any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(4)) }
+      every { ident(any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(3)) }
     }
 
   private fun service(
@@ -53,7 +54,17 @@ class RadioEpisodeServiceTest {
     clock: Clock = Clock.systemUTC(),
     renderer: RadioRenderService = RadioRenderService(),
   ): RadioEpisodeService =
-    RadioEpisodeService(outlineService, RadioCutService(), renderer, progress, airings, programmes, properties, clock)
+    RadioEpisodeService(
+      outlineService,
+      RadioCutService(),
+      renderer,
+      RadioIdentService(renderer, properties, clock),
+      progress,
+      airings,
+      programmes,
+      properties,
+      clock,
+    )
 
   private fun outline(
     before: Double,
@@ -322,6 +333,17 @@ class RadioEpisodeServiceTest {
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
     service(properties = properties, renderer = written()).make(directory)
     expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
+  }
+
+  @Test
+  fun `should save the jingle that ends a break when it cuts the episode`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
+    transcribed(1.0, 5.0, 12.0, 31.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 31.0))))
+    val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
+    store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
+    service(properties = properties).make(directory)
+    expect(idents(properties.idents).map { it.file }).toEqual(listOf("kuku-keskpaevatund.m4a"))
   }
 
   private fun shared() {
