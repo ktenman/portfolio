@@ -13,12 +13,11 @@
         recording
           ? ['max-md:left-2.5 md:w-93', phone ? 'overflow-hidden pt-1.5 pl-1.5' : 'pt-0.5 pl-3.5']
           : 'w-max pt-1.5 pl-3.5',
-        { 'max-md:bottom-22': lifted, [SETTLE]: dropped },
+        { 'max-md:bottom-22': lifted },
       ]"
       :style="place"
       aria-label="Radio player"
       data-testid="radio-mini-player"
-      @transitionend.self="dropped = false"
     >
       <template v-if="phone && recording">
         <div class="flex items-center">
@@ -123,13 +122,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onScopeDispose, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { computed, onScopeDispose, useTemplateRef, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { clamp, useDraggable, useElementSize, useMediaQuery, useWindowSize } from '@vueuse/core'
 import { useRadioDecisions } from '../../composables/use-radio-decisions'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRadioDigests, useRailStations } from '../../composables/use-radio-recordings'
-import type { RadioSpot } from '../../models/generated/domain-models'
 import {
   episodeParts,
   fullDay,
@@ -151,9 +149,6 @@ const ON_AIR_PAGES = ['Radio', 'RadioShows']
 const EDGE = 24
 
 const SLOP = 4
-
-const SETTLE =
-  'md:transition-[left,top] md:duration-500 md:ease-(--ease-spring) motion-reduce:transition-none'
 
 const ICON =
   'inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'
@@ -190,10 +185,7 @@ const room = computed(() => ({
 
 const share = (at: number, free: number) => (free ? clamp(at / free, 0, 1) : 0)
 
-const corner = ({ x, y }: RadioSpot): RadioSpot => ({ x: Math.round(x), y: Math.round(y) })
-
-const moving = ref(false)
-const dropped = ref(false)
+let moving = false
 let origin = { x: 0, y: 0 }
 
 useDraggable(card, {
@@ -201,26 +193,21 @@ useDraggable(card, {
   disabled: phone,
   onStart: (_, { clientX, clientY }) => {
     origin = { x: clientX, y: clientY }
-    dropped.value = false
   },
   onMove: ({ x, y }, { clientX, clientY }) => {
-    if (!moving.value && Math.hypot(clientX - origin.x, clientY - origin.y) < SLOP) return
-    moving.value = true
+    if (!moving && Math.hypot(clientX - origin.x, clientY - origin.y) < SLOP) return
+    moving = true
     spot.value = { x: share(x - EDGE, room.value.x), y: share(y - top.value, room.value.y) }
   },
   onEnd: () => {
-    if (moving.value && spot.value) {
-      spot.value = corner(spot.value)
-      player.pin(spot.value)
-      dropped.value = true
-    }
-    moving.value = false
+    if (moving && spot.value) player.pin(spot.value)
+    moving = false
   },
 })
 
 const place = computed(() => {
   if (phone.value || !spot.value) return undefined
-  const { x, y } = moving.value ? spot.value : corner(spot.value)
+  const { x, y } = spot.value
   return {
     left: `${EDGE + x * room.value.x}px`,
     top: `${top.value + y * room.value.y}px`,
