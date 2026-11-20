@@ -30,10 +30,12 @@ private data class Call(
 
 private val saturday = Capture("2026-10-24-keskpaevatund", listOf("Keskpäevatund"), 1792832100, 1792836300)
 private val nextSaturday = Capture("2026-10-31-keskpaevatund", listOf("Keskpäevatund"), 1793440500, 1793444700)
+private val hommik = Capture("2026-10-24-r2-hommik", listOf("R2 Hommik!"), 1792834500, 1792843500)
 
 private fun follow(
   tmp: Path,
   week: Week,
+  schedule: Schedule = Schedule(),
   sleep: (Double) -> Boolean = week::sleep,
 ): Pair<Int, List<Call>> {
   val calls = mutableListOf<Call>()
@@ -46,6 +48,7 @@ private fun follow(
       },
       week::clock,
       sleep,
+      schedule,
     )
   return Pair(code, calls)
 }
@@ -112,6 +115,24 @@ class ScheduleTest {
     write(tmp.resolve("plan.json"), listOf(saturday))
     val call = follow(tmp, Week(1792836000.0, 1793444700.0)).second.single()
     expect(Pair(call.started, call.seconds)).toEqual(Pair(1792832400.0, 3900.0))
+  }
+
+  @Test
+  fun `records a Raadio 2 capture begun 6000 s ago from its start`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan-raadio2.json"), listOf(hommik))
+    val week = Week(hommik.start + 6000.0, hommik.end.toDouble())
+    expect(follow(tmp, week, SCHEDULES.getValue("RAADIO2")).second.single().started).toEqual(hommik.start.toDouble())
+  }
+
+  @Test
+  fun `records a Raadio 2 capture begun 8000 s ago from 7080 s before now`(
+    @TempDir tmp: Path,
+  ) {
+    write(tmp.resolve("plan-raadio2.json"), listOf(hommik))
+    val week = Week(hommik.start + 8000.0, hommik.end.toDouble())
+    expect(follow(tmp, week, SCHEDULES.getValue("RAADIO2")).second.single().started).toEqual(hommik.start + 920.0)
   }
 
   @Test

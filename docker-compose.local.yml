@@ -117,7 +117,7 @@ services:
       - CLOUDFLARE_BYPASS_PROXY_URL=http://cloudflare-bypass-proxy:3000
       - TRADING212_ENABLED=true
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - RADIO_STATIONS=${RADIO_STATIONS:-KUKU,ARIPAEV,ELMAR,SKYPLUS}
+      - RADIO_STATIONS=${RADIO_STATIONS:-KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2}
     volumes:
       - radio_recordings:/recordings
       - ./trades:/app/trades:ro
@@ -227,6 +227,12 @@ services:
     container_name: portfolio-radio-worker-skyplus
     profiles: [radio, radio-skyplus]
     command: ["planned", "--station", "SKYPLUS", "--source", "/recordings/.skyplus/stream.m3u8"]
+
+  radio-worker-raadio2:
+    <<: *radio-worker
+    container_name: portfolio-radio-worker-raadio2
+    profiles: [radio, radio-raadio2]
+    command: ["planned", "--station", "RAADIO2", "--source", "https://live.err.ee/live/raadio2-audio_130257_est=130000.m3u8"]
 
   app:
     image: caddy:2.8.4-alpine

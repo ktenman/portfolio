@@ -88,6 +88,7 @@ class RadioMetricsService(
         Station.ARIPAEV to "AripaevScheduleJob",
         Station.ELMAR to "ElmarScheduleJob",
         Station.SKYPLUS to "SkyplusScheduleJob",
+        Station.RAADIO2 to "Raadio2ScheduleJob",
       )
   }
 }

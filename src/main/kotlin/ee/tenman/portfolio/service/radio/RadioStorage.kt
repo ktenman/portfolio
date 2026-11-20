@@ -8,7 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 const val UPLOAD = "upload.json"
-val AUDIO = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.mp3")
+val AUDIO = Regex("episode\\.m4a|raw(-part-\\d{3})?\\.(mp3|aac|m4a)")
 
 data class StoredFile(
   val size: Long,

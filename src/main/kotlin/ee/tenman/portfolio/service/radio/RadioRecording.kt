@@ -34,6 +34,7 @@ data class RadioProperties(
   val aripaevLive: String = "https://www.aripaev.ee/raadio/stream.mp3",
   val elmarLive: String = "https://router.euddn.net/8103046e16b71d15d692b57c187875c7/elmar.mp3",
   val skyplusLive: String = "https://stream.skymedia.ee/live/SKYPLUS",
+  val raadio2Live: String = "https://icecast.err.ee/raadio2.mp3",
   val bucket: String = "radio",
   val localDays: Long = 7,
   val dropRaw: Boolean = true,

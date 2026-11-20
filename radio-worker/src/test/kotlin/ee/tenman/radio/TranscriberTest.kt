@@ -71,6 +71,17 @@ class TranscriberTest {
   }
 
   @Test
+  fun `resumes a part kept as m4a after the last chunk heard from its aac`(
+    @TempDir tmp: Path,
+  ) {
+    writeRecording(tmp, listOf(Written("raw.m4a", 0.0, noise(13.0), true)), RecordingState.CAPTURED)
+    append(tmp.resolve("transcript.jsonl"), Chunk("raw.aac", 0.0, 5.0, false, emptyList()))
+    val stub = StubEars(60.0)
+    transcribed(tmp, stub)
+    expect(stub.heard).toEqual(listOf(8.0))
+  }
+
+  @Test
   fun `resumes after the last finished chunk`(
     @TempDir tmp: Path,
   ) {

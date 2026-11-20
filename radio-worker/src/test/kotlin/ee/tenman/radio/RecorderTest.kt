@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlin.math.abs
+import kotlin.math.round
 
 class RecorderTest {
   @Test
@@ -153,6 +154,99 @@ class RecorderTest {
   }
 
   @Test
+  fun `keeps a finished AAC part as m4a without its ADTS copy`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = aacRecorded(tmp)
+    val status = status(directory)
+    expect(Triple(status.state, status.parts.map { it.file }, Files.exists(directory.resolve("raw.aac"))))
+      .toEqual(Triple(RecordingState.CAPTURED, listOf("raw.m4a"), false))
+  }
+
+  @Test
+  fun `measures an AAC part as long as its pcm`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = aacRecorded(tmp)
+    expect(status(directory).parts.single().durationSeconds!!).toEqualWithErrorTolerance(seconds(directory.resolve("raw.pcm")), 0.05)
+  }
+
+  @Test
+  fun `probes an AAC part as aac`(
+    @TempDir tmp: Path,
+  ) {
+    expect(read<Probe>(aacRecorded(tmp).resolve("raw.probe.json")).streams.first().codec).toEqual("aac")
+  }
+
+  @Test
+  fun `resumes a stopped AAC capture into two m4a parts with nothing lost`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    replay(tmp, 60.0, format = "aac").use { station ->
+      prepare(directory, station.url, 30.0, station = "RAADIO2")
+      val first = CountDownLatch(1)
+      val recorder = thread { record(directory, first) }
+      waitFor { caughtUp(directory, tmp.resolve("hls/stream.m3u8")) }
+      first.countDown()
+      recorder.join(30_000)
+      Files.setLastModifiedTime(directory.resolve("raw.m4a"), FileTime.from(Instant.now().minusSeconds(600)))
+      record(directory, CountDownLatch(1))
+    }
+    val status = status(directory)
+    expect(Triple(status.state, status.lostSeconds, status.parts.map { it.file }))
+      .toEqual(Triple(RecordingState.CAPTURED, 0L, listOf("raw.m4a", "raw-part-002.m4a")))
+  }
+
+  @Test
+  fun `finishes an AAC part already copied to m4a without copying it again`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = stopped(tmp, Part("raw.aac", 1.4, 0.0))
+    tone(directory.resolve("raw.m4a"), 3.0)
+    Files.createFile(directory.resolve("raw.aac"))
+    record(directory, CountDownLatch(1))
+    val status = status(directory)
+    expect(Triple(status.state, status.parts.map { it.file }, Files.exists(directory.resolve("raw.aac"))))
+      .toEqual(Triple(RecordingState.CAPTURED, listOf("raw.m4a"), false))
+  }
+
+  @Test
+  fun `redoes the m4a copy that a stop left unfinished`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = stopped(tmp, Part("raw.aac", 1.4, 0.0))
+    tone(directory.resolve("raw.aac"), 3.0)
+    Files.writeString(directory.resolve("raw.m4a.tmp"), "torn")
+    record(directory, CountDownLatch(1))
+    expect(Pair(round(status(directory).parts.single().durationSeconds!!), Files.exists(directory.resolve("raw.m4a.tmp"))))
+      .toEqual(Pair(3.0, false))
+  }
+
+  @Test
+  fun `deletes the ADTS copy left beside a stored m4a part`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = stopped(tmp, Part("raw.m4a", 1.4, 0.0, 3.0, "0".repeat(64), 0))
+    tone(directory.resolve("raw.m4a"), 3.0)
+    tone(directory.resolve("raw.aac"), 3.0)
+    record(directory, CountDownLatch(1))
+    expect(Pair(status(directory).parts.map { it.file }, Files.exists(directory.resolve("raw.aac"))))
+      .toEqual(Pair(listOf("raw.m4a"), false))
+  }
+
+  @Test
+  fun `keeps an empty AAC part a kill left behind at no length`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = stopped(tmp, Part("raw.aac", 1.4, 0.0))
+    Files.createFile(directory.resolve("raw.aac"))
+    record(directory, CountDownLatch(1))
+    val status = status(directory)
+    expect(Pair(status.state, status.parts.single().durationSeconds)).toEqual(Pair(RecordingState.CAPTURED, 0.0))
+  }
+
+  @Test
   fun `starts a part after the window ended when a stop left audio missing`(
     @TempDir tmp: Path,
   ) {
@@ -233,7 +327,12 @@ class RecorderTest {
 
   @Test
   fun `reaches back over the seconds the worker was away`() {
-    expect(listOf(0.4, 19.0, 86400.0).map { reach(KUKU, it) }).toEqual(listOf(0, 3, 600))
+    expect(listOf(0.4, 19.0, 86400.0).map { reach(KUKU, it, Schedule()) }).toEqual(listOf(0, 3, 600))
+  }
+
+  @Test
+  fun `reaches back over the short segments of Raadio 2 for at most 7080 s`() {
+    expect(listOf(1800.0, 86400.0).map { reach(KUKU, it, SCHEDULES.getValue("RAADIO2")) }).toEqual(listOf(938, 3687))
   }
 
   @Test
@@ -247,25 +346,42 @@ class RecorderTest {
   }
 
   @Test
+  fun `counts the time away of Raadio 2 in its short segments`(
+    @TempDir tmp: Path,
+  ) {
+    Files.createFile(tmp.resolve("raw.aac"))
+    val started = now() - 600
+    val parts = listOf(Part("raw.aac", 1.4, 0.0, 60.0))
+    val status = Status(RecordingState.RECORDING, KUKU, started, started + 1200, 1200.0, parts, station = "RAADIO2")
+    expect(away(tmp, status)).toEqualWithErrorTolerance(545.76, 1.0)
+  }
+
+  @Test
   fun `reaches back only in a live playlist`() {
-    expect(reach("/recordings/keskpäevatund.mp3", 19.0)).toEqual(0)
+    expect(reach("/recordings/keskpäevatund.mp3", 19.0, Schedule())).toEqual(0)
   }
 
   @Test
   fun `asks ffmpeg for the missed segments and one more`() {
-    expect(command(KUKU, 30.0, 4, Path.of("raw-part-002")).joinToString(" "))
+    expect(command(KUKU, 30.0, 4, Path.of("raw-part-002"), Schedule()).joinToString(" "))
       .toContain("-rw_timeout 15000000 -m3u8_hold_counters 10 -live_start_index -7 -t 60.000 -i $KUKU")
   }
 
   @Test
+  fun `asks ffmpeg for the missed short segments of Raadio 2 and one more`() {
+    expect(command(KUKU, 30.0, 4, Path.of("raw-part-002"), SCHEDULES.getValue("RAADIO2")).joinToString(" "))
+      .toContain("-live_start_index -7 -t 39.600 -i $KUKU")
+  }
+
+  @Test
   fun `starts a new part at the live edge`() {
-    expect(command(KUKU, 30.0, 0, Path.of("raw")).joinToString(" "))
+    expect(command(KUKU, 30.0, 0, Path.of("raw"), Schedule()).joinToString(" "))
       .toContain("-rw_timeout 15000000 -m3u8_hold_counters 10 -t 30.000 -i $KUKU")
   }
 
   @Test
   fun `leaves the hold counters out of an MP3 input`() {
-    expect(command("/recordings/in.mp3", 30.0, 0, Path.of("raw")).joinToString(" ")).notToContain("m3u8_hold_counters")
+    expect(command("/recordings/in.mp3", 30.0, 0, Path.of("raw"), Schedule()).joinToString(" ")).notToContain("m3u8_hold_counters")
   }
 
   @Test
@@ -274,7 +390,7 @@ class RecorderTest {
   ) {
     val source = "${stale(tmp.resolve("stream.m3u8"))}"
     val ffmpeg =
-      ProcessBuilder(command(source, 600.0, 0, tmp.resolve("raw")))
+      ProcessBuilder(command(source, 600.0, 0, tmp.resolve("raw"), Schedule()))
         .redirectError(Redirect.DISCARD)
         .start()
     val code =
@@ -288,7 +404,7 @@ class RecorderTest {
 
   @Test
   fun `runs ffmpeg from an absolute path`() {
-    expect(Path.of(command(KUKU, 30.0, 0, Path.of("raw")).first()).isAbsolute).toEqual(true)
+    expect(Path.of(command(KUKU, 30.0, 0, Path.of("raw"), Schedule()).first()).isAbsolute).toEqual(true)
   }
 
   @Test
@@ -444,6 +560,20 @@ class RecorderTest {
       .toEqual(Pair(true, round3(status.endsAt - status.startedAt)))
   }
 
+  @Test
+  fun `moves the start of a Raadio 2 recording with no parts to 7080 s before it is recorded`(
+    @TempDir tmp: Path,
+  ) {
+    val directory = tmp.resolve("raadio")
+    val port = ServerSocket(0).use { it.localPort }
+    prepare(directory, "http://127.0.0.1:$port/stream.m3u8", 7200.0, started = now() - 7300, station = "RAADIO2")
+    val recorded = now()
+    record(directory, CountDownLatch(1))
+    val status = status(directory)
+    expect(Pair(abs(status.startedAt + 7_080.0 - recorded) <= 1.0, status.seconds))
+      .toEqual(Pair(true, round3(status.endsAt - status.startedAt)))
+  }
+
   private fun recorded(tmp: Path): Path =
     replay(tmp).use { station ->
       tmp.resolve("keskpäevatund").also {
@@ -451,6 +581,25 @@ class RecorderTest {
         record(it, CountDownLatch(1))
       }
     }
+
+  private fun aacRecorded(tmp: Path): Path =
+    replay(tmp, format = "aac").use { station ->
+      tmp.resolve("r2-äratus").also {
+        prepare(it, station.url, 12.0, station = "RAADIO2")
+        record(it, CountDownLatch(1))
+      }
+    }
+
+  private fun stopped(
+    tmp: Path,
+    part: Part,
+  ): Path {
+    val directory = tmp.resolve("raadio")
+    prepare(directory, KUKU, 0.0, station = "RAADIO2")
+    Files.writeString(directory.resolve("raw.log"), "  Duration: N/A, start: 1.400000, bitrate: N/A\n")
+    write(directory.resolve("status.json"), status(directory).copy(parts = listOf(part)))
+    return directory
+  }
 
   private fun adopted(tmp: Path): Path {
     val directory = tmp.resolve("raadio")

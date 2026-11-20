@@ -20,7 +20,11 @@
       label="Search what was said"
       :maxlength="100"
     />
-    <div class="flex gap-1.5" role="group" aria-label="Station">
+    <div
+      class="flex gap-1.5 md-down:-mx-6 md-down:-my-2 md-down:overflow-x-auto md-down:px-6 md-down:py-2 md-down:[scrollbar-width:none]"
+      role="group"
+      aria-label="Station"
+    >
       <button
         v-for="chip in chips"
         :key="chip ?? 'all'"

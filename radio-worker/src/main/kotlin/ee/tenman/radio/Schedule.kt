@@ -13,6 +13,9 @@ private const val CHECK_SECONDS = 60.0
 data class Schedule(
   val plan: String = "plan.json",
   val heartbeat: String = "heartbeat.json",
+  val segment: Double = 6.0,
+  val lookback: Double = LOOKBACK,
+  val audio: String = "mp3",
 )
 
 val SCHEDULES =
@@ -20,6 +23,7 @@ val SCHEDULES =
     "ARIPAEV" to Schedule("plan-aripaev.json", "heartbeat-aripaev.json"),
     "ELMAR" to Schedule("plan-elmar.json", "heartbeat-elmar.json"),
     "SKYPLUS" to Schedule("plan-skyplus.json", "heartbeat-skyplus.json"),
+    "RAADIO2" to Schedule("plan-raadio2.json", "heartbeat-raadio2.json", segment = 1.92, lookback = 7_080.0, audio = "aac"),
   )
 
 fun planned(
@@ -31,7 +35,7 @@ fun planned(
 ): Int {
   val (capture, now) = await(recordings, schedule, clock, sleep, null) ?: return 130
   val directory = recordings.resolve(capture.name)
-  val begin = max(capture.start.toDouble(), now - LOOKBACK)
+  val begin = max(capture.start.toDouble(), now - schedule.lookback)
   write(recordings.resolve(schedule.heartbeat), Heartbeat(now, capture.end.toDouble()))
   println("Recording $directory")
   runCatching { record(directory, begin, capture.end - begin, capture.programmes, capture.slot) }
@@ -49,7 +53,7 @@ private tailrec fun await(
   announced: Capture?,
 ): Pair<Capture, Double>? {
   val now = clock()
-  val capture = upcoming(recordings, recordings.resolve(schedule.plan), now)
+  val capture = upcoming(recordings, recordings.resolve(schedule.plan), now, schedule.lookback)
   if (capture != null && capture != announced) {
     println("Next recording ${capture.name} from ${shown(capture.start)} until ${shown(capture.end)}")
   }
@@ -63,9 +67,10 @@ private fun upcoming(
   recordings: Path,
   plan: Path,
   now: Double,
+  lookback: Double,
 ): Capture? =
   plan(plan)
-    .filter { it.end > now || it.end > now - LOOKBACK && unfinished(recordings.resolve(it.name)) }
+    .filter { it.end > now || it.end > now - lookback && unfinished(recordings.resolve(it.name)) }
     .minByOrNull { it.start }
 
 private fun plan(path: Path): List<Capture> =

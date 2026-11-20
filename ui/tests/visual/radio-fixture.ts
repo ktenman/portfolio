@@ -427,7 +427,7 @@ export const stubRadioOneStationIdle: RouteStub = async page => {
   )
 }
 
-export const stubRadioFourStations: RouteStub = async page => {
+export const stubRadioStations: RouteStub = async page => {
   await stubRadio(page)
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/station`), route =>
     route.fulfill({
@@ -436,6 +436,7 @@ export const stubRadioFourStations: RouteStub = async page => {
         ARIPAEV,
         { ...IDLE_ARIPAEV, station: Station.ELMAR },
         { ...IDLE_ARIPAEV, station: Station.SKYPLUS },
+        { ...IDLE_ARIPAEV, station: Station.RAADIO2 },
       ],
     })
   )

@@ -34,6 +34,8 @@ aripaev:
   url: http://localhost:${wiremock.server.port}
 skyplus:
   url: http://localhost:${wiremock.server.port}
+err:
+  url: http://localhost:${wiremock.server.port}
 
 poff:
   url: http://localhost:${wiremock.server.port}

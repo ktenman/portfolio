@@ -67,7 +67,7 @@ private class Session(
   ): Boolean {
     if (index == parts.size) return false
     val part = parts[index]
-    val last = chunks.lastOrNull { it.part == part.file }
+    val last = chunks.lastOrNull { stem(it.part) == stem(part.file) }
     if (last?.final == true) return next()
     val finished = over || part.durationSeconds != null
     val current = hearing ?: Hearing(part, last?.to ?: overlap(directory, parts, index)).also { hearing = it }

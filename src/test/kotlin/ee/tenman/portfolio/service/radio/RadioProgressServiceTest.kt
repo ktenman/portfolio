@@ -164,6 +164,14 @@ class RadioProgressServiceTest {
   }
 
   @Test
+  fun `should count the transcript a part made before it was kept as m4a`() {
+    val status =
+      chunks("""{"part": "raw.aac", "from": 0.0, "to": 299.18, "final": false, "segments": []}""")
+        .copy(parts = listOf(RecordingPart("raw.m4a", 0.0)))
+    expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000)).writtenSeconds).toEqual(299.18)
+  }
+
+  @Test
   fun `should wait the whole recording when no transcript is written yet`() {
     val status = chunks().also { Files.delete(directory.resolve("transcript.jsonl")) }
     expect(transcriptProgress(directory, status, Instant.ofEpochSecond(2000))).toEqual(TranscriptProgress(0.0, 4200.0, 0, 4200))

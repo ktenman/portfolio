@@ -357,6 +357,13 @@ class MainTest {
   }
 
   @Test
+  fun `planned for Raadio 2 follows the plan and heartbeat of Raadio 2`(
+    @TempDir tmp: Path,
+  ) {
+    expect(stationFiles(tmp, "RAADIO2", "plan-raadio2.json")).toEqual(listOf("heartbeat-raadio2.json", "plan-raadio2.json", "saade"))
+  }
+
+  @Test
   fun `planned without a station records Kuku into its own plan and heartbeat`(
     @TempDir tmp: Path,
   ) {

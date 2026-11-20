@@ -196,6 +196,21 @@ class RadioArchiveServiceTest {
   }
 
   @Test
+  fun `should read the format of a part kept as m4a from its probe`() {
+    val directory = recording("2026-10-17")
+    val status = RecordingStatus(RecordingState.CAPTURED, 1792230900.0, 4200.0, listOf(RecordingPart("raw.m4a", 0.0)))
+    Files.writeString(directory.resolve(STATUS_FILE), JsonMapperFactory.instance.writeValueAsString(status))
+    Files.writeString(directory.resolve("raw.probe.json"), """{"streams":[{"codec_name":"aac","bit_rate":"130000","channels":2}]}""")
+    expect(service.recordings().single().format).toEqual(AudioFormat("aac", 130_000))
+  }
+
+  @Test
+  fun `should take raw parts in mp3, aac and m4a as audio but no unfinished copy`() {
+    expect(listOf("raw.mp3", "raw.aac", "raw.m4a", "raw-part-002.m4a", "raw.m4a.tmp").map(AUDIO::matches))
+      .toEqual(listOf(true, true, true, true, false))
+  }
+
+  @Test
   fun `should count a drop of the stream for each part after the first`() {
     val directory = recording("2026-10-17")
     val parts = listOf(RecordingPart("raw.mp3", 0.0), RecordingPart("raw-part-002.mp3", 9.5), RecordingPart("raw-part-003.mp3", 19.0))

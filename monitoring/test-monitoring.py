@@ -635,7 +635,7 @@ def check_host_gates():
         assert logs == sorted(f'{service}.log' for service in services), logs
         step = workflow_step(deploy, 'Deploy with Docker Compose')
         for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
-            command = f'{environment}export HEARTBEAT="{heartbeat}" RADIO_STATIONS=KUKU,ARIPAEV,ELMAR,SKYPLUS\n{step}'
+            command = f'{environment}export HEARTBEAT="{heartbeat}" RADIO_STATIONS=KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2\n{step}'
             assert run('bash', '-eo', 'pipefail', '-c', command, check=False).returncode == code, heartbeat
         log = Path(directory) / 'docker.log'
 
@@ -651,12 +651,12 @@ def check_host_gates():
         for stations in ('KUKU,ELMR', 'KUKU, SKYPLUS', ','):
             result, stopped, _ = radio('true', stations)
             assert result.returncode != 0 and stations in result.stdout and not log.exists(), (stations, result, stopped)
-        _, stopped, profiles = radio('true', 'KUKU,ARIPAEV,SKYPLUS')
+        _, stopped, profiles = radio('true', 'KUKU,ARIPAEV,SKYPLUS,RAADIO2')
         assert stopped == [['radio-bridge-elmar', 'radio-worker-elmar']], stopped
-        assert profiles == {'radio-kuku,radio-aripaev,radio-skyplus'}, profiles
+        assert profiles == {'radio-kuku,radio-aripaev,radio-skyplus,radio-raadio2'}, profiles
         _, stopped, _ = radio('false', 'KUKU,ARIPAEV,ELMAR,SKYPLUS')
         assert len(stopped) == 1 and sorted(stopped[0]) == sorted(['radio-worker', 'radio-bridge', 'radio-worker-aripaev',
-            'radio-bridge-elmar', 'radio-worker-elmar', 'radio-bridge-skyplus', 'radio-worker-skyplus']), stopped
+            'radio-bridge-elmar', 'radio-worker-elmar', 'radio-bridge-skyplus', 'radio-worker-skyplus', 'radio-worker-raadio2']), stopped
     cleanup = (root / 'scripts/docker-cleanup.py').read_text()
     compile(cleanup, 'docker-cleanup.py', 'exec')
     assert 'container prune -f --filter until=1h' in cleanup

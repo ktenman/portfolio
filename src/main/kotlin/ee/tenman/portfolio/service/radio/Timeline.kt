@@ -74,10 +74,12 @@ class Timeline(
 
 fun sample(seconds: Double): Long = round(seconds * RATE).toLong()
 
+fun stem(file: String): String = file.substringBeforeLast('.')
+
 fun pcmOf(
   directory: Path,
   file: String,
-): Path = directory.resolve(file.substringBeforeLast(".") + ".pcm")
+): Path = directory.resolve("${stem(file)}.pcm")
 
 private fun seconds(
   pcm: Path,
