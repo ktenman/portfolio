@@ -8,9 +8,11 @@
     />
     <section
       ref="card"
-      class="fixed right-2.5 bottom-2.5 z-(--z-player) overflow-hidden rounded-xl border border-hairline bg-surface py-1.5 pr-1.5 shadow-overlay md:right-6 md:bottom-6"
+      class="fixed right-2.5 bottom-2.5 z-(--z-player) rounded-xl border border-hairline bg-surface pr-1.5 pb-1.5 shadow-overlay md:right-6 md:bottom-6"
       :class="[
-        recording ? 'pl-1.5 max-md:left-2.5 md:w-93' : 'w-max pl-3.5',
+        recording ? 'max-md:left-2.5 md:w-93' : 'w-max',
+        compact ? 'overflow-hidden pl-1.5' : 'pl-3.5',
+        recording && !compact ? 'pt-0.5' : 'pt-1.5',
         { 'max-md:bottom-22': lifted, [SETTLE]: dropped },
       ]"
       :style="place"
@@ -20,7 +22,7 @@
     >
       <div class="flex items-center">
         <button
-          v-if="recording"
+          v-if="compact"
           type="button"
           data-testid="radio-play"
           :class="[LOADED, 'size-11 [&>svg]:size-5']"
@@ -33,10 +35,9 @@
         <div
           ref="handle"
           class="min-w-0 grow md:cursor-grab md:touch-none md:select-none md:active:cursor-grabbing"
-          @click.capture="hold"
         >
           <router-link
-            v-if="recording"
+            v-if="compact && recording"
             :to="`/radio/${recording.name}`"
             draggable="false"
             class="group block rounded-control px-2 text-ink no-underline focus-visible:outline-2 focus-visible:outline-brass-deep"
@@ -51,12 +52,12 @@
           </router-link>
           <template v-else>
             <p class="mb-0 truncate text-sm/4.5 font-semibold">
-              {{ STATIONS[player.tuned.value!] }}
+              {{ recording?.programme ?? STATIONS[player.tuned.value!] }}
             </p>
             <p class="mb-0 truncate text-label/4 text-ink">{{ topic }}</p>
           </template>
         </div>
-        <template v-if="recording">
+        <template v-if="compact">
           <button
             type="button"
             :class="[ROUND, 'size-11 flex-col text-label']"
@@ -76,16 +77,20 @@
             <radio-icon name="forward" />
           </button>
         </template>
+        <router-link
+          v-else-if="recording"
+          :to="`/radio/${recording.name}`"
+          :class="ICON"
+          aria-label="Open the episode"
+        >
+          <radio-icon name="open" />
+        </router-link>
         <radio-controls v-else class="ml-3" />
         <button type="button" :class="ICON" aria-label="Stop and close" @click="player.close()">
           <radio-icon name="close" />
         </button>
       </div>
-      <div
-        v-if="recording"
-        class="absolute inset-x-0 bottom-0 flex h-0.75 gap-px"
-        aria-hidden="true"
-      >
+      <div v-if="compact" class="absolute inset-x-0 bottom-0 flex h-0.75 gap-px" aria-hidden="true">
         <div
           v-for="part in parts"
           :key="part.start"
@@ -95,6 +100,22 @@
           <div class="h-full bg-brass" :style="{ width: `${played(part)}%` }" />
         </div>
       </div>
+      <template v-else-if="recording">
+        <div class="mb-0.5 flex items-center gap-2 pr-2 text-label text-ink-soft tabular-nums">
+          <span>{{ position(player.seconds.value) }}</span>
+          <radio-scrubber
+            class="min-w-0 grow"
+            bare
+            :value="player.seconds.value"
+            :total="player.total.value"
+            :parts="parts"
+            label="Position in the recording"
+            @seek="player.seek"
+          />
+          <span>{{ position(player.total.value) }}</span>
+        </div>
+        <radio-controls class="pr-2" />
+      </template>
     </section>
   </template>
 </template>
@@ -121,6 +142,7 @@ import {
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioRing from './radio-ring.vue'
+import RadioScrubber from './radio-scrubber.vue'
 
 const ON_AIR_PAGES = ['Radio', 'RadioShows']
 
@@ -149,6 +171,7 @@ watch(digests, list => {
 const card = useTemplateRef('card')
 const handle = useTemplateRef('handle')
 const phone = useMediaQuery('(max-width: 767px)')
+const compact = computed(() => phone.value && Boolean(recording.value))
 const { width, height } = useWindowSize({ includeScrollbar: false })
 const size = useElementSize(card, undefined, { box: 'border-box' })
 const navbar = useElementSize(() => document.querySelector<HTMLElement>('.navbar'), undefined, {
@@ -171,7 +194,6 @@ const corner = ({ x, y }: RadioSpot): RadioSpot => ({ x: Math.round(x), y: Math.
 const moving = ref(false)
 const dropped = ref(false)
 let origin = { x: 0, y: 0 }
-let held = false
 
 useDraggable(card, {
   handle,
@@ -190,16 +212,10 @@ useDraggable(card, {
       spot.value = corner(spot.value)
       player.pin(spot.value)
       dropped.value = true
-      held = true
-      setTimeout(() => (held = false))
     }
     moving.value = false
   },
 })
-
-const hold = (event: MouseEvent) => {
-  if (held) event.preventDefault()
-}
 
 const place = computed(() => {
   if (phone.value || !spot.value) return undefined

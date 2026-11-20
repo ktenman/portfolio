@@ -760,29 +760,24 @@ test.describe('saved radio mini player', () => {
     await expect.poll(saves).toBe(1)
   })
 
-  test('opens the episode from its title without saving a spot', async ({ page }) => {
+  test('saves no spot on a click', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
-    await page.getByTestId('radio-mini-player').locator('p').first().click()
-    await expect(page.getByTestId('radio-player')).toBeVisible()
-    expect(saves()).toBe(0)
+    const card = page.getByTestId('radio-mini-player')
+    await dragRadioCard(page)
+    await expect.poll(saves).toBe(1)
+    const before = await card.boundingBox()
+    await card.locator('p').first().click()
+    await page.evaluate(() => new Promise(requestAnimationFrame))
+    expect([saves(), await card.boundingBox()]).toEqual([1, before])
   })
 
-  test('opens the episode from a click that drifts a pixel or two', async ({ page }) => {
+  test('saves no spot on a click that drifts a pixel or two', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
     await dragRadioCard(page, { x: 2, y: 1 })
-    await expect(page.getByTestId('radio-player')).toBeVisible()
+    await page.evaluate(() => new Promise(requestAnimationFrame))
     expect(saves()).toBe(0)
-  })
-
-  test('stays on its page after a drag that ends on its title', async ({ page }) => {
-    const saves = countSpotSaves(page)
-    await playRadio(page)
-    await dragRadioCard(page)
-    await expect.poll(saves).toBe(1)
-    await page.waitForLoadState('networkidle')
-    expect(new URL(page.url()).pathname).toBe('/')
   })
 })
 

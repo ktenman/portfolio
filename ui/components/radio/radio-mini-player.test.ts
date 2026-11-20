@@ -92,6 +92,14 @@ describe('RadioMiniPlayer', () => {
     return wrapper
   }
 
+  const onPhone = () =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+
   const card = (wrapper: VueWrapper) => wrapper.find('[data-testid="radio-mini-player"]')
 
   const play = async (item: RecordingSummary = recording(), version: Version = 'raw', at = 0) => {
@@ -184,14 +192,27 @@ describe('RadioMiniPlayer', () => {
     expect([session.metadata, handlers.play]).toEqual([null, null])
   })
 
-  it('should show the topic at the position above the programme and the time', async () => {
+  it('should show the programme above the topic at the position on a desktop', async () => {
+    await play(recording(), 'raw', 1000)
+    expect(card(await open()).text()).toContain('KeskpäevatundRahvusooperi tüli')
+  })
+
+  it('should show elapsed and total time around the scrubber on a desktop', async () => {
+    await play(recording(), 'raw', 1000)
+    const times = card(await open()).findAll('span')
+    expect(times.map(time => time.text())).toEqual(expect.arrayContaining(['16:40', '1:10:00']))
+  })
+
+  it('should show the topic at the position above the programme and the time on a phone', async () => {
+    onPhone()
     await play(recording(), 'raw', 1000)
     expect(card(await open()).text()).toContain(
       'Rahvusooperi tüliKeskpäevatund\u00a0· 16:40 / 1:10:00'
     )
   })
 
-  it('should cut a long programme name short before the time', async () => {
+  it('should cut a long programme name short before the time on a phone', async () => {
+    onPhone()
     await play(recording(), 'raw', 1000)
     const time = card(await open())
       .findAll('span')
@@ -310,7 +331,14 @@ describe('RadioMiniPlayer', () => {
     expect(card(await open('/radio', null)).exists()).toBe(true)
   })
 
-  it('should link its title to the episode', async () => {
+  it('should link to the episode on a desktop', async () => {
+    await play()
+    const link = card(await open()).find('[aria-label="Open the episode"]')
+    expect(link.attributes('href')).toBe('/radio/2026-10-17')
+  })
+
+  it('should link its title to the episode on a phone', async () => {
+    onPhone()
     await play()
     expect(
       card(await open())
@@ -319,7 +347,8 @@ describe('RadioMiniPlayer', () => {
     ).toBe('/radio/2026-10-17')
   })
 
-  it('should leave speed and mute to the episode page', async () => {
+  it('should leave speed and mute to the episode page on a phone', async () => {
+    onPhone()
     await play()
     const wrapper = card(await open())
     expect([
@@ -328,7 +357,8 @@ describe('RadioMiniPlayer', () => {
     ]).toEqual([false, false])
   })
 
-  it('should ring its play button as the cards do', async () => {
+  it('should ring its play button as the cards do on a phone', async () => {
+    onPhone()
     await play()
     expect(
       card(await open())
@@ -396,11 +426,29 @@ describe('RadioMiniPlayer', () => {
   })
 
   it.each([
+    '[data-testid="radio-speed"]',
+    '[aria-label="Back 15 s"]',
+    '[data-testid="radio-play"]',
+    '[aria-label="Forward 30 s"]',
+    '[aria-label="Mute"]',
+    '[aria-label="Open the episode"]',
+    '[aria-label="Stop and close"]',
+  ])('should give %s a 44 px target on a desktop', async selector => {
+    await play()
+    expect(
+      card(await open())
+        .find(selector)
+        .classes()
+    ).toContain('size-11')
+  })
+
+  it.each([
     '[aria-label="Back 15 s"]',
     '[data-testid="radio-play"]',
     '[aria-label="Forward 30 s"]',
     '[aria-label="Stop and close"]',
-  ])('should give %s a 44 px target', async selector => {
+  ])('should give %s a 44 px target on a phone', async selector => {
+    onPhone()
     await play()
     expect(
       card(await open())
