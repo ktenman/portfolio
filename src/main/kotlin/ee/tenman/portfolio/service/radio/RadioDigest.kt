@@ -135,7 +135,7 @@ fun fitted(
   clips: List<DigestClip>,
   seconds: Double,
 ): List<DigestClip> =
-  clips.fold(emptyList()) { kept, clip -> if ((kept + clip).sumOf { it.length + PAUSE_SECONDS } <= seconds) kept + clip else kept }
+  clips.fold(emptyList()) { kept, clip -> (kept + clip).takeIf { it.sumOf(DigestClip::length) + gaps(it).sum() <= seconds } ?: kept }
 
 fun dominant(stories: List<DigestStory>): Station = heard(stories).first()
 

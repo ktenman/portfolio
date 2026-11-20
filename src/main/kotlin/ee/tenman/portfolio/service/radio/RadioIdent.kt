@@ -1,6 +1,8 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.Station
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -39,6 +41,37 @@ fun identCuts(
     .mapNotNull { identCut(timeline, it, words) }
     .groupBy { it.programme }
     .map { (_, found) -> found.maxWith(compareBy({ it.seconds }, { it.r })) }
+
+fun idents(directory: Path): List<Ident> =
+  read<List<Ident>>(directory.resolve(IDENTS_FILE)).orEmpty().filter { Files.exists(directory.resolve(it.file)) }
+
+fun led(
+  clips: List<DigestClip>,
+  idents: List<Ident>,
+): List<DigestClip> = clips.map { it.copy(ident = ident(it.story.best, idents)) }
+
+fun gaps(clips: List<DigestClip>): List<Double> =
+  clips.drop(1).map { clip -> clip.ident?.let { rounded(IDENT_LEAD + it.seconds + IDENT_TAIL) } ?: PAUSE_SECONDS } + PAUSE_SECONDS
+
+fun join(
+  start: Double,
+  end: Double,
+  pause: Path,
+  ident: Path?,
+): List<Span> {
+  if (ident == null) return listOf(Span(start, end, pause, start, pause))
+  val from = start + IDENT_LEAD
+  val to = end - IDENT_TAIL
+  return listOf(Span(start, from, pause, start, pause), Span(from, to, ident, from, ident), Span(to, end, pause, to, pause))
+}
+
+private fun ident(
+  row: DigestRow,
+  idents: List<Ident>,
+): Ident? {
+  val aired = idents.filter { it.station == row.station }
+  return aired.firstOrNull { it.programme == row.programme } ?: aired.maxByOrNull { it.savedAt }
+}
 
 private fun identCut(
   timeline: Timeline,

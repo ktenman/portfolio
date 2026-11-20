@@ -180,6 +180,42 @@ class RadioDigestTest {
     expect(source(clip).also).toEqual(listOf(DigestMention("Samost ja Aaspõllu", Station.KUKU, LocalDate.of(2026, 11, 15))))
   }
 
+  @Test
+  fun `should lead a story with the jingle of its own programme`() {
+    val newer = OWN.copy(programme = "Samost ja Aaspõllu", file = "kuku-samost-ja-aaspollu.m4a", savedAt = "2026-11-15T10:00:00Z")
+    expect(led(listOf(clip(180.0)), listOf(newer, OWN)).map { it.ident }).toEqual(listOf(OWN))
+  }
+
+  @Test
+  fun `should lead a story with the newest jingle of its station when its programme has none`() {
+    val older = OWN.copy(programme = "Vox populi", savedAt = "2026-11-13T10:00:00Z")
+    val newer = OWN.copy(programme = "Samost ja Aaspõllu", savedAt = "2026-11-15T10:00:00Z")
+    expect(led(listOf(clip(180.0)), listOf(older, newer)).map { it.ident }).toEqual(listOf(newer))
+  }
+
+  @Test
+  fun `should lead a story with silence when its station has no jingle`() {
+    val other = OWN.copy(station = Station.ARIPAEV)
+    expect(led(listOf(clip(180.0)), listOf(other)).map { it.ident }).toEqual(listOf(null))
+  }
+
+  @Test
+  fun `should make room for the jingle before each later story it leads`() {
+    val clips = listOf(clip(180.0).copy(ident = OWN), clip(180.0), clip(180.0).copy(ident = OWN))
+    expect(gaps(clips)).toEqual(listOf(1.0, 5.4, 1.0))
+  }
+
+  @Test
+  fun `should count the jingle before a clip toward the hour`() {
+    val clips = listOf(clip(1800.0), clip(1795.0).copy(ident = OWN))
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1800.0))
+  }
+
+  private fun clip(length: Double): DigestClip {
+    val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
+    return DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, length, emptyList())
+  }
+
   private fun story(
     best: String,
     rows: List<String>,
@@ -224,5 +260,6 @@ class RadioDigestTest {
     private val TALLINN = ZoneId.of("Europe/Tallinn")
     private val FULL = listOf(KeptSpan(0.0, 3600.0))
     private const val RECORDING = "2026-11-14-1200-keskpaevatund"
+    private val OWN = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.0, "2026-11-14T10:00:00Z")
   }
 }

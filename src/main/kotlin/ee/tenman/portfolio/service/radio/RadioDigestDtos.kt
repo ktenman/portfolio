@@ -54,6 +54,7 @@ data class DigestClip(
   val start: Double,
   val end: Double,
   val lines: List<TranscriptLine>,
+  val ident: Ident? = null,
 ) {
   val length: Double
     get() = end - start

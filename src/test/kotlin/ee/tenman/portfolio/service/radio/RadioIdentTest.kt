@@ -2,8 +2,10 @@ package ee.tenman.portfolio.service.radio
 
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.domain.Station
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
 import java.nio.file.Path
 
 class RadioIdentTest {
@@ -71,6 +73,34 @@ class RadioIdentTest {
     val tape = taped(LOUD to 10.0..30.0, LOUD to 40.0..60.0)
     val found = identCuts(tape, listOf(ended(10.0), ended(40.0).copy(programme = "Äripäeva õhtu")), spoken(15.0, 45.0))
     expect(found.map { it.programme }).toEqual(listOf(SHOW, "Äripäeva õhtu"))
+  }
+
+  @Test
+  fun `should list the saved jingles whose audio is still there`() {
+    val kept = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.2, "2026-11-14T10:00:00Z")
+    Files.write(directory.resolve(kept.file), byteArrayOf(1))
+    save(directory.resolve(IDENTS_FILE), listOf(kept, kept.copy(station = Station.ARIPAEV, file = "aripaev-keskpaevatund.m4a")))
+    expect(idents(directory)).toEqual(listOf(kept))
+  }
+
+  @Test
+  fun `should list no jingles before any was saved`() {
+    expect(idents(directory)).toEqual(emptyList())
+  }
+
+  @Test
+  fun `should join two stories with a pause when the next has no jingle`() {
+    val pause = directory.resolve("pause.m4a")
+    expect(join(180.0, 181.0, pause, null)).toEqual(listOf(Span(180.0, 181.0, pause, 180.0, pause)))
+  }
+
+  @Test
+  fun `should play the jingle between a short lead and a shorter tail of silence`() {
+    val pause = directory.resolve("pause.m4a")
+    val ident = directory.resolve("kuku-keskpaevatund.m4a")
+    val lead = Span(180.0, 180.35, pause, 180.0, pause)
+    val tail = Span(185.45, 185.5, pause, 185.45, pause)
+    expect(join(180.0, 185.5, pause, ident)).toEqual(listOf(lead, Span(180.35, 185.45, ident, 180.35, ident), tail))
   }
 
   private fun taped(vararg levels: Pair<Int, ClosedFloatingPointRange<Double>>): Timeline {
