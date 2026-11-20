@@ -61,7 +61,8 @@ class RadioIdentServiceTest {
 
   @Test
   fun `should let the episode be cut when the jingle cannot be saved`() {
-    val broken = mockk<RadioRenderService> { every { ident(any(), any(), any(), any()) } throws IllegalStateException("FFmpeg exited with 1") }
+    val broken = mockk<RadioRenderService>()
+    every { broken.ident(any(), any(), any(), any()) } throws IllegalStateException("FFmpeg exited with 1")
     service(broken).save(KUKU, tape(), listOf(ended()), spoken(16.0))
     expect(idents(properties.idents)).toEqual(emptyList())
   }
