@@ -52,13 +52,32 @@ class RadioRenderService {
     start: Double,
     end: Double,
     target: Path,
+  ) = levelled(source, start, end - start, target, emptyList(), TARGET_LUFS)
+
+  fun ident(
+    source: Path,
+    start: Double,
+    seconds: Double,
+    target: Path,
+  ) {
+    val fades = listOf("afade=t=in:d=$IDENT_IN", "afade=t=out:st=${plain(seconds - IDENT_OUT)}:d=$IDENT_OUT")
+    levelled(source, start, seconds, target, fades, IDENT_LUFS)
+  }
+
+  private fun levelled(
+    source: Path,
+    start: Double,
+    seconds: Double,
+    target: Path,
+    filters: List<String>,
+    lufs: Double,
   ) {
     val log = Files.createTempFile(target.parent, "ffmpeg", ".log")
-    val input = FFMPEG + listOf("-ss", plain(start), "-t", plain(end - start), "-i", source.toString())
+    val input = FFMPEG + listOf("-ss", plain(start), "-t", plain(seconds), "-i", source.toString())
     runCatching {
-      run(input + listOf("-af", LOUDNESS, "-f", "null", "-"), log) {}
-      val encode = listOf("-loglevel", "error", "-y", "-af", "volume=${decibels(log)}dB", "-c:a", "aac", "-b:a", CLIP_BITRATE)
-      run(input + encode + target.toString(), log) {}
+      run(input + listOf("-af", (filters + LOUDNESS).joinToString(","), "-f", "null", "-"), log) {}
+      val level = (filters + "volume=${decibels(log, lufs)}dB").joinToString(",")
+      run(input + listOf("-loglevel", "error", "-y", "-af", level, "-c:a", "aac", "-b:a", CLIP_BITRATE, target.toString()), log) {}
     }.also { Files.deleteIfExists(log) }.getOrThrow()
   }
 
@@ -81,14 +100,20 @@ class RadioRenderService {
     graph: String,
   ): List<String> = ffmpeg(spans) + listOf("-filter_complex", "$graph,$LOUDNESS[level]", "-map", "[level]", "-f", "null", "-")
 
-  private fun decibels(log: Path): String = String.format(Locale.ROOT, "%.2f", gain(Files.readString(log)))
+  private fun decibels(
+    log: Path,
+    lufs: Double = TARGET_LUFS,
+  ): String = String.format(Locale.ROOT, "%.2f", gain(Files.readString(log), lufs))
 
-  private fun gain(log: String): Double {
+  private fun gain(
+    log: String,
+    lufs: Double,
+  ): Double {
     val summaries = log.split("Summary:").drop(1)
     check(summaries.isNotEmpty()) { "FFmpeg printed no loudness summary: ${tail(log.lines())}" }
     val measured = summaries.filter { reading(it, "I") > SILENCE_LUFS }
     if (measured.isEmpty()) return 0.0
-    return min(TARGET_LUFS - measured.maxOf { reading(it, "I") }, CEILING_DBTP - measured.maxOf { reading(it, "Peak") })
+    return min(lufs - measured.maxOf { reading(it, "I") }, CEILING_DBTP - measured.maxOf { reading(it, "Peak") })
   }
 
   private fun reading(
@@ -141,6 +166,9 @@ class RadioRenderService {
   companion object {
     private const val TIMEOUT_MINUTES = 10L
     private const val TARGET_LUFS = -14.0
+    private const val IDENT_LUFS = -17.0
+    private const val IDENT_IN = 0.03
+    private const val IDENT_OUT = 1.0
     private const val CEILING_DBTP = -1.5
     private const val SILENCE_LUFS = -70.0
     private const val MEASURE_SHARE = 0.25
