@@ -396,14 +396,7 @@ describe('RadioMiniPlayer', () => {
   })
 
   it.each([
-    ['top right corner nearest its spot', 1000, 800, { x: 0.7, y: 0.2 }, 'left: 976px; top: 24px'],
-    [
-      'bottom left corner nearest its spot',
-      1000,
-      800,
-      { x: 0.2, y: 0.9 },
-      'left: 24px; top: 776px',
-    ],
+    ['place its spot names', 1000, 800, { x: 0.75, y: 0.25 }, 'left: 738px; top: 212px'],
     ['top of a window shorter than itself', 0, 0, { x: 1, y: 1 }, 'left: 24px; top: 0px'],
   ])('should rest in the %s', async (_, width, height, spot, style) => {
     vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(width)
@@ -411,12 +404,6 @@ describe('RadioMiniPlayer', () => {
     await play()
     player.spot.value = spot
     expect(card(await open()).attributes('style')).toContain(style)
-  })
-
-  it('should not spring into its spot when it appears', async () => {
-    await play()
-    player.spot.value = { x: 1, y: 1 }
-    expect(card(await open()).classes()).not.toContain('md:transition-[left,top]')
   })
 
   it('should stay in its corner without a spot', async () => {

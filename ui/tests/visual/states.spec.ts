@@ -753,6 +753,21 @@ test.describe('saved radio mini player', () => {
       .toEqual([24, 24])
   })
 
+  test('stays where it was dropped after a reload', async ({ page }) => {
+    await playRadio(page)
+    const card = page.getByTestId('radio-mini-player')
+    const start = (await card.boundingBox())!
+    await dragRadioCard(page, { x: -300, y: -200 })
+    await page.reload()
+    await expect(card).toBeVisible()
+    await expect
+      .poll(async () => {
+        const box = (await card.boundingBox())!
+        return [Math.round(box.x - start.x), Math.round(box.y - start.y)]
+      })
+      .toEqual([-300, -200])
+  })
+
   test('saves its spot once per drag', async ({ page }) => {
     const saves = countSpotSaves(page)
     await playRadio(page)
