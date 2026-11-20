@@ -45,7 +45,7 @@ fun tone(
       "-i",
       "aevalsrc='$wave|$wave':s=48000:d=$seconds",
       "-c:a",
-      "libmp3lame",
+      if ("$path".endsWith(".mp3")) "libmp3lame" else "aac",
       "-b:a",
       "256k",
       path.toString(),
@@ -61,9 +61,10 @@ fun replay(
   seconds: Double = 13.0,
   from: Double = 0.0,
   speed: Double = 4.0,
+  format: String = "mp3",
 ): Station =
   Station.open(
-    tone(directory.resolve("in.mp3"), seconds),
+    tone(directory.resolve("in.$format"), seconds),
     Files.createDirectory(directory.resolve("hls")),
     port = 0,
     from = from,

@@ -68,6 +68,7 @@ class ArchitectureTest {
         "..kuku..",
         "..aripaev..",
         "..skyplus..",
+        "..err..",
         "ee.tenman.portfolio.poff..",
         "ee.tenman.portfolio.imdb..",
       ).layer("Configuration")

@@ -225,7 +225,7 @@ class RadioArchiveService(
   ): AudioFormat? =
     status.parts
       .firstOrNull()
-      ?.let { read<Probe>(directory.resolve(it.file.removeSuffix(".mp3") + ".probe.json")) }
+      ?.let { read<Probe>(directory.resolve("${stem(it.file)}.probe.json")) }
       ?.streams
       ?.firstOrNull()
 

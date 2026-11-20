@@ -44,6 +44,7 @@ export const STATIONS: Record<Station, string> = {
   [Station.ARIPAEV]: 'Äripäev',
   [Station.ELMAR]: 'Elmar',
   [Station.SKYPLUS]: 'Sky Plus',
+  [Station.RAADIO2]: 'Raadio 2',
 }
 
 const DAYS = Object.values(DayOfWeek)

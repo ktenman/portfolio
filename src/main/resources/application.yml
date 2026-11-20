@@ -174,7 +174,7 @@ scheduling:
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}
-  stations: ${RADIO_STATIONS:KUKU,ARIPAEV,ELMAR,SKYPLUS}
+  stations: ${RADIO_STATIONS:KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2}
   drop-raw: ${RADIO_DROP_RAW:true}
 
 etf:
@@ -292,6 +292,9 @@ aripaev:
 
 skyplus:
   url: https://sky.ee
+
+err:
+  url: https://eestiraadio.err.ee
 
 poff:
   url: https://poff.ee

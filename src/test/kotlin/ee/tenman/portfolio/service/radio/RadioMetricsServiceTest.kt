@@ -124,7 +124,13 @@ class RadioMetricsServiceTest {
     RadioMetricsService(radioScheduleService, jobExecutionRepository, RadioProperties(recordings = directory)).bindTo(registry)
     expect(registry.get("portfolio.radio.schedule.failed").gauges().map { it.id.getTag("station") })
       .toContain.inAnyOrder.only
-      .values("Kuku", "Äripäev", "Elmar", "Sky Plus")
+      .values("Kuku", "Äripäev", "Elmar", "Sky Plus", "Raadio 2")
+  }
+
+  @Test
+  fun `should register no bridge time for Raadio 2, which reads the stream of ERR itself`() {
+    Files.writeString(directory.resolve(Station.RAADIO2.heartbeat), """{"seen":0,"until":0}""")
+    expect(refreshed().find("portfolio.radio.bridge.timestamp.seconds").tag("station", "Raadio 2").gauge()).toEqual(null)
   }
 
   @Test

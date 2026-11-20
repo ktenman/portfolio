@@ -176,10 +176,12 @@ fun tool(
 
 fun now(): Double = System.currentTimeMillis() / 1000.0
 
+fun stem(file: String): String = file.substringBeforeLast('.')
+
 fun pcm(
   directory: Path,
   part: Part,
-): Path = directory.resolve("${part.file.substringBeforeLast('.')}.pcm")
+): Path = directory.resolve("${stem(part.file)}.pcm")
 
 fun samples(pcm: Path): Long = if (Files.exists(pcm)) Files.size(pcm) / 2 else 0
 

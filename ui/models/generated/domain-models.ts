@@ -918,6 +918,7 @@ export enum Station {
     ARIPAEV = "ARIPAEV",
     ELMAR = "ELMAR",
     SKYPLUS = "SKYPLUS",
+    RAADIO2 = "RAADIO2",
 }
 
 export enum CutState {

@@ -29,6 +29,7 @@ class RadioLiveService(
       Station.ARIPAEV -> radioProperties.aripaevLive
       Station.ELMAR -> radioProperties.elmarLive
       Station.SKYPLUS -> radioProperties.skyplusLive
+      Station.RAADIO2 -> radioProperties.raadio2Live
     }
 
   private fun command(url: String): List<String> =

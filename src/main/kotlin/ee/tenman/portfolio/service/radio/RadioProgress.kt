@@ -86,14 +86,14 @@ private fun written(
 ): Double {
   val chunks = directory.resolve(TRANSCRIPT_CHUNKS)
   if (Files.notExists(chunks)) return 0.0
-  val offsets = status.parts.associate { it.file to it.offsetSeconds }
+  val offsets = status.parts.associate { stem(it.file) to it.offsetSeconds }
   return Files
     .readAllBytes(chunks)
     .decodeToString()
     .lineSequence()
     .filter { it.isNotBlank() }
     .mapNotNull { line -> runCatching { JsonMapperFactory.instance.readTree(line) }.getOrNull() }
-    .mapNotNull { chunk -> offsets[chunk.path("part").asString()]?.plus(chunk.path("to").asDouble()) }
+    .mapNotNull { chunk -> offsets[stem(chunk.path("part").asString())]?.plus(chunk.path("to").asDouble()) }
     .maxOrNull() ?: 0.0
 }
 

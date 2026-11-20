@@ -170,10 +170,10 @@ jobs:
       - name: Deploy with Docker Compose
         env:
           RADIO_ENABLED: ${{ vars.RADIO_ENABLED == 'true' }}
-          RADIO_STATIONS: ${{ vars.RADIO_STATIONS || 'KUKU,ARIPAEV,ELMAR,SKYPLUS' }}
+          RADIO_STATIONS: ${{ vars.RADIO_STATIONS || 'KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2' }}
         run: |
-          STATIONS='KUKU:radio-worker ARIPAEV:radio-bridge,radio-worker-aripaev ELMAR:radio-bridge-elmar,radio-worker-elmar SKYPLUS:radio-bridge-skyplus,radio-worker-skyplus'
-          [[ $RADIO_STATIONS =~ ^(KUKU|ARIPAEV|ELMAR|SKYPLUS)(,(KUKU|ARIPAEV|ELMAR|SKYPLUS))*$ ]] || { echo "RADIO_STATIONS is $RADIO_STATIONS, not a comma list of KUKU, ARIPAEV, ELMAR, SKYPLUS without spaces"; exit 1; }
+          STATIONS='KUKU:radio-worker ARIPAEV:radio-bridge,radio-worker-aripaev ELMAR:radio-bridge-elmar,radio-worker-elmar SKYPLUS:radio-bridge-skyplus,radio-worker-skyplus RAADIO2:radio-worker-raadio2'
+          [[ $RADIO_STATIONS =~ ^(KUKU|ARIPAEV|ELMAR|SKYPLUS|RAADIO2)(,(KUKU|ARIPAEV|ELMAR|SKYPLUS|RAADIO2))*$ ]] || { echo "RADIO_STATIONS is $RADIO_STATIONS, not a comma list of KUKU, ARIPAEV, ELMAR, SKYPLUS, RAADIO2 without spaces"; exit 1; }
           RADIO_PROFILES=''
           RADIO_STOPPED=''
           for entry in $STATIONS; do
