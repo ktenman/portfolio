@@ -182,15 +182,14 @@ class RadioDigestTest {
 
   @Test
   fun `should lead a story with the jingle of its own programme`() {
-    val newer = OWN.copy(programme = "Samost ja Aaspõllu", file = "kuku-samost-ja-aaspollu.m4a", savedAt = "2026-11-15T10:00:00Z")
-    expect(led(listOf(clip(180.0)), listOf(newer, OWN)).map { it.ident }).toEqual(listOf(OWN))
+    val other = OWN.copy(programme = "Samost ja Aaspõllu", file = "kuku-samost-ja-aaspollu.m4a")
+    expect(led(listOf(clip(180.0)), listOf(other, OWN)).map { it.ident }).toEqual(listOf(OWN))
   }
 
   @Test
-  fun `should lead a story with the newest jingle of its station when its programme has none`() {
-    val older = OWN.copy(programme = "Vox populi", savedAt = "2026-11-13T10:00:00Z")
-    val newer = OWN.copy(programme = "Samost ja Aaspõllu", savedAt = "2026-11-15T10:00:00Z")
-    expect(led(listOf(clip(180.0)), listOf(older, newer)).map { it.ident }).toEqual(listOf(newer))
+  fun `should lead a story with silence when only another programme of its station has a jingle`() {
+    val other = OWN.copy(programme = "Samost ja Aaspõllu", file = "kuku-samost-ja-aaspollu.m4a")
+    expect(led(listOf(clip(180.0)), listOf(other)).map { it.ident }).toEqual(listOf(null))
   }
 
   @Test
@@ -260,6 +259,6 @@ class RadioDigestTest {
     private val TALLINN = ZoneId.of("Europe/Tallinn")
     private val FULL = listOf(KeptSpan(0.0, 3600.0))
     private const val RECORDING = "2026-11-14-1200-keskpaevatund"
-    private val OWN = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.0, "2026-11-14T10:00:00Z")
+    private val OWN = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.0)
   }
 }

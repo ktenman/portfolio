@@ -77,7 +77,7 @@ class RadioIdentTest {
 
   @Test
   fun `should list the saved jingles whose audio is still there`() {
-    val kept = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.2, "2026-11-14T10:00:00Z")
+    val kept = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.2)
     Files.write(directory.resolve(kept.file), byteArrayOf(1))
     save(directory.resolve(IDENTS_FILE), listOf(kept, kept.copy(station = Station.ARIPAEV, file = "aripaev-keskpaevatund.m4a")))
     expect(idents(directory)).toEqual(listOf(kept))

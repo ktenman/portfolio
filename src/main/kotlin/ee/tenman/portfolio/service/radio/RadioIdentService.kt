@@ -6,13 +6,11 @@ import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.time.Clock
 
 @Service
 class RadioIdentService(
   private val radioRenderService: RadioRenderService,
   private val radioProperties: RadioProperties,
-  private val clock: Clock,
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
@@ -40,6 +38,6 @@ class RadioIdentService(
     radioRenderService.ident(span.audio, cut.start - span.offset, cut.seconds, temporary)
     Files.move(temporary, directory.resolve(file), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
     val kept = idents(directory).filterNot { it.file == file }
-    save(directory.resolve(IDENTS_FILE), kept + Ident(station, cut.programme, file, cut.seconds, clock.instant().toString()))
+    save(directory.resolve(IDENTS_FILE), kept + Ident(station, cut.programme, file, cut.seconds))
   }
 }

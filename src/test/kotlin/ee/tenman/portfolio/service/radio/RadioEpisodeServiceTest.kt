@@ -352,7 +352,7 @@ class RadioEpisodeServiceTest {
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
     service(properties = properties).make(directory)
-    RadioIdentService(RadioRenderService(), properties, Clock.systemUTC()).save(directory)
+    RadioIdentService(RadioRenderService(), properties).save(directory)
     expect(idents(properties.idents).map { it.file }).toEqual(listOf("kuku-keskpaevatund.m4a"))
   }
 

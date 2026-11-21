@@ -9,9 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 import kotlin.math.abs
 
 class RadioIdentServiceTest {
@@ -25,7 +22,7 @@ class RadioIdentServiceTest {
   @Test
   fun `should save the jingle that ends a break under its station and programme`() {
     service.save(cut())
-    expect(idents(properties.idents)).toEqual(listOf(Ident(Station.KUKU, SHOW, "kuku-keskpaevatund.m4a", 5.8, SAVED)))
+    expect(idents(properties.idents)).toEqual(listOf(Ident(Station.KUKU, SHOW, "kuku-keskpaevatund.m4a", 5.8)))
   }
 
   @Test
@@ -54,7 +51,7 @@ class RadioIdentServiceTest {
 
   @Test
   fun `should keep the jingles of other programmes`() {
-    val other = Ident(Station.ELMAR, "Hommikuprogramm", "elmar-hommikuprogramm.m4a", 6.1, "2026-11-13T05:00:00Z")
+    val other = Ident(Station.ELMAR, "Hommikuprogramm", "elmar-hommikuprogramm.m4a", 6.1)
     Files.write(Files.createDirectories(properties.idents).resolve(other.file), byteArrayOf(1))
     save(properties.idents.resolve(IDENTS_FILE), listOf(other))
     service.save(cut())
@@ -81,8 +78,7 @@ class RadioIdentServiceTest {
     expect(Files.exists(properties.idents)).toEqual(false)
   }
 
-  private fun service(renderer: RadioRenderService) =
-    RadioIdentService(renderer, properties, Clock.fixed(Instant.parse(SAVED), ZoneOffset.UTC))
+  private fun service(renderer: RadioRenderService) = RadioIdentService(renderer, properties)
 
   private fun cut(boundary: Boundary = ended()): Path {
     val recording = Files.createDirectories(directory.resolve("2026-11-14-1200-keskpaevatund"))
@@ -98,6 +94,5 @@ class RadioIdentServiceTest {
 
   companion object {
     private const val SHOW = "Keskpäevatund"
-    private const val SAVED = "2026-11-16T10:00:00Z"
   }
 }

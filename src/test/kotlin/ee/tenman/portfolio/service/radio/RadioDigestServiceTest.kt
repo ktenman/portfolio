@@ -326,7 +326,7 @@ class RadioDigestServiceTest {
   }
 
   @Test
-  fun `should start a story after the jingle of its station`() {
+  fun `should start a story after the jingle of its programme`() {
     held()
     jingle()
     service().build(DigestShow.WEEK, TODAY)
@@ -334,7 +334,7 @@ class RadioDigestServiceTest {
   }
 
   @Test
-  fun `should play the jingle of the station between two stories`() {
+  fun `should play the jingle of the next programme between two stories`() {
     held()
     jingle()
     service().build(DigestShow.WEEK, TODAY)
@@ -539,7 +539,7 @@ class RadioDigestServiceTest {
 
   private fun jingle(): Path {
     val library = Files.createDirectories(directory.resolve("idents"))
-    val ident = Ident(Station.KUKU, "Keskpäevatund", "kuku-keskpaevatund.m4a", 5.0, "2026-11-14T10:00:00Z")
+    val ident = Ident(Station.KUKU, "Samost ja Aaspõllu", "kuku-samost-ja-aaspollu.m4a", 5.0)
     val path = library.resolve(ident.file)
     ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.2*sin(2*PI*880*t)':s=48000:d=5", "-c:a", "aac", "-b:a", "192k", "$path")
     save(library.resolve(IDENTS_FILE), listOf(ident))

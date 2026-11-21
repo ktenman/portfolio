@@ -24,7 +24,6 @@ data class Ident(
   val programme: String,
   val file: String,
   val seconds: Double,
-  val savedAt: String,
 )
 
 data class IdentCut(
@@ -74,10 +73,7 @@ fun join(
 private fun ident(
   row: DigestRow,
   idents: List<Ident>,
-): Ident? {
-  val aired = idents.filter { it.station == row.station }
-  return aired.firstOrNull { it.programme == row.programme } ?: aired.maxByOrNull { it.savedAt }
-}
+): Ident? = idents.firstOrNull { it.station == row.station && it.programme == row.programme }
 
 private fun identCut(
   timeline: Timeline,
