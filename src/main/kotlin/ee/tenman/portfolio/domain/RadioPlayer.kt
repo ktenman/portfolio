@@ -16,4 +16,5 @@ class RadioPlayer(
   var station: Station? = null,
   var x: Double? = null,
   var y: Double? = null,
+  var rate: Double? = null,
 ) : BaseEntity()

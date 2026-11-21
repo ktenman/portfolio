@@ -324,7 +324,7 @@ const tuned = (day: RadioDay, station: string | null): RadioDay => {
 
 export const stubSavedPlayer = async (page: Page, spot: RadioSpot | null = null) => {
   let saved = { recording: null, station: null, spot }
-  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/player`), route => {
+  await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/player(/rate)?`), route => {
     if (route.request().method() === 'PUT') {
       saved = { ...saved, ...route.request().postDataJSON() }
       return route.fulfill({ status: 204 })

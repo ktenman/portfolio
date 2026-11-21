@@ -26,6 +26,7 @@ import ee.tenman.portfolio.service.radio.RadioPlayerService
 import ee.tenman.portfolio.service.radio.RadioPositionDto
 import ee.tenman.portfolio.service.radio.RadioPositionService
 import ee.tenman.portfolio.service.radio.RadioProgrammeDto
+import ee.tenman.portfolio.service.radio.RadioRate
 import ee.tenman.portfolio.service.radio.RadioScheduleService
 import ee.tenman.portfolio.service.radio.RadioSearch
 import ee.tenman.portfolio.service.radio.RadioSearchService
@@ -146,6 +147,13 @@ class RadioController(
     @RequestHeader("X-User-Id") listener: String,
     @RequestBody spot: RadioSpot,
   ) = radioPlayerService.place(listener, spot)
+
+  @PutMapping("/player/rate")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  fun putRate(
+    @RequestHeader("X-User-Id") listener: String,
+    @RequestBody rate: RadioRate,
+  ) = radioPlayerService.pace(listener, rate)
 
   @GetMapping("/{name}/transcript")
   fun getTranscript(
