@@ -16,7 +16,7 @@
           class="mb-2 flex items-baseline justify-between gap-3"
         >
           <h3 class="mb-0 text-heading">{{ group.title }}</h3>
-          <span class="text-sm text-ink-soft">{{ group.note }}</span>
+          <span v-if="group.note" class="text-sm text-ink-soft">{{ group.note }}</span>
         </div>
         <data-table
           :items="group.items"
@@ -95,8 +95,8 @@ const groups = computed(() => {
   const ticked = shown.value.filter(item => item.recordEvery)
   const other = shown.value.filter(item => !item.recordEvery)
   return [
-    { title: 'Recorded every time', note: `${ticked.length}`, items: ticked },
-    { title: 'Other shows', note: `${other.length} · by next airing`, items: other },
+    { title: 'Recorded every time', items: ticked },
+    { title: 'Other shows', note: 'by next airing', items: other },
   ].filter(group => group.items.length)
 })
 

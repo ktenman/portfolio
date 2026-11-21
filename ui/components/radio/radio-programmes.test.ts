@@ -141,16 +141,16 @@ describe('RadioProgrammes', () => {
   const groups = async () =>
     (await mount()).findAll('[data-testid="radio-programme-group"]').map(group => group.text())
 
-  it('should head the ticked shows apart from the others with how many each holds', async () => {
+  it('should head the ticked shows apart from the others without counting them', async () => {
     vi.mocked(radioService.programmes).mockResolvedValue([
       ...many(2, true),
       show('Kuum tool', Station.ARIPAEV),
     ])
-    expect(await groups()).toEqual(['Recorded every time2', 'Other shows1 · by next airing'])
+    expect(await groups()).toEqual(['Recorded every time', 'Other showsby next airing'])
   })
 
   it('should leave out the heading of ticked shows when none is ticked', async () => {
-    expect(await groups()).toEqual(['Other shows1 · by next airing'])
+    expect(await groups()).toEqual(['Other showsby next airing'])
   })
 
   it('should tick the box of a show on a phone when its row is tapped', async () => {
