@@ -78,6 +78,16 @@ class RadioIdentServiceTest {
     expect(Files.exists(properties.idents)).toEqual(false)
   }
 
+  @Test
+  fun `should save the sting of a programme whose break ends without a jingle`() {
+    val recording = cut(ended().copy(jingle = null))
+    val words = listOf(TranscriptWord(10.5, 11.5, "Keskpäevatund."), TranscriptWord(16.0, 16.4, "õhtust"))
+    save(recording.resolve(TRANSCRIPT_FILE), Transcript(emptyList(), words))
+    save(recording.resolve(SOUNDS_FILE), Sounds(heard(0.0, 30.0, 0.1, 0.9)))
+    service.save(recording)
+    expect(idents(properties.idents)).toEqual(listOf(Ident(Station.KUKU, SHOW, "kuku-keskpaevatund.m4a", 5.8)))
+  }
+
   private fun service(renderer: RadioRenderService) = RadioIdentService(renderer, properties)
 
   private fun cut(boundary: Boundary = ended()): Path {

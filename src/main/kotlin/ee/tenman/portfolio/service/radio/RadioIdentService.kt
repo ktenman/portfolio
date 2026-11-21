@@ -20,10 +20,10 @@ class RadioIdentService(
 
   private fun cut(directory: Path) {
     val boundaries = read<EditList>(directory.resolve(EDIT_LIST_FILE))?.boundaries.orEmpty()
-    if (boundaries.none { it.jingle != null }) return
+    if (boundaries.isEmpty()) return
     val status = readStatus(directory)
     val timeline = Timeline(directory, status.parts)
-    identCuts(timeline, boundaries, readTranscript(directory).words).forEach { store(status.station, timeline, it) }
+    identCuts(timeline, boundaries, readTranscript(directory).words, readSounds(directory)).forEach { store(status.station, timeline, it) }
   }
 
   private fun store(
@@ -31,7 +31,7 @@ class RadioIdentService(
     timeline: Timeline,
     cut: IdentCut,
   ) {
-    val span = timeline.spans.first { cut.start >= it.start && cut.start < it.end }
+    val span = checkNotNull(span(timeline, cut.start)) { "No audio at ${cut.start} s for the jingle of ${cut.programme}" }
     val directory = Files.createDirectories(radioProperties.idents)
     val file = "${station.name.lowercase()}-${safe(fold(cut.programme))}.m4a"
     val temporary = directory.resolve("tmp-$file")
