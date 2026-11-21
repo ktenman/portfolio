@@ -18,7 +18,6 @@ class RadioEpisodeService(
   private val radioOutlineService: RadioOutlineService,
   private val radioCutService: RadioCutService,
   private val radioRenderService: RadioRenderService,
-  private val radioIdentService: RadioIdentService,
   private val radioProgressService: RadioProgressService,
   private val radioAiringRepository: RadioAiringRepository,
   private val radioProgrammeRepository: RadioProgrammeRepository,
@@ -27,12 +26,14 @@ class RadioEpisodeService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun make(directory: Path) {
+  fun make(directory: Path): Boolean {
     val todo = todo(directory)
-    if (todo.isEmpty()) return
+    if (todo.isEmpty()) return false
     val name = directory.fileName.toString()
     radioProgressService.start(name, plan(directory, todo))
-    runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }.also { radioProgressService.finish(name) }
+    val cut = runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }
+    radioProgressService.finish(name)
+    return cut.isSuccess
   }
 
   private fun plan(
@@ -78,7 +79,6 @@ class RadioEpisodeService(
     radioRenderService.render(timeline.spans, edit.keep.map { it.start to it.end }, marks, heading, temporary, status.station)
     save(directory.resolve(EDIT_LIST_FILE), edit)
     Files.move(temporary, directory.resolve(EPISODE_FILE), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-    radioIdentService.save(status, timeline, edit.boundaries, heard.words)
   }
 
   private fun findings(

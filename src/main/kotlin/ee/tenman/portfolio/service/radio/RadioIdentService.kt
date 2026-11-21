@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.Station
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Clock
 
@@ -15,14 +16,16 @@ class RadioIdentService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun save(
-    status: RecordingStatus,
-    timeline: Timeline,
-    boundaries: List<Boundary>,
-    words: List<TranscriptWord>,
-  ) {
-    runCatching { identCuts(timeline, boundaries, words).forEach { store(status.station, timeline, it) } }
-      .onFailure { log.warn("Cannot save the jingle of ${status.station}", it) }
+  fun save(directory: Path) {
+    runCatching { cut(directory) }.onFailure { log.warn("Cannot save the jingle of ${directory.fileName}", it) }
+  }
+
+  private fun cut(directory: Path) {
+    val boundaries = read<EditList>(directory.resolve(EDIT_LIST_FILE))?.boundaries.orEmpty()
+    if (boundaries.none { it.jingle != null }) return
+    val status = readStatus(directory)
+    val timeline = Timeline(directory, status.parts)
+    identCuts(timeline, boundaries, readTranscript(directory).words).forEach { store(status.station, timeline, it) }
   }
 
   private fun store(

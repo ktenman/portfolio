@@ -44,7 +44,6 @@ class RadioEpisodeServiceTest {
   private fun written() =
     mockk<RadioRenderService> {
       every { render(any(), any(), any(), any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(4)) }
-      every { ident(any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(3)) }
     }
 
   private fun service(
@@ -54,17 +53,7 @@ class RadioEpisodeServiceTest {
     clock: Clock = Clock.systemUTC(),
     renderer: RadioRenderService = RadioRenderService(),
   ): RadioEpisodeService =
-    RadioEpisodeService(
-      outlineService,
-      RadioCutService(),
-      renderer,
-      RadioIdentService(renderer, properties, clock),
-      progress,
-      airings,
-      programmes,
-      properties,
-      clock,
-    )
+    RadioEpisodeService(outlineService, RadioCutService(), renderer, progress, airings, programmes, properties, clock)
 
   private fun outline(
     before: Double,
@@ -107,6 +96,27 @@ class RadioEpisodeServiceTest {
     Files.writeString(directory.resolve("episode.m4a"), "valmis")
     service.make(directory)
     expect(Files.readString(directory.resolve("episode.m4a"))).toEqual("valmis")
+  }
+
+  @Test
+  fun `should tell that it cut nothing when the episode is already there`() {
+    Files.writeString(directory.resolve("episode.m4a"), "valmis")
+    expect(service.make(directory)).toEqual(false)
+  }
+
+  @Test
+  fun `should tell that it cut the episode`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    expect(quiet.make(directory)).toEqual(true)
+  }
+
+  @Test
+  fun `should tell that it cut nothing when the cut fails`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    Files.writeString(directory.resolve("raw.mp3"), "katkine")
+    expect(service.make(directory)).toEqual(false)
   }
 
   @Test
@@ -336,13 +346,14 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should save the jingle that ends a break when it cuts the episode`() {
+  fun `should leave a cut whose jingle can be saved`() {
     writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
     transcribed(1.0, 5.0, 12.0, 31.0, 50.0)
     saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 31.0))))
     val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
     service(properties = properties).make(directory)
+    RadioIdentService(RadioRenderService(), properties, Clock.systemUTC()).save(directory)
     expect(idents(properties.idents).map { it.file }).toEqual(listOf("kuku-keskpaevatund.m4a"))
   }
 
