@@ -89,6 +89,12 @@ class RadioIdentTest {
   }
 
   @Test
+  fun `should list no jingles when the saved list cannot be read`() {
+    Files.writeString(directory.resolve(IDENTS_FILE), "{ katki õ")
+    expect(idents(directory)).toEqual(emptyList())
+  }
+
+  @Test
   fun `should join two stories with a pause when the next has no jingle`() {
     val pause = directory.resolve("pause.m4a")
     expect(join(180.0, 181.0, pause, null)).toEqual(listOf(Span(180.0, 181.0, pause, 180.0, pause)))

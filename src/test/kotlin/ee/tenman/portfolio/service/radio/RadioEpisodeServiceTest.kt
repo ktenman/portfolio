@@ -99,8 +99,7 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
-  fun `should tell that it cut nothing when the episode is already there`() {
-    Files.writeString(directory.resolve("episode.m4a"), "valmis")
+  fun `should tell that it cut nothing for a folder that holds no recording`() {
     expect(service.make(directory)).toEqual(false)
   }
 

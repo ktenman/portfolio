@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.radio
 
 import ee.tenman.portfolio.domain.Station
+import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.math.log10
@@ -16,6 +17,7 @@ private const val REACH = 2.0
 private const val SHORTEST = 3.0
 private const val LONGEST = 7.0
 private const val WORD_MARGIN = 0.2
+private val log = LoggerFactory.getLogger(Ident::class.java)
 
 data class Ident(
   val station: Station,
@@ -43,7 +45,11 @@ fun identCuts(
     .map { (_, found) -> found.maxWith(compareBy({ it.seconds }, { it.r })) }
 
 fun idents(directory: Path): List<Ident> =
-  read<List<Ident>>(directory.resolve(IDENTS_FILE)).orEmpty().filter { Files.exists(directory.resolve(it.file)) }
+  runCatching { read<List<Ident>>(directory.resolve(IDENTS_FILE)) }
+    .onFailure { log.warn("Cannot read the saved jingles in $directory", it) }
+    .getOrNull()
+    .orEmpty()
+    .filter { Files.exists(directory.resolve(it.file)) }
 
 fun led(
   clips: List<DigestClip>,
