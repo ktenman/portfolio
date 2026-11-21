@@ -2,6 +2,7 @@ package ee.tenman.portfolio.job
 
 import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.radio.RadioEpisodeService
+import ee.tenman.portfolio.service.radio.RadioIdentService
 import ee.tenman.portfolio.service.radio.RadioProperties
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -11,6 +12,7 @@ import java.nio.file.Path
 @ScheduledJob
 class RadioEpisodeJob(
   private val radioEpisodeService: RadioEpisodeService,
+  private val radioIdentService: RadioIdentService,
   private val radioProperties: RadioProperties,
   private val jobExecutionService: JobExecutionService,
 ) : Job {
@@ -24,7 +26,8 @@ class RadioEpisodeJob(
 
   override fun execute() {
     directories().forEach { directory ->
-      runCatching { radioEpisodeService.make(directory) }.onFailure { log.error("Radio episode job failed for $directory", it) }
+      runCatching { if (radioEpisodeService.make(directory)) radioIdentService.save(directory) }
+        .onFailure { log.error("Radio episode job failed for $directory", it) }
     }
   }
 

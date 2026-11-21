@@ -70,10 +70,7 @@ class RadioRenderServiceTest {
     val episode = directory.resolve("episode.m4a")
     service.render(timeline(directory).spans, listOf(5.0 to 15.0), listOf(0.0 to "Uudised"), "Keskpäevatund", episode, Station.KUKU)
     val audio = decoded(episode)
-    val loud = { start: Double, end: Double ->
-      sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average())
-    }
-    expect((loud(0.5, 4.5) > 1000) to (loud(5.5, 9.5) < 10)).toEqual(true to true)
+    expect((loud(audio, 0.5, 4.5) > 1000) to (loud(audio, 5.5, 9.5) < 10)).toEqual(true to true)
   }
 
   @Test
@@ -171,6 +168,30 @@ class RadioRenderServiceTest {
     val titles = probe(digest)["chapters"].toList().map { it["tags"]["title"].asString() }
     expect((abs(duration(digest) - 18.0) <= 0.1) to titles).toEqual(true to listOf("Ust-Luga", "Telia"))
   }
+
+  @Test
+  fun `should cut a jingle to the length asked for`() {
+    expect(abs(duration(jingle()) - 5.2) <= 0.05).toEqual(true)
+  }
+
+  @Test
+  fun `should level a jingle three units under a story`() {
+    expect(abs(level(jingle()).first + 17) <= 0.5).toEqual(true)
+  }
+
+  @Test
+  fun `should fade a jingle out over its last second`() {
+    val audio = decoded(jingle())
+    expect(loud(audio, 4.95, 5.15) < loud(audio, 2.0, 3.0) / 4).toEqual(true)
+  }
+
+  private fun jingle(): Path = directory.resolve("tunnus.m4a").also { service.ident(episode("saade", 20), 4.0, 5.2, it) }
+
+  private fun loud(
+    audio: ShortArray,
+    start: Double,
+    end: Double,
+  ): Double = sqrt(((start * RATE).toInt() until (end * RATE).toInt()).map { audio[it].toDouble() * audio[it] }.average())
 
   private fun episode(
     stem: String,
