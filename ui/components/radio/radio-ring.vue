@@ -22,10 +22,12 @@
 import { computed } from 'vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 
+const props = defineProps<{ share?: number }>()
+
 const player = useRadioPlayer()
 
 const dash = computed(() => {
-  const share = player.progress.value
+  const share = props.share ?? player.progress.value
   return share < 1 ? `${share * 100} 100` : undefined
 })
 </script>

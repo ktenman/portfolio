@@ -329,13 +329,16 @@ describe('RadioMiniPlayer', () => {
     ).toBe(false)
   })
 
-  it.each(['/radio', '/radio/shows'])('should stay away from the On air card at %s', async path => {
-    listen()
-    expect(card(await open(path, BROADCAST)).exists()).toBe(false)
-  })
+  it.each(['/radio', '/radio/shows'])(
+    'should stay away from the Stations card at %s',
+    async path => {
+      listen()
+      expect(card(await open(path, BROADCAST)).exists()).toBe(false)
+    }
+  )
 
   it.each(['/radio/catch-up', '/radio?q=kuku'])(
-    'should show the live stream at %s, where no On air card is',
+    'should show the live stream at %s, where no Stations card is',
     async path => {
       listen()
       expect(card(await open(path, BROADCAST)).exists()).toBe(true)

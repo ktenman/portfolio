@@ -3,7 +3,6 @@ import {
   AiringState,
   type AiringRecording,
   type DayAiring,
-  type AudioFormat,
   BoundaryMethod,
   type Cut,
   type CutProgress,
@@ -12,7 +11,6 @@ import {
   type KeptSpan,
   ProgrammeCutState,
   type RadioDay,
-  RecorderState,
   type RecordingSummary,
   RecordingState,
   Station,
@@ -284,15 +282,6 @@ export const nightOf = (until: number): string => {
   const date = DATE.format(instant(until)).slice(0, 5)
   return `Overnight into ${weekday}, ${date}`
 }
-
-export const RECORDER_STATES: Record<RecorderState, { label: string; tone: BadgeTone }> = {
-  [RecorderState.WAITING]: { label: 'Waiting', tone: 'plain' },
-  [RecorderState.RECORDING]: { label: 'Recording', tone: 'live' },
-  [RecorderState.OFF]: { label: 'Not running', tone: 'error' },
-}
-
-export const audioFormat = (format: AudioFormat | null): string =>
-  format ? `${format.codec.toUpperCase()} ${Math.round(format.bitRate / 1000)} kb/s` : '—'
 
 export const span = ({ span: { start, end } }: RecordingSummary): string =>
   range(start, 0, end - start)

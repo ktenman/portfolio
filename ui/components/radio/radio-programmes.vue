@@ -73,7 +73,7 @@
       </section>
       <radio-on-air class="lg:hidden" />
     </div>
-    <radio-station />
+    <radio-on-air aside class="max-lg:hidden lg:self-start" />
   </div>
 </template>
 
@@ -85,7 +85,6 @@ import type { Station } from '../../models/generated/domain-models'
 import DataTable, { type ColumnDefinition } from '../shared/data-table.vue'
 import RadioOnAir from './radio-on-air.vue'
 import RadioRecordEvery from './radio-record-every.vue'
-import RadioStation from './radio-station.vue'
 
 const { data: programmes, isLoading, isError } = useRadioProgrammes()
 const station = useStationFilter()

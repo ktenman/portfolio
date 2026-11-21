@@ -91,7 +91,7 @@
         </template>
       </data-table>
     </div>
-    <radio-station class="lg:self-start" />
+    <radio-on-air aside class="max-lg:hidden lg:self-start" />
   </div>
 </template>
 
@@ -116,7 +116,6 @@ import RadioDigest from './radio-digest.vue'
 import RadioDigestBuild from './radio-digest-build.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioOnAir from './radio-on-air.vue'
-import RadioStation from './radio-station.vue'
 
 const { data: recordings, isLoading, isError } = useRadioRecordings()
 const station = useStationFilter()
