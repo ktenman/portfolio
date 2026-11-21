@@ -14,7 +14,7 @@
       >
         <button
           type="button"
-          :class="[on(station) ? LOADED : LISTEN, 'relative size-11 [&>svg]:size-5']"
+          :class="[LISTEN, 'relative size-11 [&>svg]:size-5']"
           :aria-label="`${on(station) ? 'Pause' : 'Listen live'}: ${STATIONS[station]}`"
           @click="on(station) ? player.toggle() : player.listen(station)"
         >
@@ -61,7 +61,7 @@ import {
 } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
 import { useRailStations, useStationFilter } from '../../composables/use-radio-recordings'
-import { AIRING_LIVE, clock, LISTEN, LOADED, STATIONS } from '../../utils/radio'
+import { AIRING_LIVE, clock, LISTEN, STATIONS } from '../../utils/radio'
 import RadioFacts from './radio-facts.vue'
 import RadioIcon from './radio-icon.vue'
 import RadioRing from './radio-ring.vue'

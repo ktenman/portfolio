@@ -3,7 +3,7 @@
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
       <button
         type="button"
-        class="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-control-border bg-surface-sunken text-ink-soft transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep md:size-9"
+        :class="[LISTEN, 'size-11 md:size-9']"
         :aria-label="`Listen to the transition: ${name}`"
         :title="`Listen to the transition: ${name}`"
         @click="player.preview(cut.start, cut.end)"
@@ -65,7 +65,7 @@ import { computed } from 'vue'
 import { CutKind } from '../../models/generated/domain-models'
 import type { Cut, CutContext, TranscriptLine } from '../../models/generated/domain-models'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { clock, foundBy, length, range } from '../../utils/radio'
+import { clock, foundBy, length, LISTEN, range } from '../../utils/radio'
 import AppButton from '../shared/app-button.vue'
 import RadioBadge from './radio-badge.vue'
 import RadioIcon from './radio-icon.vue'
