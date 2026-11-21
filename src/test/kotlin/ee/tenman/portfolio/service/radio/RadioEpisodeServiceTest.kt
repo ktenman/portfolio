@@ -99,6 +99,26 @@ class RadioEpisodeServiceTest {
   }
 
   @Test
+  fun `should tell that it cut nothing for a folder that holds no recording`() {
+    expect(service.make(directory)).toEqual(false)
+  }
+
+  @Test
+  fun `should tell that it cut the episode`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    expect(quiet.make(directory)).toEqual(true)
+  }
+
+  @Test
+  fun `should tell that it cut nothing when the cut fails`() {
+    show()
+    saved(outline(1.0, 5.0, 50.0))
+    Files.writeString(directory.resolve("raw.mp3"), "katkine")
+    expect(service.make(directory)).toEqual(false)
+  }
+
+  @Test
   fun `should skip a recording that is still recording`() {
     show("recording")
     service.make(directory)
@@ -322,6 +342,18 @@ class RadioEpisodeServiceTest {
     store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
     service(properties = properties, renderer = written()).make(directory)
     expect(edit().boundaries[2].jingle?.saved).toEqual("2026-10-17-1")
+  }
+
+  @Test
+  fun `should leave a cut whose jingle can be saved`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 60))))
+    transcribed(1.0, 5.0, 12.0, 31.0, 50.0)
+    saved(outline(1.0, 5.0, 50.0).copy(breaks = listOf(OutlineBreak(12.0, 31.0))))
+    val properties = RadioProperties(recordings = directory.resolve("arhiiv"))
+    store(pcmOf(properties.jingles, "2026-10-17-1"), template(timeline(directory), 17.0))
+    service(properties = properties).make(directory)
+    RadioIdentService(RadioRenderService(), properties).save(directory)
+    expect(idents(properties.idents).map { it.file }).toEqual(listOf("kuku-keskpaevatund.m4a"))
   }
 
   private fun shared() {

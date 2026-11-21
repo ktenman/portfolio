@@ -65,7 +65,7 @@ class RadioDigestService(
       checkNotNull(radioDigestModelService.judge(show, rows, told(show, date))) { "The model gave no judgement for the $date radio digest" }
     val ranked = ranked(judgement, rows.associateBy { it.id })
     radioDigestProgressService.judged(ranked.map { it.story.title })
-    val clips = fitted(clips(ranked, recordings.associateBy { it.name }), show.seconds)
+    val clips = fitted(led(clips(ranked, recordings.associateBy { it.name }), idents(radioProperties.idents)), show.seconds)
     check(clips.isNotEmpty() || !built(show, date)) { "No story made the $date radio digest" }
     radioDigestProgressService.fitted(clips.map { it.story.story.title })
     val work = root(show).resolve(BUILD).also { it.deleteRecursively() }
@@ -183,7 +183,7 @@ class RadioDigestService(
     date: LocalDate,
     clips: List<DigestClip>,
   ) {
-    val offsets = clips.runningFold(0.0) { at, clip -> at + clip.length + PAUSE_SECONDS }
+    val offsets = clips.zip(gaps(clips)).runningFold(0.0) { at, (clip, gap) -> at + clip.length + gap }
     val stories = clips.mapIndexed { index, clip -> story(clip, offsets[index]) }
     if (clips.isNotEmpty()) {
       render(work, title, clips, offsets, dominant(stories))
@@ -203,7 +203,11 @@ class RadioDigestService(
     val marks = clips.mapIndexed { index, clip -> offsets[index] to clip.story.story.title }
     val target = work.resolve(EPISODE_FILE)
     radioRenderService.render(spans, spans.map { it.start to it.end }, marks, title, target, station, radioDigestProgressService::mixed)
-    spans.map { it.audio }.distinct().forEach(Files::delete)
+    spans
+      .map { it.audio }
+      .distinct()
+      .filter { it.parent == work }
+      .forEach(Files::delete)
   }
 
   private fun cut(
@@ -217,7 +221,8 @@ class RadioDigestService(
       radioRenderService.clip(episode(clip.recording.name), clip.start, clip.end, audio)
       radioDigestProgressService.cut()
       val end = offsets[index] + clip.length
-      listOf(Span(offsets[index], end, audio, offsets[index], audio), Span(end, offsets[index + 1], pause, end, pause))
+      val ident = clips.getOrNull(index + 1)?.ident?.let { radioProperties.idents.resolve(it.file) }
+      listOf(Span(offsets[index], end, audio, offsets[index], audio)) + join(end, offsets[index + 1], pause, ident)
     }
   }
 

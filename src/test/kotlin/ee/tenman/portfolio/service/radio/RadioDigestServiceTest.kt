@@ -326,6 +326,31 @@ class RadioDigestServiceTest {
   }
 
   @Test
+  fun `should start a story after the jingle of its programme`() {
+    held()
+    jingle()
+    service().build(DigestShow.WEEK, TODAY)
+    expect(read<Digest>(digest().resolve(DIGEST_FILE))?.stories?.map { it.start }).toEqual(listOf(0.0, 185.4))
+  }
+
+  @Test
+  fun `should play the jingle of the next programme between two stories`() {
+    held()
+    jingle()
+    service().build(DigestShow.WEEK, TODAY)
+    val duration = probe(digest().resolve(EPISODE_FILE))["format"]["duration"].asString().toDouble()
+    expect(abs(duration - 366.4) <= 0.1).toEqual(true)
+  }
+
+  @Test
+  fun `should keep the saved jingle after it built the digest`() {
+    held()
+    val saved = jingle()
+    service().build(DigestShow.WEEK, TODAY)
+    expect(Files.exists(saved)).toEqual(true)
+  }
+
+  @Test
   fun `should tag the digest audio with the station heard longest`() {
     held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")), Station.ARIPAEV)
     every { model.judge(any(), any(), any()) } returns Judgement(listOf(story("Rünnakud Ust-Lugas", "r1", 5), story("Valimised", "r3", 4)))
@@ -510,6 +535,15 @@ class RadioDigestServiceTest {
   private fun episode(name: String) {
     val path = Files.createDirectories(directory.resolve(name)).resolve(EPISODE_FILE)
     ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.3*sin(2*PI*440*t)':s=48000:d=300", "-c:a", "aac", "-b:a", "96k", "$path")
+  }
+
+  private fun jingle(): Path {
+    val library = Files.createDirectories(directory.resolve("idents"))
+    val ident = Ident(Station.KUKU, "Samost ja Aaspõllu", "kuku-samost-ja-aaspollu.m4a", 5.0)
+    val path = library.resolve(ident.file)
+    ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.2*sin(2*PI*880*t)':s=48000:d=5", "-c:a", "aac", "-b:a", "192k", "$path")
+    save(library.resolve(IDENTS_FILE), listOf(ident))
+    return path
   }
 
   private fun stub(name: String) {

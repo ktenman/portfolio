@@ -26,12 +26,12 @@ class RadioEpisodeService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  fun make(directory: Path) {
+  fun make(directory: Path): Boolean {
     val todo = todo(directory)
-    if (todo.isEmpty()) return
+    if (todo.isEmpty()) return false
     val name = directory.fileName.toString()
     radioProgressService.start(name, plan(directory, todo))
-    runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }.also { radioProgressService.finish(name) }
+    return runCatching { cut(directory, todo) }.onFailure { fail(directory, it) }.also { radioProgressService.finish(name) }.isSuccess
   }
 
   private fun plan(

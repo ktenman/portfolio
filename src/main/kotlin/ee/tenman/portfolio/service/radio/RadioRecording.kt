@@ -41,6 +41,8 @@ data class RadioProperties(
 ) {
   val jingles: Path
     get() = recordings.resolve("jingles")
+  val idents: Path
+    get() = recordings.resolve("idents")
 }
 
 enum class RecordingState {
