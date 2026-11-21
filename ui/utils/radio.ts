@@ -81,8 +81,6 @@ export const ROUND = `${DISC} text-ink`
 
 export const LISTEN = `${ROUND} bg-surface-sunken focus-visible:outline-offset-2`
 
-export const LOADED = `${DISC} relative bg-surface text-brass-deep focus-visible:outline-offset-2`
-
 const DOT =
   "before:mr-1 before:inline-block before:size-1.5 before:rounded-full before:align-middle before:content-['']"
 

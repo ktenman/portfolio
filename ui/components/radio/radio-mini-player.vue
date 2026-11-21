@@ -24,7 +24,7 @@
           <button
             type="button"
             data-testid="radio-play"
-            :class="[LOADED, 'size-11 [&>svg]:size-5']"
+            :class="[LISTEN, 'relative size-11 [&>svg]:size-5']"
             :aria-label="player.playing.value ? 'Pause' : 'Play'"
             @click="player.toggle()"
           >
@@ -132,7 +132,7 @@ import {
   episodeParts,
   fullDay,
   isDigest,
-  LOADED,
+  LISTEN,
   position,
   rawParts,
   ROUND,

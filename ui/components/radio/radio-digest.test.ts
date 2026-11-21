@@ -170,11 +170,14 @@ describe('RadioDigest', () => {
     ]).toEqual([true, true])
   })
 
-  it('should keep the digest in the player off solid brass', async () => {
+  it('should keep the digest in the player on the sunken disc with an ink glyph', async () => {
     load()
     player.playing.value = true
     const classes = (await mount()).get('button').classes()
-    expect([classes.includes('bg-surface'), classes.includes('bg-brass')]).toEqual([true, false])
+    expect([classes.includes('text-brass-deep'), classes]).toEqual([
+      false,
+      expect.arrayContaining(['bg-surface-sunken', 'text-ink']),
+    ])
   })
 
   it('should hide the ring from screen readers', async () => {

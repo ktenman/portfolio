@@ -152,15 +152,15 @@ describe('RadioOnAir', () => {
     ])
   })
 
-  it('should turn the station playing into a quiet disc with a brass pause glyph', async () => {
+  it('should keep the station playing on the sunken disc with an ink glyph', async () => {
     const player = useRadioPlayer()
     player.tuned.value = Station.KUKU
     player.playing.value = true
     const classes = (await mount({ ...idle, onAir: broadcast })).find('button').classes()
     player.close()
-    expect([classes.includes('bg-brass'), classes]).toEqual([
+    expect([classes.includes('text-brass-deep'), classes]).toEqual([
       false,
-      expect.arrayContaining(['bg-surface', 'text-brass-deep']),
+      expect.arrayContaining(['bg-surface-sunken', 'text-ink']),
     ])
   })
 

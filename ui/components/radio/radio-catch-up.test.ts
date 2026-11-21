@@ -306,7 +306,7 @@ describe('RadioCatchUp', () => {
     const pause = await button('Pause: Keskpäevatund 12:00')
     expect([pause.find('[data-testid="radio-ring"]').exists(), pause.classes()]).toEqual([
       true,
-      expect.arrayContaining(['text-brass-deep']),
+      expect.arrayContaining(['bg-surface-sunken', 'text-ink']),
     ])
   })
 
