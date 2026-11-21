@@ -6,7 +6,7 @@ import { type RadioPositionDto, RecordingState, Station } from '../models/genera
 import { deferred } from '../tests/test-utils'
 
 const positions = vi.hoisted(() => ({ find: vi.fn(), save: vi.fn() }))
-const saved = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn() }))
+const saved = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), rate: vi.fn() }))
 
 vi.mock('../services/api', () => ({
   radioService: {
@@ -16,10 +16,11 @@ vi.mock('../services/api', () => ({
     savePosition: positions.save,
     player: saved.read,
     savePlayer: saved.write,
+    saveRate: saved.rate,
   },
 }))
 
-const NOTHING = { recording: null, station: null, spot: null }
+const NOTHING = { recording: null, station: null, spot: null, rate: null }
 const NAME = recording().name
 
 const split = () =>
@@ -59,6 +60,7 @@ describe('useRadioPlayer', () => {
     positions.save.mockReset().mockResolvedValue(undefined)
     saved.read.mockReset().mockResolvedValue(NOTHING)
     saved.write.mockReset().mockResolvedValue(undefined)
+    saved.rate.mockReset().mockResolvedValue(undefined)
     await reload()
   })
 
@@ -795,6 +797,44 @@ describe('useRadioPlayer', () => {
       await bring({ recording: recording(), spot: { x: 0.25, y: 1 } })
       player.close()
       expect(player.spot.value).toEqual({ x: 0.25, y: 1 })
+    })
+
+    it('should take the saved speed', async () => {
+      await bring({ rate: 1.5 })
+      expect(player.rate.value).toBe(1.5)
+    })
+
+    it('should play at normal speed when none was saved', async () => {
+      await bring({ rate: null })
+      expect(player.rate.value).toBe(1)
+    })
+
+    it('should play the kept recording at the saved speed', async () => {
+      await bring({ recording: recording(), rate: 1.1 })
+      expect(audio.playbackRate).toBe(1.1)
+    })
+
+    it('should leave a kept station at normal speed whatever was saved', async () => {
+      await bring({ station: Station.KUKU, rate: 1.5 })
+      expect(audio.playbackRate).toBe(1)
+    })
+
+    it('should keep a speed stepped before the answer', async () => {
+      player.step()
+      await bring({ rate: 2 })
+      expect(player.rate.value).toBe(1.1)
+    })
+
+    it('should save the speed it steps to', () => {
+      player.step()
+      expect(saved.rate).toHaveBeenCalledWith({ rate: 1.1 })
+    })
+
+    it('should keep the stepped speed when the save fails', async () => {
+      saved.rate.mockRejectedValue(new Error('võrguta'))
+      player.step()
+      await flushPromises()
+      expect(player.rate.value).toBe(1.1)
     })
   })
 })

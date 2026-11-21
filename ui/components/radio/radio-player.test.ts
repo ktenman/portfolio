@@ -12,6 +12,7 @@ vi.mock('../../services/api', () => ({
     position: () => Promise.resolve({ seconds: 0 }),
     savePosition: () => Promise.resolve(),
     savePlayer: () => Promise.resolve(),
+    saveRate: () => Promise.resolve(),
     fileUrl: (name: string, file: string) => `/api/radio/${name}/${file}`,
     review: () => Promise.resolve(),
   },

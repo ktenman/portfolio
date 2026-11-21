@@ -475,6 +475,38 @@ class RadioControllerIT {
     put("/api/radio/player/spot", "tõnu.player@näide.ee", """{"x":1.5,"y":0.0}""").andExpect(status().is5xxServerError)
   }
 
+  @Test
+  fun `should keep the speed a listener chose`() {
+    pace("kärt.player@näide.ee", 1.1)
+    player("kärt.player@näide.ee").andExpect(jsonPath("$.rate").value(1.1))
+  }
+
+  @Test
+  fun `should keep the speed apart per listener`() {
+    pace("märt.player@näide.ee", 1.5)
+    pace("jaan.player@näide.ee", 2.0)
+    player("märt.player@näide.ee").andExpect(jsonPath("$.rate").value(1.5))
+  }
+
+  @Test
+  fun `should keep what is open when the speed changes`() {
+    choose("siim.player@näide.ee", """{"station":"KUKU"}""")
+    pace("siim.player@näide.ee", 1.25)
+    player("siim.player@näide.ee").andExpect(jsonPath("$.station").value("KUKU"))
+  }
+
+  @Test
+  fun `should keep the speed when a recording opens`() {
+    pace("käthe.player@näide.ee", 2.0)
+    choose("käthe.player@näide.ee", """{"recording":"2026-10-17"}""")
+    player("käthe.player@näide.ee").andExpect(jsonPath("$.rate").value(2.0))
+  }
+
+  @Test
+  fun `should refuse a speed no player offers`() {
+    put("/api/radio/player/rate", "tiit.player@näide.ee", """{"rate":9.0}""").andExpect(status().is5xxServerError)
+  }
+
   private fun player(listener: String) = mockMvc.perform(mvcGet("/api/radio/player").header(LISTENER, listener))
 
   private fun put(
@@ -495,6 +527,13 @@ class RadioControllerIT {
     spot: String,
   ) {
     put("/api/radio/player/spot", listener, spot).andExpect(status().isNoContent)
+  }
+
+  private fun pace(
+    listener: String,
+    rate: Double,
+  ) {
+    put("/api/radio/player/rate", listener, """{"rate":$rate}""").andExpect(status().isNoContent)
   }
 
   private fun place(listener: String) = mockMvc.perform(mvcGet("/api/radio/2026-10-17/position").header(LISTENER, listener))

@@ -232,6 +232,13 @@ describe('api services', () => {
       { x: 0.25, y: 1 },
     ],
     [
+      'radio.saveRate',
+      () => radioService.saveRate({ rate: 1.1 }),
+      'put',
+      '/radio/player/rate',
+      { rate: 1.1 },
+    ],
+    [
       'radio.search',
       () => radioService.search('valimised', '2026-10-17', Station.ARIPAEV),
       'get',
