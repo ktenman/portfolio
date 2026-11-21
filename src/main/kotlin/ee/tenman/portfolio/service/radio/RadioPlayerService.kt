@@ -11,8 +11,8 @@ class RadioPlayerService(
   private val radioArchiveService: RadioArchiveService,
 ) {
   fun find(listener: String): RadioPlayerDto {
-    val player = radioPlayerRepository.findByListener(listener) ?: return RadioPlayerDto(null, null, null)
-    return RadioPlayerDto(player.recording?.let(radioArchiveService::recording), player.station, spot(player))
+    val player = radioPlayerRepository.findByListener(listener) ?: return RadioPlayerDto(null, null, null, null)
+    return RadioPlayerDto(player.recording?.let(radioArchiveService::recording), player.station, spot(player), player.rate)
   }
 
   @Transactional
@@ -26,6 +26,12 @@ class RadioPlayerService(
     listener: String,
     spot: RadioSpot,
   ) = radioPlayerRepository.upsertSpot(listener, spot.x, spot.y)
+
+  @Transactional
+  fun pace(
+    listener: String,
+    rate: RadioRate,
+  ) = radioPlayerRepository.upsertRate(listener, rate.rate)
 
   private fun spot(player: RadioPlayer): RadioSpot? {
     val x = player.x ?: return null

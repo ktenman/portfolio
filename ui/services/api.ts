@@ -31,6 +31,7 @@ import {
   type RadioPositionDto,
   type RadioProgrammeDto,
   type RadioSearch,
+  type RadioRate,
   type RadioSpot,
   type RadioStation,
   type Station,
@@ -273,6 +274,7 @@ export const radioService = {
   savePlayer: (choice: RadioPlayerChoice) =>
     httpClient.put<void>(`${API_ENDPOINTS.RADIO}/player`, choice),
   saveSpot: (spot: RadioSpot) => httpClient.put<void>(`${API_ENDPOINTS.RADIO}/player/spot`, spot),
+  saveRate: (rate: RadioRate) => httpClient.put<void>(`${API_ENDPOINTS.RADIO}/player/rate`, rate),
   fileUrl: (name: string, file: string) => `/api${API_ENDPOINTS.RADIO}/${name}/${file}`,
   programmes: () => httpClient.get<RadioProgrammeDto[]>(`${API_ENDPOINTS.RADIO}/programmes`),
   stations: () => httpClient.get<RadioStation[]>(`${API_ENDPOINTS.RADIO}/station`),

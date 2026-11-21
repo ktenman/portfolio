@@ -28,6 +28,7 @@ const started = ref(false)
 const spot = ref<RadioSpot | null>(null)
 const toast = useToast()
 let loaded = ''
+let stepped = false
 let opened = ''
 let heard = 0
 let saved: number | null = null
@@ -221,6 +222,8 @@ const skip = (by: number) => pick(seconds.value + by)
 
 const step = () => {
   rate.value = RATES[RATES.indexOf(rate.value) + 1] ?? RATES[0]!
+  stepped = true
+  radioService.saveRate({ rate: rate.value }).catch(() => undefined)
 }
 
 const playFrom = (at: number, wanted: Version = 'raw') => {
@@ -337,6 +340,7 @@ const recall = async () => {
   const card = await radioService.player().catch(() => null)
   if (!card) return
   spot.value ??= card.spot
+  if (!stepped && card.rate) rate.value = card.rate
   const kept = card.recording
   if ((!kept && !card.station) || !vacant(kept?.name)) return
   if (kept && !recording.value) load(kept, edition(kept))
