@@ -170,9 +170,7 @@ test('radio shows tables stay clear of the side cards at 1024px', async ({ page 
   await page.setViewportSize({ width: 1024, height: 900 })
   await stubRadioOnAir(page)
   await openRoute(page, '/radio/shows')
-  const rail = await page
-    .getByRole('complementary', { name: 'Recorders and broadcast' })
-    .boundingBox()
+  const rail = await page.getByRole('complementary', { name: 'Stations' }).boundingBox()
   const edges = await page
     .locator('.desktop-table-wrapper')
     .evaluateAll(wrappers => wrappers.map(wrapper => wrapper.getBoundingClientRect().right))

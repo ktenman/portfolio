@@ -348,11 +348,11 @@ describe('RadioRecordings', () => {
     expect(wrapper.findAll('thead th').map(header => header.text())).toContain('Station')
   })
 
-  it('should put the On air card before the recordings on a phone', async () => {
+  it('should put the Stations card before the recordings on a phone', async () => {
     const onAir = { name: 'Tarkade klubi', start: 1792170142, end: 1792173742, recorded: false }
     vi.mocked(radioService.stations).mockResolvedValueOnce([station({ onAir })])
     const wrapper = await mount()
-    const heading = wrapper.findAll('h3').find(h => h.text() === 'On air')!.element
+    const heading = wrapper.findAll('h3').find(h => h.text() === 'Stations')!.element
     const row = wrapper.find('tbody tr').element
     expect(heading.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

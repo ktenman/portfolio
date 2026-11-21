@@ -400,15 +400,15 @@ test('the radio day bar sums the time planned on a day with nothing recorded', a
   ).toHaveScreenshot('radio-day-planned.png')
 })
 
-test('radio recorders with one station idle', async ({ page }) => {
+test('radio stations with one recorder not running', async ({ page }) => {
   await stubBuildInfo(page)
   await stubEnums(page)
   await stubRadioOneStationIdle(page)
   await openRoute(page, '/radio')
   await freeze(page)
   await expect(
-    page.getByRole('complementary', { name: 'Recorders and broadcast' })
-  ).toHaveScreenshot('radio-recorders-idle.png')
+    page.getByRole('heading', { name: 'Stations' }).filter({ visible: true }).locator('xpath=..')
+  ).toHaveScreenshot('radio-stations-recorder-off.png')
 })
 
 test('an unfolded radio digest lists every story across the page', async ({ page }, testInfo) => {

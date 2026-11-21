@@ -6,7 +6,8 @@ import { renderWithProviders } from '../../tests/test-utils'
 import RadioOnAir from './radio-on-air.vue'
 import RadioIcon from './radio-icon.vue'
 import { useRadioPlayer } from '../../composables/use-radio-player'
-import { RecorderState, Station } from '../../models/generated/domain-models'
+import { type RadioStation, RecorderState, Station } from '../../models/generated/domain-models'
+import { station } from './radio-fixture'
 
 vi.mock('../../services/api', () => ({
   radioService: {
@@ -43,22 +44,17 @@ const broadcast = {
   recorded: false,
 }
 
-const next = {
-  name: 'Ilmaparandaja',
-  start: SATURDAY_NOON + 3600,
-  end: SATURDAY_NOON + 7200,
-  recorded: false,
-}
-
-const mount = async (
-  station: Awaited<ReturnType<typeof radioService.stations>>[number],
-  props: { aside?: boolean } = {}
-) => {
-  vi.mocked(radioService.stations).mockResolvedValue([station])
-  const wrapper = renderWithProviders({ render: () => h(RadioOnAir, props) })
+const mount = async (...stations: RadioStation[]) => {
+  vi.mocked(radioService.stations).mockResolvedValue(stations)
+  const wrapper = renderWithProviders({ render: () => h(RadioOnAir) })
   await flushPromises()
   return wrapper
 }
+
+const halfway = { ...broadcast, end: SATURDAY_NOON + 74 * 60 }
+
+const dash = (wrapper: ReturnType<typeof renderWithProviders>) =>
+  wrapper.get('[data-testid="radio-ring"] circle:last-child').attributes('stroke-dasharray')
 
 describe('RadioOnAir', () => {
   beforeEach(() => {
@@ -70,25 +66,35 @@ describe('RadioOnAir', () => {
     vi.useRealTimers()
   })
 
-  it('should show nothing while no programme is on air', async () => {
+  it('should show nothing without a programme, a disk figure or a stopped recorder', async () => {
     expect((await mount(idle)).find('section').exists()).toBe(false)
   })
 
-  it('should title the programme on air', async () => {
+  it('should title the card Stations', async () => {
     expect((await mount({ ...idle, onAir: broadcast })).find('section').text()).toContain(
-      'On airTarkade klubi'
+      'StationsTarkade klubi'
     )
   })
 
-  it('should show the hours of the programme on air', async () => {
-    expect((await mount({ ...idle, onAir: broadcast })).text()).toContain(
-      '12:00–13:00 · not recorded'
-    )
+  it('should title the card Station on a chip', async () => {
+    const wrapper = await mount({ ...idle, onAir: broadcast })
+    await wrapper.vm.$router.replace({ query: { station: 'kuku' } })
+    await flushPromises()
+    expect(wrapper.find('h3').text()).toBe('Station')
   })
 
-  it('should say the programme on air is being recorded', async () => {
+  it('should say when the programme on air ends', async () => {
+    expect((await mount({ ...idle, onAir: broadcast })).text()).toContain('Kuku · until 13:00')
+  })
+
+  it('should mark the programme on air that is being recorded', async () => {
     const onAir = { ...broadcast, recorded: true }
-    expect((await mount({ ...idle, onAir })).text()).toContain('12:00–13:00 · recording')
+    expect((await mount({ ...idle, onAir })).find('[title="Being recorded"]').text()).toBe('Rec')
+  })
+
+  it('should leave a programme that is not recorded unmarked', async () => {
+    const wrapper = await mount({ ...idle, onAir: broadcast })
+    expect(wrapper.find('[title="Being recorded"]').exists()).toBe(false)
   })
 
   it('should lead the programme on air with the live button', async () => {
@@ -96,25 +102,13 @@ describe('RadioOnAir', () => {
     expect(button.parentElement?.firstElementChild).toBe(button)
   })
 
-  it('should fill the progress line with the share of the programme that has aired', async () => {
-    const onAir = { ...broadcast, end: SATURDAY_NOON + 74 * 60 }
-    const line = (await mount({ ...idle, onAir })).find('[data-testid="radio-on-air-progress"]')
-    expect(line.attributes('style')).toContain('width: 50%')
+  it('should close the ring by the share of the programme that has aired', async () => {
+    expect(dash(await mount({ ...idle, onAir: halfway }))).toBe('50 100')
   })
 
-  it('should fill the progress line no further than the end of the programme', async () => {
+  it('should close the ring fully once the programme has ended', async () => {
     const onAir = { ...broadcast, end: SATURDAY_NOON + 600 }
-    const line = (await mount({ ...idle, onAir })).find('[data-testid="radio-on-air-progress"]')
-    expect(line.attributes('style')).toContain('width: 100%')
-  })
-
-  it('should give the next programme one line with its start and name', async () => {
-    const line = (await mount({ ...idle, onAir: broadcast, next })).find('p')
-    expect(line.text()).toBe('Next 13:00 · Ilmaparandaja')
-  })
-
-  it('should show no next row without a next programme', async () => {
-    expect((await mount({ ...idle, onAir: broadcast })).text()).not.toContain('Next')
+    expect(dash(await mount({ ...idle, onAir }))).toBeUndefined()
   })
 
   it('should play the station live through the server', async () => {
@@ -170,23 +164,13 @@ describe('RadioOnAir', () => {
     ])
   })
 
-  it('should draw a full ring around the station that plays', async () => {
+  it('should keep the ring on the programme while the station plays', async () => {
     const player = useRadioPlayer()
     player.tuned.value = Station.KUKU
     player.playing.value = true
-    const dash = (await mount({ ...idle, onAir: broadcast }))
-      .get('[data-testid="radio-ring"] circle:last-child')
-      .attributes('stroke-dasharray')
+    const share = dash(await mount({ ...idle, onAir: halfway }))
     player.close()
-    expect(dash).toBeUndefined()
-  })
-
-  it('should draw no ring around a station that was hung up', async () => {
-    const player = useRadioPlayer()
-    player.tuned.value = Station.KUKU
-    const wrapper = await mount({ ...idle, onAir: broadcast })
-    player.close()
-    expect(wrapper.find('[data-testid="radio-ring"]').exists()).toBe(false)
+    expect(share).toBe('50 100')
   })
 
   it('should show only the icon on the live button', async () => {
@@ -209,9 +193,15 @@ describe('RadioOnAir', () => {
     expect(label).toBe('Pause: Kuku')
   })
 
-  it('should draw the whole section as one card beside the recorder', async () => {
-    const section = (await mount({ ...idle, onAir: broadcast }, { aside: true })).find('section')
-    expect(section.classes()).toContain('card')
+  it('should draw the rail as one card named after its heading', async () => {
+    vi.mocked(radioService.stations).mockResolvedValue([{ ...idle, onAir: broadcast }])
+    const wrapper = renderWithProviders({ render: () => h(RadioOnAir, { aside: true }) })
+    await flushPromises()
+    const rail = wrapper.find('aside')
+    expect([rail.classes().includes('card'), rail.attributes('aria-label')]).toEqual([
+      true,
+      'Stations',
+    ])
   })
 
   it('should keep the heading above the card between the recordings and the shows', async () => {
@@ -221,12 +211,7 @@ describe('RadioOnAir', () => {
 
   const aripaev = { ...idle, station: Station.ARIPAEV, onAir: { ...broadcast, name: 'Kuum tool' } }
 
-  const both = async (props: { aside?: boolean } = {}) => {
-    vi.mocked(radioService.stations).mockResolvedValue([{ ...idle, onAir: broadcast }, aripaev])
-    const wrapper = renderWithProviders({ render: () => h(RadioOnAir, props) })
-    await flushPromises()
-    return wrapper
-  }
+  const both = () => mount({ ...idle, onAir: broadcast }, aripaev)
 
   const labels = (wrapper: ReturnType<typeof renderWithProviders>) =>
     wrapper.findAll('button').map(button => button.attributes('aria-label'))
@@ -239,30 +224,8 @@ describe('RadioOnAir', () => {
     expect(labels(await mount(idle))).toEqual([])
   })
 
-  it('should give each station its own progress line', async () => {
-    const lines = (await both()).findAll('[data-testid="radio-on-air-progress"]')
-    expect(lines).toHaveLength(2)
-  })
-
-  it('should give each station its own next show', async () => {
-    vi.mocked(radioService.stations).mockResolvedValue([
-      { ...idle, onAir: broadcast, next },
-      { ...aripaev, next: { ...next, name: 'Tööandjate tund' } },
-    ])
-    const wrapper = renderWithProviders({ render: () => h(RadioOnAir) })
-    await flushPromises()
-    expect(wrapper.findAll('p').map(line => line.text())).toEqual([
-      'Next 13:00 · Ilmaparandaja',
-      'Next 13:00 · Tööandjate tund',
-    ])
-  })
-
-  it('should lead the hours of a show with its station', async () => {
-    expect((await both()).text()).toContain('Äripäev · 12:00–13:00 · not recorded')
-  })
-
-  it('should keep the separator with the recording state when the line wraps', async () => {
-    expect((await both()).find('.whitespace-nowrap').text()).toBe('· not recorded')
+  it('should lead the end of a show with its station', async () => {
+    expect((await both()).text()).toContain('Äripäev · until 13:00')
   })
 
   it('should tune to the station of the row', async () => {
@@ -291,5 +254,52 @@ describe('RadioOnAir', () => {
     await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
     await flushPromises()
     expect(labels(wrapper)).toEqual(['Listen live: Äripäev'])
+  })
+
+  const kuku = station()
+  const second = station({ station: Station.ARIPAEV, hours: 2106 })
+
+  const figures = (wrapper: ReturnType<typeof renderWithProviders>) =>
+    wrapper.findAll('dd').map(figure => figure.text())
+
+  it('should give the free space and the hours that still fit while nothing is on air', async () => {
+    expect((await mount(kuku)).find('dl').text()).toBe('Free space364 GBRoom for≈ 3,159 h')
+  })
+
+  it('should rule the disk figures off from the stations above them', async () => {
+    const wrapper = await mount({ ...kuku, onAir: broadcast })
+    expect(wrapper.find('dl').classes()).toContain('border-t')
+  })
+
+  it('should draw no rule above the disk figures while nothing is on air', async () => {
+    expect((await mount(kuku)).find('dl').classes()).not.toContain('border-t')
+  })
+
+  it('should give the room of Kuku whatever the order', async () => {
+    expect(figures(await mount(second, kuku))).toContain('≈ 3,159 h')
+  })
+
+  it('should give the room of the first listed station when Kuku is off', async () => {
+    expect(figures(await mount(second))).toContain('≈ 2,106 h')
+  })
+
+  it('should give the room of the station on a chip', async () => {
+    const wrapper = await mount(kuku, second)
+    await wrapper.vm.$router.replace({ query: { station: 'aripaev' } })
+    await flushPromises()
+    expect(figures(wrapper)).toContain('≈ 2,106 h')
+  })
+
+  it('should give only the free space while the hours are unknown', async () => {
+    expect(figures(await mount({ ...kuku, hours: null }))).toEqual(['364 GB'])
+  })
+
+  it('should name the stations whose recorder is not running', async () => {
+    const wrapper = await mount(kuku, { ...second, recorder: RecorderState.OFF })
+    expect(wrapper.text()).toContain('Not running: Äripäev')
+  })
+
+  it('should say nothing about recorders that run', async () => {
+    expect((await mount(kuku, second)).text()).not.toContain('Not running')
   })
 })

@@ -7,7 +7,6 @@ import {
 } from '../models/generated/domain-models'
 import {
   advance,
-  audioFormat,
   clock,
   day,
   episodeParts,
@@ -123,12 +122,6 @@ describe('missedRun', () => {
 
   it('should count one missed airing as one show', () => {
     expect(missedRun([airing()])).toBe('14:00–15:00 · 1 show, not recorded')
-  })
-})
-
-describe('stream', () => {
-  it('should give the format of the recording', () => {
-    expect(audioFormat(recording().format)).toEqual('MP3 256 kb/s')
   })
 })
 

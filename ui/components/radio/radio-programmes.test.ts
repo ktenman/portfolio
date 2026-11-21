@@ -72,23 +72,17 @@ describe('RadioProgrammes', () => {
     expect(radioService.choose).toHaveBeenCalledWith(175, { recordEvery: true, uncut: false })
   })
 
-  it('should name a show as the next capture once it is ticked', async () => {
+  it('should mark the show on air as recorded once it is ticked', async () => {
     const noon = Date.UTC(2026, 9, 24, 9, 0, 0) / 1000
-    const capture = {
-      name: '2026-10-24-1200-keskpaevatund',
-      programmes: ['Keskpäevatund'],
-      start: noon - 30,
-      end: noon + 3630,
-      slot: { start: noon, end: noon + 3600 },
-    }
+    const onAir = { name: 'Keskpäevatund', start: noon, end: noon + 3600, recorded: false }
     vi.mocked(radioService.stations)
-      .mockResolvedValueOnce([station()])
-      .mockResolvedValue([station({ capture })])
+      .mockResolvedValueOnce([station({ onAir })])
+      .mockResolvedValue([station({ onAir: { ...onAir, recorded: true } })])
     vi.mocked(radioService.choose).mockResolvedValue()
     const wrapper = await mount()
     await wrapper.find('input[aria-label="Record every time: Keskpäevatund"]').setValue(true)
     await flushPromises()
-    expect(wrapper.text()).toContain('Keskpäevatund, Sat 24.10 12:00')
+    expect(wrapper.find('[title="Being recorded"]').exists()).toBe(true)
   })
 
   it('should untick the box when the choice cannot be saved', async () => {
