@@ -391,6 +391,10 @@ export interface RadioSpot {
     y: number;
 }
 
+export interface RadioRate {
+    rate: number;
+}
+
 export interface RadioPlayerChoice {
     recording: string | null;
     station: Station | null;
@@ -400,6 +404,7 @@ export interface RadioPlayerDto {
     recording: RecordingSummary | null;
     station: Station | null;
     spot: RadioSpot | null;
+    rate: number | null;
 }
 
 export interface RadioSearch {

@@ -309,6 +309,10 @@ data class RadioSpot(
   val y: Double,
 )
 
+data class RadioRate(
+  val rate: Double,
+)
+
 data class RadioPlayerChoice(
   val recording: String? = null,
   val station: Station? = null,
@@ -318,4 +322,5 @@ data class RadioPlayerDto(
   val recording: RecordingSummary?,
   val station: Station?,
   val spot: RadioSpot?,
+  val rate: Double?,
 )

@@ -43,4 +43,20 @@ interface RadioPlayerRepository : JpaRepository<RadioPlayer, Long> {
     x: Double,
     y: Double,
   )
+
+  @Modifying
+  @Query(
+    """
+    INSERT INTO radio_player (listener, rate)
+    VALUES (:listener, :rate)
+    ON CONFLICT (listener)
+    DO UPDATE SET rate = EXCLUDED.rate,
+      updated_at = NOW(), version = radio_player.version + 1
+    """,
+    nativeQuery = true,
+  )
+  fun upsertRate(
+    listener: String,
+    rate: Double,
+  )
 }
