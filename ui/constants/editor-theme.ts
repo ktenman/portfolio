@@ -4,12 +4,12 @@ export const EDITOR_TOKEN_HEX = {
   surface: '#211d1a',
   hairline: '#342f2b',
   'hairline-strong': '#47413c',
-  ink: '#eae7e2',
-  'ink-soft': '#a5a199',
-  brass: '#dbb06b',
+  ink: '#e4e1db',
+  'ink-soft': '#c5c0b8',
+  brass: '#e1b671',
   'brass-wash': '#3a2b16',
-  gain: '#6bc987',
-  notice: '#7fb6ee',
+  gain: '#6dca89',
+  notice: '#8cc3fc',
 }
 
 export const EDITOR_DARK_THEME = 'portfolio-dark'

@@ -43,6 +43,37 @@ const decodeSrgb = (channel: number): number =>
 const encodeSrgb = (channel: number): number =>
   channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055
 
+const APCA_WEIGHTS = [0.2126729, 0.7151522, 0.072175] as const
+
+function apcaLuminance(color: Oklch): number {
+  const screen = oklchToLinearRgb(color)
+    .map(channel => encodeSrgb(clampUnit(channel)) ** 2.4)
+    .reduce((sum, channel, index) => sum + APCA_WEIGHTS[index] * channel, 0)
+  return screen < 0.022 ? screen + (0.022 - screen) ** 1.414 : screen
+}
+
+export function apcaContrast(text: Oklch, background: Oklch): number {
+  const foreground = apcaLuminance(text)
+  const ground = apcaLuminance(background)
+  const lift =
+    ground > foreground
+      ? (ground ** 0.56 - foreground ** 0.57) * 1.14
+      : (ground ** 0.65 - foreground ** 0.62) * 1.14
+  if (Math.abs(lift) < 0.1) return 0
+  return (Math.abs(lift) - 0.027) * 100
+}
+
+const opponents = ({ c, h }: Oklch): [number, number] => {
+  const radians = (h * Math.PI) / 180
+  return [c * Math.cos(radians), c * Math.sin(radians)]
+}
+
+export function deltaE(first: Oklch, second: Oklch): number {
+  const [firstA, firstB] = opponents(first)
+  const [secondA, secondB] = opponents(second)
+  return Math.hypot(first.l - second.l, firstA - secondA, firstB - secondB)
+}
+
 const toByte = (channel: number): number => Math.round(clampUnit(channel) * 255)
 
 const numbersIn = (value: string): number[] => (value.match(/-?[\d.]+/g) ?? []).map(Number)

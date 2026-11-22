@@ -32,31 +32,31 @@
   --color-card-border: light-dark(rgb(0 0 0 / 0.05), var(--color-hairline));
   --color-dialog-border: light-dark(rgb(0 0 0 / 0.175), var(--color-hairline-strong));
 
-  --color-ink: light-dark(oklch(0.24 0.012 60), oklch(0.93 0.008 85));
-  --color-ink-soft: light-dark(oklch(0.5 0.014 60), oklch(0.71 0.012 80));
-  --color-ink-faint: light-dark(oklch(0.62 0.012 60), oklch(0.62 0.012 75));
+  --color-ink: light-dark(oklch(0.24 0.012 60), oklch(0.91 0.008 85));
+  --color-ink-soft: light-dark(oklch(0.5 0.014 60), oklch(0.81 0.012 80));
+  --color-ink-faint: light-dark(oklch(0.62 0.012 60), oklch(0.73 0.012 75));
   --color-ink-muted: var(--color-ink-soft);
   --color-body-secondary: var(--color-ink-soft);
 
-  --color-brass: light-dark(oklch(0.53 0.098 74), oklch(0.78 0.1 78));
+  --color-brass: light-dark(oklch(0.53 0.098 74), oklch(0.8 0.1 78));
   --color-brass-deep: light-dark(oklch(0.46 0.098 74), oklch(0.86 0.085 80));
   --color-brass-wash: light-dark(oklch(0.955 0.02 74), oklch(0.3 0.04 74));
 
-  --color-gain: light-dark(oklch(0.52 0.115 152), oklch(0.76 0.13 152));
+  --color-gain: light-dark(oklch(0.52 0.115 152), oklch(0.765 0.13 152));
   --color-gain-deep: light-dark(oklch(0.45 0.115 152), oklch(0.84 0.11 152));
   --color-gain-wash: light-dark(oklch(0.955 0.022 152), oklch(0.29 0.04 152));
-  --color-loss: light-dark(oklch(0.52 0.16 26), oklch(0.76 0.12 26));
+  --color-loss: light-dark(oklch(0.52 0.16 26), oklch(0.795 0.11 26));
   --color-loss-deep: light-dark(oklch(0.45 0.16 26), oklch(0.84 0.08 26));
   --color-loss-wash: light-dark(oklch(0.955 0.022 26), oklch(0.29 0.045 26));
   --color-loss-wash-deep: light-dark(oklch(0.9 0.045 26), oklch(0.42 0.08 26));
   --color-change-flat: var(--color-gray-200);
-  --color-gain-step-1: light-dark(oklch(0.93 0.034 152), oklch(0.29 0.035 152));
-  --color-gain-step-2: light-dark(oklch(0.84 0.07 152), oklch(0.38 0.065 152));
-  --color-gain-step-3: light-dark(oklch(0.68 0.1 152), oklch(0.48 0.095 152));
-  --color-loss-step-1: light-dark(oklch(0.93 0.035 26), oklch(0.29 0.04 26));
-  --color-loss-step-2: light-dark(oklch(0.84 0.07 26), oklch(0.38 0.095 26));
-  --color-loss-step-3: light-dark(oklch(0.68 0.13 26), oklch(0.48 0.14 26));
-  --color-notice: light-dark(oklch(0.52 0.11 250), oklch(0.76 0.1 250));
+  --color-gain-step-1: light-dark(oklch(0.93 0.034 152), oklch(0.31 0.065 152));
+  --color-gain-step-2: light-dark(oklch(0.84 0.07 152), oklch(0.39 0.09 152));
+  --color-gain-step-3: light-dark(oklch(0.68 0.1 152), oklch(0.48 0.115 152));
+  --color-loss-step-1: light-dark(oklch(0.93 0.035 26), oklch(0.31 0.075 26));
+  --color-loss-step-2: light-dark(oklch(0.84 0.07 26), oklch(0.39 0.115 26));
+  --color-loss-step-3: light-dark(oklch(0.68 0.13 26), oklch(0.48 0.15 26));
+  --color-notice: light-dark(oklch(0.52 0.11 250), oklch(0.8 0.1 250));
   --color-notice-wash: light-dark(oklch(0.955 0.022 250), oklch(0.29 0.04 250));
 
   --color-signal-indigo: var(--color-brass);

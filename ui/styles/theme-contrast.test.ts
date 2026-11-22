@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import themeCss from './theme.css?raw'
 import { EDITOR_TOKEN_HEX } from '../constants/editor-theme'
 import {
+  apcaContrast,
   contrastRatio,
+  deltaE,
   hexFromOklch,
   isInSrgbGamut,
   luminanceFromOklch,
@@ -102,6 +104,18 @@ const PAIRS: ReadonlyArray<[string, string, number]> = [
   ['on-neutral', 'neutral-fill-hover', AA_TEXT],
 ]
 
+const APCA_FLOORS: ReadonlyArray<[string, number]> = [
+  ['ink-soft', 60],
+  ['ink-faint', 45],
+  ['brass', 60],
+  ['notice', 60],
+  ['gain', 60],
+  ['loss', 60],
+]
+
+const STEP_FROM_CARD = 0.07
+const GAIN_FROM_LOSS = 0.06
+
 const PALETTES: ReadonlyArray<{
   palette: Palette
   locks: ReadonlyArray<[string, string, number]>
@@ -118,9 +132,8 @@ const PALETTES: ReadonlyArray<{
   {
     palette: 'dark',
     locks: [
-      ['gain', 'loss', 0.76],
-      ['gain-step-1', 'loss-step-1', 0.29],
-      ['gain-step-2', 'loss-step-2', 0.38],
+      ['gain-step-1', 'loss-step-1', 0.31],
+      ['gain-step-2', 'loss-step-2', 0.39],
       ['gain-step-3', 'loss-step-3', 0.48],
     ],
   },
@@ -168,12 +181,44 @@ describe.each(PALETTES)('the Statement palette in $palette', ({ palette, locks }
     }
   )
 
+  it.each(APCA_FLOORS)('reads %s on surface at APCA Lc %i or more', (name, floor) => {
+    const tokens = declaredTokens(palette)
+    expect(
+      apcaContrast(tokens.get(name) as Oklch, tokens.get('surface') as Oklch)
+    ).toBeGreaterThanOrEqual(floor)
+  })
+
+  it.each(['gain', 'loss'])('sets the first %s step apart from the card it sits on', side => {
+    const tokens = declaredTokens(palette)
+    expect(
+      deltaE(tokens.get(`${side}-step-1`) as Oklch, tokens.get('surface') as Oklch)
+    ).toBeGreaterThanOrEqual(STEP_FROM_CARD)
+  })
+
+  it.each(['step-1', 'step-2', 'step-3'])('sets gain apart from loss at %s', step => {
+    const tokens = declaredTokens(palette)
+    expect(
+      deltaE(tokens.get(`gain-${step}`) as Oklch, tokens.get(`loss-${step}`) as Oklch)
+    ).toBeGreaterThanOrEqual(GAIN_FROM_LOSS)
+  })
+
   it.each(['step-1', 'step-2', 'step-3'])('keeps %s of each side on the hue of its side', step => {
     const tokens = declaredTokens(palette)
     expect([tokens.get(`gain-${step}`)?.h, tokens.get(`loss-${step}`)?.h]).toEqual([
       tokens.get('gain')?.h,
       tokens.get('loss')?.h,
     ])
+  })
+})
+
+describe('gain and loss in dark', () => {
+  it('read with the same APCA contrast on surface so equal movements carry equal weight', () => {
+    const tokens = declaredTokens('dark')
+    const surface = tokens.get('surface') as Oklch
+    const [gain, loss] = ['gain', 'loss'].map(name =>
+      apcaContrast(tokens.get(name) as Oklch, surface)
+    )
+    expect(Math.abs(gain - loss)).toBeLessThan(1)
   })
 })
 
