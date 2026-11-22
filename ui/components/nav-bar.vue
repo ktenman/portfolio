@@ -210,8 +210,6 @@ function formatDate(dateString: string): string {
   flex-shrink: 0;
   align-items: center;
   padding-inline: 0.375rem;
-  font-size: var(--text-label);
-  white-space: nowrap;
 }
 
 .build-info {
