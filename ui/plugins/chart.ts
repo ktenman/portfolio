@@ -82,9 +82,11 @@ export const chartTheme = computed(() => {
     ink: resolve('ink'),
     tooltip: {
       ...TOOLTIP_LAYOUT,
-      backgroundColor: resolve('gray-700'),
-      titleColor: resolve('paper'),
-      bodyColor: resolve('paper'),
+      backgroundColor: resolve(dark.value ? 'surface-hover' : 'gray-700'),
+      titleColor: resolve(dark.value ? 'ink' : 'paper'),
+      bodyColor: resolve(dark.value ? 'ink' : 'paper'),
+      borderColor: resolve(dark.value ? 'hairline-strong' : 'gray-700'),
+      borderWidth: dark.value ? 1 : 0,
     },
   }
 })

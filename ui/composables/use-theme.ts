@@ -20,6 +20,15 @@ watch(
 
 const dark = computed(() => mode.state.value === 'dark')
 
+watch(
+  dark,
+  value =>
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', value ? '#191512' : '#fcfaf6'),
+  { immediate: true }
+)
+
 let chosen = false
 let saving = Promise.resolve()
 

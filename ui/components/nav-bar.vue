@@ -1,6 +1,6 @@
 <template>
   <nav class="navbar border-b border-hairline-strong bg-surface navbar-sticky">
-    <div class="mx-auto w-full max-w-app px-3">
+    <div class="navbar-row mx-auto w-full max-w-app px-3">
       <div ref="row" class="navbar-scroll-container">
         <div class="navbar-content">
           <ul class="navbar-nav">
@@ -11,42 +11,42 @@
               </router-link>
             </li>
           </ul>
-          <div class="nav-end">
-            <span v-if="buildInfo" class="text-body-secondary build-info">
-              {{ buildInfo.hash.substring(0, 7) }} {{ formatDate(buildInfo.time) }}
-            </span>
-            <button
-              class="nav-glyph theme-toggle"
-              type="button"
-              popovertarget="theme-menu"
-              aria-label="Theme"
-              title="Theme"
-            >
-              <radio-icon :name="theme" />
-            </button>
-            <div id="theme-menu" class="theme-menu" popover role="group" aria-label="Theme">
-              <button
-                v-for="option in themes"
-                :key="option.value"
-                class="theme-option"
-                type="button"
-                popovertarget="theme-menu"
-                popovertargetaction="hide"
-                :aria-pressed="theme === option.value"
-                @click="choose(option.value)"
-              >
-                <radio-icon :name="option.value" class="text-body-secondary" />
-                {{ option.label }}
-                <radio-icon v-if="theme === option.value" name="check" class="ml-auto text-brass" />
-              </button>
-            </div>
-            <form v-if="hosted && buildInfo" method="post" action="/logout">
-              <button class="nav-glyph" type="submit" aria-label="Log out" title="Log out">
-                <radio-icon name="logout" />
-              </button>
-            </form>
-          </div>
+          <span v-if="buildInfo" class="text-body-secondary build-info">
+            {{ buildInfo.hash.substring(0, 7) }} {{ formatDate(buildInfo.time) }}
+          </span>
         </div>
+      </div>
+      <div class="nav-end">
+        <button
+          class="nav-glyph theme-toggle"
+          type="button"
+          popovertarget="theme-menu"
+          aria-label="Theme"
+          title="Theme"
+        >
+          <radio-icon :name="theme" />
+        </button>
+        <div id="theme-menu" class="theme-menu" popover role="group" aria-label="Theme">
+          <button
+            v-for="option in themes"
+            :key="option.value"
+            class="theme-option"
+            type="button"
+            popovertarget="theme-menu"
+            popovertargetaction="hide"
+            :aria-pressed="theme === option.value"
+            @click="choose(option.value)"
+          >
+            <radio-icon :name="option.value" class="text-body-secondary" />
+            {{ option.label }}
+            <radio-icon v-if="theme === option.value" name="check" class="ml-auto text-brass" />
+          </button>
+        </div>
+        <form v-if="hosted && buildInfo" method="post" action="/logout">
+          <button class="nav-glyph" type="submit" aria-label="Log out" title="Log out">
+            <radio-icon name="logout" />
+          </button>
+        </form>
       </div>
     </div>
   </nav>
@@ -125,8 +125,14 @@ function formatDate(dateString: string): string {
   padding: 0.5rem 0;
 }
 
+.navbar-row {
+  display: flex;
+  align-items: center;
+}
+
 .navbar-scroll-container {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   margin-block: -0.25rem;
   padding-block: 0.25rem;
   overflow-x: auto;
@@ -145,7 +151,6 @@ function formatDate(dateString: string): string {
   justify-content: space-between;
   min-width: 100%;
   width: max-content;
-  padding-right: 0.375rem;
 }
 
 .navbar-nav {
@@ -202,15 +207,17 @@ function formatDate(dateString: string): string {
 
 .nav-end {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  margin-left: 1.25rem;
-  padding-left: 0.625rem;
+  padding-inline: 0.375rem;
   font-size: var(--text-label);
   white-space: nowrap;
 }
 
 .build-info {
-  margin-right: 0.375rem;
+  margin-left: 1.875rem;
+  font-size: var(--text-label);
+  white-space: nowrap;
   word-spacing: 0.25em;
 }
 
@@ -293,8 +300,8 @@ function formatDate(dateString: string): string {
     gap: 0.5rem;
   }
 
-  .nav-end {
-    margin-left: 3rem;
+  .build-info {
+    margin-left: 3.625rem;
   }
 
   .nav-glyph {

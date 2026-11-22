@@ -128,7 +128,7 @@ type Group = 'all' | 'films' | 'people'
 const GROUPS: Record<Group, string> = { all: 'All', films: 'Films', people: 'People' }
 const BOX = 'overflow-hidden rounded-container border border-hairline bg-surface'
 const BAND =
-  'mb-0 flex items-baseline justify-between bg-surface-band px-4 py-2.5 text-base font-normal text-ink-soft [&_strong]:text-ink'
+  'mb-0 flex items-baseline justify-between bg-surface-sunken px-4 py-2.5 text-base font-normal text-ink-soft [&_strong]:text-ink'
 
 const group = ref<Group>('all')
 const open = reactive({ films: false, people: false })

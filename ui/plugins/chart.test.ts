@@ -112,20 +112,18 @@ const colours = (theme: typeof chartTheme.value) => [
   theme.tooltip.backgroundColor,
   theme.tooltip.titleColor,
   theme.tooltip.bodyColor,
+  theme.tooltip.borderColor,
 ]
 
-const resolved = (scheme: string) =>
-  [
-    'hairline',
-    'ink-soft',
-    'surface',
-    'brass',
-    'ink-faint',
-    'ink',
-    'gray-700',
-    'paper',
-    'paper',
-  ].map(token => `${scheme} var(--color-${token})`)
+const TOOLTIP_TOKENS = {
+  light: ['gray-700', 'paper', 'paper', 'gray-700'],
+  dark: ['surface-hover', 'ink', 'ink', 'hairline-strong'],
+}
+
+const resolved = (scheme: 'light' | 'dark') =>
+  ['hairline', 'ink-soft', 'surface', 'brass', 'ink-faint', 'ink', ...TOOLTIP_TOKENS[scheme]].map(
+    token => `${scheme} var(--color-${token})`
+  )
 
 describe('chartTheme', () => {
   afterEach(() => {
@@ -146,6 +144,15 @@ describe('chartTheme', () => {
     colours(loaded.value)
     theme.value = 'dark'
     expect(colours(loaded.value)).toEqual(resolved('dark'))
+  })
+
+  it('should ring the tooltip only once it goes dark', async () => {
+    const { chartTheme: loaded, theme } = await loadChartTheme()
+    stubComputedStyle()
+    theme.value = 'light'
+    const light = loaded.value.tooltip.borderWidth
+    theme.value = 'dark'
+    expect([light, loaded.value.tooltip.borderWidth]).toEqual([0, 1])
   })
 
   it('should read through a fresh probe after the page body was emptied', async () => {

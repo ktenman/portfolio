@@ -53,7 +53,7 @@ test('the Theme menu opens under its glyph', async ({ page }) => {
 test('the navbar row cannot scroll up and down', async ({ page }) => {
   await openHosted(page)
   const row = page.locator('nav.navbar .navbar-scroll-container')
-  await page.getByRole('button', { name: 'Log out' }).hover()
+  await row.locator('.nav-link').first().hover()
   await page.mouse.wheel(0, 100)
   await page.evaluate(() => new Promise(requestAnimationFrame))
   expect(await row.evaluate(element => element.scrollTop)).toBe(0)

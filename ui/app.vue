@@ -13,7 +13,7 @@
         </router-view>
       </div>
     </main>
-    <footer class="bg-gray-100 py-2 text-center">
+    <footer class="border-t border-hairline bg-paper py-2 text-center">
       <small>&copy; {{ currentYear }} Portfolio Manager</small>
     </footer>
     <RadioMiniPlayer v-if="player.started.value" />
@@ -74,12 +74,12 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: var(--color-gray-100);
+  background-color: var(--color-paper);
 }
 .auth-spinner {
   width: 3rem;
   height: 3rem;
-  border: 0.25rem solid var(--color-gray-200);
+  border: 0.25rem solid var(--color-hairline);
   border-top-color: var(--color-signal-indigo);
   border-radius: 50%;
   animation: auth-spin 1s linear infinite;

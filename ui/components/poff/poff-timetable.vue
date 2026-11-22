@@ -14,7 +14,7 @@
         class="overflow-clip rounded-container border border-hairline bg-surface md-down:-mx-3 md-down:rounded-none md-down:border-x-0"
       >
         <div
-          class="flex items-baseline justify-between bg-surface-band px-4 py-2.5 text-sm text-ink-soft"
+          class="flex items-baseline justify-between bg-surface-sunken px-4 py-2.5 text-sm text-ink-soft"
         >
           <span data-testid="poff-band">
             <template v-if="data">
@@ -65,7 +65,7 @@
             </tr>
             <template v-for="group in groups" :key="group.time">
               <tr
-                class="sticky top-12 z-10 block border-t border-hairline bg-surface-band not-md-down:hidden"
+                class="sticky top-12 z-10 block border-t border-hairline bg-surface-sunken not-md-down:hidden"
                 data-testid="poff-hour"
               >
                 <th
