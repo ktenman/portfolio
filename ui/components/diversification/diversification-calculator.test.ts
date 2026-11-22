@@ -47,7 +47,8 @@ vi.mock('../../services/api', () => ({
   },
 }))
 
-vi.mock('@vueuse/core', () => ({
+vi.mock('@vueuse/core', async importOriginal => ({
+  ...(await importOriginal<typeof import('@vueuse/core')>()),
   useDebounceFn: vi.fn((fn: () => void) => fn),
   useLocalStorage: vi.fn(<T>(_key: string, defaultValue: T) => ref(defaultValue)),
   useNow: vi.fn(() => ({ value: new Date() })),

@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubRadioStations } from './radio-fixture'
 import { openRoute, settleAndFreeze } from './settle'
 
 test.beforeEach(async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioStations(page)
 })

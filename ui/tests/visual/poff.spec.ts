@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubPoff } from './poff-fixture'
 import { freeze, openRoute } from './settle'
@@ -25,7 +25,7 @@ const FILM_CONTROLS = [
 
 const open = async (page: Page, phone: (typeof PHONES)[number], path = '/poff') => {
   await page.setViewportSize(phone)
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPoff(page)
   await openRoute(page, path)
@@ -190,7 +190,7 @@ for (const [view, path, title] of [
     test(`PÖFF ${view} keeps its place and folds when a film is left by ${way}`, async ({
       page,
     }, testInfo) => {
-      await stubBuildInfo(page)
+      await stubShell(page)
       await stubEnums(page)
       await stubPoff(page)
       await openRoute(page, path)

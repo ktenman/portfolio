@@ -30,7 +30,7 @@
           class="size-full object-cover"
         />
         <span
-          class="absolute top-1/2 left-1/2 flex size-16 -translate-1/2 items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors group-hover:bg-brass-deep"
+          class="absolute top-1/2 left-1/2 flex size-16 -translate-1/2 items-center justify-center rounded-full bg-brass text-on-fill shadow-control transition-colors group-hover:bg-brass-deep"
         >
           <radio-icon name="play" class="size-7" />
         </span>

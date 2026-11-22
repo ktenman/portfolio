@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { freeze, openRoute } from './settle'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubInstruments } from './instruments-fixture'
 
@@ -43,7 +43,7 @@ const READOUT_LINES = [
 ]
 
 test.beforeEach(async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubInstruments(page)
   await openRoute(page, '/instruments/heatmap')

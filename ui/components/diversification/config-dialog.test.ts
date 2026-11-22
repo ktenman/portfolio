@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
-import { h } from 'vue'
+import { h, nextTick } from 'vue'
 import ConfigDialog from './config-dialog.vue'
+import { useTheme } from '../../composables/use-theme'
 
 vi.mock('@guolao/vue-monaco-editor', () => ({
   VueMonacoEditor: {
@@ -41,6 +42,45 @@ describe('ConfigDialog', () => {
 
   afterEach(() => {
     wrapper?.unmount()
+  })
+
+  beforeEach(() => {
+    useTheme().theme.value = 'light'
+  })
+
+  const showEditor = async (mode: 'export' | 'import') => {
+    wrapper = createWrapper({ mode })
+    if (mode === 'export') return wrapper.findComponent({ name: 'VueMonacoEditor' })
+    const fileInput = wrapper.find('input[type="file"]')
+    const config = { allocations: [{ instrumentId: 1, value: 100 }], inputMode: 'percentage' }
+    const file = new File([JSON.stringify(config)], 'jõud.json', { type: 'application/json' })
+    Object.defineProperty(fileInput.element, 'files', { value: [file] })
+    await fileInput.trigger('change')
+    await vi.waitFor(() => expect(wrapper.find('.import-preview').exists()).toBe(true))
+    return wrapper.findComponent({ name: 'VueMonacoEditor' })
+  }
+
+  describe('colour scheme', () => {
+    it.each(['export', 'import'] as const)(
+      'switches the %s editor from the stock light theme to the token theme when the scheme turns dark',
+      async mode => {
+        const editor = await showEditor(mode)
+        const light = editor.props('theme')
+        useTheme().theme.value = 'dark'
+        await nextTick()
+        expect([light, editor.props('theme')]).toEqual(['vs', 'portfolio-dark'])
+      }
+    )
+
+    it('defines the token theme on the vs-dark base before the editor mounts', async () => {
+      const defineTheme = vi.fn()
+      const editor = await showEditor('export')
+      editor.vm.$emit('beforeMount', { editor: { defineTheme } })
+      expect(defineTheme).toHaveBeenCalledWith(
+        'portfolio-dark',
+        expect.objectContaining({ base: 'vs-dark' })
+      )
+    })
   })
 
   describe('export mode', () => {

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { openRoute, settleAndFreeze } from './settle'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubPortfolioSummary } from './summary-fixture'
 
@@ -11,7 +11,7 @@ const DRAG_STEPS = 8
 const MARGIN_PX = 8
 
 async function openSummary(page: Page): Promise<void> {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await openRoute(page, '/')

@@ -1,5 +1,5 @@
 <template>
-  <div class="card border-0! shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
+  <div class="card border-0! shadow-panel">
     <div class="card-body p-4! sm:p-6!">
       <div class="chart-header mb-4">
         <slot name="actions" />

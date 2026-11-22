@@ -61,6 +61,13 @@ const linearToRgba = ([red, green, blue]: [number, number, number], alpha: numbe
   alpha,
 })
 
+const byteHex = (byte: number): string => byte.toString(16).padStart(2, '0')
+
+export function hexFromOklch(color: Oklch): string {
+  const { red, green, blue } = linearToRgba(oklchToLinearRgb(color), 1)
+  return `#${[red, green, blue].map(byteHex).join('')}`
+}
+
 function parseColor(value: string): Rgba {
   const channels = numbersIn(value)
   if (channels.length < 3 || channels.length > 4) {

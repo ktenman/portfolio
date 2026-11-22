@@ -117,7 +117,7 @@ dialog.modal {
 }
 
 dialog.modal::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-scrim);
 }
 
 .modal-dialog {
@@ -141,7 +141,7 @@ dialog.modal::backdrop {
   pointer-events: auto;
   background-color: var(--color-gray-100);
   background-clip: padding-box;
-  border: 1px solid rgb(0 0 0 / 0.175);
+  border: 1px solid var(--color-dialog-border);
   border-radius: var(--radius-container);
   outline: 0;
 }

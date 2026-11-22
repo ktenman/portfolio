@@ -26,12 +26,13 @@ const props = withDefaults(
 )
 
 const BASE =
-  'btn inline-block cursor-pointer rounded-container border border-control-border text-center align-middle leading-normal font-medium shadow-control transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 enabled:active:shadow-[inset_0_1px_1px_rgb(0_0_0/0.04)] md-down:min-h-11'
+  'btn inline-block cursor-pointer rounded-container border border-control-border text-center align-middle leading-normal font-medium shadow-control transition-all select-none disabled:cursor-not-allowed disabled:opacity-60 enabled:active:shadow-pressed md-down:min-h-11'
 
 const SOLID = {
   none: 'bg-transparent text-ink enabled:active:translate-y-px',
-  primary: 'bg-signal-indigo text-white enabled:hover:bg-signal-indigo-deep',
-  secondary: 'bg-gray-600 text-white enabled:hover:bg-gray-700 enabled:active:translate-y-px',
+  primary: 'bg-signal-indigo text-on-fill enabled:hover:bg-signal-indigo-deep',
+  secondary:
+    'bg-neutral-fill text-on-neutral enabled:hover:bg-neutral-fill-hover enabled:active:translate-y-px',
 }
 
 const GHOST =
@@ -48,6 +49,6 @@ const classes = computed(() => [
   sizing.value,
   props.variant ? `btn-${props.variant}` : undefined,
   props.size ? `btn-${props.size}` : undefined,
-  props.ghost ? `btn-ghost bg-[rgb(0_0_0/0.02)] ${GHOST}` : SOLID[props.variant ?? 'none'],
+  props.ghost ? `btn-ghost bg-tint ${GHOST}` : SOLID[props.variant ?? 'none'],
 ])
 </script>

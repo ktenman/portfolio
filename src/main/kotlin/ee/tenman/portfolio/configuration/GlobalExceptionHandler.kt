@@ -5,8 +5,10 @@ import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingRequestHeaderException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException
@@ -39,6 +41,18 @@ class GlobalExceptionHandler {
         status = HttpStatus.BAD_REQUEST,
         message = "Invalid request",
         debugMessage = "Malformed multipart request",
+      )
+    return ResponseEntity(apiError, apiError.status)
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException::class, MissingRequestHeaderException::class)
+  fun handleMalformedRequest(exception: Exception): ResponseEntity<ApiError> {
+    log.warn("Rejected malformed request: ${exception.message}")
+    val apiError =
+      ApiError(
+        status = HttpStatus.BAD_REQUEST,
+        message = "Invalid request",
+        debugMessage = "Malformed request",
       )
     return ResponseEntity(apiError, apiError.status)
   }

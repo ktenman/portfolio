@@ -1,8 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { Chart } from 'chart.js'
 import EtfBreakdownChart from './etf-breakdown-chart.vue'
 import type { ChartDataItem } from '../../services/etf-chart-service'
+import { useTheme } from '../../composables/use-theme'
+
+const { DARK_SWATCH } = vi.hoisted(() => ({ DARK_SWATCH: 'rgb(1, 2, 3)' }))
+
+vi.mock('../../constants/chart-colors', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../constants/chart-colors')>()),
+  schemeColor: (color: string, dark: boolean) => (dark ? DARK_SWATCH : color),
+}))
 
 vi.mock('chart.js', () => {
   const mockChart: any = vi.fn().mockImplementation(function (_canvas: unknown, config: any) {
@@ -50,6 +59,7 @@ describe('EtfBreakdownChart', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    useTheme().theme.value = 'light'
   })
 
   afterEach(() => {
@@ -388,6 +398,34 @@ describe('EtfBreakdownChart', () => {
       const legendLabels = wrapper.findAll('.legend-label')
       expect(legendLabels[0].text()).toBe('AT&T Inc.')
       expect(legendLabels[1].text()).toBe('Johnson & Johnson')
+    })
+  })
+
+  describe('dark scheme', () => {
+    const darkFills = mockChartData.map(() => DARK_SWATCH)
+
+    const latestFill = () =>
+      vi.mocked(Chart).mock.lastCall?.[1].data.datasets[0].backgroundColor as string[]
+
+    it('fills each donut slice with the colour the dark scheme gives it', () => {
+      useTheme().theme.value = 'dark'
+      mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
+      expect(latestFill()).toEqual(darkFills)
+    })
+
+    it('paints each legend swatch with the colour the dark scheme gives it', () => {
+      useTheme().theme.value = 'dark'
+      const swatches = mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
+        .findAll('.legend-color')
+        .map(swatch => (swatch.element as HTMLElement).style.backgroundColor)
+      expect(swatches).toEqual(darkFills)
+    })
+
+    it('repaints the donut on screen when the scheme turns dark', async () => {
+      mount(EtfBreakdownChart, { props: { chartData: mockChartData } })
+      useTheme().theme.value = 'dark'
+      await nextTick()
+      expect(latestFill()).toEqual(darkFills)
     })
   })
 

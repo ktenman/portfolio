@@ -5,7 +5,8 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue'
 import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
-import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
+import { CHART_COLORS, schemeColor, withAlpha } from '../../constants/chart-colors'
+import { useTheme } from '../../composables/use-theme'
 
 interface ChartDataPoint {
   date: string
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<ChartProps>(), {
 })
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
+const { dark } = useTheme()
 
 const applyASAP = (data: ChartDataPoint[], maxPoints: number): ChartDataPoint[] => {
   if (data.length <= maxPoints) return data
@@ -59,8 +61,8 @@ useChartLifecycle(chartCanvas, toRef(props, 'data'), ctx => {
         {
           label: props.yAxisLabel,
           data: processedData.map(x => x.amount),
-          backgroundColor: props.backgroundColor,
-          borderColor: props.borderColor,
+          backgroundColor: schemeColor(props.backgroundColor, dark.value),
+          borderColor: schemeColor(props.borderColor, dark.value),
           borderWidth: 1,
         },
       ],

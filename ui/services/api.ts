@@ -37,6 +37,8 @@ import {
   type Station,
   type RecordingSummary,
   type TranscriptSection,
+  type Theme,
+  type UserPreferenceDto,
   type IntradaySummaryPointDto,
   type PortfolioSummaryDto,
   type RangeChangeDto,
@@ -289,6 +291,11 @@ export const radioService = {
     httpClient.get<RadioSearch>(`${API_ENDPOINTS.RADIO}/search`, {
       params: { q, after, station },
     }),
+}
+
+export const preferencesService = {
+  get: () => httpClient.get<UserPreferenceDto>(API_ENDPOINTS.PREFERENCES),
+  save: (theme: Theme) => httpClient.put<void>(API_ENDPOINTS.PREFERENCES, { theme }),
 }
 
 export const liveUpdatesService = {

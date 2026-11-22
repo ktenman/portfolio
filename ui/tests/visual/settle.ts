@@ -1,8 +1,13 @@
-import { type Locator, type Page } from '@playwright/test'
+import {
+  type Locator,
+  type Page,
+  type PageAssertionsToHaveScreenshotOptions,
+} from '@playwright/test'
 
 const SETTLE_POLL_INTERVAL_MS = 400
 const SETTLE_REQUIRED_SAMPLES = 4
 const SETTLE_TIMEOUT_MS = 20000
+const MAX_CAPTURE_HEIGHT = 12000
 
 const FREEZE_STYLES = [
   '.currency-value { overflow: hidden; }',
@@ -30,7 +35,7 @@ async function waitForValueToSettle(
   }
 }
 
-function waitForPageToSettle(page: Page): Promise<void> {
+export function waitForPageToSettle(page: Page): Promise<void> {
   return waitForValueToSettle(page, 'Page signature', () =>
     page.evaluate(() => {
       const hash = (text: string) => {
@@ -68,4 +73,13 @@ export async function freeze(page: Page): Promise<void> {
 export async function settleAndFreeze(page: Page): Promise<void> {
   await waitForPageToSettle(page)
   await freeze(page)
+}
+
+export async function routeShot(page: Page): Promise<PageAssertionsToHaveScreenshotOptions> {
+  const width = await page.evaluate(() => document.documentElement.scrollWidth)
+  return {
+    fullPage: true,
+    clip: { x: 0, y: 0, width, height: MAX_CAPTURE_HEIGHT },
+    mask: [page.locator('canvas')],
+  }
 }

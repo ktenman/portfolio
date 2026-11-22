@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { contrastRatio, flattenLayers, luminanceFromRgbString } from '../contrast'
 import { freeze, openRoute } from './settle'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubEtfBreakdown } from './etf-fixture'
 import { stubInstruments } from './instruments-fixture'
@@ -44,7 +44,7 @@ interface PaintedRing {
 }
 
 test.beforeEach(async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
 })
 

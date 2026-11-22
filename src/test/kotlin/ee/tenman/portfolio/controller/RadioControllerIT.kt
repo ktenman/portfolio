@@ -410,7 +410,7 @@ class RadioControllerIT {
 
   @Test
   fun `should refuse to say where a recording was left without a listener`() {
-    mockMvc.perform(mvcGet("/api/radio/2026-10-17/position")).andExpect(status().isInternalServerError)
+    mockMvc.perform(mvcGet("/api/radio/2026-10-17/position")).andExpect(status().isBadRequest)
   }
 
   @Test

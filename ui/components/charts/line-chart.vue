@@ -5,9 +5,10 @@
 <script setup lang="ts">
 import { ref, toRef } from 'vue'
 import { useChartLifecycle } from '../../composables/use-chart-lifecycle'
-import { crosshair, tooltipStyle } from '../../plugins/chart'
+import { chartTheme, crosshair } from '../../plugins/chart'
+import { useTheme } from '../../composables/use-theme'
 import { formatCurrency, formatCurrencyWithSymbol } from '../../utils/formatters'
-import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
+import { CHART_COLORS, schemeColor, withAlpha } from '../../constants/chart-colors'
 
 interface ChartProps {
   data: number[]
@@ -27,6 +28,7 @@ const props = withDefaults(defineProps<ChartProps>(), {
 })
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
+const { dark } = useTheme()
 
 useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
   type: 'line',
@@ -37,8 +39,8 @@ useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
       {
         label: props.yAxisLabel,
         data: props.data,
-        borderColor: props.borderColor,
-        backgroundColor: props.backgroundColor,
+        borderColor: schemeColor(props.borderColor, dark.value),
+        backgroundColor: schemeColor(props.backgroundColor, dark.value),
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 4,
@@ -70,7 +72,7 @@ useChartLifecycle(chartCanvas, toRef(props, 'data'), () => ({
       title: { display: true, text: props.title, font: { size: 16 } },
       legend: { display: false },
       tooltip: {
-        ...tooltipStyle,
+        ...chartTheme.value.tooltip,
         callbacks: {
           title: items => `${props.xAxisLabel} ${items[0].label}`,
           label: context =>

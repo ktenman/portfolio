@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { ref } from 'vue'
 import NavBar from './nav-bar.vue'
+import RadioIcon from './radio/radio-icon.vue'
 
 interface BuildInfo {
   hash: string
@@ -15,6 +16,12 @@ vi.mock('../services/api', () => ({
   utilityService: {
     getBuildInfo: vi.fn(),
   },
+}))
+
+const theme = vi.hoisted(() => ({ choose: vi.fn() }))
+
+vi.mock('../composables/use-theme', () => ({
+  useTheme: () => ({ theme: ref('auto'), choose: theme.choose }),
 }))
 
 vi.mock('@tanstack/vue-query', () => ({
@@ -58,6 +65,18 @@ describe('NavBar', () => {
       },
     })
   }
+
+  const location = window.location
+
+  const visit = (hostname: string) =>
+    Object.defineProperty(window, 'location', {
+      value: { ...location, hostname },
+      writable: true,
+    })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', { value: location, writable: true })
+  })
 
   describe('navigation links', () => {
     it('should render all navigation links', () => {
@@ -106,8 +125,7 @@ describe('NavBar', () => {
       mockBuildInfo.value = buildInfoData
       const wrapper = createWrapper()
 
-      expect(wrapper.text()).toContain('a1b2c3d')
-      expect(wrapper.text()).toContain('31.12.2023')
+      expect(wrapper.find('.build-info').text()).toBe('a1b2c3d 31.12.2023')
     })
 
     it('should format date correctly', () => {
@@ -187,18 +205,6 @@ describe('NavBar', () => {
   })
 
   describe('log out', () => {
-    const location = window.location
-
-    const visit = (hostname: string) =>
-      Object.defineProperty(window, 'location', {
-        value: { ...location, hostname },
-        writable: true,
-      })
-
-    afterEach(() => {
-      Object.defineProperty(window, 'location', { value: location, writable: true })
-    })
-
     it('should not offer Log out on localhost', () => {
       visit('localhost')
       mockBuildInfo.value = buildInfoData
@@ -211,20 +217,56 @@ describe('NavBar', () => {
       mockBuildInfo.value = buildInfoData
       const form = createWrapper().find('form[method="post"][action="/logout"]')
 
-      expect(form.find('button[type="submit"]').text()).toBe('Log out')
-    })
-
-    it('should set Log out as a navigation link instead of a boxed button', () => {
-      visit('fov.ee')
-      mockBuildInfo.value = buildInfoData
-
-      expect(createWrapper().find('form button').classes()).toEqual(['nav-link'])
+      expect(form.find('button[type="submit"]').attributes('aria-label')).toBe('Log out')
     })
 
     it('should not offer Log out on fov.ee before build info arrives', () => {
       visit('fov.ee')
 
       expect(createWrapper().find('form').exists()).toBe(false)
+    })
+  })
+
+  describe('theme switch', () => {
+    it('should offer System, Light and Dark with System pressed', () => {
+      const options = createWrapper().findAll('#theme-menu button')
+
+      expect(options.map(option => [option.text(), option.attributes('aria-pressed')])).toEqual([
+        ['System', 'true'],
+        ['Light', 'false'],
+        ['Dark', 'false'],
+      ])
+    })
+
+    it('should open the Theme menu from a glyph of the current theme', () => {
+      const wrapper = createWrapper()
+      const toggle = wrapper.find('button[aria-label="Theme"]')
+
+      expect([
+        toggle.attributes('popovertarget'),
+        toggle.findComponent(RadioIcon).props('name'),
+        wrapper.find('#theme-menu[popover]').attributes('aria-label'),
+      ]).toEqual(['theme-menu', 'auto', 'Theme'])
+    })
+
+    it('should choose dark when Dark is picked', async () => {
+      const wrapper = createWrapper()
+
+      await wrapper.findAll('#theme-menu button')[2].trigger('click')
+
+      expect(theme.choose).toHaveBeenCalledWith('dark')
+    })
+
+    it('should close the menu once a theme is picked', () => {
+      const closers = '#theme-menu [popovertarget="theme-menu"][popovertargetaction="hide"]'
+
+      expect(createWrapper().findAll(closers)).toHaveLength(3)
+    })
+
+    it('should offer the theme switch off fov.ee before build info arrives', () => {
+      visit('localhost')
+
+      expect(createWrapper().find('button[aria-label="Theme"]').exists()).toBe(true)
     })
   })
 })

@@ -4,7 +4,7 @@ import { STORAGE_KEYS } from '../../constants/storage-keys'
 import { type TransactionsWithSummaryDto } from '../../models/generated/domain-models'
 import { freeze, openRoute, settleAndFreeze, waitForBoxHeightToSettle } from './settle'
 import { apiRoute, type RouteStub } from './stub'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubCalculator } from './calculator-fixture'
 import { stubDiversification, stubDiversificationWithLongFundName } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
@@ -174,7 +174,7 @@ test.describe('modals', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await stubBuildInfo(page)
+    await stubShell(page)
     await stubEnums(page)
   })
 
@@ -230,7 +230,7 @@ test.describe('modals', () => {
 
 test('summary chart marks the high and low of the range', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await openRoute(page, '/')
@@ -242,7 +242,7 @@ test('summary chart marks the high and low of total profit when total value is h
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
@@ -260,7 +260,7 @@ test('an off-shortlist period shows on the ninth cell of the period row', async 
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await openSummaryOn(page, '6Y')
   await freeze(page)
@@ -271,7 +271,7 @@ test('an off-shortlist period shows on the ninth cell of the period row', async 
 
 test('the More popover opens below the period row', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await openSummaryOn(page, '6Y')
   await page.getByRole('button', { name: '6Y', exact: true }).click()
@@ -293,7 +293,7 @@ test('the More popover opens below the period row', async ({ page }, testInfo) =
 })
 
 test('a radio schedule row opens its recording wherever it is clicked', async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/catch-up')
@@ -320,7 +320,7 @@ async function labelAt(page: Page, x: number, y: number): Promise<string | null>
 test('the play button of a radio schedule row stays above the link to its recording', async ({
   page,
 }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/catch-up')
@@ -334,7 +334,7 @@ test('the play button of a radio schedule row stays above the link to its record
 
 test('the radio recordings table scrolls inside its box', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio')
@@ -346,7 +346,7 @@ test('the radio day bar leaves the room after a recording name unlinked', async 
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/catch-up')
@@ -360,7 +360,7 @@ test('the radio day bar links a recording name that runs past its block', async 
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/catch-up')
@@ -377,7 +377,7 @@ test('the radio day bar stops a recording name at the next planned airing', asyn
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioPlannedSoon(page)
   await openRoute(page, '/radio/catch-up')
@@ -390,7 +390,7 @@ test('the radio day bar sums the time planned on a day with nothing recorded', a
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioPlannedOnly(page)
   await openRoute(page, '/radio/catch-up')
@@ -401,7 +401,7 @@ test('the radio day bar sums the time planned on a day with nothing recorded', a
 })
 
 test('radio stations with one recorder not running', async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioOneStationIdle(page)
   await openRoute(page, '/radio')
@@ -417,7 +417,7 @@ test('an unfolded radio digest lists every story across the page', async ({ page
     key: `${STORAGE_KEYS.RADIO_DIGEST_OPEN}_week`,
     value: 'true',
   })
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio')
@@ -429,7 +429,7 @@ test('an unfolded radio digest lists every story across the page', async ({ page
 
 test('a radio digest in the player becomes the player', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio')
@@ -444,7 +444,7 @@ test('a radio digest in the player becomes the player', async ({ page }, testInf
 
 test('the radio player stays in view while the page scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'tablet')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await page.setViewportSize({ width: page.viewportSize()!.width, height: 500 })
@@ -459,7 +459,7 @@ test('the radio player keeps its show and way back in view on a phone', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await page.setViewportSize({ width: 375, height: 667 })
@@ -473,7 +473,7 @@ test('the radio player keeps its show and way back in view on a phone', async ({
 
 test('the radio rail stays in view while the text scrolls', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioLongText(page)
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -486,7 +486,7 @@ test('the radio rail stays in view while the text scrolls', async ({ page }, tes
 
 test('the raw radio recording shows the cut decisions', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
@@ -501,7 +501,7 @@ test('the radio player keeps every control at least 44 px tall on a phone', asyn
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio/2026-10-17')
@@ -517,7 +517,7 @@ test('the radio player keeps every control at least 44 px tall on a phone', asyn
 
 test('the radio player sticks below the navbar', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioLongText(page)
   await page.setViewportSize({ width: 1440, height: 800 })
@@ -530,7 +530,7 @@ test('the radio player sticks below the navbar', async ({ page }, testInfo) => {
 
 test('the playing radio line stays clear of the player', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadioLongText(page)
   await page.setViewportSize({ width: 1440, height: 600 })
@@ -549,7 +549,7 @@ async function stubPlayer(page: Page, stub: RouteStub): Promise<void> {
       return Promise.resolve()
     }
   })
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await stubCalculator(page)
@@ -648,7 +648,7 @@ test('the radio mini player opens its episode without loading the audio again', 
 
 test('the radio mini player waits for something to play', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await stubRadio(page)
@@ -858,7 +858,7 @@ test.describe('desktop states', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await stubBuildInfo(page)
+    await stubShell(page)
     await stubEnums(page)
   })
 
@@ -1063,7 +1063,7 @@ test.describe('mobile states', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await stubBuildInfo(page)
+    await stubShell(page)
     await stubEnums(page)
   })
 

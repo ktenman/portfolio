@@ -38,10 +38,14 @@ export type IconName =
   | 'search'
   | 'filter'
   | 'refresh'
+  | 'auto'
+  | 'light'
+  | 'dark'
+  | 'logout'
 
 defineProps<{ name: IconName }>()
 
-const SOLID = new Set<IconName>(['play', 'pause'])
+const SOLID = new Set<IconName>(['play', 'pause', 'auto'])
 
 const CLOCKWISE = ['M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8', 'M21 3v5h-5']
 
@@ -65,6 +69,13 @@ const PATHS: Record<IconName, string[]> = {
   close: ['M18 6 6 18', 'm6 6 12 12'],
   search: ['M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16', 'm21 21-4.3-4.3'],
   refresh: CLOCKWISE,
+  auto: ['M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20m0 2a8 8 0 0 0 0 16z'],
+  light: [
+    'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+    'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41',
+  ],
+  dark: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z'],
+  logout: ['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'm16 17 5-5-5-5', 'M21 12H9'],
   alert: ['M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0', 'M12 8v4', 'M12 16h.01'],
   trash: [
     'M3 6h18',

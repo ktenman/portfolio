@@ -12,7 +12,7 @@
     >
       <span
         class="size-2 shrink-0 rounded-full"
-        :style="{ backgroundColor: benchmark.color }"
+        :style="{ backgroundColor: schemeColor(benchmark.color, dark) }"
         aria-hidden="true"
       ></span>
       {{ benchmark.label }}
@@ -22,8 +22,12 @@
 
 <script lang="ts" setup>
 import { BENCHMARKS, type BenchmarkKey } from '../../composables/use-portfolio-chart'
+import { useTheme } from '../../composables/use-theme'
+import { schemeColor } from '../../constants/chart-colors'
 
 defineProps<{ selected: BenchmarkKey[] }>()
 
 const emit = defineEmits<{ select: [key: BenchmarkKey] }>()
+
+const { dark } = useTheme()
 </script>

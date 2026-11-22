@@ -34,6 +34,8 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
+import { useTheme } from '../../composables/use-theme'
+import { schemeColor } from '../../constants/chart-colors'
 import { formatHoldingPercentage, formatPercentage } from '../../utils/formatters'
 import { countryFlagUrl } from '../../utils/currency-flag'
 import {
@@ -48,6 +50,7 @@ const props = defineProps<{
   holdings?: boolean
 }>()
 
+const { dark } = useTheme()
 const hasBenchmark = computed(() => props.rows.some(row => row.benchmark !== undefined))
 const formatValue = (value: number) =>
   props.holdings ? formatHoldingPercentage(value) : formatPercentage(value)
@@ -63,7 +66,7 @@ const scaled = (value: number): number =>
 
 const barStyle = (row: BreakdownRow) => ({
   width: `${scaled(row.value)}%`,
-  '--row-bar-color': row.color,
+  '--row-bar-color': schemeColor(row.color, dark.value),
 })
 
 const rowTitle = (row: BreakdownRow): string => {

@@ -9,11 +9,24 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <title>Portfolio</title>
 
+  <script>
+    try {
+      const theme = localStorage.getItem('portfolio_theme')
+      if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+    } catch {}
+  </script>
+
   <!-- Initial loading styles -->
   <style>
     html {
+      color-scheme: light dark;
+      background-color: light-dark(#fcfaf6, #191512);
+    }
+    html[data-theme='light'] {
       color-scheme: light;
-      background-color: #fcfaf6;
+    }
+    html[data-theme='dark'] {
+      color-scheme: dark;
     }
     body {
       margin: 0;
@@ -24,13 +37,13 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #fcfaf6;
+      background-color: light-dark(#fcfaf6, #191512);
     }
     .initial-spinner {
       width: 3rem;
       height: 3rem;
-      border: 0.25rem solid #e2dfda;
-      border-top-color: #8d621f;
+      border: 0.25rem solid light-dark(#e2dfda, #342f2b);
+      border-top-color: light-dark(#8d621f, #dbb06b);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }

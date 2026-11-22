@@ -3,7 +3,8 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { Chart, type ChartConfiguration } from 'chart.js'
 import PortfolioChart from './portfolio-chart.vue'
-import { CHART_COLORS } from '../../constants/chart-colors'
+import { CHART_COLORS, CHART_COLORS_DARK } from '../../constants/chart-colors'
+import { useTheme } from '../../composables/use-theme'
 import { STORAGE_KEYS } from '../../constants'
 import { rangeExtremes } from '../../plugins/chart'
 
@@ -60,6 +61,7 @@ describe('PortfolioChart', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    useTheme().theme.value = 'light'
   })
 
   describe('data transformation', () => {
@@ -286,6 +288,18 @@ describe('PortfolioChart', () => {
       await nextTick()
 
       expect(localStorage.getItem(STORAGE_KEYS.SUMMARY_CHART_HIDDEN)).toBe('[]')
+    })
+
+    it('should redraw every series in its dark counterpart when the scheme turns dark', async () => {
+      await createWrapper()
+      const instance = vi.mocked(Chart).mock.results[0].value
+
+      useTheme().theme.value = 'dark'
+      await nextTick()
+
+      expect(
+        instance.data.datasets.map((dataset: { borderColor: string }) => dataset.borderColor)
+      ).toEqual([0, 1, 3, 5].map(index => CHART_COLORS_DARK[index]))
     })
 
     it('should destroy the chart when the component unmounts', async () => {

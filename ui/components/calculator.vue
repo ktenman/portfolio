@@ -187,7 +187,7 @@ canvas {
     justify-content: center;
     padding: 1rem;
     background-color: var(--color-surface);
-    box-shadow: 0 -2px 8px rgb(0 0 0 / 0.08);
+    box-shadow: var(--shadow-dock);
   }
 
   .calculator-buttons-mobile .btn {

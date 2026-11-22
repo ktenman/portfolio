@@ -2,14 +2,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { nothingFound, radioSearch } from '../../components/radio/radio-fixture'
 import { API_ENDPOINTS } from '../../constants/api'
 import { type RadioSearch } from '../../models/generated/domain-models'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { stubRadio } from './radio-fixture'
 import { openRoute, settleAndFreeze } from './settle'
 import { apiRoute } from './stub'
 
 const search = async (page: Page, found: RadioSearch) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await page.route(apiRoute(`${API_ENDPOINTS.RADIO}/search`), route =>
@@ -26,7 +26,7 @@ test('radio search results replace the tab', async ({ page }) => {
 })
 
 test('the radio search field shows its whole placeholder', async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubRadio(page)
   await openRoute(page, '/radio')

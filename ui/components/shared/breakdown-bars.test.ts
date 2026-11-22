@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BreakdownBars from './breakdown-bars.vue'
-import { DONUT_COLORS } from '../../constants/chart-colors'
+import { DONUT_COLORS, DONUT_COLORS_DARK } from '../../constants/chart-colors'
+import { useTheme } from '../../composables/use-theme'
 import { paint, type ComparedRow } from '../../services/diversification-chart-service'
 
 const rows = paint([
@@ -14,6 +15,10 @@ const mountBars = (props: Record<string, unknown> = {}) =>
   mount(BreakdownBars, { props: { rows, benchmarkLabel: 'VGLA', ...props } })
 
 describe('BreakdownBars', () => {
+  beforeEach(() => {
+    useTheme().theme.value = 'light'
+  })
+
   it('shows small holding weights with four decimals and rounded zero below the threshold', () => {
     const rows = paint([
       { label: 'Small', value: 0.0049, isOther: false },
@@ -68,6 +73,13 @@ describe('BreakdownBars', () => {
       .map(bar => bar.attributes('style'))
     expect(painted[0]).toContain(`--row-bar-color: ${DONUT_COLORS[0]}`)
     expect(painted[1]).toContain(`--row-bar-color: ${DONUT_COLORS[1]}`)
+  })
+
+  it('paints each bar with the dark counterpart of its colour in the dark scheme', () => {
+    useTheme().theme.value = 'dark'
+    expect(mountBars().find('.row-bar').attributes('style')).toContain(
+      `--row-bar-color: ${DONUT_COLORS_DARK[0]}`
+    )
   })
 
   it('flags ratios above 2 and below 0.5', () => {

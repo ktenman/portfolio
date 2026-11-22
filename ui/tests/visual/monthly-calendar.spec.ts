@@ -5,7 +5,7 @@ import type { PortfolioSummaryDto } from '../../models/generated/domain-models'
 import { addDays, daysBetween } from '../../utils/iso-dates'
 import { freeze, openRoute } from './settle'
 import { apiRoute, type RouteStub } from './stub'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { SERIES_RESPONSE, stubPortfolioSummary } from './summary-fixture'
 
@@ -127,7 +127,7 @@ const HISTORIES = [
 const calendar = (page: Page) => page.locator('.monthly-profit-calendar')
 
 async function openMonthly(page: Page, today: string, stub?: RouteStub): Promise<void> {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await stub?.(page)

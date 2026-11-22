@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import FundReportPopover from './fund-report-popover.vue'
 import type { FundReportDto } from '../../models/generated/domain-models'
+import { useTheme } from '../../composables/use-theme'
+
+const { DARK_SWATCH } = vi.hoisted(() => ({ DARK_SWATCH: 'rgb(1, 2, 3)' }))
+
+vi.mock('../../constants/chart-colors', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../constants/chart-colors')>()),
+  schemeColor: (color: string, dark: boolean) => (dark ? DARK_SWATCH : color),
+}))
 
 const REPORTS: FundReportDto[] = [
   {
@@ -27,6 +35,10 @@ const fundNames = (wrapper: ReturnType<typeof mountPopover>) =>
   wrapper.findAll('.fund-table .fund-name').map(cell => cell.text())
 
 describe('FundReportPopover', () => {
+  beforeEach(() => {
+    useTheme().theme.value = 'light'
+  })
+
   it('points the report button at the popover', () => {
     const wrapper = mountPopover()
 
@@ -112,6 +124,18 @@ describe('FundReportPopover', () => {
     expect(
       segments.map(segment => Number((segment.element as HTMLElement).style.flexGrow).toFixed(2))
     ).toEqual(['58.26', '41.62', '0.12'])
+  })
+
+  it('paints the stack and the fund swatches in the colours the dark scheme gives them', () => {
+    useTheme().theme.value = 'dark'
+
+    const wrapper = mountPopover()
+
+    expect(
+      [...wrapper.findAll('.fund-stack span'), ...wrapper.findAll('.fund-swatch')].map(
+        swatch => (swatch.element as HTMLElement).style.backgroundColor
+      )
+    ).toEqual([...Array(6).fill(DARK_SWATCH), ''])
   })
 
   it('lists the funds of the month picked', async () => {

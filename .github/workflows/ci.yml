@@ -308,7 +308,7 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Run visual regression tests
-        run: npx playwright test --project='*${{ matrix.viewport }}'
+        run: npx playwright test --project='*${{ matrix.viewport }}*'
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true

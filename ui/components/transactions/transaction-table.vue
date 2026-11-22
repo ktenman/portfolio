@@ -19,7 +19,7 @@
             <div class="transaction-meta">
               <span
                 v-if="item.platform"
-                class="badge inline-block rounded-control bg-gray-600 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-bold whitespace-nowrap text-white"
+                class="badge inline-block rounded-control bg-gray-600 px-[0.65em] py-[0.35em] text-center align-baseline text-[0.75em] leading-none font-bold whitespace-nowrap text-on-fill"
               >
                 {{ formatPlatformName(item.platform) }}
               </span>
