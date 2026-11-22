@@ -29,6 +29,8 @@ const loadTheme = async (prefersDark: boolean) => {
   return useTheme()
 }
 
+const themeColor = () => document.querySelector('meta[name="theme-color"]')?.getAttribute('content')
+
 describe('useTheme', () => {
   beforeEach(() => {
     vi.unstubAllGlobals()
@@ -36,6 +38,7 @@ describe('useTheme', () => {
     localStorage.clear()
     window.dispatchEvent(new StorageEvent('storage', { storageArea: localStorage }))
     delete document.documentElement.dataset.theme
+    document.head.innerHTML = '<meta name="theme-color" content="">'
   })
 
   it('should choose auto and follow a dark device when nothing is stored', async () => {
@@ -161,6 +164,29 @@ describe('useTheme', () => {
     await recalled
 
     expect(theme.value).toBe('light')
+  })
+
+  it('should colour the browser bar dark on a dark device when nothing is stored', async () => {
+    await loadTheme(true)
+    await nextTick()
+
+    expect(themeColor()).toBe('#191512')
+  })
+
+  it('should colour the browser bar light once light is chosen on a dark device', async () => {
+    const { choose } = await loadTheme(true)
+    choose('light')
+    await nextTick()
+
+    expect(themeColor()).toBe('#fcfaf6')
+  })
+
+  it('should set the browser bar colour in the page before the app loads', () => {
+    const page = readFileSync(join(import.meta.dirname, '..', 'index.html'), 'utf8')
+
+    expect(page).toMatch(
+      /<meta content="#fcfaf6" name="theme-color"\/>[\s\S]*prefers-color-scheme: dark/
+    )
   })
 
   it('should read the stored theme in the page before the app loads', () => {

@@ -228,6 +228,14 @@ describe('NavBar', () => {
   })
 
   describe('theme switch', () => {
+    it('should keep the theme switch outside the sideways-scrolling row of links', () => {
+      const wrapper = createWrapper()
+
+      expect(wrapper.find('.navbar-scroll-container button[aria-label="Theme"]').exists()).toBe(
+        false
+      )
+    })
+
     it('should offer System, Light and Dark with System pressed', () => {
       const options = createWrapper().findAll('#theme-menu button')
 

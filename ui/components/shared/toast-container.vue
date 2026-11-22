@@ -51,11 +51,13 @@ const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
   max-width: 100%;
   font-size: var(--text-sm);
   pointer-events: auto;
-  color: var(--color-on-fill);
-  background-color: var(--toast-bg);
+  color: light-dark(var(--color-on-fill), var(--color-ink));
+  background-color: light-dark(var(--toast-bg), var(--color-surface));
   background-clip: padding-box;
   border-radius: var(--radius-control);
-  box-shadow: var(--shadow-overlay);
+  box-shadow:
+    inset 3px 0 0 light-dark(transparent, var(--toast-bg)),
+    var(--shadow-overlay);
 }
 
 .toast-container > :not(:last-child) {

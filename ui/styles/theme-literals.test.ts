@@ -14,6 +14,8 @@ const ALLOWED: Record<string, string> = {
   'constants/chart-colors.ts': 'canvas palette, checked by its own test',
   'constants/editor-theme.ts':
     "Monaco's defineTheme takes hex only; a test pins each hex to its token",
+  'composables/use-theme.ts':
+    "the browser bar's theme-color, the same hex as the page background in index.html",
   'components/poff/poff-film-media.vue': 'white text and black scrims over photos',
   'styles/components/forms.css': 'chevron strokes inside data URIs, which no token can reach',
 }

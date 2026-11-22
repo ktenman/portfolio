@@ -7,12 +7,15 @@
   <meta content="yes" name="apple-mobile-web-app-capable"/>
   <meta content="yes" name="mobile-web-app-capable"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="#fcfaf6" name="theme-color"/>
   <title>Portfolio</title>
 
   <script>
     try {
       const theme = localStorage.getItem('portfolio_theme')
       if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+      const dark = theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+      if (dark) document.querySelector('meta[name="theme-color"]').content = '#191512'
     } catch {}
   </script>
 
