@@ -1,5 +1,5 @@
 <template>
-  <div class="card border-0! shadow-[0_0.125rem_0.25rem_rgb(0_0_0/0.075)]">
+  <div class="card border-0! shadow-panel">
     <div class="card-body p-0!">
       <loading-spinner v-if="isLoading" class="my-12!" />
       <AlertMessage v-else-if="isError" variant="danger" class="m-6! mb-0!">

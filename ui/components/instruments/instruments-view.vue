@@ -313,7 +313,7 @@ const handleTitleClick = async () => {
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background-color: var(--color-hairline);
+  background-color: var(--color-switch-track);
   border-radius: 1.5rem;
   transition: all 0.2s ease;
 }
@@ -325,10 +325,10 @@ const handleTitleClick = async () => {
   width: 1.125rem;
   left: 0.1875rem;
   bottom: 0.1875rem;
-  background-color: white;
+  background-color: var(--color-switch-knob);
   border-radius: 50%;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-knob);
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -336,6 +336,7 @@ const handleTitleClick = async () => {
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
+  background-color: var(--color-switch-knob-on);
   transform: translateX(1rem);
 }
 

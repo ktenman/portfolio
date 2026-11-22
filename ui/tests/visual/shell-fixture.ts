@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from '../../constants/api'
+import { Theme } from '../../models/generated/domain-models'
 import { apiRoute, type RouteStub } from './stub'
 
 const BUILD_INFO = {
@@ -6,6 +7,9 @@ const BUILD_INFO = {
   time: '2026-08-07T09:15:00Z',
 }
 
-export const stubBuildInfo: RouteStub = async page => {
+export const stubShell: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.BUILD_INFO), route => route.fulfill({ json: BUILD_INFO }))
+  await page.route(apiRoute(API_ENDPOINTS.PREFERENCES), route =>
+    route.fulfill({ json: { theme: Theme.AUTO } })
+  )
 }

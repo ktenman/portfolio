@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
   LIVE_UPDATES: '/live-updates',
   RADIO: '/radio',
   POFF: '/poff',
+  PREFERENCES: '/preferences',
 } as const
 
 export const REFETCH_INTERVALS = {

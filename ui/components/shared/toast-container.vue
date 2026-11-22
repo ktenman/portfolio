@@ -51,7 +51,7 @@ const TOAST_STYLES: Record<ToastType, { accent: string; label: string }> = {
   max-width: 100%;
   font-size: var(--text-sm);
   pointer-events: auto;
-  color: var(--color-white);
+  color: var(--color-on-fill);
   background-color: var(--toast-bg);
   background-clip: padding-box;
   border-radius: var(--radius-control);

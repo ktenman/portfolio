@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
 import { openRoute, settleAndFreeze } from './settle'
 import { apiRoute } from './stub'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubEnums } from './enums-fixture'
 import { SERIES_RESPONSE, stubPortfolioSummary, TODAY_SUMMARY } from './summary-fixture'
 
@@ -81,7 +81,7 @@ const phoneLayout = (page: Page) =>
   }, SUBPIXEL_PX)
 
 test.beforeEach(async ({ page }) => {
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubPortfolioSummary(page)
   await page.route(apiRoute(API_ENDPOINTS.PORTFOLIO_SUMMARY_SERIES), route =>

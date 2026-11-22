@@ -10,7 +10,12 @@ const DEDICATED = [
   { name: 'period-desktop', spec: 'chart-period', viewport: { width: 1440, height: 900 } },
 ]
 
-const DEDICATED_SPECS = DEDICATED.map(({ spec }) => `**/${spec}.spec.ts`)
+const DEDICATED_SPECS = [...DEDICATED.map(({ spec }) => `**/${spec}.spec.ts`), '**/scheme.spec.ts']
+
+const DARK = [
+  { name: 'mobile-dark', viewport: { width: 390, height: 844 } },
+  { name: 'desktop-dark', viewport: { width: 1440, height: 900 } },
+]
 
 export default defineConfig({
   testDir: './ui/tests/visual',
@@ -56,6 +61,11 @@ export default defineConfig({
       testIgnore: DEDICATED_SPECS,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
+    ...DARK.map(({ name, viewport }) => ({
+      name,
+      grep: /routes\.spec\.ts route |palette\.spec\.ts|scheme\.spec\.ts|log-out\.spec\.ts the Theme menu/,
+      use: { ...devices['Desktop Chrome'], viewport, colorScheme: 'dark' as const },
+    })),
     ...DEDICATED.map(({ name, spec, viewport }) => ({
       name,
       testMatch: `**/${spec}.spec.ts`,

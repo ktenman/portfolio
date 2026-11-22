@@ -32,7 +32,7 @@
           target="_blank"
           rel="noopener"
           class="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-control border px-3.5 font-medium whitespace-nowrap shadow-control transition-colors focus-visible:outline-2 focus-visible:outline-brass-deep"
-          :class="row.next ? 'border-brass bg-brass text-white hover:bg-brass-deep' : OUTLINED"
+          :class="row.next ? 'border-brass bg-brass text-on-fill hover:bg-brass-deep' : OUTLINED"
           :aria-label="`Tickets for ${film.title} on ${row.weekday} ${row.day} at ${clock(row.screening.start)}`"
         >
           Tickets

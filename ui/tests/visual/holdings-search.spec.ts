@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { API_ENDPOINTS } from '../../constants/api'
-import { stubBuildInfo } from './build-info-fixture'
+import { stubShell } from './shell-fixture'
 import { stubDiversification } from './diversification-fixture'
 import { stubEnums } from './enums-fixture'
 import { openRoute } from './settle'
@@ -15,7 +15,7 @@ const trackWidths = (panel: Locator) =>
 
 const openHoldings = async (page: Page) => {
   await page.route(apiRoute(API_ENDPOINTS.LIVE_UPDATES), route => route.fulfill({ status: 204 }))
-  await stubBuildInfo(page)
+  await stubShell(page)
   await stubEnums(page)
   await stubDiversification(page)
   await openRoute(page, '/diversification')

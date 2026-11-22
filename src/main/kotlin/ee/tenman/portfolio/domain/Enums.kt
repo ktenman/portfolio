@@ -193,6 +193,12 @@ enum class VisionModel(
   GOOGLE_VISION("google-vision", isOpenRouter = false),
 }
 
+enum class Theme {
+  AUTO,
+  LIGHT,
+  DARK,
+}
+
 data class PlatformDto(
   val name: String,
   val displayName: String,

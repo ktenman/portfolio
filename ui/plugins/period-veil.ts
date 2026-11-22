@@ -2,7 +2,7 @@ import type { Chart, LineElement, Plugin } from 'chart.js'
 import { withAlpha } from '../constants/chart-colors'
 import { readFrame, xOfDate, type ChartFrame } from '../services/chart-frame'
 import type { ChartPeriod } from '../services/chart-period'
-import { brassColor, drawDot, surfaceColor } from './chart'
+import { chartTheme, drawDot } from './chart'
 
 export interface PeriodDrawing {
   period: ChartPeriod | null
@@ -45,20 +45,21 @@ const drawPeriod = (chart: Chart<'line'>, frame: ChartFrame, drawing: PeriodDraw
   const { ctx } = chart
   const edges = [xOfDate(frame, drawing.period.from), xOfDate(frame, drawing.period.to)]
   const [from, to] = edges
+  const { surface, brass } = chartTheme.value
   ctx.save()
-  ctx.fillStyle = withAlpha(surfaceColor, VEIL_ALPHA)
+  ctx.fillStyle = withAlpha(surface, VEIL_ALPHA)
   fillPlot(ctx, frame, frame.left, from)
   fillPlot(ctx, frame, to, frame.right)
   if (drawing.inside) {
-    ctx.fillStyle = withAlpha(brassColor, TINT_ALPHA)
+    ctx.fillStyle = withAlpha(brass, TINT_ALPHA)
     fillPlot(ctx, frame, from, to)
   }
-  ctx.strokeStyle = brassColor
+  ctx.strokeStyle = brass
   ctx.lineWidth = 1
   edges.forEach(x => strokeEdge(ctx, frame, x))
   edges.forEach(x => {
     const y = lineY(chart, x)
-    if (y !== null) drawDot(ctx, { x, y }, brassColor)
+    if (y !== null) drawDot(ctx, { x, y }, brass)
   })
   ctx.restore()
 }

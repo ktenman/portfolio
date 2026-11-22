@@ -28,25 +28,25 @@
 }
 
 .dialog-btn.primary {
-  color: var(--color-white);
+  color: var(--color-on-fill);
   background: var(--color-control-graphite);
   border-color: var(--color-control-graphite);
 }
 
 .dialog-btn.primary:hover:not(:disabled) {
-  color: var(--color-white);
+  color: var(--color-on-fill);
   background: var(--color-control-graphite-deep);
   border-color: var(--color-control-graphite-deep);
 }
 
 .dialog-btn.danger {
-  color: var(--color-white);
+  color: var(--color-on-fill);
   background: var(--color-loss);
   border-color: var(--color-loss);
 }
 
 .dialog-btn.danger:hover:not(:disabled) {
-  color: var(--color-white);
+  color: var(--color-on-fill);
   background: var(--color-loss-deep);
   border-color: var(--color-loss-deep);
 }

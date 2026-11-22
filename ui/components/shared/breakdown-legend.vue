@@ -13,7 +13,11 @@
       @click="toggle(index)"
     >
       <img v-if="item.code" :src="countryFlagUrl(item.code)" :alt="item.code" class="legend-flag" />
-      <span v-else class="legend-color" :style="{ backgroundColor: item.color }"></span>
+      <span
+        v-else
+        class="legend-color"
+        :style="{ backgroundColor: schemeColor(item.color, dark) }"
+      ></span>
       <span class="legend-label">{{ item.label }}</span>
       <span class="legend-value">{{ formatValue(item.value) }}</span>
       <span
@@ -34,6 +38,8 @@ import {
   type BreakdownRow,
 } from '../../services/diversification-chart-service'
 import { countryFlagUrl } from '../../utils/currency-flag'
+import { useTheme } from '../../composables/use-theme'
+import { schemeColor } from '../../constants/chart-colors'
 
 const props = defineProps<{
   items: BreakdownRow[]
@@ -45,6 +51,8 @@ const emit = defineEmits<{
   hover: [index: number]
   leave: []
 }>()
+
+const { dark } = useTheme()
 
 const toggle = (index: number) =>
   index === props.activeIndex ? emit('leave') : emit('hover', index)

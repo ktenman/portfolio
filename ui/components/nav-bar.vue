@@ -11,15 +11,38 @@
               </router-link>
             </li>
           </ul>
-          <!-- Build info display -->
-          <div class="build-info" v-if="buildInfo">
-            <span class="text-body-secondary build-info-text">
-              {{ buildInfo.hash.substring(0, 7) }} | {{ formatDate(buildInfo.time) }}
+          <div class="nav-end">
+            <span v-if="buildInfo" class="text-body-secondary build-info">
+              {{ buildInfo.hash.substring(0, 7) }} {{ formatDate(buildInfo.time) }}
             </span>
-            <form v-if="hosted" class="log-out" method="post" action="/logout">
-              <button class="nav-link" type="submit">
-                Log out
-                <span class="nav-indicator"></span>
+            <button
+              class="nav-glyph theme-toggle"
+              type="button"
+              popovertarget="theme-menu"
+              aria-label="Theme"
+              title="Theme"
+            >
+              <radio-icon :name="theme" />
+            </button>
+            <div id="theme-menu" class="theme-menu" popover role="group" aria-label="Theme">
+              <button
+                v-for="option in themes"
+                :key="option.value"
+                class="theme-option"
+                type="button"
+                popovertarget="theme-menu"
+                popovertargetaction="hide"
+                :aria-pressed="theme === option.value"
+                @click="choose(option.value)"
+              >
+                <radio-icon :name="option.value" class="text-body-secondary" />
+                {{ option.label }}
+                <radio-icon v-if="theme === option.value" name="check" class="ml-auto text-brass" />
+              </button>
+            </div>
+            <form v-if="hosted && buildInfo" method="post" action="/logout">
+              <button class="nav-glyph" type="submit" aria-label="Log out" title="Log out">
+                <radio-icon name="logout" />
               </button>
             </form>
           </div>
@@ -33,8 +56,10 @@
 import { nextTick, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
+import { useTheme, type ThemeChoice } from '../composables/use-theme'
 import { utilityService } from '../services/api'
 import { revealInRow } from '../utils/dom'
+import RadioIcon from './radio/radio-icon.vue'
 
 const routes = ref([
   { path: '/', name: 'Summary' },
@@ -48,7 +73,14 @@ const routes = ref([
   { path: '/monitoring', name: 'Monitoring' },
 ])
 
+const themes: { value: ThemeChoice; label: string }[] = [
+  { value: 'auto', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+]
+
 const hosted = window.location.hostname === 'fov.ee'
+const { theme, choose } = useTheme()
 const row = useTemplateRef<HTMLDivElement>('row')
 const route = useRoute()
 
@@ -95,6 +127,8 @@ function formatDate(dateString: string): string {
 
 .navbar-scroll-container {
   width: 100%;
+  margin-block: -0.25rem;
+  padding-block: 0.25rem;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -111,7 +145,7 @@ function formatDate(dateString: string): string {
   justify-content: space-between;
   min-width: 100%;
   width: max-content;
-  padding-right: 0.9375rem;
+  padding-right: 0.375rem;
 }
 
 .navbar-nav {
@@ -136,7 +170,7 @@ function formatDate(dateString: string): string {
   font-size: var(--text-base);
   font-weight: 500;
   letter-spacing: -0.01em;
-  color: rgb(0 0 0 / 0.65);
+  color: var(--color-nav-link);
   text-decoration: none;
   transition: color var(--transition-slow);
 }
@@ -166,33 +200,79 @@ function formatDate(dateString: string): string {
   transform: scaleX(1);
 }
 
-.build-info {
+.nav-end {
   display: flex;
   align-items: center;
   margin-left: 1.25rem;
-  padding: 0 0.625rem;
+  padding-left: 0.625rem;
   font-size: var(--text-label);
   white-space: nowrap;
 }
 
-.build-info-text {
-  padding: 0.25rem 0.5rem;
+.build-info {
+  margin-right: 0.375rem;
+  word-spacing: 0.25em;
 }
 
-.log-out {
+.nav-glyph {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-body-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-control);
+  transition:
+    color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.nav-glyph:hover,
+.theme-toggle:has(+ :popover-open) {
+  color: var(--color-signal-indigo);
+  background-color: var(--color-surface-hover);
+}
+
+.theme-menu {
+  width: 9.25rem;
+  margin: auto;
+  padding: 0.25rem;
+  font-size: var(--text-2xs);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-container);
+  box-shadow: var(--shadow-overlay);
+}
+
+@supports (anchor-name: --theme) {
+  .theme-toggle {
+    anchor-name: --theme;
+  }
+
+  .theme-menu {
+    position-anchor: --theme;
+    position-try-fallbacks: flip-inline;
+    inset: auto;
+    top: calc(anchor(bottom) + 0.375rem);
+    right: anchor(right);
+    margin: 0;
+  }
+}
+
+.theme-option {
   display: flex;
   align-items: center;
-}
-
-.log-out::before {
-  content: '';
-  width: 1px;
-  height: 1rem;
-  background-color: var(--color-hairline-strong);
-}
-
-.log-out .nav-link {
+  gap: 0.5rem;
+  width: 100%;
+  height: 2rem;
+  padding: 0 0.5rem;
   cursor: pointer;
+  border-radius: var(--radius-control);
+}
+
+.theme-option:hover {
+  background-color: var(--color-surface-hover);
 }
 
 @media (min-width: 992px) {
@@ -207,19 +287,23 @@ function formatDate(dateString: string): string {
 @media (max-width: 767.98px) {
   .navbar-content {
     gap: 0.5rem;
-    padding-right: 1rem;
   }
 
   .navbar-nav {
     gap: 0.5rem;
   }
 
-  .build-info {
+  .nav-end {
     margin-left: 3rem;
   }
 
-  .log-out .nav-link {
-    min-height: 2.75rem;
+  .nav-glyph {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .theme-option {
+    height: 2.75rem;
   }
 }
 </style>

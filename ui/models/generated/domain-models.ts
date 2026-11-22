@@ -233,6 +233,10 @@ export interface CollectionItemStatusDto {
     error: string | null;
 }
 
+export interface UserPreferenceDto {
+    theme: Theme;
+}
+
 export interface PlatformDto {
     name: string;
     displayName: string;
@@ -916,6 +920,12 @@ export enum LiveUpdate {
     SUMMARY = "SUMMARY",
     RADIO = "RADIO",
     DIGEST = "DIGEST",
+}
+
+export enum Theme {
+    AUTO = "AUTO",
+    LIGHT = "LIGHT",
+    DARK = "DARK",
 }
 
 export enum Station {

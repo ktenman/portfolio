@@ -30,7 +30,8 @@ import { useLocalStorage, useMediaQuery } from '@vueuse/core'
 import { Chart, type ChartOptions, type LegendItem } from 'chart.js'
 import { formatDate, formatDateTime, formatCurrencyWithSymbol } from '../../utils/formatters'
 import { STORAGE_KEYS } from '../../constants'
-import { CHART_COLORS, withAlpha } from '../../constants/chart-colors'
+import { CHART_COLORS, schemeColor, withAlpha } from '../../constants/chart-colors'
+import { useTheme } from '../../composables/use-theme'
 import type { ChartDataPoint, PerformanceChartData } from '../../composables/use-portfolio-chart'
 import { usePeriodGesture } from '../../composables/use-period-gesture'
 import { frameBounds, type ChartFrame } from '../../services/chart-frame'
@@ -39,12 +40,9 @@ import { daysBetween } from '../../utils/iso-dates'
 import { createPeriodVeil } from '../../plugins/period-veil'
 import ChartPeriodLayer from './chart-period-layer.vue'
 import {
+  chartTheme,
   crosshair,
   rangeExtremes,
-  tooltipStyle,
-  gridColor,
-  labelColor,
-  surfaceColor,
   compactAmount,
   percentAmount,
 } from '../../plugins/chart'
@@ -144,6 +142,10 @@ const veiledLabels = (target: Chart): LegendItem[] =>
     strokeStyle: 'transparent',
   }))
 
+const { dark } = useTheme()
+
+const paint = (color: string) => schemeColor(color, dark.value)
+
 const chartData = computed(() => {
   if (!props.data) return null
 
@@ -155,9 +157,19 @@ const chartData = computed(() => {
     return {
       labels,
       datasets: [
-        performanceDataset('portfolio', 'Portfolio', CHART_COLORS[0], props.data.portfolioValues),
+        performanceDataset(
+          'portfolio',
+          'Portfolio',
+          paint(CHART_COLORS[0]),
+          props.data.portfolioValues
+        ),
         ...props.data.benchmarks.map(benchmark =>
-          performanceDataset(benchmark.key, benchmark.label, benchmark.color, benchmark.values)
+          performanceDataset(
+            benchmark.key,
+            benchmark.label,
+            paint(benchmark.color),
+            benchmark.values
+          )
         ),
       ],
     }
@@ -170,9 +182,9 @@ const chartData = computed(() => {
         seriesId: 'totalValue',
         label: isCompact.value ? 'Value' : 'Total Value',
         hidden: isHidden('totalValue'),
-        borderColor: CHART_COLORS[0],
-        backgroundColor: withAlpha(CHART_COLORS[0], 0.08),
-        pointHoverBackgroundColor: CHART_COLORS[0],
+        borderColor: paint(CHART_COLORS[0]),
+        backgroundColor: withAlpha(paint(CHART_COLORS[0]), 0.08),
+        pointHoverBackgroundColor: paint(CHART_COLORS[0]),
         fill: true,
         data: props.data.totalValues,
         rangeExtremes: hasPeriod.value ? null : props.data.extremes,
@@ -182,9 +194,9 @@ const chartData = computed(() => {
         seriesId: 'totalProfit',
         label: isCompact.value ? 'Profit' : 'Total Profit',
         hidden: isHidden('totalProfit'),
-        borderColor: CHART_COLORS[1],
-        backgroundColor: CHART_COLORS[1],
-        pointHoverBackgroundColor: CHART_COLORS[1],
+        borderColor: paint(CHART_COLORS[1]),
+        backgroundColor: paint(CHART_COLORS[1]),
+        pointHoverBackgroundColor: paint(CHART_COLORS[1]),
         data: props.data.profitValues,
         rangeExtremes: hasPeriod.value ? null : props.data.profitExtremes,
         yAxisID: 'y',
@@ -193,9 +205,9 @@ const chartData = computed(() => {
         seriesId: 'xirrAnnualReturn',
         label: isCompact.value ? 'XIRR' : 'XIRR Annual Return',
         hidden: isHidden('xirrAnnualReturn'),
-        borderColor: CHART_COLORS[3],
-        backgroundColor: CHART_COLORS[3],
-        pointHoverBackgroundColor: CHART_COLORS[3],
+        borderColor: paint(CHART_COLORS[3]),
+        backgroundColor: paint(CHART_COLORS[3]),
+        pointHoverBackgroundColor: paint(CHART_COLORS[3]),
         data: props.data.xirrValues,
         yAxisID: 'y1',
       },
@@ -203,9 +215,9 @@ const chartData = computed(() => {
         seriesId: 'earningsPerMonth',
         label: isCompact.value ? 'EPM' : 'Earnings Per Month',
         hidden: isHidden('earningsPerMonth'),
-        borderColor: CHART_COLORS[5],
-        backgroundColor: CHART_COLORS[5],
-        pointHoverBackgroundColor: CHART_COLORS[5],
+        borderColor: paint(CHART_COLORS[5]),
+        backgroundColor: paint(CHART_COLORS[5]),
+        pointHoverBackgroundColor: paint(CHART_COLORS[5]),
         data: props.data.earningsValues,
         yAxisID: 'y',
       },
@@ -233,7 +245,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       radius: 0,
       hoverRadius: 5,
       hoverBorderWidth: 2,
-      hoverBorderColor: surfaceColor,
+      hoverBorderColor: chartTheme.value.surface,
     },
     line: {
       cubicInterpolationMode: 'monotone',
@@ -242,7 +254,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
   },
   plugins: {
     tooltip: {
-      ...tooltipStyle,
+      ...chartTheme.value.tooltip,
       callbacks: {
         label: context => {
           const value = context.parsed.y
@@ -267,7 +279,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
         boxWidth: 6,
         boxHeight: 6,
         padding: 16,
-        color: labelColor,
+        color: chartTheme.value.label,
         font: tickFont,
         ...(legendVeiled.value && { generateLabels: veiledLabels }),
       },
@@ -279,7 +291,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       grid: { display: false, tickLength: isPerformance.value ? 8 : 25 },
       ticks: {
         maxTicksLimit: 5,
-        color: hasPeriod.value ? 'transparent' : labelColor,
+        color: hasPeriod.value ? 'transparent' : chartTheme.value.label,
         font: tickFont,
       },
     },
@@ -289,10 +301,10 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       position: 'left' as const,
       grace: valueExtremes.value ? '10%' : 0,
       border: { display: false },
-      grid: { color: gridColor },
+      grid: { color: chartTheme.value.grid },
       ticks: {
         maxTicksLimit: 8,
-        color: labelColor,
+        color: chartTheme.value.label,
         font: tickFont,
         callback: value =>
           isPerformance.value ? percentTick(value) : `€${compactAmount.format(Number(value))}`,
@@ -308,7 +320,7 @@ const chartOptions = computed<ChartOptions<'line'>>(() => ({
       },
       ticks: {
         maxTicksLimit: 8,
-        color: labelColor,
+        color: chartTheme.value.label,
         font: tickFont,
         callback: percentTick,
       },

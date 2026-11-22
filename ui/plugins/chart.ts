@@ -11,7 +11,9 @@ import {
   Legend,
   Filler,
 } from 'chart.js'
+import { computed } from 'vue'
 import type { RangeExtremes } from '../composables/use-portfolio-chart'
+import { useTheme } from '../composables/use-theme'
 import { formatCurrencyWithSymbol } from '../utils/formatters'
 
 Chart.register(
@@ -29,14 +31,17 @@ Chart.register(
 Chart.defaults.font.family =
   getComputedStyle(document.body).fontFamily || Chart.defaults.font.family
 
-const rootStyles = getComputedStyle(document.documentElement)
-const crosshairColor = rootStyles.getPropertyValue('--color-ink-faint').trim()
-const inkColor = rootStyles.getPropertyValue('--color-ink').trim()
+const PROBE_ID = 'chart-colour-probe'
 
-export const gridColor = rootStyles.getPropertyValue('--color-hairline').trim()
-export const labelColor = rootStyles.getPropertyValue('--color-ink-soft').trim()
-export const surfaceColor = rootStyles.getPropertyValue('--color-surface').trim()
-export const brassColor = rootStyles.getPropertyValue('--color-brass').trim()
+const probe = (): HTMLElement => {
+  const existing = document.getElementById(PROBE_ID)
+  if (existing) return existing
+  const created = document.createElement('span')
+  created.id = PROBE_ID
+  created.hidden = true
+  document.body.append(created)
+  return created
+}
 
 export const compactAmount = new Intl.NumberFormat('en-US', {
   notation: 'compact',
@@ -47,10 +52,7 @@ export const percentAmount = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 })
 
-export const tooltipStyle = {
-  backgroundColor: rootStyles.getPropertyValue('--color-gray-700').trim(),
-  titleColor: rootStyles.getPropertyValue('--color-paper').trim(),
-  bodyColor: rootStyles.getPropertyValue('--color-paper').trim(),
+const TOOLTIP_LAYOUT = {
   titleFont: { size: 11, weight: 500 },
   titleMarginBottom: 8,
   bodyFont: { size: 12 },
@@ -62,6 +64,31 @@ export const tooltipStyle = {
   usePointStyle: true,
 } as const
 
+const { dark } = useTheme()
+
+export const chartTheme = computed(() => {
+  const element = probe()
+  element.style.colorScheme = dark.value ? 'dark' : 'light'
+  const resolve = (token: string): string => {
+    element.style.color = `var(--color-${token})`
+    return getComputedStyle(element).color
+  }
+  return {
+    grid: resolve('hairline'),
+    label: resolve('ink-soft'),
+    surface: resolve('surface'),
+    brass: resolve('brass'),
+    crosshair: resolve('ink-faint'),
+    ink: resolve('ink'),
+    tooltip: {
+      ...TOOLTIP_LAYOUT,
+      backgroundColor: resolve('gray-700'),
+      titleColor: resolve('paper'),
+      bodyColor: resolve('paper'),
+    },
+  }
+})
+
 const strokeVerticalLine = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -70,7 +97,7 @@ const strokeVerticalLine = (
   dash: number[] = []
 ) => {
   ctx.lineWidth = 1
-  ctx.strokeStyle = crosshairColor
+  ctx.strokeStyle = chartTheme.value.crosshair
   ctx.setLineDash(dash)
   ctx.beginPath()
   ctx.moveTo(x, from)
@@ -151,7 +178,7 @@ export const drawDot = (
   color: string
 ) => {
   ctx.lineWidth = 2
-  ctx.fillStyle = surfaceColor
+  ctx.fillStyle = chartTheme.value.surface
   ctx.strokeStyle = color
   ctx.beginPath()
   ctx.arc(x, y, MARKER_RADIUS, 0, Math.PI * 2)
@@ -163,7 +190,7 @@ const drawHaloText = (ctx: CanvasRenderingContext2D, { text, x, y, font, color }
   ctx.font = font
   ctx.lineJoin = 'round'
   ctx.lineWidth = 3
-  ctx.strokeStyle = surfaceColor
+  ctx.strokeStyle = chartTheme.value.surface
   ctx.strokeText(text, x, y)
   ctx.fillStyle = color
   ctx.fillText(text, x, y)
@@ -177,7 +204,7 @@ const drawLabel = (chart: Chart, marker: ExtremeMarker) => {
   const y = marker.y + marker.direction * LABEL_OFFSET
   ctx.textAlign = 'left'
   ctx.textBaseline = marker.direction === ABOVE ? 'bottom' : 'top'
-  drawHaloText(ctx, { text: marker.amount, x, y, font: amountFont, color: inkColor })
+  drawHaloText(ctx, { text: marker.amount, x, y, font: amountFont, color: chartTheme.value.ink })
 }
 
 export const rangeExtremes: Plugin = {

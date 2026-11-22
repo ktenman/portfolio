@@ -26,7 +26,8 @@ Chart.register(DoughnutController, ArcElement)
 <script lang="ts" setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import BreakdownLegend from './breakdown-legend.vue'
-import { withAlpha } from '../../constants/chart-colors'
+import { schemeColor, withAlpha } from '../../constants/chart-colors'
+import { useTheme } from '../../composables/use-theme'
 import { formatPercentage } from '../../utils/formatters'
 import type { BreakdownRow } from '../../services/diversification-chart-service'
 
@@ -41,6 +42,7 @@ const props = withDefaults(
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 const activeIndex = ref<number | null>(null)
 let chart: Chart | null = null
+const { dark } = useTheme()
 
 const activeItem = computed(() =>
   activeIndex.value === null ? null : (props.rows[activeIndex.value] ?? null)
@@ -51,9 +53,10 @@ const DIMMED_OPACITY = 0.3
 const GAP_PX = 6
 
 const fills = (active: number | null) =>
-  props.rows.map((row, index) =>
-    active === null || active === index ? row.color : withAlpha(row.color, DIMMED_OPACITY)
-  )
+  props.rows.map((row, index) => {
+    const color = schemeColor(row.color, dark.value)
+    return active === null || active === index ? color : withAlpha(color, DIMMED_OPACITY)
+  })
 
 const shapeArcs = {
   id: 'shapeArcs',
@@ -147,6 +150,8 @@ watch(
     updateChartData()
   }
 )
+
+watch(dark, renderChart)
 
 onBeforeUnmount(() => {
   chart?.destroy()

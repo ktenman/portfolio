@@ -41,6 +41,7 @@ import { useAuthState } from './composables/use-auth-state'
 import { useEnumValues } from './composables/use-enum-values'
 import { useLiveUpdates } from './composables/use-live-updates'
 import { useRadioPlayer } from './composables/use-radio-player'
+import { useTheme } from './composables/use-theme'
 
 const ConfirmDialog = defineAsyncComponent(() => import('./components/shared/confirm-dialog.vue'))
 const RadioMiniPlayer = defineAsyncComponent(
@@ -53,11 +54,14 @@ const { isAuthChecking, checkAuth } = useAuthState()
 const { loadAll } = useEnumValues()
 const audio = useTemplateRef<HTMLAudioElement>('audio')
 const player = useRadioPlayer()
+const theme = useTheme()
 useLiveUpdates()
 
 onMounted(() => {
   checkAuth().then(signed => {
-    if (signed) player.recall()
+    if (!signed) return
+    player.recall()
+    theme.recall()
   })
   loadAll()
   if (audio.value) player.attach(audio.value)

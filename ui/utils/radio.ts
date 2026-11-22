@@ -72,7 +72,7 @@ export const LINK =
 export const ROW_LINK = 'font-semibold after:absolute after:inset-0 after:rounded-container'
 
 export const PLAY =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-white shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
+  'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full bg-brass text-on-fill shadow-control transition-colors hover:bg-brass-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-deep'
 
 const DISC =
   'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-brass-wash hover:text-brass-deep focus-visible:outline-2 focus-visible:outline-brass-deep'

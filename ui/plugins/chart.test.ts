@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import type { Chart } from 'chart.js'
 import type { RangeExtremes } from '../composables/use-portfolio-chart'
-import { rangeExtremes, surfaceColor } from './chart'
+import { chartTheme, rangeExtremes } from './chart'
 
 interface DrawnText {
   text: string
@@ -88,6 +88,85 @@ const draw = (options: FakeChartOptions = {}) => {
   return { texts, fills }
 }
 
+const PROBE = 'span[hidden]'
+
+const stubComputedStyle = () =>
+  vi.spyOn(window, 'getComputedStyle').mockImplementation(element => {
+    const { color, colorScheme } = (element as HTMLElement).style
+    return { color: element.isConnected ? `${colorScheme} ${color}` : '' } as CSSStyleDeclaration
+  })
+
+const loadChartTheme = async () => {
+  vi.resetModules()
+  const [chart, theme] = await Promise.all([import('./chart'), import('../composables/use-theme')])
+  return { chartTheme: chart.chartTheme, theme: theme.useTheme().theme }
+}
+
+const colours = (theme: typeof chartTheme.value) => [
+  theme.grid,
+  theme.label,
+  theme.surface,
+  theme.brass,
+  theme.crosshair,
+  theme.ink,
+  theme.tooltip.backgroundColor,
+  theme.tooltip.titleColor,
+  theme.tooltip.bodyColor,
+]
+
+const resolved = (scheme: string) =>
+  [
+    'hairline',
+    'ink-soft',
+    'surface',
+    'brass',
+    'ink-faint',
+    'ink',
+    'gray-700',
+    'paper',
+    'paper',
+  ].map(token => `${scheme} var(--color-${token})`)
+
+describe('chartTheme', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should read every colour from its token through a probe set to the light scheme', async () => {
+    const { chartTheme: loaded, theme } = await loadChartTheme()
+    theme.value = 'light'
+    stubComputedStyle()
+    expect(colours(loaded.value)).toEqual(resolved('light'))
+  })
+
+  it('should read every colour again through a probe set to the dark scheme once it goes dark', async () => {
+    const { chartTheme: loaded, theme } = await loadChartTheme()
+    stubComputedStyle()
+    colours(loaded.value)
+    theme.value = 'dark'
+    expect(colours(loaded.value)).toEqual(resolved('dark'))
+  })
+
+  it('should read through a fresh probe after the page body was emptied', async () => {
+    const { chartTheme: loaded, theme } = await loadChartTheme()
+    stubComputedStyle()
+    colours(loaded.value)
+    document.body.replaceChildren()
+    theme.value = 'dark'
+    expect(loaded.value.grid).toBe('dark var(--color-hairline)')
+  })
+
+  it('should keep one probe in the page however often the module loads', async () => {
+    const first = await loadChartTheme()
+    colours(first.chartTheme.value)
+    const second = await loadChartTheme()
+    second.theme.value = 'dark'
+    colours(second.chartTheme.value)
+    expect(document.querySelectorAll(PROBE)).toHaveLength(1)
+  })
+})
+
 describe('rangeExtremes', () => {
   it('should label the high and the low with only their amount', () => {
     expect(draw().texts.map(drawn => drawn.text)).toEqual(['€178,204.06', '€102,060.28'])
@@ -102,11 +181,11 @@ describe('rangeExtremes', () => {
   })
 
   it('should leave both extreme dots hollow while nothing is hovered', () => {
-    expect(draw().fills).toEqual([surfaceColor, surfaceColor])
+    expect(draw().fills).toEqual([chartTheme.value.surface, chartTheme.value.surface])
   })
 
   it('should leave the hovered extreme dot to the charts own hover point', () => {
-    expect(draw({ hovered: 2 }).fills).toEqual([surfaceColor])
+    expect(draw({ hovered: 2 }).fills).toEqual([chartTheme.value.surface])
   })
 
   it('should draw nothing when every series with extremes is hidden', () => {

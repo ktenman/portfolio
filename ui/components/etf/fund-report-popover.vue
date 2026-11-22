@@ -101,6 +101,8 @@ import {
 import type { FundReportDto } from '../../models/generated/domain-models'
 import { formatPercentage } from '../../utils/formatters'
 import CloseButton from '../shared/close-button.vue'
+import { useTheme } from '../../composables/use-theme'
+import { schemeColor } from '../../constants/chart-colors'
 
 const props = defineProps<{
   name: string
@@ -111,7 +113,14 @@ const reportIndex = ref(0)
 
 const report = computed(() => props.reports[reportIndex.value])
 
-const slices = computed(() => buildFundChartData(report.value))
+const { dark } = useTheme()
+
+const slices = computed(() =>
+  buildFundChartData(report.value).map(slice => ({
+    ...slice,
+    color: schemeColor(slice.color, dark.value),
+  }))
+)
 
 const rows = computed(() => {
   const colors = new Map(slices.value.map(slice => [slice.label, slice.color]))

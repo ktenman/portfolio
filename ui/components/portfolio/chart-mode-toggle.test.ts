@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ChartModeToggle from './chart-mode-toggle.vue'
 import type { BenchmarkKey } from '../../composables/use-portfolio-chart'
+import { useTheme } from '../../composables/use-theme'
+
+const { DARK_SWATCH } = vi.hoisted(() => ({ DARK_SWATCH: 'rgb(1, 2, 3)' }))
+
+vi.mock('../../constants/chart-colors', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../constants/chart-colors')>()),
+  schemeColor: (color: string, dark: boolean) => (dark ? DARK_SWATCH : color),
+}))
 
 const createWrapper = (selected: BenchmarkKey[] = []) =>
   mount(ChartModeToggle, { props: { selected } })
@@ -10,6 +18,10 @@ const pressedLabels = (wrapper: ReturnType<typeof createWrapper>) =>
   wrapper.findAll('button[aria-pressed="true"]').map(button => button.text())
 
 describe('ChartModeToggle', () => {
+  beforeEach(() => {
+    useTheme().theme.value = 'light'
+  })
+
   it('should name the chip group Compare', () => {
     const wrapper = createWrapper()
     const label = wrapper.find('[role="group"]').attributes('aria-labelledby')
@@ -43,5 +55,18 @@ describe('ChartModeToggle', () => {
     await wrapper.findAll('button')[1].trigger('click')
 
     expect(wrapper.emitted('select')).toEqual([['vwce']])
+  })
+
+  it('should paint each swatch in the colour the dark scheme gives it', () => {
+    useTheme().theme.value = 'dark'
+
+    const swatches = createWrapper()
+      .findAll('button > span')
+      .map(swatch => swatch.attributes('style'))
+
+    expect(swatches).toEqual([
+      `background-color: ${DARK_SWATCH};`,
+      `background-color: ${DARK_SWATCH};`,
+    ])
   })
 })

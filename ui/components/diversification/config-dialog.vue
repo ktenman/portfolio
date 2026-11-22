@@ -16,7 +16,8 @@
           v-model:value="exportContent"
           language="json"
           :options="editorOptions"
-          theme="vs"
+          :theme="editorTheme"
+          @before-mount="defineEditorTheme"
         />
       </div>
     </template>
@@ -54,7 +55,8 @@
             v-model:value="importContent"
             language="json"
             :options="editorOptions"
-            theme="vs"
+            :theme="editorTheme"
+            @before-mount="defineEditorTheme"
           />
         </div>
         <AlertMessage v-if="validationWarning" variant="warning" class="mt-4 mb-0!">
@@ -86,10 +88,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
+import { VueMonacoEditor, type MonacoEditor } from '@guolao/vue-monaco-editor'
 import ModalShell from '../shared/modal-shell.vue'
 import AlertMessage from '../shared/alert-message.vue'
 import type { CachedState } from './types'
+import { useTheme } from '../../composables/use-theme'
+import { EDITOR_DARK_THEME, EDITOR_THEME } from '../../constants/editor-theme'
 
 interface Props {
   modelValue: boolean
@@ -108,6 +112,11 @@ const emit = defineEmits<{
   export: []
   import: [data: CachedState]
 }>()
+
+const { dark } = useTheme()
+const editorTheme = computed(() => (dark.value ? EDITOR_DARK_THEME : 'vs'))
+const defineEditorTheme = (monaco: MonacoEditor) =>
+  monaco.editor.defineTheme(EDITOR_DARK_THEME, EDITOR_THEME)
 
 const editorOptions = {
   readOnly: true,
