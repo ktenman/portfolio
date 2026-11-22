@@ -73,6 +73,9 @@ export const chartTheme = computed(() => {
     element.style.color = `var(--color-${token})`
     return getComputedStyle(element).color
   }
+  const [fill, text, rule] = dark.value
+    ? ['surface-hover', 'ink', 'hairline-strong']
+    : ['gray-700', 'paper', 'gray-700']
   return {
     grid: resolve('hairline'),
     label: resolve('ink-soft'),
@@ -82,10 +85,10 @@ export const chartTheme = computed(() => {
     ink: resolve('ink'),
     tooltip: {
       ...TOOLTIP_LAYOUT,
-      backgroundColor: resolve(dark.value ? 'surface-hover' : 'gray-700'),
-      titleColor: resolve(dark.value ? 'ink' : 'paper'),
-      bodyColor: resolve(dark.value ? 'ink' : 'paper'),
-      borderColor: resolve(dark.value ? 'hairline-strong' : 'gray-700'),
+      backgroundColor: resolve(fill),
+      titleColor: resolve(text),
+      bodyColor: resolve(text),
+      borderColor: resolve(rule),
       borderWidth: dark.value ? 1 : 0,
     },
   }
