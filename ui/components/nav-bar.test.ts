@@ -228,12 +228,14 @@ describe('NavBar', () => {
   })
 
   describe('theme switch', () => {
-    it('should keep the theme switch outside the sideways-scrolling row of links', () => {
-      const wrapper = createWrapper()
+    it('should scroll the theme switch and Log out with the row of links', () => {
+      visit('fov.ee')
+      mockBuildInfo.value = buildInfoData
+      const row = createWrapper().find('.navbar-scroll-container')
 
-      expect(wrapper.find('.navbar-scroll-container button[aria-label="Theme"]').exists()).toBe(
-        false
-      )
+      expect(
+        row.findAll('button[aria-label]').map(button => button.attributes('aria-label'))
+      ).toEqual(['Theme', 'Log out'])
     })
 
     it('should offer System, Light and Dark with System pressed', () => {
