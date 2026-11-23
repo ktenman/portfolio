@@ -241,6 +241,7 @@ export const monitoringService = {
 
 export const poffService = {
   catalogue: () => httpClient.get<PoffCatalogueResponse>(`${API_ENDPOINTS.POFF}/catalogue`),
+  enabled: () => httpClient.get<boolean>(`${API_ENDPOINTS.POFF}/enabled`),
   stillUrl: (key: string, width: 640 | 1280): string =>
     `/api${API_ENDPOINTS.POFF}/stills/${key}?width=${width}`,
 }

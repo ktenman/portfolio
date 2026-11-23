@@ -4,12 +4,16 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.CollectionMonitoringProperties
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.job.ImdbRatingJob
+import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.model.CollectionSnapshot
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.support.StaticListableBeanFactory
 import org.springframework.context.ApplicationContext
 import java.time.Clock
 import java.time.Instant
@@ -17,11 +21,9 @@ import java.time.ZoneId
 
 class CollectionScheduleServiceTest {
   @Test
-  fun `should disable expectations when scheduling is disabled`() {
-    val clock = clock("2026-09-25T10:00:00Z")
-    val service = service(clock, false)
-    val snapshot = snapshot(CollectionKey.BINANCE_PRICES)
-    expect(service.expectation(snapshot).enabled).toEqual(false)
+  fun `should disable a collection whose job is not scheduled`() {
+    val service = service(clock("2026-09-25T10:00:00Z"), CollectionMetricsService.JOBS.values - ImdbRatingJob::class.java.simpleName)
+    expect(service.expectation(snapshot(CollectionKey.IMDB_RATINGS)).enabled).toEqual(false)
   }
 
   @Test
@@ -355,11 +357,11 @@ class CollectionScheduleServiceTest {
 
   private fun service(
     clock: Clock,
-    enabled: Boolean = true,
+    scheduled: Collection<String> = CollectionMetricsService.JOBS.values,
   ): CollectionScheduleService {
     val started = clock.instant().toEpochMilli()
     val context = mockk<ApplicationContext> { every { startupDate } returns started }
-    return CollectionScheduleService(clock, CollectionMonitoringProperties(), enabled, 120000, 60000, context)
+    return CollectionScheduleService(clock, CollectionMonitoringProperties(), jobs(scheduled), 120000, 60000, context)
   }
 
   private fun clock(value: String): Clock =
@@ -386,3 +388,7 @@ class CollectionScheduleServiceTest {
     itemSuccesses = mapOf("VGLA:GER:EUR" to null),
   )
 }
+
+fun jobs(names: Collection<String> = CollectionMetricsService.JOBS.values): ObjectProvider<Job> =
+  StaticListableBeanFactory(names.associateWith { name -> mockk<Job> { every { getName() } returns name } })
+    .getBeanProvider(Job::class.java)

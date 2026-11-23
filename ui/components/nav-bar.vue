@@ -4,7 +4,7 @@
       <div ref="row" class="navbar-scroll-container">
         <div class="navbar-content">
           <ul class="navbar-nav">
-            <li class="nav-item" v-for="route in routes" :key="route.path">
+            <li class="nav-item" v-for="route in links" :key="route.path">
               <router-link class="nav-link" :to="route.path" active-class="active">
                 {{ route.name }}
                 <span class="nav-indicator"></span>
@@ -53,15 +53,15 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
 import { useTheme, type ThemeChoice } from '../composables/use-theme'
-import { utilityService } from '../services/api'
+import { poffService, utilityService } from '../services/api'
 import { revealInRow } from '../utils/dom'
 import RadioIcon from './radio/radio-icon.vue'
 
-const routes = ref([
+const routes = [
   { path: '/', name: 'Summary' },
   { path: '/radio', name: 'Radio' },
   { path: '/poff', name: 'PÖFF' },
@@ -71,7 +71,7 @@ const routes = ref([
   { path: '/diversification', name: 'Diversification' },
   { path: '/calculator', name: 'Calculator' },
   { path: '/monitoring', name: 'Monitoring' },
-])
+]
 
 const themes: { value: ThemeChoice; label: string }[] = [
   { value: 'auto', label: 'System' },
@@ -84,8 +84,24 @@ const { theme, choose } = useTheme()
 const row = useTemplateRef<HTMLDivElement>('row')
 const route = useRoute()
 
+const { data: buildInfo } = useQuery({
+  queryKey: ['build-info'],
+  queryFn: utilityService.getBuildInfo,
+  staleTime: Infinity,
+  retry: false,
+})
+
+const { data: poff } = useQuery({
+  queryKey: ['poff-enabled'],
+  queryFn: poffService.enabled,
+  staleTime: Infinity,
+  retry: false,
+})
+
+const links = computed(() => routes.filter(link => link.path !== '/poff' || poff.value === true))
+
 watch(
-  () => route.path,
+  [() => route.path, links],
   async () => {
     await nextTick()
     await document.fonts.ready
@@ -93,13 +109,6 @@ watch(
   },
   { immediate: true }
 )
-
-const { data: buildInfo } = useQuery({
-  queryKey: ['build-info'],
-  queryFn: utilityService.getBuildInfo,
-  staleTime: Infinity,
-  retry: false,
-})
 
 function formatDate(dateString: string): string {
   if (!dateString || dateString === 'unknown') return 'unknown'

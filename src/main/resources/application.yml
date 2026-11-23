@@ -297,6 +297,7 @@ err:
   url: https://eestiraadio.err.ee
 
 poff:
+  enabled: ${POFF_ENABLED:false}
   url: https://poff.ee
   pause: 300ms
 

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.job
 
+import ch.tutteli.atrium.api.fluent.en_GB.notToContain
 import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.verbs.expect
 import org.junit.jupiter.api.Test
@@ -16,7 +17,7 @@ class ScheduledJobsTest {
   fun `should register every scheduled job method without errors`() {
     val processor = ScheduledAnnotationBeanPostProcessor().apply { setEmbeddedValueResolver(StandardEnvironment()::resolvePlaceholders) }
     val failures =
-      jobClasses().mapNotNull { type ->
+      jobClasses(poff = true).mapNotNull { type ->
         runCatching { processor.postProcessAfterInitialization(ObjenesisStd().newInstance(type), type.simpleName) }
           .exceptionOrNull()
           ?.let { "${type.simpleName}: $it" }
@@ -24,8 +25,13 @@ class ScheduledJobsTest {
     expect(failures).toBeEmpty()
   }
 
-  private fun jobClasses(): List<Class<*>> =
-    ClassPathScanningCandidateComponentProvider(false, MockEnvironment())
+  @Test
+  fun `should leave out the PÖFF jobs while PÖFF is off`() {
+    expect(jobClasses(poff = false)).notToContain(PoffImportJob::class.java, ImdbRatingJob::class.java)
+  }
+
+  private fun jobClasses(poff: Boolean): List<Class<*>> =
+    ClassPathScanningCandidateComponentProvider(false, MockEnvironment().withProperty("poff.enabled", poff.toString()))
       .apply { addIncludeFilter(AnnotationTypeFilter(Component::class.java)) }
       .findCandidateComponents(ScheduledJob::class.java.packageName)
       .map { Class.forName(it.beanClassName) }

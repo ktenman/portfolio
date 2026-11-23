@@ -6,9 +6,11 @@ import ee.tenman.portfolio.service.infrastructure.JobExecutionService
 import ee.tenman.portfolio.service.monitoring.CollectionMonitorService
 import ee.tenman.portfolio.service.poff.ImdbRatingService
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty
 import org.springframework.scheduling.annotation.Scheduled
 
 @ScheduledJob
+@ConditionalOnBooleanProperty("poff.enabled")
 class ImdbRatingJob(
   private val imdbRatingService: ImdbRatingService,
   private val jobExecutionService: JobExecutionService,

@@ -12,6 +12,7 @@ import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.MeterBinder
 import jakarta.annotation.PostConstruct
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.Scheduled
 import java.time.Clock
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 @ScheduledJob
+@ConditionalOnBooleanProperty("poff.enabled")
 class PoffImportJob(
   private val poffImportService: PoffImportService,
   private val poffCatalogueService: PoffCatalogueService,

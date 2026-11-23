@@ -12,4 +12,7 @@ export const stubShell: RouteStub = async page => {
   await page.route(apiRoute(API_ENDPOINTS.PREFERENCES), route =>
     route.fulfill({ json: { theme: Theme.AUTO } })
   )
+  await page.route(apiRoute(`${API_ENDPOINTS.POFF}/enabled`), route =>
+    route.fulfill({ json: true })
+  )
 }

@@ -2,9 +2,11 @@ package ee.tenman.portfolio.service.monitoring
 
 import ee.tenman.portfolio.configuration.CollectionMonitoringProperties
 import ee.tenman.portfolio.domain.CollectionKey
+import ee.tenman.portfolio.job.Job
 import ee.tenman.portfolio.model.CollectionExpectation
 import ee.tenman.portfolio.model.CollectionSchedules
 import ee.tenman.portfolio.model.CollectionSnapshot
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationContext
 import org.springframework.scheduling.support.CronExpression
@@ -18,18 +20,20 @@ import java.time.ZoneId
 class CollectionScheduleService(
   private val clock: Clock,
   private val properties: CollectionMonitoringProperties,
-  @param:Value("\${scheduling.enabled:true}") private val enabled: Boolean,
+  jobs: ObjectProvider<Job>,
   @param:Value(CollectionSchedules.BINANCE_PRICE_INTERVAL) private val binanceInterval: Long,
   @param:Value(CollectionSchedules.TRADING212_PRICE_INTERVAL) private val trading212Interval: Long,
   context: ApplicationContext,
 ) {
   private val started = Instant.ofEpochMilli(context.startupDate)
+  private val scheduled by lazy { jobs.map { it.getName() }.toSet() }
 
   fun expectation(snapshot: CollectionSnapshot): CollectionExpectation {
     val now = clock.instant()
     val delay = startup(snapshot.key)
     val warming = now.isBefore(started.plusSeconds(delay).plus(properties.startupGrace))
     val window = window(snapshot, now)
+    val enabled = CollectionMetricsService.JOBS.getValue(snapshot.key) in scheduled
     val expected = enabled && snapshot.expected.isNotEmpty() && !warming && active(snapshot.key, now)
     val deadline = if (snapshot.key.operation == "prices") priceDeadline(snapshot, window) else dailyDeadline(snapshot)
     return CollectionExpectation(enabled, expected, window, deadline)
