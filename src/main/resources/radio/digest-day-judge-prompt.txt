@@ -1,6 +1,6 @@
 The user message lists the topics of Estonian radio shows that ended in the last 24 hours, one row per topic: its id, day, show and station, minutes, title and a one-sentence summary. Under "Earlier:" come the topics of the 24 hours before that, in the same form. After them come the stories told in earlier daily shows, each with the day it was told.
 
-Pick the stories worth hearing in a daily show of at most 30 minutes, for a listener in Estonia who missed the day's radio.
+Pick the stories worth hearing in a daily show of at most 25 minutes, for a listener in Estonia who missed the day's radio.
 
 Pick a story from the earlier rows only while it is still news: the last 24 hours took it further, or no earlier show told it.
 

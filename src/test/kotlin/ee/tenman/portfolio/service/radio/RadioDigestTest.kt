@@ -105,24 +105,24 @@ class RadioDigestTest {
   }
 
   @Test
-  fun `should skip a clip that would take the digest past an hour`() {
+  fun `should skip a clip that would take the digest past 50 minutes`() {
     val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
-    val clips = listOf(1500.0, 1500.0, 900.0, 500.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
-    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1500.0, 1500.0, 500.0))
+    val clips = listOf(1200.0, 1200.0, 900.0, 500.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1200.0, 1200.0, 500.0))
   }
 
   @Test
-  fun `should skip a clip that would take the day show past half an hour`() {
+  fun `should skip a clip that would take the day show past 25 minutes`() {
     val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
-    val clips = listOf(900.0, 900.0, 600.0, 400.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
-    expect(fitted(clips, DigestShow.DAY.seconds).map { it.length }).toEqual(listOf(900.0, 600.0))
+    val clips = listOf(750.0, 750.0, 500.0, 400.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips, DigestShow.DAY.seconds).map { it.length }).toEqual(listOf(750.0, 500.0))
   }
 
   @Test
-  fun `should count the pause after each clip toward the hour`() {
+  fun `should count the pause after each clip toward the 50 minutes`() {
     val ranked = RankedStory(story("r1", listOf("r1"), 5, 5), row(0.0, 600.0), emptyList(), 15)
-    val clips = listOf(1800.0, 1800.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
-    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1800.0))
+    val clips = listOf(1500.0, 1500.0).map { DigestClip(ranked, cutRecording(RECORDING, emptyList()), 0.0, it, emptyList()) }
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1500.0))
   }
 
   @Test
@@ -205,9 +205,9 @@ class RadioDigestTest {
   }
 
   @Test
-  fun `should count the jingle before a clip toward the hour`() {
-    val clips = listOf(clip(1800.0), clip(1795.0).copy(ident = OWN))
-    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1800.0))
+  fun `should count the jingle before a clip toward the 50 minutes`() {
+    val clips = listOf(clip(1500.0), clip(1495.0).copy(ident = OWN))
+    expect(fitted(clips, DigestShow.WEEK.seconds).map { it.length }).toEqual(listOf(1500.0))
   }
 
   private fun clip(length: Double): DigestClip {

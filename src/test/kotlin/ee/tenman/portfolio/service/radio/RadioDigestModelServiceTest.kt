@@ -73,7 +73,7 @@ class RadioDigestModelServiceTest {
     val client = mockk<OpenRouterClient>()
     every { client.complete(AiPurpose.RADIO_DIGEST, any(), any(), any(), any()) } returns null
     RadioDigestModelService(client, RadioProperties()).judge(DigestShow.DAY, listOf(ROW), emptyList())
-    verify { client.complete(AiPurpose.RADIO_DIGEST, any(), match { "daily show of at most 30 minutes" in it }, any(), any()) }
+    verify { client.complete(AiPurpose.RADIO_DIGEST, any(), match { "daily show of at most 25 minutes" in it }, any(), any()) }
   }
 
   @Test
