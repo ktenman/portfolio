@@ -34,13 +34,13 @@ class RadioDigestProgressServiceTest {
   @Test
   fun `should start at choosing the stories with the judge's pace left`() {
     progress.started(DigestShow.WEEK, DAY)
-    expect(progress.current()).toEqual(DigestBuild(DigestShow.WEEK, DAY, DigestStep.STORIES, secondsLeft = 724))
+    expect(progress.current()).toEqual(DigestBuild(DigestShow.WEEK, DAY, DigestStep.STORIES, secondsLeft = 615))
   }
 
   @Test
   fun `should expect half the stories and mix for the day show`() {
     progress.started(DigestShow.DAY, DAY)
-    expect(progress.current()?.secondsLeft).toEqual(397)
+    expect(progress.current()?.secondsLeft).toEqual(343)
   }
 
   @Test
@@ -73,7 +73,7 @@ class RadioDigestProgressServiceTest {
     progress.judged(listOf("Üks", "Kaks", "Kolm", "Neli"))
     now = now.plusSeconds(20)
     progress.chosen()
-    expect(progress.current()?.secondsLeft).toEqual(302)
+    expect(progress.current()?.secondsLeft).toEqual(273)
   }
 
   @Test
