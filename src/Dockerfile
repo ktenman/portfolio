@@ -2,23 +2,15 @@ FROM bellsoft/liberica-openjre-alpine-musl:25
 
 WORKDIR /app
 
-ARG BUILD_HASH=unknown
-ARG BUILD_TIME=unknown
-
-ENV BUILD_HASH=${BUILD_HASH} \
-    BUILD_TIME=${BUILD_TIME}
-
-ADD --checksum=sha256:e43a270df53c6f423e0ab157be9c27ccc01d5dc3232e162fe54777573db2f149 https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.33.1/opentelemetry-javaagent-2.33.1.jar opentelemetry-javaagent.jar
-
-COPY build/libs/*.jar app.jar
-
 RUN apk update && \
     apk upgrade --no-cache && \
     apk add --no-cache curl ffmpeg && \
     rm -rf /var/cache/apk/* && \
     adduser -D -s /bin/sh appuser && \
     mkdir /recordings && \
-    chown -R appuser:appuser /app /recordings
+    chown appuser:appuser /app /recordings
+
+ADD --chown=appuser:appuser --checksum=sha256:e43a270df53c6f423e0ab157be9c27ccc01d5dc3232e162fe54777573db2f149 https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.33.1/opentelemetry-javaagent-2.33.1.jar opentelemetry-javaagent.jar
 
 USER appuser
 
@@ -28,3 +20,11 @@ ENV JAVA_OPTS="-Xmx1024m -XX:+UseSerialGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFre
     SERVER_PORT=8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+ARG BUILD_HASH=unknown
+ARG BUILD_TIME=unknown
+
+ENV BUILD_HASH=${BUILD_HASH} \
+    BUILD_TIME=${BUILD_TIME}
+
+COPY --chown=appuser:appuser build/libs/*.jar app.jar
