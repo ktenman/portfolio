@@ -142,6 +142,7 @@ function formatDate(dateString: string): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1.875rem;
   min-width: 100%;
   width: max-content;
 }
@@ -201,7 +202,6 @@ function formatDate(dateString: string): string {
 .nav-end {
   display: flex;
   align-items: center;
-  margin-left: 1.875rem;
   padding-right: 0.375rem;
 }
 
@@ -284,15 +284,11 @@ function formatDate(dateString: string): string {
 
 @media (max-width: 767.98px) {
   .navbar-content {
-    gap: 0.5rem;
+    gap: 4.125rem;
   }
 
   .navbar-nav {
     gap: 0.5rem;
-  }
-
-  .nav-end {
-    margin-left: 3.625rem;
   }
 
   .nav-glyph {
