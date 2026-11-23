@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.AiModel
 import ee.tenman.portfolio.domain.Currency
 import jakarta.annotation.PostConstruct
 import org.springframework.boot.context.properties.ConfigurationProperties
+import java.time.Duration
 
 @ConfigurationProperties(prefix = "logo-replacement")
 data class LogoReplacementProperties(
@@ -36,6 +37,12 @@ data class IndustryClassificationProperties(
 data class HoldingReconciliationProperties(
   val enabled: Boolean = false,
   val dryRun: Boolean = true,
+)
+
+@ConfigurationProperties(prefix = "poff")
+data class PoffProperties(
+  val enabled: Boolean,
+  val pause: Duration,
 )
 
 @ConfigurationProperties(prefix = "fund-currency")

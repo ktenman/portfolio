@@ -195,6 +195,7 @@ describe('api services', () => {
     ['utility.getBuildInfo', () => utilityService.getBuildInfo(), 'get', '/build-info', undefined],
     ['radio.recordings', () => radioService.recordings(), 'get', '/radio', undefined],
     ['poff.catalogue', () => poffService.catalogue(), 'get', '/poff/catalogue', undefined],
+    ['poff.enabled', () => poffService.enabled(), 'get', '/poff/enabled', undefined],
     [
       'radio.transcript',
       () => radioService.transcript('2026-10-17'),

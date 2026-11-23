@@ -12,6 +12,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.configuration.PoffProperties
 import ee.tenman.portfolio.domain.PoffCatalogue
 import ee.tenman.portfolio.poff.PoffClient
 import ee.tenman.portfolio.repository.PoffImdbRepository
@@ -332,7 +333,7 @@ class PoffImportJobIT {
   fun `does not start a second import while one is running`() {
     catalogueService().store(PoffCatalogue(listOf(poffFilm(1))))
     val poff = SlowPoff()
-    val job = job(importService = PoffImportService(poff, Duration.ZERO))
+    val job = job(importService = PoffImportService(poff, PoffProperties(enabled = true, pause = Duration.ZERO)))
     val first = thread { runCatching { job.execute() } }
     poff.started.await(10, TimeUnit.SECONDS)
     runCatching { job.execute() }

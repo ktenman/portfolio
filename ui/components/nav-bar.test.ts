@@ -11,10 +11,14 @@ interface BuildInfo {
 }
 
 const mockBuildInfo = ref<BuildInfo | null>(null)
+const mockPoff = ref<boolean | undefined>(true)
 
 vi.mock('../services/api', () => ({
   utilityService: {
     getBuildInfo: vi.fn(),
+  },
+  poffService: {
+    enabled: vi.fn(),
   },
 }))
 
@@ -25,8 +29,8 @@ vi.mock('../composables/use-theme', () => ({
 }))
 
 vi.mock('@tanstack/vue-query', () => ({
-  useQuery: vi.fn(() => ({
-    data: mockBuildInfo,
+  useQuery: vi.fn(({ queryKey }: { queryKey: string[] }) => ({
+    data: queryKey[0] === 'poff-enabled' ? mockPoff : mockBuildInfo,
     isLoading: ref(false),
     error: ref(null),
     isError: ref(false),
@@ -56,6 +60,7 @@ describe('NavBar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockBuildInfo.value = null
+    mockPoff.value = true
   })
 
   const createWrapper = () => {
@@ -102,6 +107,31 @@ describe('NavBar', () => {
         'Calculator',
         'Monitoring',
       ])
+    })
+
+    it.each([false, undefined])('should hide the PÖFF link while the flag is %s', flag => {
+      mockPoff.value = flag
+      const wrapper = createWrapper()
+
+      expect(wrapper.findAll('.nav-link').map(link => link.text())).not.toContain('PÖFF')
+    })
+
+    it('should scroll the active link back into view once the PÖFF link arrives', async () => {
+      mockPoff.value = undefined
+      await router.push('/transactions')
+      const wrapper = createWrapper()
+      await flushPromises()
+      const place = vi
+        .spyOn(Element.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: Element) {
+          const active = this.classList.contains('active')
+          return (active ? { left: 320, right: 380 } : { left: 0, right: 300 }) as DOMRect
+        })
+      mockPoff.value = true
+      await flushPromises()
+      place.mockRestore()
+
+      expect(wrapper.find('.navbar-scroll-container').element.scrollLeft).toBe(80)
     })
 
     it('should scroll the row of links until the active link shows', async () => {

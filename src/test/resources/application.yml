@@ -38,6 +38,7 @@ err:
   url: http://localhost:${wiremock.server.port}
 
 poff:
+  enabled: true
   url: http://localhost:${wiremock.server.port}
   pause: 0ms
 

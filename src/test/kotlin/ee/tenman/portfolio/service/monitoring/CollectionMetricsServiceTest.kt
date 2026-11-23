@@ -310,7 +310,7 @@ class CollectionMetricsServiceTest {
     val registry = SimpleMeterRegistry()
     val breakers = CircuitBreakerRegistry.ofDefaults()
     val context = mockk<ApplicationContext> { every { startupDate } returns NOW.toEpochMilli() }
-    val schedules = CollectionScheduleService(clock, CollectionMonitoringProperties(), true, 120000, 60000, context)
+    val schedules = CollectionScheduleService(clock, CollectionMonitoringProperties(), jobs(), 120000, 60000, context)
     val metrics = CollectionMetricsService(inventory, state, schedules, breakers, clock)
     metrics.bindTo(registry)
     return MetricsFixture(clock, inventory, state, registry, breakers, metrics)

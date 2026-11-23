@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.configuration.PoffProperties
 import ee.tenman.portfolio.domain.PoffCatalogueResponse
 import ee.tenman.portfolio.service.poff.PoffCatalogueService
 import ee.tenman.portfolio.service.poff.PoffStillService
@@ -18,7 +19,11 @@ import java.util.concurrent.TimeUnit
 class PoffController(
   private val poffCatalogueService: PoffCatalogueService,
   private val poffStillService: PoffStillService,
+  private val poffProperties: PoffProperties,
 ) {
+  @GetMapping("/enabled")
+  fun enabled(): Boolean = poffProperties.enabled
+
   @GetMapping("/catalogue")
   fun catalogue(): ResponseEntity<PoffCatalogueResponse> = ResponseEntity.ofNullable(poffCatalogueService.catalogue())
 

@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.poff
 
+import ee.tenman.portfolio.configuration.PoffProperties
 import ee.tenman.portfolio.imdb.ImdbDatasetClient
 import ee.tenman.portfolio.repository.PoffImdbRepository
 import org.springframework.stereotype.Service
@@ -8,8 +9,9 @@ import org.springframework.stereotype.Service
 class ImdbRatingService(
   private val imdbDatasetClient: ImdbDatasetClient,
   private val poffImdbRepository: PoffImdbRepository,
+  private val poffProperties: PoffProperties,
 ) {
-  fun matched(): Boolean = poffImdbRepository.existsByImdbIdIsNotNull()
+  fun matched(): Boolean = poffProperties.enabled && poffImdbRepository.existsByImdbIdIsNotNull()
 
   fun refresh() {
     val rows = poffImdbRepository.findByImdbIdIsNotNull()

@@ -48,6 +48,11 @@ class PoffControllerIT {
   }
 
   @Test
+  fun `tells whether PÖFF is on`() {
+    mockMvc.perform(mvcGet("/api/poff/enabled")).andExpect(content().string("true"))
+  }
+
+  @Test
   fun `returns stills as the keys they are served under`() {
     val still = "https://assets.poff.ee/img/Kõlakamber_big_16_9.jpeg"
     poffSnapshotRepository.save(PoffSnapshot(PoffCatalogue(listOf(poffFilm(8810, stills = listOf(still)))), synced))

@@ -7,12 +7,15 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import ee.tenman.portfolio.configuration.IntegrationTest
+import ee.tenman.portfolio.configuration.PoffProperties
 import ee.tenman.portfolio.domain.PoffImdb
 import ee.tenman.portfolio.repository.PoffImdbRepository
+import io.mockk.mockk
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import org.wiremock.spring.InjectWireMock
 import java.math.BigDecimal
+import java.time.Duration
 import java.time.Instant
 
 @IntegrationTest
@@ -48,6 +51,13 @@ class ImdbRatingServiceIT {
   fun `reports a matched film once one is matched`() {
     matched(1, "tt9395802")
     expect(imdbRatingService.matched()).toEqual(true)
+  }
+
+  @Test
+  fun `reports no matched film while PÖFF is off`() {
+    matched(1, "tt9395802")
+    val service = ImdbRatingService(mockk(), poffImdbRepository, PoffProperties(enabled = false, pause = Duration.ZERO))
+    expect(service.matched()).toEqual(false)
   }
 
   @Test
