@@ -505,7 +505,7 @@ def check_traces():
     panel = next(panel for panel in board['panels'] if panel['title'] == 'Slow requests')
     listing = {'queries': panel['targets'], 'from': str(start // 10 ** 6 - 60000), 'to': str(start // 10 ** 6 + 60000)}
     fields = {'d': '2026-11-03 21:20:00.000', 'thread': 'scheduled-1', 'level': 'INFO', 'logger': 'e.t.p.j.FtDataRetrievalJob',
-              'trace_id': trace, 'msg': f'Hinnad uuendatud ä {uuid.uuid4().hex}'}
+              'traceId': trace, 'msg': f'Hinnad uuendatud ä {uuid.uuid4().hex}'}
     line = re.sub(r'%(-?\d+)?(\w+)(?:\{([^}]*)\})?',
                   lambda match: fields.get(match.group(3) if match.group(2) == 'X' else match.group(2), '').ljust(abs(int(match.group(1) or 0))), pattern)
     with compose_project('tempo', 'loki', 'grafana') as project:

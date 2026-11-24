@@ -41,6 +41,10 @@ dependencies {
 
   implementation(libs.spring.boot.starter.actuator)
   implementation(libs.micrometer.registry.prometheus)
+  implementation(libs.spring.boot.starter.opentelemetry) {
+    exclude(group = "io.micrometer", module = "micrometer-registry-otlp")
+  }
+  implementation(libs.datasource.micrometer.spring.boot)
   implementation(libs.spring.boot.starter.aspectj)
   implementation(libs.spring.boot.starter.flyway)
   implementation(libs.flyway.database.postgresql)
