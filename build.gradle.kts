@@ -376,7 +376,6 @@ if (providers.gradleProperty("native").isPresent) {
   configure<GraalVMExtension> {
     binaries.named("main") {
       resources.autodetect()
-      jvmArgs.add("-Xmx10g")
       buildArgs.addAll(
         "-H:+UnlockExperimentalVMOptions",
         "-H:Preserve=package=ee.tenman.portfolio.*,package=io.minio.*,package=org.simpleframework.xml.core,package=org.telegram.telegrambots.*,package=java.lang,package=java.math,package=java.time,package=java.util,package=kotlin,package=kotlin.collections.*",
