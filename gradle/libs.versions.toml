@@ -24,6 +24,8 @@ pitestPlugin = "1.19.0"
 kotest = "6.2.6"
 sherpaOnnx = "1.13.8"
 datasourceMicrometer = "2.3.1"
+graalvmNativePlugin = "1.1.19"
+hibernatePlugin = "7.4.15.Final"
 
 [libraries]
 # Spring Boot
@@ -113,3 +115,5 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 typescript-generator = { id = "cz.habarta.typescript-generator", version.ref = "typescriptGenerator" }
 pitest = { id = "info.solidsoft.pitest", version.ref = "pitestPlugin" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvmNativePlugin" }
+hibernate-orm = { id = "org.hibernate.orm", version.ref = "hibernatePlugin" }

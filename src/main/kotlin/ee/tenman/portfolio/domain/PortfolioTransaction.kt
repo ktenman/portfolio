@@ -41,4 +41,8 @@ class PortfolioTransaction(
   var commission: BigDecimal = BigDecimal.ZERO,
   @Column(name = "currency", nullable = false)
   var currency: String = "EUR",
-) : BaseEntity()
+) : BaseEntity() {
+  companion object {
+    private const val serialVersionUID: Long = -5966201828531052108L
+  }
+}

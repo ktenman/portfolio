@@ -1,3 +1,5 @@
+import org.graalvm.buildtools.gradle.dsl.GraalVMExtension
+import org.hibernate.orm.tooling.gradle.HibernateOrmSpec
 import java.util.concurrent.TimeUnit
 
 plugins {
@@ -11,6 +13,8 @@ plugins {
   alias(libs.plugins.detekt)
   alias(libs.plugins.typescript.generator)
   alias(libs.plugins.pitest)
+  alias(libs.plugins.graalvm.native) apply false
+  alias(libs.plugins.hibernate.orm) apply false
 }
 
 group = "ee.tenman"
@@ -361,4 +365,29 @@ pitest {
       "ee.tenman.portfolio.service.*IntegrationTest",
     ),
   )
+}
+
+if (providers.gradleProperty("native").isPresent) {
+  apply(plugin = "org.graalvm.buildtools.native")
+  apply(plugin = "org.hibernate.orm")
+  configure<HibernateOrmSpec> {
+    enhancement { }
+  }
+  configure<GraalVMExtension> {
+    binaries.named("main") {
+      resources.autodetect()
+      jvmArgs.add("-Xmx10g")
+      buildArgs.addAll(
+        "-H:+UnlockExperimentalVMOptions",
+        "-H:Preserve=package=ee.tenman.portfolio.*,package=io.minio.*,package=org.simpleframework.xml.core,package=org.telegram.telegrambots.*,package=java.lang,package=java.math,package=java.time,package=java.util,package=kotlin,package=kotlin.collections.*",
+        "-H:ExcludeResources=META-INF/services/org\\.hibernate\\.bytecode\\.spi\\.BytecodeProvider",
+        "-H:IncludeResources=org/apache/(pdfbox/resources/.*|fontbox/(cmap/[^.]+|unicode/.*\\.txt))",
+        "-H:+AddAllCharsets",
+      )
+    }
+  }
+  tasks.named("processAot") {
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+  }
 }

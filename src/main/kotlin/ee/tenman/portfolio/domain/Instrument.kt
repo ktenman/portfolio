@@ -49,4 +49,8 @@ class Instrument(
   fun cashPriceOrNull(): BigDecimal? = if (isCash()) BigDecimal.ONE else null
 
   fun issuer(): String = if (category == InstrumentCategory.ETF.name) name.substringBefore(' ') else name
+
+  companion object {
+    private const val serialVersionUID: Long = 5195459143216650820L
+  }
 }

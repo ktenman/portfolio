@@ -23,4 +23,8 @@ class PortfolioDailySummary(
   var totalProfit: BigDecimal,
   @Column(name = "earnings_per_day", nullable = false)
   var earningsPerDay: BigDecimal,
-) : BaseEntity()
+) : BaseEntity() {
+  companion object {
+    private const val serialVersionUID: Long = 3196017946321380390L
+  }
+}

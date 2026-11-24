@@ -285,6 +285,13 @@ def check_compose():
     jobs = sorted(re.findall(r'job_name: (\S+)', (ROOT / 'prometheus.yml').read_text()))
     assert jobs == ['alertmanager', 'cadvisor', 'node', 'portfolio-backend', 'postgres', 'prometheus', 'redis'], jobs
     assert services['backend']['environment']['MANAGEMENT_SERVER_PORT'] == 9090
+    native = (ROOT.parent / '.github/workflows/ci.yml').read_text().split('\n  build-push:')[1]
+    for key in ('TELEGRAM_BOT_ENABLED', 'MANAGEMENT_SERVER_PORT', 'SPRINGDOC_APIDOCS_ENABLED', 'CLOUDFLARE_BYPASS_PROXY_URL', 'SCHEDULING_ENABLED', 'POFF_ENABLED',
+                'MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT'):
+        built = re.search(rf'^\s+{key}: (.+)$', native, re.MULTILINE)
+        running = services['backend']['environment'].get(key)
+        assert (built and built.group(1).strip('\'"').lower()) == (running if running is None else str(running).lower()), \
+            f'a native backend keeps the {key} it was built with, so build-push must build it with the value Compose runs it with, {running}'
     assert services['backend']['environment']['MONITORING_POSTGRES_PASSWORD'] == services['postgres-exporter']['environment']['DATA_SOURCE_PASS'], \
         'the backend must set the monitoring role password that postgres-exporter logs in with'
     worker = services['radio-worker']
