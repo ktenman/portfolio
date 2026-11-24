@@ -130,9 +130,21 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (id) (jvm_memory_used_bytes{job=\"portfolio-backend\", area=\"nonheap\"})",
+          "expr": "sum by (id) (jvm_memory_used_bytes{job=\"portfolio-backend\", area=\"nonheap\"}) > 0",
           "legendFormat": "{{id}}",
           "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(container_memory_working_set_bytes{name=\"backend\"}) unless on() group(jvm_memory_used_bytes{job=\"portfolio-backend\", area=\"nonheap\"} > 0)",
+          "legendFormat": "whole process (native image)",
+          "refId": "B",
           "instant": false,
           "range": true,
           "format": "time_series"
@@ -176,7 +188,8 @@
         "w": 12,
         "x": 12,
         "y": 0
-      }
+      },
+      "description": "A native image has no Metaspace or CodeCache: its code and class data live in the binary. While the backend runs natively, the panel shows the memory of the whole process instead."
     },
     {
       "type": "timeseries",
@@ -194,6 +207,18 @@
           "expr": "sum by (action, cause) (rate(jvm_gc_pause_seconds_sum{job=\"portfolio-backend\"}[$__rate_interval]))",
           "legendFormat": "{{action}} {{cause}}",
           "refId": "A",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (gc) (rate(jvm_gc_collection_time_seconds_total{job=\"portfolio-backend\"}[$__rate_interval])) unless on() group(jvm_gc_pause_seconds_count{job=\"portfolio-backend\"})",
+          "legendFormat": "{{gc}}",
+          "refId": "B",
           "instant": false,
           "range": true,
           "format": "time_series"
@@ -237,7 +262,8 @@
         "w": 12,
         "x": 0,
         "y": 8
-      }
+      },
+      "description": "A native image's collectors report no pauses. While the backend runs natively, the panel shows the share of time each collector spent collecting, which stops the world."
     },
     {
       "type": "timeseries",
