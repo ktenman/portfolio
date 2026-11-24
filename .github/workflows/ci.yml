@@ -24,7 +24,7 @@ on:
   pull_request:
 
 env:
-  BACKEND_NATIVE: ${{ vars.BACKEND_NATIVE == 'true' || contains(github.event.pull_request.labels.*.name, 'native') }}
+  BACKEND_NATIVE: ${{ vars.BACKEND_NATIVE != 'false' }}
 
 jobs:
   lint:
