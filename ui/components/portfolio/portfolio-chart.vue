@@ -1,7 +1,7 @@
 <template>
   <div
     ref="root"
-    class="chart-container relative md:w-[80.8%]"
+    class="chart-container relative"
     :class="{ 'touch-pan-y touch-pinch-zoom select-none [-webkit-touch-callout:none]': selectable }"
     :style="{ cursor }"
     data-testid="summary-chart"

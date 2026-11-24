@@ -68,7 +68,7 @@
         </div>
       </header>
 
-      <div class="chart-frame">
+      <div class="chart-frame md:w-[80.8%]">
         <portfolio-chart
           :key="chartKey"
           v-model:period="chartPeriod"
