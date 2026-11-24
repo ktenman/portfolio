@@ -2,7 +2,6 @@ package ee.tenman.portfolio.service.calculation.xirr
 
 import ee.tenman.portfolio.exception.XirrCalculationException
 import org.slf4j.LoggerFactory
-import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlin.math.abs
 import kotlin.math.pow
@@ -21,7 +20,7 @@ class Xirr(
   private val endDate = cashFlows.maxOf { it.date }
   private val startDate = cashFlows.minOf { it.date }
 
-  private val yearsToEnd = { date: LocalDate -> ChronoUnit.DAYS.between(date, endDate).toDouble() / 365.25 }
+  private val terms = cashFlows.map { it.amount to ChronoUnit.DAYS.between(it.date, endDate).toDouble() / 365.25 }
 
   fun getCashFlows(): List<CashFlow> = cashFlows
 
@@ -86,12 +85,10 @@ class Xirr(
     return (finalValue - initialInvestment) / initialInvestment
   }
 
-  private fun netPresentValue(rate: Double): Double = cashFlows.sumOf { it.amount * (1 + rate).pow(yearsToEnd(it.date)) }
+  private fun netPresentValue(rate: Double): Double = terms.sumOf { (amount, years) -> amount * (1 + rate).pow(years) }
 
   private fun netPresentValueDerivative(rate: Double): Double =
-    cashFlows.sumOf {
-      it.amount * yearsToEnd(it.date) * (1 + rate).pow(yearsToEnd(it.date) - 1)
-    }
+    terms.sumOf { (amount, years) -> amount * years * (1 + rate).pow(years - 1) }
 
   private fun estimateInitialRate(): Double {
     val totalAmount = cashFlows.sumOf { it.amount }

@@ -26,6 +26,8 @@ management:
   tracing:
     sampling:
       probability: 1.0
+jdbc:
+  includes: CONNECTION, QUERY
 spring:
   config:
     import: "optional:classpath:fund-currency-overrides.yml"
