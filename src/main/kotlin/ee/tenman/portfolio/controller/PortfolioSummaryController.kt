@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.configuration.aspect.SingleFlight
 import ee.tenman.portfolio.domain.BenchmarkIndex
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.TimeRange
@@ -67,6 +68,7 @@ class PortfolioSummaryController(
 
   @GetMapping("/historical")
   @Loggable
+  @SingleFlight
   fun getHistoricalPortfolioSummary(
     @RequestParam page: Int,
     @RequestParam size: Int,
@@ -75,6 +77,7 @@ class PortfolioSummaryController(
 
   @GetMapping("/current")
   @Loggable
+  @SingleFlight
   fun getCurrentPortfolioSummary(
     @RequestParam(required = false) platforms: List<String>?,
   ): PortfolioSummaryDto {
@@ -87,6 +90,7 @@ class PortfolioSummaryController(
 
   @GetMapping("/series")
   @Loggable
+  @SingleFlight
   fun getSummarySeries(
     @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
@@ -94,6 +98,7 @@ class PortfolioSummaryController(
 
   @GetMapping("/intraday")
   @Loggable
+  @SingleFlight
   fun getIntradaySeries(
     @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
@@ -108,6 +113,7 @@ class PortfolioSummaryController(
 
   @GetMapping("/range-change")
   @Loggable
+  @SingleFlight
   fun getRangeChange(
     @RequestParam(defaultValue = TimeRange.DEFAULT_CODE) range: TimeRange,
     @RequestParam(required = false) platforms: List<String>?,
@@ -115,12 +121,14 @@ class PortfolioSummaryController(
 
   @GetMapping("/xirr-windows")
   @Loggable
+  @SingleFlight
   fun getXirrWindows(
     @RequestParam(required = false) platforms: List<String>?,
   ): XirrWindowsDto = xirrWindowService.calculate(Platform.parseList(platforms))
 
   @GetMapping("/annual-windows")
   @Loggable
+  @SingleFlight
   fun getAnnualWindows(
     @RequestParam(required = false) platforms: List<String>?,
   ): AnnualWindowsDto = annualWindowService.calculate(Platform.parseList(platforms))
