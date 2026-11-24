@@ -4,11 +4,12 @@ WORKDIR /app
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends curl ffmpeg && \
-    dpkg --purge --force-depends $(dpkg-query -Wf '${Package} ' 'libllvm*' mesa-libgallium) && \
-    rm -rf /var/lib/apt/lists/* && \
+    apt-get install -y --no-install-recommends ca-certificates curl libfreetype6 && \
+    rm -rf /var/lib/apt/lists/* /usr/bin/pebble && \
     mkdir /recordings && \
     chown ubuntu:ubuntu /app /recordings
+
+COPY --from=mwader/static-ffmpeg:9.1 /ffmpeg /usr/local/bin/
 
 USER ubuntu
 
