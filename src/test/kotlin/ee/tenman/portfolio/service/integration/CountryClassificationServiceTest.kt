@@ -121,6 +121,19 @@ class CountryClassificationServiceTest {
   @ParameterizedTest
   @ValueSource(
     strings = [
+      "Mxn/usd",
+      "Usd/thb",
+      "GBP/EUR",
+      " Chf/usd ",
+    ],
+  )
+  fun `should filter currency pair hedges`(name: String) {
+    expect(service.isNonCompanyHolding(name)).toEqual(true)
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+    strings = [
       "Bitcoin",
       "bitcoin",
       "BITCOIN",
@@ -179,6 +192,8 @@ class CountryClassificationServiceTest {
       "Apple Inc",
       "Microsoft Corporation",
       "Samsung Electronics",
+      "Novo Nordisk A/S",
+      "Ørsted A/S",
     ],
   )
   fun `should not filter real companies`(name: String) {

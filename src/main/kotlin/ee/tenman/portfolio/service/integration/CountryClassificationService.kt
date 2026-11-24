@@ -31,6 +31,7 @@ class CountryClassificationService(
         Regex("^cash\\s+collateral", RegexOption.IGNORE_CASE),
         Regex("^(australian|canadian|hong kong|new zealand|new taiwan|singapore|us)\\s+dollar$", RegexOption.IGNORE_CASE),
         Regex("^(danish krone|japanese yen|pound sterling|swiss franc|euro currency)$", RegexOption.IGNORE_CASE),
+        Regex("^[a-z]{3}/[a-z]{3}$", RegexOption.IGNORE_CASE),
         Regex("^(bitcoin|ethereum|litecoin|ripple|xrp|solana|cardano|dogecoin|polkadot|avalanche)$", RegexOption.IGNORE_CASE),
         Regex("(stoxx|industrial|s&p).*\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\s+\\d{2}$", RegexOption.IGNORE_CASE),
       )
