@@ -230,13 +230,19 @@ jobs:
       - name: Build base image
         if: matrix.type == 'e2e' && env.BACKEND_NATIVE != 'true'
         run: docker build -t ghcr.io/ktenman/portfolio-base:firefox -f src/Dockerfile.base src/
-      - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
+      - uses: actions/cache@v6
+        id: native-e2e
         if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true'
+        with:
+          path: build/native/nativeCompile
+          key: native-e2e-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**', '.github/workflows/ci.yml') }}
+      - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
+        if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true' && steps.native-e2e.outputs.cache-hit != 'true'
         with:
           java-version: '25'
           distribution: 'graalvm-community'
       - name: Build native backend for E2E
-        if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true'
+        if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true' && steps.native-e2e.outputs.cache-hit != 'true'
         env:
           SCHEDULING_ENABLED: false
         run: |
@@ -389,8 +395,8 @@ jobs:
 
   build-push:
     name: 🐳 Build & Push ${{ matrix.name }}
-    needs: [lint, test, detect-changes]
-    if: always() && (needs.lint.result == 'success' && needs.test.result == 'success' || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    needs: [detect-changes]
+    if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -560,8 +566,8 @@ jobs:
 
   promote:
     name: 🏷️ Promote ${{ matrix.name }}
-    needs: [visual, build-push]
-    if: always() && needs.build-push.result == 'success' && (needs.visual.result == 'success' || github.event_name == 'workflow_dispatch')
+    needs: [lint, test, visual, build-push]
+    if: always() && needs.build-push.result == 'success' && (needs.lint.result == 'success' && needs.test.result == 'success' && needs.visual.result == 'success' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
