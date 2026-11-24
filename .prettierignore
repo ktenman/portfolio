@@ -2,6 +2,7 @@
 .github/security-reports/container-scan-report.md
 ui/models/generated/domain-models.ts
 monitoring/grafana/dashboards/
+src/main/resources/META-INF/native-image/
 
 # Build outputs
 build/
