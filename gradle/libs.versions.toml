@@ -23,6 +23,7 @@ pitest = "1.23.0"
 pitestPlugin = "1.19.0"
 kotest = "6.2.6"
 sherpaOnnx = "1.13.8"
+datasourceMicrometer = "2.3.1"
 
 [libraries]
 # Spring Boot
@@ -32,6 +33,8 @@ spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boo
 spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+spring-boot-starter-opentelemetry = { module = "org.springframework.boot:spring-boot-starter-opentelemetry" }
+datasource-micrometer-spring-boot = { module = "net.ttddyy.observation:datasource-micrometer-spring-boot", version.ref = "datasourceMicrometer" }
 spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }

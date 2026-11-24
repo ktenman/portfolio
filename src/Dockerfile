@@ -10,13 +10,10 @@ RUN apk update && \
     mkdir /recordings && \
     chown appuser:appuser /app /recordings
 
-ADD --chown=appuser:appuser --checksum=sha256:e43a270df53c6f423e0ab157be9c27ccc01d5dc3232e162fe54777573db2f149 https://repo1.maven.org/maven2/io/opentelemetry/javaagent/opentelemetry-javaagent/2.33.1/opentelemetry-javaagent-2.33.1.jar opentelemetry-javaagent.jar
-
 USER appuser
 
-ENV JAVA_OPTS="-Xmx1024m -XX:+UseSerialGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30 -XX:+UseCompactObjectHeaders -XX:TieredStopAtLevel=1 -Duser.timezone=Europe/Tallinn -javaagent:/app/opentelemetry-javaagent.jar" \
+ENV JAVA_OPTS="-Xmx1024m -XX:+UseSerialGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30 -XX:+UseCompactObjectHeaders -XX:TieredStopAtLevel=1 -Duser.timezone=Europe/Tallinn" \
     JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError" \
-    OTEL_JAVAAGENT_ENABLED=false \
     SERVER_PORT=8080
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

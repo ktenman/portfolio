@@ -7,6 +7,11 @@ spring:
     placeholders:
       "[monitoring_password]": ''
 
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
 server:
   servlet:
     encoding:

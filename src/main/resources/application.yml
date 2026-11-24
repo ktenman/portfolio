@@ -23,6 +23,9 @@ management:
   info:
     env:
       enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
 spring:
   config:
     import: "optional:classpath:fund-currency-overrides.yml"
@@ -106,7 +109,7 @@ logging:
     org.hibernate: INFO
     ee.tenman.portfolio.service.etf.EtfHoldingService: DEBUG
   pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{trace_id} %X{transactionId}- %msg%n'
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{traceId} %X{transactionId}- %msg%n'
 #    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %X{traceId}%n'
     file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{20} %X{transactionId}- %msg%n'
 
