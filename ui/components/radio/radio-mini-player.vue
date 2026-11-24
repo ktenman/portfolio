@@ -65,16 +65,6 @@
             <radio-icon name="close" />
           </button>
         </div>
-        <div class="absolute inset-x-0 bottom-0 flex h-0.75 gap-px" aria-hidden="true">
-          <div
-            v-for="part in parts"
-            :key="part.start"
-            class="min-w-0 basis-0 bg-hairline"
-            :style="{ flexGrow: part.end - part.start }"
-          >
-            <div class="h-full bg-brass" :style="{ width: `${played(part)}%` }" />
-          </div>
-        </div>
       </template>
       <template v-else>
         <div class="flex items-center">
@@ -137,7 +127,6 @@ import {
   rawParts,
   ROUND,
   STATIONS,
-  type StripPart,
 } from '../../utils/radio'
 import RadioControls from './radio-controls.vue'
 import RadioIcon from './radio-icon.vue'
@@ -242,9 +231,6 @@ const parts = computed(() => {
     ? rawParts(target, decisions.removed.value)
     : episodeParts(target)
 })
-
-const played = ({ start, end }: StripPart) =>
-  clamp(((player.seconds.value - start) / (end - start)) * 100, 0, 100)
 
 const time = computed(
   () => `\u00a0· ${position(player.seconds.value)} / ${position(player.total.value)}`
