@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.service.etf
 
 import ee.tenman.portfolio.domain.EtfPosition
+import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.EtfPositionRepository
@@ -30,9 +31,10 @@ class EtfBreakdownDataLoaderService(
     val filteredInstruments =
       etfSymbols?.let { symbols -> allInstruments.filter { it.symbol in symbols } } ?: allInstruments
     val instrumentIds = filteredInstruments.map { it.id }
-    val allPositions = loadPositionsForInstruments(instrumentIds)
     val transactionData = transactionCalculationService.batchCalculateAll(instrumentIds)
     val filteredTransactionData = applyPlatformFilter(transactionData, platformFilter)
+    val heldIds = filteredInstruments.filter { isHeld(it, filteredTransactionData, platformFilter) }.map { it.id }
+    val allPositions = loadPositionsForInstruments(heldIds)
     return EtfBreakdownData(
       instruments = filteredInstruments,
       positionsByEtfId = allPositions.groupBy { it.etfInstrument.id },
@@ -51,6 +53,15 @@ class EtfBreakdownDataLoaderService(
       positionsByEtfId = allPositions.groupBy { it.etfInstrument.id },
       transactionDataByInstrumentId = transactionData,
     )
+  }
+
+  private fun isHeld(
+    instrument: Instrument,
+    transactionData: Map<Long, InstrumentTransactionData>,
+    platformFilter: Set<Platform>?,
+  ): Boolean {
+    if (instrument.providerName == ProviderName.SYNTHETIC) return true
+    return transactionData[instrument.id]?.isHeld(platformFilter) == true
   }
 
   private fun loadPositionsForInstruments(instrumentIds: List<Long>): List<EtfPosition> =

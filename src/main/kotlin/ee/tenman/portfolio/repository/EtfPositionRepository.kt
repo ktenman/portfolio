@@ -91,10 +91,10 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   @Query(
     """
     WITH latest AS MATERIALIZED (
-      SELECT ep2.etfInstrument.id AS etfInstrumentId, MAX(ep2.snapshotDate) AS snapshotDate
-      FROM EtfPosition ep2
-      WHERE ep2.etfInstrument.id IN :etfInstrumentIds
-      GROUP BY ep2.etfInstrument.id
+      SELECT i.id AS etfInstrumentId,
+        (SELECT MAX(ep2.snapshotDate) FROM EtfPosition ep2 WHERE ep2.etfInstrument.id = i.id) AS snapshotDate
+      FROM Instrument i
+      WHERE i.id IN :etfInstrumentIds
     )
     SELECT ep FROM EtfPosition ep
     JOIN FETCH ep.etfInstrument

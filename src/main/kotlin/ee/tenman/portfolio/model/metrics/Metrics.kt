@@ -1,7 +1,11 @@
 package ee.tenman.portfolio.model.metrics
 
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.model.holding.AggregatedHoldings
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
 import java.math.BigDecimal
+import java.time.LocalDate
 
 data class PortfolioMetrics(
   var totalValue: BigDecimal = BigDecimal.ZERO,
@@ -9,6 +13,21 @@ data class PortfolioMetrics(
   var unrealizedProfit: BigDecimal = BigDecimal.ZERO,
   var totalProfit: BigDecimal = BigDecimal.ZERO,
   val xirrCashFlows: MutableList<CashFlow> = mutableListOf(),
+)
+
+data class PreparedHolding(
+  val instrument: Instrument,
+  val transactions: List<PortfolioTransaction>,
+  val aggregated: AggregatedHoldings?,
+  val realizedProfit: BigDecimal,
+  val cashFlows: List<CashFlow>,
+)
+
+data class PreparedDay(
+  val date: LocalDate,
+  val baselineProfit: BigDecimal,
+  val trailingDays: Long,
+  val holdings: List<PreparedHolding>,
 )
 
 data class InstrumentMetrics(

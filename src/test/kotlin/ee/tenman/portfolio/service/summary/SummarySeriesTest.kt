@@ -24,11 +24,13 @@ import java.time.ZoneOffset
 
 class PortfolioSummarySeriesServiceTest {
   private val summaryService = mockk<SummaryService>()
+  private val summaryCacheService = mockk<SummaryCacheService>()
   private val platformSummaryCacheService = mockk<PlatformSummaryCacheService>()
   private val transactionService = mockk<TransactionService>()
   private val service =
     PortfolioSummarySeriesService(
       summaryService = summaryService,
+      summaryCacheService = summaryCacheService,
       platformSummaryCacheService = platformSummaryCacheService,
       transactionService = transactionService,
     )
@@ -64,6 +66,42 @@ class PortfolioSummarySeriesServiceTest {
 
     verify(exactly = 0) { summaryService.getSeries(any()) }
     expect(result).toEqual(listOf(summary().toSummaryDto()))
+  }
+
+  @Test
+  fun `should compute the opening day when the selection omits a platform holding transactions`() {
+    val platforms = listOf(Platform.LHV)
+    val opening = summary()
+    every { transactionService.coversEveryPlatform(platforms) } returns false
+    every { platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, LocalDate.of(2023, 7, 20)) } returns opening
+
+    expect(service.getOpening(platforms, LocalDate.of(2023, 7, 20))).toEqual(opening)
+  }
+
+  @Test
+  fun `should read the stored opening day for the whole portfolio`() {
+    val opening = summary()
+    every { summaryCacheService.findByEntryDate(LocalDate.of(2023, 7, 20)) } returns opening
+
+    expect(service.getOpening(null, LocalDate.of(2023, 7, 20))).toEqual(opening)
+  }
+
+  @Test
+  fun `should report no opening for the whole portfolio when the start day is not stored`() {
+    every { summaryCacheService.findByEntryDate(LocalDate.of(2023, 7, 19)) } returns null
+
+    expect(service.getOpening(null, LocalDate.of(2023, 7, 19))).toEqual(null)
+  }
+
+  @Test
+  fun `should compute the opening day when the selection covers every platform but the day is not stored`() {
+    val platforms = listOf(Platform.SWEDBANK, Platform.LHV)
+    val opening = summary()
+    every { transactionService.coversEveryPlatform(platforms) } returns true
+    every { summaryCacheService.findByEntryDate(LocalDate.of(2023, 7, 20)) } returns null
+    every { platformSummaryCacheService.getSummaryForPlatformsOnDate(platforms, LocalDate.of(2023, 7, 20)) } returns opening
+
+    expect(service.getOpening(platforms, LocalDate.of(2023, 7, 20))).toEqual(opening)
   }
 
   @Test

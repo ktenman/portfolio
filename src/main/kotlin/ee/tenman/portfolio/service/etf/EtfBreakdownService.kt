@@ -100,8 +100,7 @@ class EtfBreakdownService(
     if (instrument.providerName == ProviderName.SYNTHETIC) {
       return syntheticEtfCalculationService.hasActiveHoldings(instrument.id, platformFilter)
     }
-    val transactionData = data.transactionDataByInstrumentId[instrument.id] ?: return false
-    return transactionData.quantityForPlatforms(platformFilter) > BigDecimal.ZERO
+    return data.transactionDataByInstrumentId[instrument.id]?.isHeld(platformFilter) == true
   }
 
   private fun buildHoldingsMap(

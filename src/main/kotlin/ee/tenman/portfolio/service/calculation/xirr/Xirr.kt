@@ -20,7 +20,8 @@ class Xirr(
   private val endDate = cashFlows.maxOf { it.date }
   private val startDate = cashFlows.minOf { it.date }
 
-  private val terms = cashFlows.map { it.amount to ChronoUnit.DAYS.between(it.date, endDate).toDouble() / 365.25 }
+  private val amounts = DoubleArray(cashFlows.size) { cashFlows[it].amount }
+  private val yearsToEnd = DoubleArray(cashFlows.size) { ChronoUnit.DAYS.between(cashFlows[it].date, endDate).toDouble() / 365.25 }
 
   fun getCashFlows(): List<CashFlow> = cashFlows
 
@@ -56,7 +57,8 @@ class Xirr(
   private fun calculateXirrWithNewtonRaphson(guess: Double): Double {
     var current = guess
     repeat(MAX_ELEVATIONS) {
-      val next = current - netPresentValue(current) / netPresentValueDerivative(current)
+      val next = current - newtonStep(current)
+      if (!next.isFinite()) throw ArithmeticException("Newton-Raphson diverged from rate $current")
       if (abs(next - current) <= SOLVER_ACCURACY) return next
       current = next
     }
@@ -85,10 +87,22 @@ class Xirr(
     return (finalValue - initialInvestment) / initialInvestment
   }
 
-  private fun netPresentValue(rate: Double): Double = terms.sumOf { (amount, years) -> amount * (1 + rate).pow(years) }
+  private fun netPresentValue(rate: Double): Double {
+    var value = 0.0
+    for (index in amounts.indices) value += amounts[index] * (1 + rate).pow(yearsToEnd[index])
+    return value
+  }
 
-  private fun netPresentValueDerivative(rate: Double): Double =
-    terms.sumOf { (amount, years) -> amount * years * (1 + rate).pow(years - 1) }
+  private fun newtonStep(rate: Double): Double {
+    var value = 0.0
+    var slope = 0.0
+    for (index in amounts.indices) {
+      val term = amounts[index] * (1 + rate).pow(yearsToEnd[index])
+      value += term
+      slope += term * yearsToEnd[index]
+    }
+    return value / (slope / (1 + rate))
+  }
 
   private fun estimateInitialRate(): Double {
     val totalAmount = cashFlows.sumOf { it.amount }
@@ -101,7 +115,8 @@ class Xirr(
       } else {
         0.0
       }
+    val rate = estimatedRate.takeUnless { it.isNaN() } ?: ((1 + totalAmount / totalDeposits).pow(1 / years) - 1)
 
-    return estimatedRate.coerceIn(-0.9, 0.9)
+    return rate.coerceIn(-0.9, 0.9)
   }
 }

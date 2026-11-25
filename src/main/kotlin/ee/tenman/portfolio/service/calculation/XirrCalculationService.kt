@@ -57,21 +57,23 @@ class XirrCalculationService(
   }
 
   fun convertToCashFlow(tx: PortfolioTransaction): CashFlow {
+    val gross = tx.price.toDouble() * tx.quantity.toDouble()
+    val commission = tx.commission.toDouble()
     val amount =
       when (tx.transactionType) {
-        TransactionType.BUY -> -(tx.price.multiply(tx.quantity).add(tx.commission))
-        TransactionType.SELL -> tx.price.multiply(tx.quantity).subtract(tx.commission)
+        TransactionType.BUY -> -(gross + commission)
+        TransactionType.SELL -> gross - commission
       }
-    return CashFlow(amount.toDouble(), tx.transactionDate)
+    return CashFlow(amount, tx.transactionDate)
   }
 
   fun addCashFlows(
     cashFlowList: MutableList<CashFlow>,
-    transactions: List<PortfolioTransaction>,
+    cashFlows: List<CashFlow>,
     currentValue: BigDecimal,
     date: LocalDate,
   ) {
-    cashFlowList += transactions.map(::convertToCashFlow)
+    cashFlowList += cashFlows
     cashFlowList += CashFlow(currentValue.toDouble(), date)
   }
 

@@ -55,9 +55,8 @@ class ProfitCalculationEngine {
     transaction.remainingQuantity = BigDecimal.ZERO
     if (state.currentQuantity.compareTo(BigDecimal.ZERO) <= 0) return state
     val effectiveQuantity = transaction.quantity.min(state.currentQuantity)
-    val sellRatio = effectiveQuantity.divide(state.currentQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
     return TransactionState(
-      state.totalCost.multiply(BigDecimal.ONE.subtract(sellRatio)),
+      InvestmentMath.remainingCost(state.totalCost, effectiveQuantity, state.currentQuantity),
       state.currentQuantity.subtract(effectiveQuantity),
     )
   }

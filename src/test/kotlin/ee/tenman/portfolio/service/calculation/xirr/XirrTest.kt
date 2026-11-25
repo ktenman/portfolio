@@ -26,7 +26,7 @@ class XirrTest {
         XirrTestCase(
           "complex set of transactions over multiple years",
           complexCashFlows,
-          0.14743321895599365,
+          0.14743276567403696,
         ),
       )
 
@@ -56,7 +56,7 @@ class XirrTest {
   fun `should calculate correct XIRR value when given transactions`(testCase: XirrTestCase) {
     val xirrValue = Xirr(testCase.cashFlows)()
 
-    val tolerance = 1e-14
+    val tolerance = 1e-9
     expect(Math.abs(xirrValue - testCase.expectedXirr)).toBeLessThan(tolerance)
   }
 

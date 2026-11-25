@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.calculation
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
+import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -53,6 +54,18 @@ class InvestmentMathTest {
   fun `should calculateRealizedProfit with empty transactions returns zero`() {
     val result = InvestmentMath.calculateRealizedProfit(emptyList())
     expect(result).toEqualNumerically(BigDecimal.ZERO)
+  }
+
+  @Test
+  fun `should keep the cost of the shares still held after a sale`() {
+    expect(InvestmentMath.remainingCost(BigDecimal("100"), BigDecimal("1"), BigDecimal("3")))
+      .toEqualNumerically(BigDecimal("66.6666666667"))
+  }
+
+  @Test
+  fun `should round the remaining cost to the calculation scale`() {
+    expect(InvestmentMath.remainingCost(BigDecimal("10.123456789012"), BigDecimal("1"), BigDecimal("4")).scale())
+      .toEqual(CALCULATION_SCALE)
   }
 
   @Test

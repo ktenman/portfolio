@@ -247,7 +247,7 @@ class IntradaySummaryReplayServiceTest {
   ): IntradaySummaryReplayService {
     every { transactions.findAllByPlatformsWithInstruments(any()) } returns trades
     every { repository.findForReplay(any(), any(), any()) } returns captures
-    every { daily.buildPriceLookup(any()) } returns PriceLookup(dailyPrices)
+    every { daily.buildLatestPriceLookup(any(), any()) } returns PriceLookup(dailyPrices)
     return IntradaySummaryReplayService(transactions, repository, daily, calculator(clock(now)), clock(now))
   }
 

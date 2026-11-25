@@ -31,7 +31,7 @@ class SyntheticEtfCalculationService(
     val instruments = instrumentRepository.findBySymbolIn(tickers)
     if (instruments.isEmpty()) return false
     val transactionData = transactionCalculationService.batchCalculateAll(instruments.map { it.id })
-    return transactionData.values.any { it.quantityForPlatforms(platformFilter) > BigDecimal.ZERO }
+    return transactionData.values.any { it.isHeld(platformFilter) }
   }
 
   fun buildHoldings(

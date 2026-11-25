@@ -63,7 +63,7 @@ class InstrumentSnapshotService(
         .findAllWithInstruments()
         .filter { !it.transactionDate.isAfter(calculationDate) }
         .groupBy { it.instrument.id }
-    val priceLookup = dailyPriceService.buildLatestPriceLookup(instruments, calculationDate)
+    val priceLookup = dailyPriceService.buildLatestPriceLookup(instruments, listOf(calculationDate))
     val context =
       InstrumentEnrichmentContext(
         calculationDate = calculationDate,

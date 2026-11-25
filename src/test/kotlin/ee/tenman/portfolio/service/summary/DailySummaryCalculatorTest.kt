@@ -1,15 +1,18 @@
 package ee.tenman.portfolio.service.summary
 
+import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
+import ee.tenman.portfolio.model.metrics.PreparedHolding
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -20,6 +23,17 @@ class DailySummaryCalculatorTest {
   private val calculator = DailySummaryCalculator(investmentMetricsService, xirrCalculationService)
   private val date = LocalDate.of(2026, 9, 13)
   private val instrument = TransactionFixtures.createInstrument()
+
+  @BeforeEach
+  fun setUp() {
+    every { investmentMetricsService.prepareHoldings(any()) } returns
+      listOf(PreparedHolding(instrument, emptyList(), null, BigDecimal.ZERO, emptyList()))
+  }
+
+  @Test
+  fun `prices a day and the start of its trailing year`() {
+    expect(calculator.pricedDates(date)).toEqual(listOf(date, LocalDate.of(2025, 9, 13)))
+  }
 
   @Test
   fun `earnings per day is total profit divided by portfolio age when younger than a year`() {
@@ -73,7 +87,7 @@ class DailySummaryCalculatorTest {
   fun `baseline metrics receive the same price lookup as the current metrics`() {
     val lookup = PriceLookup(emptyList())
     every { investmentMetricsService.calculatePortfolioMetrics(any(), date.minusDays(365), lookup) } returns metrics("270")
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), date, lookup) } returns metrics("1000")
+    every { investmentMetricsService.valuePortfolio(any(), date, lookup) } returns metrics("1000")
 
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(500))), date, lookup)
 
@@ -97,6 +111,7 @@ class DailySummaryCalculatorTest {
     profit: String,
   ) {
     every { investmentMetricsService.calculatePortfolioMetrics(any(), on, null) } returns metrics(profit)
+    every { investmentMetricsService.valuePortfolio(any(), on, null) } returns metrics(profit)
   }
 
   private fun metrics(profit: String) = PortfolioMetrics(totalProfit = BigDecimal(profit))

@@ -18,6 +18,7 @@ import ee.tenman.portfolio.dto.LargestPositionDto
 import ee.tenman.portfolio.model.diversification.AggregatedHolding
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.etf.HoldingAggregationService
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +29,7 @@ import java.math.RoundingMode
 class DiversificationCalculatorService(
   private val instrumentRepository: InstrumentRepository,
   private val etfPositionRepository: EtfPositionRepository,
+  private val holdingAggregationService: HoldingAggregationService,
 ) {
   @Transactional(readOnly = true)
   fun calculate(request: DiversificationCalculatorRequestDto): DiversificationCalculatorResponseDto {
@@ -169,7 +171,7 @@ class DiversificationCalculatorService(
   ): Map<String, AggregatedHolding> =
     allocations
       .flatMap { allocation -> weightedHoldings(allocation, weights, instruments) }
-      .groupBy { normalizeHoldingName(it.name) }
+      .groupBy { holdingAggregationService.normalizeHoldingName(it.name) }
       .mapValues { (_, holdings) ->
         holdings.reduce { first, next ->
           first.copy(percentage = first.percentage.add(next.percentage), etfSymbols = first.etfSymbols + next.etfSymbols)
@@ -196,8 +198,6 @@ class DiversificationCalculatorService(
     }
   }
 
-  private fun normalizeHoldingName(name: String): String = name.lowercase().replace(Regex("\\s+"), " ").trim()
-
   private fun buildHoldingDtos(holdingsData: Map<String, AggregatedHolding>): List<DiversificationHoldingDto> =
     holdingsData.values
       .filter { it.percentage.signum() > 0 }
@@ -208,7 +208,7 @@ class DiversificationCalculatorService(
           percentage = holding.percentage.setScale(RESULT_SCALE, RoundingMode.HALF_UP),
           inEtfs = holding.etfSymbols.sorted().joinToString(", "),
         )
-      }.sortedByDescending { it.percentage }
+      }.sortedWith(compareByDescending<DiversificationHoldingDto> { it.percentage }.thenBy { it.name })
 
   private fun aggregateSectors(holdingsData: Map<String, AggregatedHolding>): List<DiversificationSectorDto> =
     holdingsData.values

@@ -6,6 +6,7 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPrice
+import ee.tenman.portfolio.domain.DailyPricePoint
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.repository.DailyPriceRepository
@@ -221,6 +222,18 @@ class DailyPriceServiceTest {
     val result = dailyPriceService.getCurrentPrice(createCashInstrument())
 
     expect(result).toEqualNumerically(BigDecimal.ONE)
+  }
+
+  @Test
+  fun `should build a price lookup answering each date from its latest earlier price`() {
+    val yearAgo = testDate.minusYears(1)
+    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument), testDate) } returns
+      listOf(DailyPricePoint(testInstrument.id, testDate.minusDays(2), BigDecimal("150.5")))
+    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument), yearAgo) } returns
+      listOf(DailyPricePoint(testInstrument.id, yearAgo.minusDays(3), BigDecimal("90.25")))
+    val lookup = dailyPriceService.buildLatestPriceLookup(listOf(testInstrument), listOf(testDate, yearAgo))
+    val prices = listOf(testDate, yearAgo).map { lookup.priceOnOrBefore(testInstrument.id, it)?.toPlainString() }
+    expect(prices).toEqual(listOf("150.5", "90.25"))
   }
 
   @Test

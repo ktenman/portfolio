@@ -2,9 +2,11 @@ package ee.tenman.portfolio.service.calculation
 
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
+import ee.tenman.portfolio.model.holding.AggregatedHoldings
 import ee.tenman.portfolio.model.holding.CurrentHoldings
 import ee.tenman.portfolio.model.metrics.InstrumentMetrics
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
+import ee.tenman.portfolio.model.metrics.PreparedHolding
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceLookup
 import ee.tenman.portfolio.service.transaction.TransactionService
@@ -94,54 +96,85 @@ class InvestmentMetricsService(
     instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
     date: LocalDate,
     priceLookup: PriceLookup? = null,
+  ): PortfolioMetrics = valuePortfolio(prepareHoldings(instrumentGroups), date, priceLookup)
+
+  fun prepareHoldings(instrumentGroups: Map<Instrument, List<PortfolioTransaction>>): List<PreparedHolding> {
+    transactionService.calculateTransactionProfits(instrumentGroups.values.flatten())
+    return instrumentGroups.map { (instrument, transactions) -> prepareHolding(instrument, transactions) }
+  }
+
+  fun valuePortfolio(
+    holdings: List<PreparedHolding>,
+    date: LocalDate,
+    priceLookup: PriceLookup? = null,
   ): PortfolioMetrics {
     val metrics = PortfolioMetrics()
-    transactionService.calculateTransactionProfits(instrumentGroups.values.flatten())
-    instrumentGroups.forEach { (instrument, transactions) ->
-      runCatching {
-        processInstrumentWithUnifiedCalculation(instrument, transactions, date, metrics, priceLookup)
-      }.onFailure {
-        log.warn("Unified calculation failed, using fallback: ${it.message}")
-        processInstrumentWithFallback(instrument, transactions, date, metrics, priceLookup)
-      }
-    }
+    holdings.forEach { holding -> valueHolding(holding, date, metrics, priceLookup) }
     return metrics
   }
 
-  private fun processInstrumentWithUnifiedCalculation(
+  private fun prepareHolding(
     instrument: Instrument,
     transactions: List<PortfolioTransaction>,
+  ): PreparedHolding =
+    PreparedHolding(
+      instrument = instrument,
+      transactions = transactions,
+      aggregated = aggregate(transactions),
+      realizedProfit = calculateRealizedProfit(transactions),
+      cashFlows = transactions.map(xirrCalculationService::convertToCashFlow),
+    )
+
+  private fun aggregate(transactions: List<PortfolioTransaction>): AggregatedHoldings? =
+    runCatching { holdingsCalculationService.calculateAggregatedHoldings(transactions) }
+      .onFailure { log.warn("Aggregating holdings failed, using fallback: ${it.message}") }
+      .getOrNull()
+
+  private fun valueHolding(
+    holding: PreparedHolding,
     date: LocalDate,
     metrics: PortfolioMetrics,
     priceLookup: PriceLookup?,
   ) {
-    val aggregated = holdingsCalculationService.calculateAggregatedHoldings(transactions)
-    val realizedProfit = calculateRealizedProfit(transactions)
-    val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, instrument, date, priceLookup)
+    val aggregated = holding.aggregated ?: return processInstrumentWithFallback(holding, date, metrics, priceLookup)
+    runCatching { processInstrumentWithUnifiedCalculation(holding, aggregated, date, metrics, priceLookup) }
+      .onFailure {
+        log.warn("Unified calculation failed, using fallback: ${it.message}")
+        processInstrumentWithFallback(holding, date, metrics, priceLookup)
+      }
+  }
+
+  private fun processInstrumentWithUnifiedCalculation(
+    holding: PreparedHolding,
+    aggregated: AggregatedHoldings,
+    date: LocalDate,
+    metrics: PortfolioMetrics,
+    priceLookup: PriceLookup?,
+  ) {
+    val currentValue = calculateCurrentValueForDate(aggregated.totalQuantity, holding.instrument, date, priceLookup)
     val unrealizedProfit = currentValue.subtract(aggregated.totalInvestment)
-    if (hasNothingToAdd(currentValue, realizedProfit)) return
-    updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
-    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
+    if (hasNothingToAdd(currentValue, holding.realizedProfit)) return
+    updateMetrics(metrics, currentValue, holding.realizedProfit, unrealizedProfit)
+    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, holding.cashFlows, currentValue, date)
   }
 
   private fun processInstrumentWithFallback(
-    instrument: Instrument,
-    transactions: List<PortfolioTransaction>,
+    holding: PreparedHolding,
     date: LocalDate,
     metrics: PortfolioMetrics,
     priceLookup: PriceLookup?,
   ) {
-    val netQuantity = holdingsCalculationService.calculateNetQuantity(transactions)
+    val netQuantity = holdingsCalculationService.calculateNetQuantity(holding.transactions)
     if (netQuantity <= BigDecimal.ZERO) {
-      processZeroQuantityFallback(transactions, date, metrics)
+      processZeroQuantityFallback(holding, date, metrics)
       return
     }
-    val price = getEffectivePriceForDate(instrument, date, priceLookup) ?: return
+    val price = getEffectivePriceForDate(holding.instrument, date, priceLookup) ?: return
     val currentValue = netQuantity.multiply(price)
-    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, currentValue)
+    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(holding.transactions, currentValue)
     if (hasNothingToAdd(currentValue, realizedProfit)) return
     updateMetrics(metrics, currentValue, realizedProfit, unrealizedProfit)
-    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, currentValue, date)
+    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, holding.cashFlows, currentValue, date)
   }
 
   private fun getEffectivePriceForDate(
@@ -157,14 +190,14 @@ class InvestmentMetricsService(
   }
 
   private fun processZeroQuantityFallback(
-    transactions: List<PortfolioTransaction>,
+    holding: PreparedHolding,
     date: LocalDate,
     metrics: PortfolioMetrics,
   ) {
-    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(transactions, BigDecimal.ZERO)
+    val (realizedProfit, unrealizedProfit) = calculateFallbackProfits(holding.transactions, BigDecimal.ZERO)
     if (hasNothingToAdd(BigDecimal.ZERO, realizedProfit)) return
     updateMetrics(metrics, BigDecimal.ZERO, realizedProfit, unrealizedProfit)
-    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, transactions, BigDecimal.ZERO, date)
+    xirrCalculationService.addCashFlows(metrics.xirrCashFlows, holding.cashFlows, BigDecimal.ZERO, date)
   }
 
   private fun hasNothingToAdd(
