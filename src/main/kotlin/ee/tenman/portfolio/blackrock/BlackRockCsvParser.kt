@@ -12,7 +12,7 @@ data class BlackRockHolding(
 )
 
 enum class BlackRockFund(
-  val productId: String,
+  val portfolioId: String,
 ) {
   CSUS("253740"),
   SAWD("305419"),

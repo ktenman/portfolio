@@ -130,7 +130,10 @@ class RetryIT {
 
   @Test
   fun `should return csus holdings after one 503`() {
-    stubFailingOnce({ get(urlPathEqualTo(CSUS_PATH)) }, ok("Ticker,Name,Asset Class,Weight (%)\nAAPL,APPLE INC,Equity,6.5\n"))
+    stubFailingOnce(
+      { get(urlPathEqualTo(CSUS_PATH)).withQueryParam("portfolioId", equalTo("253740")).withQueryParam("component", equalTo("holdings")) },
+      ok("Ticker,Name,Asset Class,Weight (%)\nAAPL,APPLE INC,Equity,6.5\n"),
+    )
     expect(blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS).map { it.name }).toContainExactly("APPLE INC")
     verify(2, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
   }
@@ -223,7 +226,7 @@ class RetryIT {
     private const val TICKER_PATH = "/api/v3/ticker/price"
     private const val KLINES_PATH = "/api/v3/klines"
     private const val LIGHTYEAR_PATH = "/lightyear/fetch"
-    private const val CSUS_PATH = "/uk/individual/products/253740/x/1472631233320.ajax"
+    private const val CSUS_PATH = "/varnish-api/uk-retail01-product-data/product-data/api/v1/get-fund-document"
     private const val PRICES_PATH = "/prices"
     private const val ETF_HOLDINGS_PATH = "/trading212/etf-holdings"
     private const val ETF_SUMMARY_PATH = "/trading212/etf-summary"
