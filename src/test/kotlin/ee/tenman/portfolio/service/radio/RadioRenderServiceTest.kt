@@ -39,11 +39,12 @@ class RadioRenderServiceTest {
   }
 
   @Test
-  fun `should name the station of the recording as the artist`() {
-    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, taped(directory, "raw", 10))))
+  fun `should tag the audio with the title it is given and the station as the artist`() {
+    writeRecording(directory, listOf(FixturePart("raw.mp3", 0.0, silent(directory, "raw", 2))))
     val episode = directory.resolve("episode.m4a")
-    service.render(timeline(directory).spans, listOf(2.0 to 8.0), listOf(0.0 to "Uudised"), "Kuum tool", episode, Station.ARIPAEV)
-    expect(probe(episode)["format"]["tags"]["artist"].asString()).toEqual("Äripäev")
+    service.render(timeline(directory).spans, listOf(0.0 to 2.0), listOf(0.0 to "Uudised"), "Nädal raadios", episode, Station.ARIPAEV)
+    val tags = probe(episode)["format"]["tags"]
+    expect(tags["title"].asString() to tags["artist"].asString()).toEqual("Nädal raadios" to "Äripäev")
   }
 
   @Test

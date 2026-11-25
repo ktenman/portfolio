@@ -13,6 +13,7 @@ import ee.tenman.portfolio.repository.JobExecutionRepository
 import ee.tenman.portfolio.service.infrastructure.LiveUpdateService
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
@@ -23,7 +24,8 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import kotlin.math.abs
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 
 class RadioDigestServiceTest {
   @TempDir
@@ -31,12 +33,21 @@ class RadioDigestServiceTest {
 
   private val archive = mockk<RadioArchiveService>()
   private val model = mockk<RadioDigestModelService>()
+  private val renderer =
+    mockk<RadioRenderService> {
+      every { silence(any(), any()) } answers { Files.createFile(firstArg<Path>()) }
+      every { clip(any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(3)) }
+      every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
+        lastArg<(Double) -> Unit>()(1.0)
+        Files.createFile(arg<Path>(4))
+      }
+    }
   private val jobs = mockk<JobExecutionRepository> { every { countByJobNameAndStatusAndStartTimeAfter(any(), any(), any()) } returns 0 }
   private val progress = spyk(RadioDigestProgressService(LiveUpdateService(), Clock.fixed(Instant.parse(NOW), ZoneId.of("Europe/Tallinn"))))
 
   @Test
   fun `should report choosing the stories while the judge reads`() {
-    held(audio = false)
+    held()
     var step: DigestStep? = null
     every { model.judge(any(), any(), any()) } answers {
       step = progress.current()?.step
@@ -48,42 +59,42 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should list the stories picked while their clips are chosen`() {
-    held(audio = false)
+    held()
     var titles: List<String>? = null
     every { model.clip(any(), any()) } answers {
       titles = progress.current()?.titles
       null
     }
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    service().build(DigestShow.WEEK, TODAY)
     expect(titles).toEqual(listOf("Rünnakud Ust-Lugas", "Valimised"))
   }
 
   @Test
   fun `should count each clip as it is cut`() {
-    held(audio = false)
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    held()
+    service().build(DigestShow.WEEK, TODAY)
     verify(exactly = 2) { progress.cut() }
   }
 
   @Test
   fun `should follow the mix`() {
-    held(audio = false)
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    held()
+    service().build(DigestShow.WEEK, TODAY)
     verify(atLeast = 1) { progress.mixed(any()) }
   }
 
   @Test
   fun `should forget the build once it is written`() {
-    held(audio = false)
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    held()
+    service().build(DigestShow.WEEK, TODAY)
     expect(progress.current()).toEqual(null)
   }
 
   @Test
   fun `should forget the build when it fails`() {
-    held(audio = false)
+    held()
     every { model.judge(any(), any(), any()) } returns null
-    runCatching { service().build(DigestShow.WEEK, TODAY) }
+    expect { service().build(DigestShow.WEEK, TODAY) }.toThrow<IllegalStateException>()
     expect(progress.current()).toEqual(null)
   }
 
@@ -145,41 +156,40 @@ class RadioDigestServiceTest {
   fun `should write a digest with a chapter per story`() {
     held()
     service().build(DigestShow.WEEK, TODAY)
-    val titles = probe(digest().resolve(EPISODE_FILE))["chapters"].toList().map { it["tags"]["title"].asString() }
-    expect(titles).toEqual(listOf("Rünnakud Ust-Lugas", "Valimised"))
+    verify { renderer.render(any(), any(), listOf(0.0 to "Rünnakud Ust-Lugas", 181.0 to "Valimised"), any(), any(), any(), any()) }
   }
 
   @Test
   fun `should title the digest audio with the week it covers`() {
     held()
     service().build(DigestShow.WEEK, TODAY)
-    expect(probe(digest().resolve(EPISODE_FILE))["format"]["tags"]["title"].asString()).toEqual("Week in Radio 09.11–15.11.2026")
+    verify { renderer.render(any(), any(), any(), "Week in Radio 09.11–15.11.2026", any(), any(), any()) }
   }
 
   @Test
   fun `should keep the stories in rank order when two shows take turns`() {
-    held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")), audio = false)
+    held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")))
     every { model.judge(any(), any(), any()) } returns
       Judgement(listOf(story("Rünnakud Ust-Lugas", "r1", 5), story("Valimised", "r3", 4), story("Telia koondab", "r2", 3)))
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    service().build(DigestShow.WEEK, TODAY)
     expect(read<Digest>(digest().resolve(DIGEST_FILE))?.stories?.map { it.title })
       .toEqual(listOf("Rünnakud Ust-Lugas", "Valimised", "Telia koondab"))
   }
 
   @Test
   fun `should start each story's transcript at its place in the digest`() {
-    held(audio = false)
-    service(renderer = silent()).build(DigestShow.WEEK, TODAY)
+    held()
+    service().build(DigestShow.WEEK, TODAY)
     val second = read<List<TranscriptSection>>(digest().resolve(TRANSCRIPT_FILE)).orEmpty()[1]
     expect(second.lines.first().start to second.start).toEqual(181.0 to 181.0)
   }
 
   @Test
   fun `should leave the previous digest when the judge does not answer`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY.minusDays(1), emptyList())
     every { model.judge(any(), any(), any()) } returns null
-    runCatching { service().build(DigestShow.WEEK, TODAY) }
+    expect { service().build(DigestShow.WEEK, TODAY) }.toThrow<IllegalStateException>()
     expect(Files.exists(digest(TODAY.minusDays(1)).resolve(DIGEST_FILE)) to Files.exists(digest())).toEqual(true to false)
   }
 
@@ -198,7 +208,7 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should mark a day without a story as built without audio`() {
-    held(audio = false)
+    held()
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     service().build(DigestShow.WEEK, TODAY)
     val stories = read<Digest>(digest().resolve(DIGEST_FILE))?.stories
@@ -207,21 +217,20 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should keep the newest seven digests`() {
-    held(audio = false)
-    (1L..8L).forEach { writtenDigest(directory, TODAY.minusDays(it), emptyList()) }
+    held()
+    built(1, 2, 3, 4, 5, 6, 7, 8)
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     service().build(DigestShow.WEEK, TODAY)
-    val kept = Files.list(directory.resolve(DigestShow.WEEK.directory)).use { days -> days.map { it.fileName.toString() }.toList() }
-    expect(kept.sorted()).toEqual((6L downTo 0L).map { TODAY.minusDays(it).toString() })
+    expect(days()).toEqual(listOf("2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-15", "2026-11-16"))
   }
 
   @Test
   fun `should leave out a recording whose episode is not on disk`() {
-    held(audio = false)
+    held()
     Files.delete(directory.resolve(SAMOST).resolve(EPISODE_FILE))
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     service().build(DigestShow.WEEK, TODAY)
-    verify { model.judge(any(), match { rows -> rows.map { it.recording } == listOf(KESKPAEVATUND) }, any()) }
+    expect(judged()).toEqual(listOf(KESKPAEVATUND))
   }
 
   @Test
@@ -229,15 +238,15 @@ class RadioDigestServiceTest {
     val finding = cutRecording(KESKPAEVATUND, listOf(EpisodeChapter(0.0, "Ust-Luga")), state = ProgrammeCutState.FINDING)
     every { archive.recordings() } returns listOf(finding)
     service().build(DigestShow.WEEK, TODAY)
-    expect(Files.exists(directory.resolve(DigestShow.WEEK.directory))).toEqual(false)
+    expect(Files.exists(week())).toEqual(false)
   }
 
   @Test
   fun `should judge only the shows of the days kept on disk`() {
-    held(audio = false)
+    held()
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     service(localDays = 2, now = "2026-11-16T12:00:00Z").build(DigestShow.WEEK, TODAY)
-    verify { model.judge(any(), match { rows -> rows.map { it.recording } == listOf(SAMOST) }, any()) }
+    expect(judged()).toEqual(listOf(SAMOST))
   }
 
   @Test
@@ -255,7 +264,7 @@ class RadioDigestServiceTest {
     held()
     service().build(DigestShow.DAY, TODAY)
     val written = Files.exists(directory.resolve(DigestShow.DAY.directory).resolve(TODAY.toString()).resolve(DIGEST_FILE))
-    expect(written to Files.exists(directory.resolve(DigestShow.WEEK.directory))).toEqual(true to false)
+    expect(written to Files.exists(week())).toEqual(true to false)
   }
 
   @Test
@@ -306,8 +315,7 @@ class RadioDigestServiceTest {
     ended(10, 30, 50)
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     service().build(DigestShow.DAY, TODAY)
-    val marked = listOf("eetris-30" to true, "eetris-10" to false)
-    verify { model.judge(DigestShow.DAY, match { rows -> rows.map { it.recording to it.earlier } == marked }, any()) }
+    expect(earlier()).toEqual(listOf("eetris-30"))
   }
 
   @Test
@@ -321,8 +329,7 @@ class RadioDigestServiceTest {
   fun `should leave a second of silence after each story`() {
     held()
     service().build(DigestShow.WEEK, TODAY)
-    val duration = probe(digest().resolve(EPISODE_FILE))["format"]["duration"].asString().toDouble()
-    expect(abs(duration - 362.0) <= 0.1).toEqual(true)
+    expect(played()).toEqual(listOf("clip-1.m4a" to 180.0, "pause.m4a" to 181.0, "clip-2.m4a" to 361.0, "pause.m4a" to 362.0))
   }
 
   @Test
@@ -338,8 +345,16 @@ class RadioDigestServiceTest {
     held()
     jingle()
     service().build(DigestShow.WEEK, TODAY)
-    val duration = probe(digest().resolve(EPISODE_FILE))["format"]["duration"].asString().toDouble()
-    expect(abs(duration - 366.4) <= 0.1).toEqual(true)
+    expect(played()).toEqual(
+      listOf(
+        "clip-1.m4a" to 180.0,
+        "pause.m4a" to 180.35,
+        "kuku-samost-ja-aaspollu.m4a" to 185.35,
+        "pause.m4a" to 185.4,
+        "clip-2.m4a" to 365.4,
+        "pause.m4a" to 366.4,
+      ),
+    )
   }
 
   @Test
@@ -355,18 +370,16 @@ class RadioDigestServiceTest {
     held(listOf(EpisodeChapter(0.0, "Ust-Luga"), EpisodeChapter(150.0, "Telia")), Station.ARIPAEV)
     every { model.judge(any(), any(), any()) } returns Judgement(listOf(story("Rünnakud Ust-Lugas", "r1", 5), story("Valimised", "r3", 4)))
     service().build(DigestShow.WEEK, TODAY)
-    expect(probe(digest().resolve(EPISODE_FILE))["format"]["tags"]["artist"].asString()).toEqual("Äripäev")
+    verify { renderer.render(any(), any(), any(), any(), any(), Station.ARIPAEV, any()) }
   }
 
   @Test
   fun `should clear the clips of a failed build before the next one`() {
     held()
-    Files.writeString(directory.resolve(SAMOST).resolve(EPISODE_FILE), "Pole heli õ")
-    runCatching { service().build(DigestShow.WEEK, TODAY.minusDays(1)) }
-    episode(SAMOST)
+    val work = Files.createDirectories(week().resolve("build.tmp"))
+    Files.writeString(work.resolve("clip-3.m4a"), "Pole heli õ")
     service().build(DigestShow.WEEK, TODAY)
-    val kept = Files.list(directory.resolve(DigestShow.WEEK.directory)).use { folders -> folders.map { it.fileName.toString() }.toList() }
-    expect(kept).toEqual(listOf(TODAY.toString()))
+    expect(Files.exists(digest().resolve("clip-3.m4a"))).toEqual(false)
   }
 
   @Test
@@ -378,26 +391,26 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should replace today's digest when it is rebuilt`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY, listOf("Vana lugu"))
-    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    service().rebuild(DigestShow.WEEK, TODAY)
     expect(Files.readString(digest().resolve(DIGEST_FILE))).notToContain("Vana lugu")
   }
 
   @Test
   fun `should rebuild after today's tries are used up`() {
-    held(audio = false)
+    held()
     failed(3)
-    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    service().rebuild(DigestShow.WEEK, TODAY)
     expect(Files.exists(digest().resolve(DIGEST_FILE))).toEqual(true)
   }
 
   @Test
   fun `should keep today's digest when the rebuild fails`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY, listOf("Vana lugu"))
-    val renderer = mockk<RadioRenderService> { every { silence(any(), any()) } throws IllegalStateException("FFmpeg lõpetas veaga") }
-    runCatching { service(renderer = renderer).rebuild(DigestShow.WEEK, TODAY) }
+    every { renderer.silence(any(), any()) } throws IllegalStateException("FFmpeg lõpetas veaga")
+    expect { service().rebuild(DigestShow.WEEK, TODAY) }.toThrow<IllegalStateException>()
     expect(Files.readString(digest().resolve(DIGEST_FILE))).toContain("Vana lugu")
   }
 
@@ -411,15 +424,15 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should keep the earlier week's digest beside a midweek rebuild`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY.minusDays(2), listOf("Eelmine nädal"))
-    service(renderer = silent()).rebuild(DigestShow.WEEK, TODAY)
+    service().rebuild(DigestShow.WEEK, TODAY)
     expect(Files.exists(digest(TODAY.minusDays(2)).resolve(DIGEST_FILE))).toEqual(true)
   }
 
   @Test
   fun `should leave the running build alone when a scheduled one is refused`() {
-    held(audio = false)
+    held()
     progress.started(DigestShow.DAY, TODAY)
     service().build(DigestShow.WEEK, TODAY)
     expect(progress.current()?.show).toEqual(DigestShow.DAY)
@@ -440,16 +453,16 @@ class RadioDigestServiceTest {
 
   @Test
   fun `should keep today's digest when the rebuild finds no story`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY, listOf("Vana lugu"))
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
-    runCatching { service().rebuild(DigestShow.WEEK, TODAY) }
+    expect { service().rebuild(DigestShow.WEEK, TODAY) }.toThrow<IllegalStateException>()
     expect(Files.readString(digest().resolve(DIGEST_FILE))).toContain("Vana lugu")
   }
 
   @Test
   fun `should say that no story made the rebuilt digest`() {
-    held(audio = false)
+    held()
     writtenDigest(directory, TODAY, listOf("Vana lugu"))
     every { model.judge(any(), any(), any()) } returns Judgement(emptyList())
     expect { service().rebuild(DigestShow.WEEK, TODAY) }
@@ -460,7 +473,6 @@ class RadioDigestServiceTest {
   private fun service(
     localDays: Long = 7,
     now: String = NOW,
-    renderer: RadioRenderService = RadioRenderService(),
   ) = RadioDigestService(
     archive,
     model,
@@ -471,20 +483,9 @@ class RadioDigestServiceTest {
     Clock.fixed(Instant.parse(now), ZoneId.of("Europe/Tallinn")),
   )
 
-  private fun silent() =
-    mockk<RadioRenderService> {
-      every { silence(any(), any()) } answers { Files.createFile(firstArg<Path>()) }
-      every { clip(any(), any(), any(), any()) } answers { Files.createFile(arg<Path>(3)) }
-      every { render(any(), any(), any(), any(), any(), any(), any()) } answers {
-        lastArg<(Double) -> Unit>()(1.0)
-        Files.createFile(arg<Path>(4))
-      }
-    }
-
   private fun held(
     chapters: List<EpisodeChapter> = listOf(EpisodeChapter(0.0, "Ust-Luga")),
     station: Station = Station.KUKU,
-    audio: Boolean = true,
   ) {
     val audible = listOf(KeptSpan(0.0, 300.0))
     val first = cutRecording(KESKPAEVATUND, chapters, audible)
@@ -497,7 +498,8 @@ class RadioDigestServiceTest {
         startedAt = SUNDAY_NOON,
         station = station,
       )
-    listOf(first, second).forEach { if (audio) episode(it.name) else stub(it.name) }
+    stub(first.name)
+    stub(second.name)
     every { archive.recordings() } returns listOf(second, first)
     every { archive.transcript(KESKPAEVATUND) } returns listOf(TranscriptLine(0.0, 5.0, "Sõda on lähedal.", emptyList()))
     every { archive.transcript(SAMOST) } returns listOf(TranscriptLine(0.0, 5.0, "Valimised tulevad.", emptyList()))
@@ -511,7 +513,7 @@ class RadioDigestServiceTest {
         val start = Instant.parse(NOW).epochSecond - (ago + 1) * 3600.0
         cutRecording("eetris-$ago", listOf(EpisodeChapter(0.0, "Uudised õhtul")), startedAt = start)
       }
-    recordings.forEach { episode(it.name) }
+    recordings.forEach { stub(it.name) }
     every { archive.recordings() } returns recordings
   }
 
@@ -532,25 +534,40 @@ class RadioDigestServiceTest {
     importance: Int,
   ) = JudgedStory(title, "Kokkuvõte", listOf(row), row, "news", importance, 5, false, "Põhjus")
 
-  private fun episode(name: String) {
-    val path = Files.createDirectories(directory.resolve(name)).resolve(EPISODE_FILE)
-    ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.3*sin(2*PI*440*t)':s=48000:d=300", "-c:a", "aac", "-b:a", "96k", "$path")
-  }
-
   private fun jingle(): Path {
     val library = Files.createDirectories(directory.resolve("idents"))
     val ident = Ident(Station.KUKU, "Samost ja Aaspõllu", "kuku-samost-ja-aaspollu.m4a", 5.0)
-    val path = library.resolve(ident.file)
-    ffmpeg("-f", "lavfi", "-i", "aevalsrc='0.2*sin(2*PI*880*t)':s=48000:d=5", "-c:a", "aac", "-b:a", "192k", "$path")
     save(library.resolve(IDENTS_FILE), listOf(ident))
-    return path
+    return Files.writeString(library.resolve(ident.file), "Džingel õ")
+  }
+
+  private fun built(vararg ages: Long) = ages.forEach { writtenDigest(directory, TODAY.minusDays(it), emptyList()) }
+
+  private fun days(): List<String> = week().listDirectoryEntries().map { it.name }.sorted()
+
+  private fun judged(): List<String> = shown().map { it.recording }
+
+  private fun earlier(): List<String> = shown().filter { it.earlier }.map { it.recording }
+
+  private fun shown(): List<DigestRow> {
+    val rows = slot<List<DigestRow>>()
+    verify { model.judge(any(), capture(rows), any()) }
+    return rows.captured
+  }
+
+  private fun played(): List<Pair<String, Double>> {
+    val spans = slot<List<Span>>()
+    verify { renderer.render(capture(spans), any(), any(), any(), any(), any(), any()) }
+    return spans.captured.map { it.audio.name to it.end }
   }
 
   private fun stub(name: String) {
     Files.writeString(Files.createDirectories(directory.resolve(name)).resolve(EPISODE_FILE), "Pole heli õ")
   }
 
-  private fun digest(date: LocalDate = TODAY): Path = directory.resolve(DigestShow.WEEK.directory).resolve(date.toString())
+  private fun week(): Path = directory.resolve(DigestShow.WEEK.directory)
+
+  private fun digest(date: LocalDate = TODAY): Path = week().resolve(date.toString())
 
   companion object {
     private val TODAY = LocalDate.of(2026, 11, 16)

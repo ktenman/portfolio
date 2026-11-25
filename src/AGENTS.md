@@ -477,6 +477,7 @@ expect(value != null).toEqual(true)   // Don't use this!
 - Objects must not provide functionality used only by tests
 - Tests may not assert on side effects such as logging output
 - The best tests consist of a single statement
+- Test methods are straight-line code: no `if`, `when`, loops, `forEach`, `repeat`, `try`, `runCatching` or logic inside `match { }`; assert a failure with `expect { … }.toThrow<…>()`, build the state a test needs directly, and compare what a small named helper reads against literal values
 - Test method names must spell "cannot" and "dont" without apostrophes
 
 ### Test Isolation
