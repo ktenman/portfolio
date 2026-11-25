@@ -90,7 +90,7 @@ class SummaryServiceDateResolutionTest : SummaryServiceTestBase() {
     expect(result.entryDate).toEqual(date)
     expect(result.totalValue).toEqualNumerically(BigDecimal("2000.00"))
     verify { summaryCacheService.findByEntryDate(date.minusDays(1)) }
-    verify { investmentMetricsService.calculatePortfolioMetrics(any(), date) }
+    verify { investmentMetricsService.valuePortfolio(any(), date) }
   }
 
   @Test

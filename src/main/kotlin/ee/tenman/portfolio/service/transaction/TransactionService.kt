@@ -99,7 +99,6 @@ class TransactionService(
     }
   }
 
-  @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
   fun calculateTransactionProfits(
     transactions: List<PortfolioTransaction>,
     currentPrice: BigDecimal = BigDecimal.ZERO,

@@ -18,6 +18,7 @@ import ee.tenman.portfolio.dto.AllocationDto
 import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.etf.HoldingAggregationService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -34,7 +35,7 @@ class DiversificationCalculatorServiceTest {
   @BeforeEach
   fun setup() {
     every { instrumentRepository.findByProviderName(ProviderName.SYNTHETIC) } returns emptyList()
-    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository)
+    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository, HoldingAggregationService())
   }
 
   @Test
@@ -88,6 +89,18 @@ class DiversificationCalculatorServiceTest {
     val result = service.calculate(request)
 
     expect(result.weightedAnnualReturn).toEqualNumerically(BigDecimal("0.1320"))
+  }
+
+  @Test
+  fun `should order holdings of equal weight by name`() {
+    val etf = createInstrument(1L, "VWCE")
+    val marsh = createHolding(1L, "MMC", "Marsh", IndustrySector.FINANCE, "US", "United States")
+    val bny = createHolding(2L, "BK", "BNY Mellon", IndustrySector.FINANCE, "US", "United States")
+    val pank = createHolding(3L, "OKO", "Ökö Pank", IndustrySector.FINANCE, "EE", "Estonia")
+    val positions = listOf(marsh, pank, bny).map { createPosition(etf, it, BigDecimal("2.0000")) }
+    setupMocks(listOf(etf), positions)
+    val result = service.calculate(createRequest(AllocationDto(1L, BigDecimal("100"))))
+    expect(result.holdings.map { it.name }).toEqual(listOf("BNY Mellon", "Marsh", "Ökö Pank"))
   }
 
   @Test

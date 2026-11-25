@@ -7,6 +7,15 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 object InvestmentMath {
+  fun remainingCost(
+    totalCost: BigDecimal,
+    soldQuantity: BigDecimal,
+    heldQuantity: BigDecimal,
+  ): BigDecimal {
+    val soldShare = soldQuantity.divide(heldQuantity, CALCULATION_SCALE, RoundingMode.HALF_UP)
+    return totalCost.multiply(BigDecimal.ONE.subtract(soldShare)).setScale(CALCULATION_SCALE, RoundingMode.HALF_UP)
+  }
+
   fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions
       .filter { it.transactionType == TransactionType.SELL }

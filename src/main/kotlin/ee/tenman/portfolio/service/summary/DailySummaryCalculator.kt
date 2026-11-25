@@ -3,6 +3,7 @@ package ee.tenman.portfolio.service.summary
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
+import ee.tenman.portfolio.model.metrics.PreparedDay
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.pricing.PriceLookup
@@ -21,15 +22,30 @@ class DailySummaryCalculator(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     priceLookup: PriceLookup? = null,
+  ): PortfolioDailySummary = calculateFromPrepared(prepareDay(transactions, date, priceLookup), priceLookup)
+
+  fun prepareDay(
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate,
+    priceLookup: PriceLookup?,
+  ): PreparedDay =
+    PreparedDay(
+      date = date,
+      baselineProfit = calculateBaselineProfit(transactions, baselineDate(date), priceLookup),
+      trailingDays = trailingDays(transactions, date),
+      holdings = investmentMetricsService.prepareHoldings(transactions.groupBy { it.instrument }),
+    )
+
+  fun calculateFromPrepared(
+    day: PreparedDay,
+    priceLookup: PriceLookup?,
   ): PortfolioDailySummary {
-    if (transactions.isEmpty()) return createEmptySummary(date)
-    val baselineDate = date.minusDays(TRAILING_WINDOW_DAYS)
-    val baselineProfit = calculateBaselineProfit(transactions, baselineDate, priceLookup)
-    val metrics = metricsOn(transactions, date, priceLookup)
-    val days = ChronoUnit.DAYS.between(transactions.minOf { it.transactionDate }, date).coerceIn(1, TRAILING_WINDOW_DAYS)
-    val earningsPerDay = metrics.totalProfit.subtract(baselineProfit).divide(BigDecimal(days), CALCULATION_SCALE, RoundingMode.HALF_UP)
-    return buildSummary(date, metrics, earningsPerDay)
+    if (day.holdings.isEmpty()) return createEmptySummary(day.date)
+    val metrics = investmentMetricsService.valuePortfolio(day.holdings, day.date, priceLookup)
+    return buildSummary(day.date, metrics, day.baselineProfit, day.trailingDays)
   }
+
+  fun pricedDates(date: LocalDate): List<LocalDate> = listOf(date, baselineDate(date))
 
   fun shouldReuseYesterday(
     yesterdaySummary: PortfolioDailySummary,
@@ -54,20 +70,27 @@ class DailySummaryCalculator(
   ): BigDecimal {
     val earlier = transactions.filter { !it.transactionDate.isAfter(baselineDate) }
     if (earlier.isEmpty()) return BigDecimal.ZERO
-    return metricsOn(earlier, baselineDate, priceLookup).totalProfit
+    return investmentMetricsService.calculatePortfolioMetrics(earlier.groupBy { it.instrument }, baselineDate, priceLookup).totalProfit
   }
 
-  private fun metricsOn(
+  private fun baselineDate(date: LocalDate): LocalDate = date.minusDays(TRAILING_WINDOW_DAYS)
+
+  private fun trailingDays(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
-    priceLookup: PriceLookup?,
-  ): PortfolioMetrics = investmentMetricsService.calculatePortfolioMetrics(transactions.groupBy { it.instrument }, date, priceLookup)
+  ): Long {
+    val first = transactions.minOfOrNull { it.transactionDate } ?: date
+    return ChronoUnit.DAYS.between(first, date).coerceIn(1, TRAILING_WINDOW_DAYS)
+  }
 
   private fun buildSummary(
     date: LocalDate,
     metrics: PortfolioMetrics,
-    earningsPerDay: BigDecimal,
+    baselineProfit: BigDecimal,
+    trailingDays: Long,
   ): PortfolioDailySummary {
+    val earningsPerDay =
+      metrics.totalProfit.subtract(baselineProfit).divide(BigDecimal(trailingDays), CALCULATION_SCALE, RoundingMode.HALF_UP)
     val xirr = xirrCalculationService.calculateAdjustedXirr(metrics.xirrCashFlows, date)
     val xirrBigDecimal = xirr?.let { BigDecimal(it) } ?: BigDecimal.ZERO
     return PortfolioDailySummary(

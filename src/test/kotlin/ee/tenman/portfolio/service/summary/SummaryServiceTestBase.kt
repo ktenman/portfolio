@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
+import ee.tenman.portfolio.model.metrics.PreparedHolding
 import ee.tenman.portfolio.repository.PortfolioDailySummaryRepository
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
@@ -59,6 +60,13 @@ abstract class SummaryServiceTestBase {
     every { portfolioDailySummaryRepository.findByEntryDate(any()) } returns null
     every { investmentMetricsService.calculatePortfolioMetrics(any(), any(), any()) } returns
       PortfolioMetrics(totalValue = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO)
+    every { investmentMetricsService.prepareHoldings(any()) } answers {
+      firstArg<Map<Instrument, List<PortfolioTransaction>>>().map { (owner, trades) ->
+        PreparedHolding(owner, trades, null, BigDecimal.ZERO, emptyList())
+      }
+    }
+    every { investmentMetricsService.valuePortfolio(any(), any(), any()) } returns
+      PortfolioMetrics(totalValue = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO)
     every { xirrCalculationService.buildCashFlows(any(), any(), any()) } returns emptyList()
     every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.0
   }
@@ -69,11 +77,15 @@ abstract class SummaryServiceTestBase {
     totalProfit: BigDecimal,
     vararg cashFlows: CashFlow,
   ) {
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns
-      PortfolioMetrics(totalValue = totalValue, totalProfit = totalProfit).apply {
-        xirrCashFlows.addAll(cashFlows)
-      }
+    every { investmentMetricsService.valuePortfolio(any(), date) } returns metrics(totalValue, totalProfit, cashFlows)
+    every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns metrics(totalValue, totalProfit, cashFlows)
   }
+
+  private fun metrics(
+    totalValue: BigDecimal,
+    totalProfit: BigDecimal,
+    cashFlows: Array<out CashFlow>,
+  ): PortfolioMetrics = PortfolioMetrics(totalValue = totalValue, totalProfit = totalProfit).apply { xirrCashFlows.addAll(cashFlows) }
 
   protected fun createBuyTransaction(
     quantity: BigDecimal,

@@ -5,6 +5,7 @@ import ee.tenman.portfolio.domain.InstrumentMinutePrice
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.dto.IntradaySummaryPointDto
+import ee.tenman.portfolio.model.metrics.PreparedDay
 import ee.tenman.portfolio.repository.InstrumentMinutePriceRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.pricing.DailyPriceService
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 @Service
@@ -47,7 +49,8 @@ class IntradaySummaryReplayService(
     val captures = instrumentMinutePriceRepository.findForReplay(instruments.map { it.id }, from, until)
     if (captures.isEmpty()) return emptyList()
     val times = timestamps(maxOf(from, captures.first().capturedAt), until, bucketSeconds(days))
-    return replay(times, captures, transactions, dailyPriceService.buildPriceLookup(instruments))
+    val dates = times.map { it.atZone(clock.zone).toLocalDate() }.distinct().flatMap(dailySummaryCalculator::pricedDates)
+    return replay(times, captures, transactions, dailyPriceService.buildLatestPriceLookup(instruments, dates))
   }
 
   private fun timestamps(
@@ -70,6 +73,7 @@ class IntradaySummaryReplayService(
     lookup: PriceLookup,
   ): List<IntradaySummaryPointDto> {
     val prices = mutableMapOf<Long, BigDecimal>()
+    val days = mutableMapOf<LocalDate, PreparedDay>()
     var next = 0
     return times.map { time ->
       while (next < captures.size && !captures[next].capturedAt.isAfter(time)) {
@@ -77,8 +81,14 @@ class IntradaySummaryReplayService(
         next++
       }
       val date = time.atZone(clock.zone).toLocalDate()
-      val eligible = transactions.filter { !it.transactionDate.isAfter(date) }
-      dailySummaryCalculator.calculateFromTransactions(eligible, date, lookup.pinnedAt(date, prices)).toIntradayPointDto(time)
+      val day = days.getOrPut(date) { prepare(transactions, date, lookup) }
+      dailySummaryCalculator.calculateFromPrepared(day, lookup.pinnedAt(date, prices)).toIntradayPointDto(time)
     }
   }
+
+  private fun prepare(
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate,
+    lookup: PriceLookup,
+  ): PreparedDay = dailySummaryCalculator.prepareDay(transactions.filter { !it.transactionDate.isAfter(date) }, date, lookup)
 }

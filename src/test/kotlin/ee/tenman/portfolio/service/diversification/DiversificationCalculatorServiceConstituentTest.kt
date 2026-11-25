@@ -12,6 +12,7 @@ import ee.tenman.portfolio.dto.DiversificationCalculatorRequestDto
 import ee.tenman.portfolio.dto.EtfDetailDto
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.service.etf.HoldingAggregationService
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
@@ -26,7 +27,7 @@ class DiversificationCalculatorServiceConstituentTest {
 
   @BeforeEach
   fun setup() {
-    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository)
+    service = DiversificationCalculatorService(instrumentRepository, etfPositionRepository, HoldingAggregationService())
   }
 
   @Test

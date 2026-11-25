@@ -15,6 +15,8 @@ data class InstrumentTransactionData(
       .fold(BigDecimal.ZERO) { acc, qty -> acc.add(qty) }
   }
 
+  fun isHeld(filter: Set<Platform>?): Boolean = quantityForPlatforms(filter) > BigDecimal.ZERO
+
   fun platformsForFilter(filter: Set<Platform>?): Set<Platform> {
     if (filter == null) return platforms
     return platforms.filter { it in filter }.toSet()

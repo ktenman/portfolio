@@ -46,7 +46,7 @@ class PortfolioRangeChangeService(
     platforms: List<Platform>?,
   ): PortfolioDailySummary? {
     val start = range.startDate(LocalDate.now(clock)) ?: return null
-    return seriesService.getSummaries(range, platforms).firstOrNull()?.takeUnless { it.entryDate.isAfter(start) }
+    return seriesService.getOpening(platforms, start)
   }
 
   private fun contributions(

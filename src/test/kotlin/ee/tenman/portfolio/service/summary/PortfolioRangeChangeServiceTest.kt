@@ -43,8 +43,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should report the whole profit when the range opens before the first recorded day`() {
     givenCurrentSummary()
-    every { seriesService.getSummaries(TimeRange.ONE_YEAR, null) } returns
-      listOf(summary(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getOpening(null, LocalDate.of(2025, 8, 14)) } returns null
 
     expect(service.calculate(TimeRange.ONE_YEAR, null).changeAmount).toEqualNumerically(BigDecimal("818.96"))
   }
@@ -52,8 +51,8 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should subtract the profit recorded on the range start date`() {
     givenCurrentSummary()
-    every { seriesService.getSummaries(TimeRange.ONE_WEEK, null) } returns
-      listOf(summary(LocalDate.of(2026, 8, 7), BigDecimal("24138.46"), BigDecimal("424.52")))
+    every { seriesService.getOpening(null, LocalDate.of(2026, 8, 7)) } returns
+      summary(LocalDate.of(2026, 8, 7), BigDecimal("24138.46"), BigDecimal("424.52"))
 
     expect(service.calculate(TimeRange.ONE_WEEK, null).changeAmount).toEqualNumerically(BigDecimal("394.44"))
   }
@@ -148,7 +147,7 @@ class PortfolioRangeChangeServiceTest {
   @Test
   fun `should report a zero change when the range has no recorded days`() {
     givenCurrentSummary(BigDecimal.ZERO, BigDecimal.ZERO)
-    every { seriesService.getSummaries(TimeRange.SIX_MONTHS, null) } returns emptyList()
+    every { seriesService.getOpening(null, LocalDate.of(2026, 2, 14)) } returns null
 
     expect(service.calculate(TimeRange.SIX_MONTHS, null).changeAmount).toEqualNumerically(BigDecimal.ZERO)
   }
@@ -158,8 +157,7 @@ class PortfolioRangeChangeServiceTest {
     val platforms = listOf(Platform.LIGHTYEAR_BUSINESS)
     every { platformSummaryCacheService.getCurrentDaySummaryForPlatforms(platforms) } returns
       summary(LocalDate.of(2026, 8, 14), BigDecimal("24532.90"), BigDecimal("818.96"))
-    every { seriesService.getSummaries(TimeRange.FIVE_YEARS, platforms) } returns
-      listOf(summary(LocalDate.of(2026, 6, 16), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getOpening(platforms, LocalDate.of(2021, 8, 14)) } returns null
 
     expect(service.calculate(TimeRange.FIVE_YEARS, platforms).changeAmount).toEqualNumerically(BigDecimal("818.96"))
   }
@@ -180,8 +178,8 @@ class PortfolioRangeChangeServiceTest {
 
   private fun givenOpeningYear() {
     givenCurrentSummary()
-    every { seriesService.getSummaries(TimeRange.ONE_YEAR, null) } returns
-      listOf(summary(LocalDate.of(2025, 8, 14), BigDecimal("5897.21"), BigDecimal("-102.79")))
+    every { seriesService.getOpening(null, LocalDate.of(2025, 8, 14)) } returns
+      summary(LocalDate.of(2025, 8, 14), BigDecimal("5897.21"), BigDecimal("-102.79"))
   }
 
   private fun buy(
