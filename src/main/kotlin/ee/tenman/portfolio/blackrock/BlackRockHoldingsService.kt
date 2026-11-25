@@ -15,7 +15,7 @@ class BlackRockHoldingsService(
 
   @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
   fun fetchHoldings(fund: BlackRockFund): List<HoldingData> {
-    val csv = blackRockHoldingsClient.getHoldingsCsv(fund.productId, "${fund}_holdings", "csv", "fund")
+    val csv = blackRockHoldingsClient.getHoldingsCsv(fund.productId)
     val holdings = BlackRockCsvParser.parse(csv)
     if (holdings.isEmpty()) {
       log.warn("BlackRock returned 0 equity holdings for $fund")

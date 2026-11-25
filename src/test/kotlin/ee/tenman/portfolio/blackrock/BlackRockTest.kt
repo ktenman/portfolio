@@ -27,7 +27,7 @@ class BlackRockHoldingsServiceTest {
 
   @Test
   fun `should return holdings ranked by descending weight`() {
-    every { client.getHoldingsCsv(any(), any(), any(), any()) } returns
+    every { client.getHoldingsCsv(any()) } returns
       listOf("Fund Holdings as of,\"11/Jun/2026\"", " ", header, row("AAPL", "6.81"), row("NVDA", "7.42"))
         .joinToString("\n")
 
@@ -43,7 +43,7 @@ class BlackRockHoldingsServiceTest {
 
   @Test
   fun `should return empty list when csv has no equity rows`() {
-    every { client.getHoldingsCsv(any(), any(), any(), any()) } returns
+    every { client.getHoldingsCsv(any()) } returns
       listOf("Fund Holdings as of,\"11/Jun/2026\"", " ", header).joinToString("\n")
 
     val holdings = service.fetchHoldings(BlackRockFund.CSUS)
