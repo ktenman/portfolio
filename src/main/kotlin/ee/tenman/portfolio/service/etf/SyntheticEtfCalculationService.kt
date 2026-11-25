@@ -1,114 +1,38 @@
 package ee.tenman.portfolio.service.etf
 
-import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.InstrumentCategory
 import ee.tenman.portfolio.domain.Platform
+import ee.tenman.portfolio.model.holding.HoldingPositionRow
 import ee.tenman.portfolio.model.holding.InternalHoldingData
-import ee.tenman.portfolio.model.holding.SyntheticHoldingValue
-import ee.tenman.portfolio.repository.EtfPositionRepository
-import ee.tenman.portfolio.repository.InstrumentRepository
+import ee.tenman.portfolio.model.holding.toHoldingData
 import ee.tenman.portfolio.service.pricing.DailyPriceService
-import ee.tenman.portfolio.service.transaction.TransactionCalculationService
+import ee.tenman.portfolio.service.transaction.InstrumentTransactionData
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
 @Service
 class SyntheticEtfCalculationService(
-  private val instrumentRepository: InstrumentRepository,
-  private val etfPositionRepository: EtfPositionRepository,
-  private val transactionCalculationService: TransactionCalculationService,
   private val dailyPriceService: DailyPriceService,
 ) {
-  fun hasActiveHoldings(
-    syntheticEtfId: Long,
-    platformFilter: Set<Platform>? = null,
-  ): Boolean {
-    val positions = etfPositionRepository.findLatestPositionsByEtfId(syntheticEtfId)
-    val tickers = positions.mapNotNull { it.holding.ticker }
-    if (tickers.isEmpty()) return false
-    val instruments = instrumentRepository.findBySymbolIn(tickers)
-    if (instruments.isEmpty()) return false
-    val transactionData = transactionCalculationService.batchCalculateAll(instruments.map { it.id })
-    return transactionData.values.any { it.isHeld(platformFilter) }
-  }
-
   fun buildHoldings(
-    positions: List<EtfPosition>,
+    positions: List<HoldingPositionRow>,
     etfSymbol: String,
-    platformFilter: Set<Platform>? = null,
-  ): List<InternalHoldingData> {
-    val (holdingValues, instrumentsByTicker) = calculateHoldingValuesWithInstruments(positions, platformFilter)
-    return holdingValues.map { h ->
-      val holding = h.position.holding
-      val ticker = holding.ticker
-      val instrument = ticker?.let { instrumentsByTicker[it] }
-      InternalHoldingData(
-        holdingUuid = holding.uuid,
-        ticker = ticker?.uppercase()?.trim()?.takeIf { it.isNotBlank() },
-        name = holding.name.trim(),
-        sector = resolveSector(holding.sector?.displayName, instrument),
-        industry = holding.industry,
-        countryCode = holding.countryCode?.trim()?.takeIf { it.isNotBlank() },
-        countryName = holding.countryName?.trim()?.takeIf { it.isNotBlank() },
-        value = h.value,
-        etfSymbol = etfSymbol,
-        platforms = h.platforms,
-      )
+    platformFilter: Set<Platform>?,
+    instrumentsByTicker: Map<String, Instrument>,
+    transactionData: Map<Long, InstrumentTransactionData>,
+  ): List<InternalHoldingData> =
+    positions.mapNotNull { position ->
+      val instrument = position.ticker?.let { instrumentsByTicker[it] } ?: return@mapNotNull null
+      val data = transactionData[instrument.id] ?: return@mapNotNull null
+      val quantity = data.quantityForPlatforms(platformFilter)
+      if (quantity <= BigDecimal.ZERO) return@mapNotNull null
+      val value = quantity.multiply(dailyPriceService.getCurrentPrice(instrument))
+      val holding = position.toHoldingData(value, etfSymbol, data.platformsForFilter(platformFilter))
+      holding.copy(sector = holding.sector ?: cryptoSector(instrument))
     }
-  }
 
-  private fun resolveSector(
-    holdingSector: String?,
-    instrument: Instrument?,
-  ): String? =
-    holdingSector?.trim()?.takeIf { it.isNotBlank() }
-      ?: instrument
-        ?.category
-        ?.takeIf { it.equals(InstrumentCategory.CRYPTO.name, ignoreCase = true) }
-        ?.let { IndustrySector.CRYPTOCURRENCY.displayName }
-
-  fun calculateHoldingValues(
-    positions: List<EtfPosition>,
-    platformFilter: Set<Platform>? = null,
-  ): List<SyntheticHoldingValue> = calculateHoldingValuesWithInstruments(positions, platformFilter).first
-
-  private fun calculateHoldingValuesWithInstruments(
-    positions: List<EtfPosition>,
-    platformFilter: Set<Platform>? = null,
-  ): Pair<List<SyntheticHoldingValue>, Map<String, Instrument>> {
-    val tickers = positions.mapNotNull { it.holding.ticker }
-    if (tickers.isEmpty()) return Pair(emptyList(), emptyMap())
-    val instrumentsByTicker = instrumentRepository.findBySymbolIn(tickers).associateBy { it.symbol }
-    val transactionData = transactionCalculationService.batchCalculateAll(instrumentsByTicker.values.map { it.id })
-    val holdingValues =
-      positions.mapNotNull { pos ->
-        val ticker = pos.holding.ticker ?: return@mapNotNull null
-        val instrument = instrumentsByTicker[ticker] ?: return@mapNotNull null
-        val data = transactionData[instrument.id] ?: return@mapNotNull null
-        val quantity = data.quantityForPlatforms(platformFilter)
-        if (quantity <= BigDecimal.ZERO) return@mapNotNull null
-        val price = dailyPriceService.getCurrentPrice(instrument)
-        val value = quantity.multiply(price)
-        val platforms = data.platformsForFilter(platformFilter)
-        SyntheticHoldingValue(pos, value, platforms)
-      }
-    return Pair(holdingValues, instrumentsByTicker)
-  }
-
-  fun calculateTotalValue(
-    etfs: List<Instrument>,
-    platformFilter: Set<Platform>? = null,
-  ): BigDecimal {
-    if (etfs.isEmpty()) return BigDecimal.ZERO
-    val allPositions = etfPositionRepository.findLatestPositionsByEtfIds(etfs.map { it.id })
-    val positionsByEtfId = allPositions.groupBy { it.etfInstrument.id }
-    return etfs.fold(BigDecimal.ZERO) { acc, etf ->
-      val positions = positionsByEtfId[etf.id] ?: emptyList()
-      val holdingValues = calculateHoldingValues(positions, platformFilter)
-      val syntheticValue = holdingValues.fold(BigDecimal.ZERO) { sum, h -> sum.add(h.value) }
-      acc.add(syntheticValue)
-    }
-  }
+  private fun cryptoSector(instrument: Instrument): String? =
+    IndustrySector.CRYPTOCURRENCY.displayName.takeIf { instrument.category.equals(InstrumentCategory.CRYPTO.name, ignoreCase = true) }
 }

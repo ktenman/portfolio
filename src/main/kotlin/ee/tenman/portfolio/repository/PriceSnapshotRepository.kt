@@ -1,7 +1,6 @@
 package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.PriceSnapshot
-import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -52,19 +51,15 @@ interface PriceSnapshotRepository : JpaRepository<PriceSnapshot, Long> {
   @Query(
     """
     SELECT ps FROM PriceSnapshot ps
-    WHERE ps.instrument.id = :instrumentId
-      AND ps.providerName = :providerName
-      AND ps.snapshotHour BETWEEN :earliestHour AND :targetHour
-    ORDER BY ps.snapshotHour DESC
-    LIMIT 1
+    WHERE ps.instrument.id IN :instrumentIds
+      AND ps.snapshotHour BETWEEN :earliestHour AND :latestHour
     """,
   )
-  fun findClosestAtOrBefore(
-    instrumentId: Long,
-    providerName: ProviderName,
+  fun findAllBetween(
+    instrumentIds: Collection<Long>,
     earliestHour: Instant,
-    targetHour: Instant,
-  ): PriceSnapshot?
+    latestHour: Instant,
+  ): List<PriceSnapshot>
 
   @Modifying(clearAutomatically = true)
   @Query(

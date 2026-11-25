@@ -9,19 +9,21 @@ import java.math.BigDecimal
 
 @Service
 class HoldingAggregationService {
-  fun aggregateHoldings(holdings: List<InternalHoldingData>): Map<HoldingKey, HoldingValue> =
-    holdings
-      .groupBy { holding -> buildHoldingGroupKey(holding) }
+  fun aggregateHoldings(holdings: List<InternalHoldingData>): Map<HoldingKey, HoldingValue> {
+    val keysByName = HashMap<String, String>()
+    return holdings
+      .groupBy { holding -> keysByName.getOrPut(holding.name) { buildHoldingGroupKey(holding) } }
       .entries
       .associate { (_, groupedHoldings) -> buildHoldingEntry(groupedHoldings) }
+  }
 
   private fun buildHoldingGroupKey(holding: InternalHoldingData): String = "name:${normalizeHoldingName(holding.name)}"
 
-  fun normalizeHoldingName(name: String): String =
-    name
-      .lowercase()
-      .replace(WHITESPACE, " ")
-      .trim()
+  fun normalizeHoldingName(name: String): String {
+    val lowercase = name.lowercase()
+    if (lowercase.none { it in REGEX_ONLY_WHITESPACE } && !lowercase.contains("  ")) return lowercase.trim()
+    return lowercase.replace(WHITESPACE, " ").trim()
+  }
 
   private fun buildHoldingEntry(groupedHoldings: List<InternalHoldingData>): Pair<HoldingKey, HoldingValue> {
     val key = buildHoldingKey(groupedHoldings)
@@ -71,5 +73,6 @@ class HoldingAggregationService {
 
   companion object {
     private val WHITESPACE = Regex("\\s+")
+    private const val REGEX_ONLY_WHITESPACE = "\t\n\u000B\u000C\r"
   }
 }

@@ -1,6 +1,7 @@
 package ee.tenman.portfolio.controller
 
 import ee.tenman.portfolio.configuration.aspect.Loggable
+import ee.tenman.portfolio.configuration.aspect.SingleFlight
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.dto.InstrumentDto
 import ee.tenman.portfolio.dto.InstrumentsResponse
@@ -44,6 +45,7 @@ class InstrumentController(
 
   @GetMapping
   @Loggable
+  @SingleFlight
   fun getAllInstruments(
     @RequestParam(required = false) platforms: List<String>?,
     @RequestParam(defaultValue = "1D") period: TimeRange,

@@ -1,7 +1,7 @@
 package ee.tenman.portfolio.model.holding
 
-import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.GicsIndustry
+import ee.tenman.portfolio.domain.IndustrySector
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.service.calculation.InvestmentMath
@@ -22,12 +22,6 @@ data class HoldingValue(
   val totalValue: BigDecimal,
   val etfSymbols: MutableSet<String>,
   val platforms: MutableSet<Platform>,
-)
-
-data class SyntheticHoldingValue(
-  val position: EtfPosition,
-  val value: BigDecimal,
-  val platforms: Set<Platform>,
 )
 
 data class HoldingKey(
@@ -53,26 +47,38 @@ data class InternalHoldingData(
   val platforms: Set<Platform>,
 )
 
-fun EtfPosition.toHoldingData(
+data class HoldingPositionRow(
+  val etfInstrumentId: Long,
+  val weightPercentage: BigDecimal,
+  val holdingUuid: UUID,
+  val ticker: String?,
+  val name: String,
+  val sector: IndustrySector?,
+  val industry: GicsIndustry?,
+  val countryCode: String?,
+  val countryName: String?,
+)
+
+fun HoldingPositionRow.toHoldingData(
   value: BigDecimal,
   etfSymbol: String,
   platforms: Set<Platform>,
 ) = InternalHoldingData(
-  holdingUuid = holding.uuid,
+  holdingUuid = holdingUuid,
   ticker =
-    holding.ticker
+    ticker
       ?.uppercase()
       ?.trim()
       ?.takeIf { it.isNotBlank() },
-  name = holding.name.trim(),
-  sector = holding.sector?.displayName,
-  industry = holding.industry,
+  name = name.trim(),
+  sector = sector?.displayName,
+  industry = industry,
   countryCode =
-    holding.countryCode
+    countryCode
       ?.trim()
       ?.takeIf { it.isNotBlank() },
   countryName =
-    holding.countryName
+    countryName
       ?.trim()
       ?.takeIf { it.isNotBlank() },
   value = value,

@@ -52,6 +52,22 @@ class EtfPositionRepositoryIT {
   }
 
   @Test
+  fun `should return holding rows from only the latest snapshot of each fund`() {
+    val (vwce, vgla) =
+      transactionRunner.runInTransaction {
+        val vwce = saveFund("VWCE:GER:EUR")
+        insertPositions(vwce, 2, LocalDate.of(2026, 8, 31))
+        insertPositions(vwce, 3, LocalDate.of(2026, 7, 31))
+        val vgla = saveFund("VGLA:GER:EUR")
+        insertPositions(vgla, 1, LocalDate.of(2026, 9, 22))
+        insertPositions(vgla, 4, LocalDate.of(2026, 8, 31))
+        vwce.id to vgla.id
+      }
+    val rows = etfPositionRepository.findLatestHoldingRowsByEtfIds(listOf(vwce, vgla))
+    expect(rows.groupingBy { it.etfInstrumentId }.eachCount()).toEqual(mapOf(vwce to 2, vgla to 1))
+  }
+
+  @Test
   fun `should find the latest snapshot date for the requested fund`() {
     transactionRunner.runInTransaction {
       val fund = saveFund("VWCE:GER:EUR")

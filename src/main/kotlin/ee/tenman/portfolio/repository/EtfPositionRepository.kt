@@ -2,6 +2,7 @@ package ee.tenman.portfolio.repository
 
 import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.model.holding.HoldingPositionRow
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -72,24 +73,6 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
 
   @Query(
     """
-    SELECT ep FROM EtfPosition ep
-    JOIN FETCH ep.etfInstrument
-    JOIN FETCH ep.holding
-    WHERE ep.etfInstrument.id = :etfInstrumentId
-    AND ep.snapshotDate = (
-      SELECT MAX(ep2.snapshotDate)
-      FROM EtfPosition ep2
-      WHERE ep2.etfInstrument.id = :etfInstrumentId
-    )
-    ORDER BY ep.weightPercentage DESC
-  """,
-  )
-  fun findLatestPositionsByEtfId(
-    @Param("etfInstrumentId") etfInstrumentId: Long,
-  ): List<EtfPosition>
-
-  @Query(
-    """
     WITH latest AS MATERIALIZED (
       SELECT i.id AS etfInstrumentId,
         (SELECT MAX(ep2.snapshotDate) FROM EtfPosition ep2 WHERE ep2.etfInstrument.id = i.id) AS snapshotDate
@@ -107,6 +90,27 @@ interface EtfPositionRepository : JpaRepository<EtfPosition, Long> {
   fun findLatestPositionsByEtfIds(
     @Param("etfInstrumentIds") etfInstrumentIds: List<Long>,
   ): List<EtfPosition>
+
+  @Query(
+    """
+    WITH latest AS MATERIALIZED (
+      SELECT i.id AS etfInstrumentId,
+        (SELECT MAX(ep2.snapshotDate) FROM EtfPosition ep2 WHERE ep2.etfInstrument.id = i.id) AS snapshotDate
+      FROM Instrument i
+      WHERE i.id IN :etfInstrumentIds
+    )
+    SELECT new ee.tenman.portfolio.model.holding.HoldingPositionRow(
+      ep.etfInstrument.id, ep.weightPercentage, h.uuid, h.ticker, h.name, h.sector, h.industry, h.countryCode, h.countryName
+    )
+    FROM EtfPosition ep
+    JOIN ep.holding h
+    JOIN latest l ON l.etfInstrumentId = ep.etfInstrument.id AND ep.snapshotDate >= l.snapshotDate
+    WHERE ep.etfInstrument.id IN :etfInstrumentIds
+  """,
+  )
+  fun findLatestHoldingRowsByEtfIds(
+    @Param("etfInstrumentIds") etfInstrumentIds: List<Long>,
+  ): List<HoldingPositionRow>
 
   @Query("SELECT DISTINCT ep.etfInstrument.id FROM EtfPosition ep")
   fun findDistinctEtfInstrumentIds(): List<Long>

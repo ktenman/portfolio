@@ -6,6 +6,7 @@ import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import ee.tenman.portfolio.domain.TimeRange
 import ee.tenman.portfolio.model.InstrumentSnapshot
+import ee.tenman.portfolio.model.PriceChange
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
 import java.math.BigDecimal
@@ -129,4 +130,5 @@ data class InstrumentEnrichmentContext(
   val calculationDate: LocalDate,
   val priceChangePeriod: TimeRange,
   val targetPlatforms: Set<Platform>?,
+  val priceChanges: Map<Long, PriceChange>,
 )
