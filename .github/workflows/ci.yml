@@ -376,7 +376,8 @@ jobs:
           base: ${{ steps.deployed.outputs.sha }}
           filters: |
             backend:
-              - 'src/**'
+              - 'src/main/**'
+              - 'src/Dockerfile*'
               - 'build.gradle.kts'
               - 'settings.gradle.kts'
               - 'gradle/**'
@@ -398,6 +399,7 @@ jobs:
     needs: [detect-changes]
     if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     permissions:
       contents: read
       packages: write
@@ -465,8 +467,14 @@ jobs:
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         if: steps.check.outputs.should_build == 'true' && (matrix.name == 'backend' || matrix.name == 'radio-worker')
-      - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
+      - uses: actions/cache@v6
+        id: native-deploy
         if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && env.BACKEND_NATIVE == 'true'
+        with:
+          path: build/native/nativeCompile
+          key: native-deploy-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**', '.github/workflows/ci.yml') }}
+      - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
+        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && env.BACKEND_NATIVE == 'true' && steps.native-deploy.outputs.cache-hit != 'true'
         with:
           java-version: '25'
           distribution: 'graalvm-community'
@@ -476,7 +484,7 @@ jobs:
           ./gradlew aotClasses -Pnative --build-cache
           ./gradlew --stop
           ./gradlew nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
-        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && env.BACKEND_NATIVE == 'true'
+        if: steps.check.outputs.should_build == 'true' && matrix.name == 'backend' && env.BACKEND_NATIVE == 'true' && steps.native-deploy.outputs.cache-hit != 'true'
         env:
           TELEGRAM_BOT_ENABLED: true
           MANAGEMENT_SERVER_PORT: 9090
