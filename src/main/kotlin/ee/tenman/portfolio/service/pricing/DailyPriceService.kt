@@ -56,16 +56,15 @@ class DailyPriceService(
   }
 
   @Transactional(readOnly = true)
-  fun findPriceNear(
-    instrument: Instrument,
-    targetDate: LocalDate,
-    lookbackDays: Long = 5,
-  ): DailyPrice? =
-    dailyPriceRepository.findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
-      instrument,
-      targetDate.minusDays(lookbackDays),
-      targetDate,
-    )
+  fun findLatestPrices(
+    instruments: Collection<Instrument>,
+    date: LocalDate,
+    earliestDate: LocalDate,
+  ): Map<Long, BigDecimal> =
+    dailyPriceRepository
+      .findLatestPricePoints(instruments, date)
+      .filterNot { it.entryDate.isBefore(earliestDate) }
+      .associate { it.instrumentId to it.closePrice }
 
   @Transactional(readOnly = true)
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice> = dailyPriceRepository.findAllByInstrument(instrument)

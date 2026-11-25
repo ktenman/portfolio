@@ -6,8 +6,8 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.EtfHolding
-import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.IndustrySector
+import ee.tenman.portfolio.model.holding.HoldingPositionRow
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
@@ -15,7 +15,6 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.util.Optional
 
 class EtfBenchmarkServiceTest {
@@ -23,7 +22,6 @@ class EtfBenchmarkServiceTest {
   private val etfPositionRepository = mockk<EtfPositionRepository>()
   private val etfBenchmarkService =
     EtfBenchmarkService(instrumentRepository, etfPositionRepository, HoldingAggregationService())
-  private val snapshotDate = LocalDate.of(2026, 9, 12)
   private val benchmark = createInstrument(symbol = "VWCE:GER:EUR", id = 11L)
 
   @Test
@@ -60,6 +58,14 @@ class EtfBenchmarkServiceTest {
     val result = etfBenchmarkService.getBenchmarkHoldings("VWCE:GER:EUR")
 
     expect(result).toHaveSize(1)
+  }
+
+  @Test
+  fun `should key merged share classes on the heaviest holding when rows arrive lightest first`() {
+    val heavy = createHolding(1L, "GOOGL", "Alphabet Inc.")
+    stubPositions(position(createHolding(2L, "GOOG", "Alphabet Inc."), BigDecimal("0.8000")), position(heavy, BigDecimal("1.2000")))
+    val result = etfBenchmarkService.getBenchmarkHoldings("VWCE:GER:EUR")
+    expect(result.single().holdingUuid).toEqual(heavy.uuid)
   }
 
   @Test
@@ -137,20 +143,25 @@ class EtfBenchmarkServiceTest {
     expect(result).toBeEmpty()
   }
 
-  private fun stubPositions(vararg positions: EtfPosition) {
+  private fun stubPositions(vararg positions: HoldingPositionRow) {
     every { instrumentRepository.findBySymbol("VWCE:GER:EUR") } returns Optional.of(benchmark)
-    every { etfPositionRepository.findLatestPositionsByEtfId(11L) } returns positions.toList()
+    every { etfPositionRepository.findLatestHoldingRowsByEtfIds(listOf(11L)) } returns positions.toList()
   }
 
   private fun position(
     holding: EtfHolding,
     weight: BigDecimal,
-  ): EtfPosition =
-    EtfPosition(
-      etfInstrument = benchmark,
-      holding = holding,
+  ): HoldingPositionRow =
+    HoldingPositionRow(
+      etfInstrumentId = benchmark.id,
       weightPercentage = weight,
-      snapshotDate = snapshotDate,
+      holdingUuid = holding.uuid,
+      ticker = holding.ticker,
+      name = holding.name,
+      sector = holding.sector,
+      industry = holding.industry,
+      countryCode = holding.countryCode,
+      countryName = holding.countryName,
     )
 
   private fun createHolding(

@@ -8,6 +8,7 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.cache.RedisCacheWriter
 import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
 import java.time.Duration
 
 @Configuration
@@ -24,7 +25,8 @@ class RedisConfiguration {
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
     cacheConfigurations[PLATFORM_SUMMARY_CACHE] =
       RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
-    cacheConfigurations[ETF_BREAKDOWN_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2))
+    cacheConfigurations[ETF_BREAKDOWN_CACHE] =
+      RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(2)).serializeValuesWith(SerializationPair.byteArray())
     cacheConfigurations[LIGHTYEAR_UUID_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
     cacheConfigurations[LOGO_CANDIDATES_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1))
     cacheConfigurations[LOGO_NAME_SEARCH_CACHE] = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofDays(1))
@@ -49,7 +51,7 @@ class RedisConfiguration {
     const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"
     const val TRANSACTION_CACHE = "transaction-cache-v6"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
-    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v4"
+    const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v5"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v4"
     const val LOGO_CANDIDATES_CACHE: String = "logo-candidates-v4"
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v4"

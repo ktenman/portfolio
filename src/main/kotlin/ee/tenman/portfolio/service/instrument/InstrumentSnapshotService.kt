@@ -64,11 +64,13 @@ class InstrumentSnapshotService(
         .filter { !it.transactionDate.isAfter(calculationDate) }
         .groupBy { it.instrument.id }
     val priceLookup = dailyPriceService.buildLatestPriceLookup(instruments, listOf(calculationDate))
+    val priceChangePeriod = period ?: TimeRange.ONE_DAY
     val context =
       InstrumentEnrichmentContext(
         calculationDate = calculationDate,
-        priceChangePeriod = period ?: TimeRange.ONE_DAY,
+        priceChangePeriod = priceChangePeriod,
         targetPlatforms = parsePlatformFilters(platforms),
+        priceChanges = priceChangeService.getPriceChanges(instruments, priceChangePeriod, priceLookup),
       )
     val snapshotsWithTransactions = mutableListOf<Pair<InstrumentSnapshot, List<PortfolioTransaction>>>()
     instruments.forEach { instrument ->
@@ -177,8 +179,7 @@ class InstrumentSnapshotService(
     if (periodStart == null || transactions.minOf { it.transactionDate }.isAfter(periodStart)) {
       return totalReturn(metrics)
     }
-    return priceChangeService
-      .getPriceChange(instrument, context.priceChangePeriod)
+    return context.priceChanges[instrument.id]
       ?.let { PriceChange(it.changeAmount.multiply(metrics.quantity), it.changePercent) }
   }
 

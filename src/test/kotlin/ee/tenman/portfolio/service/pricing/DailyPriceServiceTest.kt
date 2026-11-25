@@ -237,6 +237,18 @@ class DailyPriceServiceTest {
   }
 
   @Test
+  fun `should find the latest price of each instrument on or after the earliest date`() {
+    val other = createInstrument(symbol = "ÄRI", id = 2L)
+    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument, other), testDate) } returns
+      listOf(
+        DailyPricePoint(testInstrument.id, testDate.minusDays(5), BigDecimal("150.5")),
+        DailyPricePoint(other.id, testDate.minusDays(6), BigDecimal("90.25")),
+      )
+    val prices = dailyPriceService.findLatestPrices(listOf(testInstrument, other), testDate, testDate.minusDays(5))
+    expect(prices.mapValues { it.value.toPlainString() }).toEqual(mapOf(testInstrument.id to "150.5"))
+  }
+
+  @Test
   fun `should getCurrentPrice return ONE for cash instrument even with null currentPrice`() {
     val result = dailyPriceService.getCurrentPrice(createCashInstrument(currentPrice = null))
 

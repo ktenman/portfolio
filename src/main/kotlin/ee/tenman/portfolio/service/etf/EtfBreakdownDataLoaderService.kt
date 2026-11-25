@@ -4,6 +4,8 @@ import ee.tenman.portfolio.domain.EtfPosition
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
+import ee.tenman.portfolio.model.holding.HoldingPositionRow
+import ee.tenman.portfolio.model.holding.InternalHoldingData
 import ee.tenman.portfolio.repository.EtfPositionRepository
 import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.transaction.InstrumentTransactionData
@@ -16,6 +18,7 @@ class EtfBreakdownDataLoaderService(
   private val instrumentRepository: InstrumentRepository,
   private val etfPositionRepository: EtfPositionRepository,
   private val transactionCalculationService: TransactionCalculationService,
+  private val syntheticEtfCalculationService: SyntheticEtfCalculationService,
 ) {
   companion object {
     private val DIAGNOSTIC_PROVIDERS =
@@ -27,20 +30,54 @@ class EtfBreakdownDataLoaderService(
     etfSymbols: List<String>?,
     platformFilter: Set<Platform>?,
   ): EtfBreakdownData {
-    val allInstruments = instrumentRepository.findByProviderNameIn(BREAKDOWN_PROVIDERS)
-    val filteredInstruments =
-      etfSymbols?.let { symbols -> allInstruments.filter { it.symbol in symbols } } ?: allInstruments
-    val instrumentIds = filteredInstruments.map { it.id }
-    val transactionData = transactionCalculationService.batchCalculateAll(instrumentIds)
+    val allInstruments = instrumentRepository.findAll().toList()
+    val filteredInstruments = selectInstruments(allInstruments, etfSymbols)
+    val hasSynthetic = filteredInstruments.any { it.isSynthetic() }
+    val transactionData =
+      transactionCalculationService.batchCalculateAll((if (hasSynthetic) allInstruments else filteredInstruments).map { it.id })
     val filteredTransactionData = applyPlatformFilter(transactionData, platformFilter)
     val heldIds = filteredInstruments.filter { isHeld(it, filteredTransactionData, platformFilter) }.map { it.id }
-    val allPositions = loadPositionsForInstruments(heldIds)
+    val positionsByEtfId = loadHoldingRows(heldIds)
     return EtfBreakdownData(
       instruments = filteredInstruments,
-      positionsByEtfId = allPositions.groupBy { it.etfInstrument.id },
+      positionsByEtfId = positionsByEtfId,
       transactionDataByInstrumentId = filteredTransactionData,
       allTransactionData = transactionData,
+      syntheticHoldingsByEtfId =
+        buildSyntheticHoldings(filteredInstruments, positionsByEtfId, platformFilter, allInstruments, transactionData),
     )
+  }
+
+  private fun selectInstruments(
+    allInstruments: List<Instrument>,
+    etfSymbols: List<String>?,
+  ): List<Instrument> {
+    val breakdownInstruments = allInstruments.filter { it.providerName in BREAKDOWN_PROVIDERS }
+    return etfSymbols?.let { symbols -> breakdownInstruments.filter { it.symbol in symbols } } ?: breakdownInstruments
+  }
+
+  private fun loadHoldingRows(etfIds: List<Long>): Map<Long, List<HoldingPositionRow>> {
+    if (etfIds.isEmpty()) return emptyMap()
+    return etfPositionRepository
+      .findLatestHoldingRowsByEtfIds(etfIds)
+      .sortedByDescending { it.weightPercentage }
+      .groupBy { it.etfInstrumentId }
+  }
+
+  private fun buildSyntheticHoldings(
+    instruments: List<Instrument>,
+    positionsByEtfId: Map<Long, List<HoldingPositionRow>>,
+    platformFilter: Set<Platform>?,
+    allInstruments: List<Instrument>,
+    transactionData: Map<Long, InstrumentTransactionData>,
+  ): Map<Long, List<InternalHoldingData>> {
+    val synthetic = instruments.filter { it.isSynthetic() }
+    if (synthetic.isEmpty()) return emptyMap()
+    val instrumentsBySymbol = allInstruments.associateBy { it.symbol }
+    return synthetic.associate { etf ->
+      val positions = positionsByEtfId[etf.id].orEmpty()
+      etf.id to syntheticEtfCalculationService.buildHoldings(positions, etf.symbol, platformFilter, instrumentsBySymbol, transactionData)
+    }
   }
 
   fun loadDiagnosticData(): DiagnosticData {
@@ -60,7 +97,7 @@ class EtfBreakdownDataLoaderService(
     transactionData: Map<Long, InstrumentTransactionData>,
     platformFilter: Set<Platform>?,
   ): Boolean {
-    if (instrument.providerName == ProviderName.SYNTHETIC) return true
+    if (instrument.isSynthetic()) return true
     return transactionData[instrument.id]?.isHeld(platformFilter) == true
   }
 

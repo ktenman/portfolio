@@ -1,9 +1,10 @@
 package ee.tenman.portfolio.controller
 
+import ee.tenman.portfolio.configuration.aspect.SingleFlight
 import ee.tenman.portfolio.dto.EtfDiagnosticDto
-import ee.tenman.portfolio.dto.EtfHoldingBreakdownDto
-import ee.tenman.portfolio.service.etf.EtfBenchmarkService
+import ee.tenman.portfolio.service.etf.EtfBreakdownJsonService
 import ee.tenman.portfolio.service.etf.EtfBreakdownService
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -14,18 +15,20 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/etf-breakdown")
 class EtfBreakdownController(
   private val etfBreakdownService: EtfBreakdownService,
-  private val etfBenchmarkService: EtfBenchmarkService,
+  private val etfBreakdownJsonService: EtfBreakdownJsonService,
 ) {
-  @GetMapping
+  @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+  @SingleFlight
   fun getEtfHoldingsBreakdown(
     @RequestParam(required = false) etfSymbols: List<String>?,
     @RequestParam(required = false) platforms: List<String>?,
-  ): List<EtfHoldingBreakdownDto> = etfBreakdownService.getHoldingsBreakdown(etfSymbols, platforms)
+  ): ByteArray = etfBreakdownJsonService.getHoldingsBreakdown(etfSymbols, platforms)
 
-  @GetMapping("/benchmark")
+  @GetMapping("/benchmark", produces = [MediaType.APPLICATION_JSON_VALUE])
+  @SingleFlight
   fun getBenchmarkHoldings(
     @RequestParam symbol: String,
-  ): List<EtfHoldingBreakdownDto> = etfBenchmarkService.getBenchmarkHoldings(symbol)
+  ): ByteArray = etfBreakdownJsonService.getBenchmarkHoldings(symbol)
 
   @DeleteMapping("/cache")
   fun evictCache() {

@@ -57,12 +57,11 @@ class PriceSnapshotService(
   ): Boolean = priceSnapshotRepository.existsByInstrumentIdAndProviderName(instrumentId, providerName.name)
 
   @Transactional(readOnly = true)
-  fun findClosestAtOrBefore(
-    instrumentId: Long,
-    providerName: ProviderName,
+  fun findAllBetween(
+    instrumentIds: Collection<Long>,
     earliestHour: Instant,
-    targetHour: Instant,
-  ): PriceSnapshot? = priceSnapshotRepository.findClosestAtOrBefore(instrumentId, providerName, earliestHour, targetHour)
+    latestHour: Instant,
+  ): List<PriceSnapshot> = priceSnapshotRepository.findAllBetween(instrumentIds, earliestHour, latestHour)
 
   fun deleteOlderThan(cutoff: Instant) {
     do {

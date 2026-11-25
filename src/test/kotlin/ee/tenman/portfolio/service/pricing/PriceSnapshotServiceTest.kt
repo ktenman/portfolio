@@ -91,24 +91,11 @@ class PriceSnapshotServiceTest {
   }
 
   @Test
-  fun `should find closest snapshot before target hour`() {
+  fun `should find the snapshots of every instrument between two hours`() {
     val snapshot = createSnapshot()
     val earliestHour = Instant.parse("2024-01-15T08:00:00Z")
-    every { priceSnapshotRepository.findClosestAtOrBefore(1L, ProviderName.BINANCE, earliestHour, hour) } returns snapshot
-
-    val result = service.findClosestAtOrBefore(1L, ProviderName.BINANCE, earliestHour, hour)
-
-    expect(result).toEqual(snapshot)
-  }
-
-  @Test
-  fun `should return null when no snapshot found before target hour`() {
-    val earliestHour = Instant.parse("2024-01-15T08:00:00Z")
-    every { priceSnapshotRepository.findClosestAtOrBefore(1L, ProviderName.BINANCE, earliestHour, hour) } returns null
-
-    val result = service.findClosestAtOrBefore(1L, ProviderName.BINANCE, earliestHour, hour)
-
-    expect(result).toEqual(null)
+    every { priceSnapshotRepository.findAllBetween(listOf(1L, 2L), earliestHour, hour) } returns listOf(snapshot)
+    expect(service.findAllBetween(listOf(1L, 2L), earliestHour, hour)).toEqual(listOf(snapshot))
   }
 
   @Test

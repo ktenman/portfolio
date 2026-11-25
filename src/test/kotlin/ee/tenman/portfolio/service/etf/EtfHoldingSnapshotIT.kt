@@ -55,7 +55,7 @@ class EtfHoldingSnapshotIT {
 
     service.saveHoldings("VWCE", date, listOf(holding("Äri A", "60", 1), holding("Äri C", "40", 2)))
 
-    val snapshot = positions.findLatestPositionsByEtfId(instruments.findBySymbol("VWCE").orElseThrow().id)
+    val snapshot = positions.findLatestPositionsByEtfIds(listOf(instruments.findBySymbol("VWCE").orElseThrow().id))
     expect(snapshot.map { it.holding.name }).toContainExactly("Äri A", "Äri C")
     expect(snapshot.map { it.positionRank }).toContainExactly(1, 2)
     expect(snapshot.first().weightPercentage).toEqualNumerically(BigDecimal("60"))
@@ -93,7 +93,7 @@ class EtfHoldingSnapshotIT {
     expect { service.saveHoldings("VWCE", date, listOf(holding("Äri A", "60", 1), invalid)) }
       .toThrow<DataIntegrityViolationException>()
 
-    val snapshot = positions.findLatestPositionsByEtfId(instruments.findBySymbol("VWCE").orElseThrow().id)
+    val snapshot = positions.findLatestPositionsByEtfIds(listOf(instruments.findBySymbol("VWCE").orElseThrow().id))
     expect(snapshot.map { it.holding.name }.toSet()).toEqual(setOf("Äri A", "Äri B"))
     expect(snapshot.map { it.weightPercentage.toInt() }).toContainExactly(50, 50)
     expect(holdings.findAll().map { it.name }.toSet()).toEqual(setOf("Äri A", "Äri B"))
@@ -111,7 +111,7 @@ class EtfHoldingSnapshotIT {
       }
     }.toThrow<IllegalStateException>()
 
-    val snapshot = positions.findLatestPositionsByEtfId(instruments.findBySymbol("VWCE").orElseThrow().id)
+    val snapshot = positions.findLatestPositionsByEtfIds(listOf(instruments.findBySymbol("VWCE").orElseThrow().id))
     expect(snapshot.map { it.holding.name }.toSet()).toEqual(setOf("Äri A", "Äri B"))
     expect(snapshot.map { it.weightPercentage.toInt() }).toContainExactly(50, 50)
     expect(holdings.findAll().map { it.name }.toSet()).toEqual(setOf("Äri A", "Äri B"))
@@ -124,7 +124,7 @@ class EtfHoldingSnapshotIT {
 
     expect { service.saveHoldings("VWCE", date, emptyList()) }.toThrow<IllegalArgumentException>()
 
-    val snapshot = positions.findLatestPositionsByEtfId(instruments.findBySymbol("VWCE").orElseThrow().id)
+    val snapshot = positions.findLatestPositionsByEtfIds(listOf(instruments.findBySymbol("VWCE").orElseThrow().id))
     expect(snapshot.map { it.holding.name }).toContainExactly("Äri A")
     expect(snapshot.single().weightPercentage).toEqualNumerically(BigDecimal("100"))
   }
@@ -137,7 +137,7 @@ class EtfHoldingSnapshotIT {
     expect { service.saveHoldings("VWCE", date, listOf(holding("Äri A", "60", 1), holding(" ", "40", 2))) }
       .toThrow<IllegalArgumentException>()
 
-    val snapshot = positions.findLatestPositionsByEtfId(instruments.findBySymbol("VWCE").orElseThrow().id)
+    val snapshot = positions.findLatestPositionsByEtfIds(listOf(instruments.findBySymbol("VWCE").orElseThrow().id))
     expect(snapshot.map { it.holding.name }).toContainExactly("Äri A")
     expect(snapshot.single().weightPercentage).toEqualNumerically(BigDecimal("100"))
   }

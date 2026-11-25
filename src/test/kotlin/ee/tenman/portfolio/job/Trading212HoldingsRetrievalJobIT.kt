@@ -110,7 +110,7 @@ class Trading212HoldingsRetrievalJobIT {
     job.runJob()
 
     val bnke = instrumentRepository.findBySymbol("BNKE:PAR:EUR").orElseThrow()
-    val positions = etfPositionRepository.findLatestPositionsByEtfId(bnke.id)
+    val positions = etfPositionRepository.findLatestPositionsByEtfIds(listOf(bnke.id))
     expect(positions.size).toEqual(29)
     val snapshotDates = positions.map { it.snapshotDate }.toSet()
     expect(snapshotDates).toContain(LocalDate.now(clock))
