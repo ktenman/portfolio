@@ -38,7 +38,7 @@ object BlackRockCsvParser {
   fun parse(csv: String): List<BlackRockHolding> {
     val lines = csv.lines().filter { it.isNotBlank() }
     val headerIndex = lines.indexOfFirst { it.startsWith("Ticker,") }
-    check(headerIndex >= 0) { "BlackRock holdings CSV missing 'Ticker,' header row" }
+    check(headerIndex >= 0) { "BlackRock holdings CSV missing 'Ticker,' header row: ${csv.take(200)}" }
     val columns = splitCsvLine(lines[headerIndex])
     val indices = REQUIRED.associateWith { columns.indexOf(it) }
     check(indices.values.all { it >= 0 }) { "BlackRock holdings CSV missing required columns, found: $columns" }

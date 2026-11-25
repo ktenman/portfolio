@@ -142,4 +142,11 @@ class BlackRockCsvParserTest {
       BlackRockCsvParser.parse(csv)
     }.toThrow<IllegalStateException>().messageToContain("Ticker")
   }
+
+  @Test
+  fun `should quote the start of the body when the ticker header row is absent`() {
+    expect {
+      BlackRockCsvParser.parse("<!DOCTYPE html><title>iShares – Šveitsi fond</title>")
+    }.toThrow<IllegalStateException>().messageToContain("<!DOCTYPE html><title>iShares – Šveitsi fond</title>")
+  }
 }

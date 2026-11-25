@@ -139,6 +139,13 @@ class RetryIT {
   }
 
   @Test
+  fun `should not retry csus holdings when blackrock sends a page instead of csv`() {
+    stubFor(get(urlPathEqualTo(CSUS_PATH)).willReturn(ok("<!DOCTYPE html><html lang=\"en-GB\">")))
+    expect { blackRockHoldingsService.fetchHoldings(BlackRockFund.CSUS) }.toThrow<IllegalStateException>()
+    verify(1, getRequestedFor(urlPathEqualTo(CSUS_PATH)))
+  }
+
+  @Test
   fun `should leave a failed trading212 price request to the job retry`() {
     stubFailingOnce({ get(urlPathEqualTo(PRICES_PATH)) }, okJson(PRICES))
     expect { trading212Service.fetchCurrentPrices(setOf("VUAA:GER:EUR")) }.toThrow<FeignException.ServiceUnavailable>()
