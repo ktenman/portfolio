@@ -13,7 +13,7 @@ class BlackRockHoldingsService(
 ) {
   private val log = LoggerFactory.getLogger(javaClass)
 
-  @Retryable(maxRetries = 2, multiplier = 2.0, excludes = [FeignException.FeignClientException::class])
+  @Retryable(maxRetries = 2, multiplier = 2.0, includes = [FeignException::class], excludes = [FeignException.FeignClientException::class])
   fun fetchHoldings(fund: BlackRockFund): List<HoldingData> {
     val csv = blackRockHoldingsClient.getHoldingsCsv(fund.productId, "${fund}_holdings", "csv", "fund")
     val holdings = BlackRockCsvParser.parse(csv)
