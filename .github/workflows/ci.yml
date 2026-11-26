@@ -320,7 +320,7 @@ jobs:
           retention-days: 7
 
   visual:
-    name: 🖼️ Visual Regression Tests (${{ matrix.shard }}/6)
+    name: 🖼️ Visual Tests (${{ matrix.shard }}/6)
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04-arm
     strategy:
