@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Clock
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteRecursively
 
@@ -158,6 +160,19 @@ class RadioArchiveService(
     save(deleted, read<List<String>>(deleted).orEmpty() + name)
     directory.deleteRecursively()
     return true
+  }
+
+  fun expire() {
+    val days = radioProperties.retentionDays
+    if (days <= 0) return
+    val cutoff = Instant.now(clock).minus(days, ChronoUnit.DAYS)
+    directories(radioProperties.recordings)
+      .filter { directory -> readable(directory) { readStatus(it).endedBefore(cutoff) } == true }
+      .forEach { directory ->
+        runCatching { delete(directory.fileName.toString()) }
+          .onSuccess { log.info("Deleted radio recording ${directory.fileName} after $days days") }
+          .onFailure { log.error("Cannot delete expired radio recording $directory", it) }
+      }
   }
 
   private fun <T> readable(

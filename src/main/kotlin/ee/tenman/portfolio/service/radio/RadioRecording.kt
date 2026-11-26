@@ -38,6 +38,7 @@ data class RadioProperties(
   val bucket: String = "radio",
   val localDays: Long = 7,
   val dropRaw: Boolean = true,
+  val retentionDays: Long = 30,
   val stations: List<Station> = Station.entries,
 ) {
   val jingles: Path
@@ -72,6 +73,10 @@ data class RecordingStatus(
 )
 
 fun RecordingStatus.title(): String = programmes.joinToString(", ")
+
+fun RecordingStatus.ended(): Instant = Instant.ofEpochMilli(((startedAt + seconds) * 1000).toLong())
+
+fun RecordingStatus.endedBefore(cutoff: Instant): Boolean = state != RecordingState.RECORDING && ended().isBefore(cutoff)
 
 private val UNSAFE = Regex("""[/\\:*?"<>|]""")
 

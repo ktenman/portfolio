@@ -103,6 +103,7 @@ jobs:
           echo "BUILD_HASH=$(git rev-parse --short HEAD)" >> .env
           echo "BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> .env
           echo "RADIO_DROP_RAW=${{ vars.RADIO_DROP_RAW == 'true' }}" >> .env
+          echo "RADIO_RETENTION_DAYS=${{ vars.RADIO_RETENTION_DAYS }}" >> .env
       - name: Prepare monitoring secrets
         env:
           MONITORING_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITORING_TELEGRAM_BOT_TOKEN }}

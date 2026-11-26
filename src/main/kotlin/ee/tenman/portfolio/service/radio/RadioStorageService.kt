@@ -190,9 +190,7 @@ class RadioStorageService(
     Files.exists(directory.resolve(TRANSCRIPT_FILE)) && radioEpisodeService.todo(directory).isEmpty()
 
   private fun old(status: RecordingStatus): Boolean =
-    ended(status).isBefore(Instant.now(clock).minus(radioProperties.localDays, ChronoUnit.DAYS))
-
-  private fun ended(status: RecordingStatus): Instant = Instant.ofEpochMilli(((status.startedAt + status.seconds) * 1000).toLong())
+    status.ended().isBefore(Instant.now(clock).minus(radioProperties.localDays, ChronoUnit.DAYS))
 
   private fun due(
     directory: Path,
@@ -211,9 +209,8 @@ class RadioStorageService(
     if (parts(directory).isEmpty() && saved(directory).keys.none(::raw)) return false
     val status = readStatus(directory)
     val cutoff = Instant.now(clock).minus(RAW_HOURS, ChronoUnit.HOURS)
-    return status.state != RecordingState.RECORDING &&
+    return status.endedBefore(cutoff) &&
       !keeps(status, programmes) &&
-      ended(status).isBefore(cutoff) &&
       EPISODE_FILE in saved(directory) &&
       Files.notExists(directory.resolve(REVIEW_FILE)) &&
       read<EditList>(directory.resolve(EDIT_LIST_FILE)).found().containsAll(status.programmes)
