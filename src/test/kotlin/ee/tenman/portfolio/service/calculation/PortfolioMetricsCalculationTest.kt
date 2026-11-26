@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import java.math.BigDecimal
+import java.time.LocalDate
 
 class PortfolioMetricsCalculationTest : InvestmentMetricsTestBase() {
   @Test
@@ -134,7 +135,7 @@ class PortfolioMetricsCalculationTest : InvestmentMetricsTestBase() {
 
   @Test
   fun `should calculatePortfolioMetrics with empty instrument groups returns empty metrics`() {
-    val metrics = investmentMetricsService.calculatePortfolioMetrics(emptyMap(), testDate)
+    val metrics = portfolioMetrics(emptyMap(), testDate)
 
     expect(metrics.totalValue).toEqualNumerically(BigDecimal.ZERO)
     expect(metrics.totalProfit).toEqualNumerically(BigDecimal.ZERO)
@@ -246,16 +247,22 @@ class PortfolioMetricsCalculationTest : InvestmentMetricsTestBase() {
   }
 
   private fun metricsFor(vararg transactions: PortfolioTransaction): PortfolioMetrics =
-    investmentMetricsService.calculatePortfolioMetrics(mapOf(testInstrument to transactions.toList()), testDate)
+    portfolioMetrics(mapOf(testInstrument to transactions.toList()), testDate)
+
+  private fun portfolioMetrics(
+    groups: Map<Instrument, List<PortfolioTransaction>>,
+    date: LocalDate,
+    lookup: PriceLookup? = null,
+  ): PortfolioMetrics = investmentMetricsService.valuePortfolio(investmentMetricsService.prepareHoldings(groups), date, lookup)
 
   private fun metricsFor(vararg groups: Pair<Instrument, List<PortfolioTransaction>>): PortfolioMetrics =
-    investmentMetricsService.calculatePortfolioMetrics(groups.toMap(), testDate)
+    portfolioMetrics(groups.toMap(), testDate)
 
   private fun metricsWithLookup(
     price: String,
     vararg transactions: PortfolioTransaction,
   ): PortfolioMetrics =
-    investmentMetricsService.calculatePortfolioMetrics(
+    portfolioMetrics(
       mapOf(testInstrument to transactions.toList()),
       testDate,
       PriceLookup(listOf(DailyPricePoint(testInstrument.id, testDate, BigDecimal(price)))),

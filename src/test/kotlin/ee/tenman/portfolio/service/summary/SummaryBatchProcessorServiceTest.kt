@@ -40,7 +40,8 @@ class SummaryBatchProcessorServiceTest {
       baseCurrency = "EUR",
       currentPrice = BigDecimal("100.00"),
     ).apply { id = 1L }
-    every { dailyPriceService.buildPriceLookup(any()) } returns PriceLookup(emptyList())
+    every { dailyPriceService.buildPriceLookup(any(), any()) } returns PriceLookup(emptyList())
+    every { dailySummaryCalculator.pricedDates(any()) } answers { listOf(firstArg()) }
   }
 
   @Nested

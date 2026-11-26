@@ -8,6 +8,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -42,6 +44,38 @@ class PortfolioTransaction(
   @Column(name = "currency", nullable = false)
   var currency: String = "EUR",
 ) : BaseEntity() {
+  private fun writeObject(output: ObjectOutputStream) {
+    output.writeObject(instrument)
+    output.writeObject(transactionType)
+    output.writeObject(platform)
+    output.writeLong(transactionDate.toEpochDay())
+    output.writeUTF(currency)
+    listOf(
+      quantity,
+      price,
+      realizedProfit,
+      unrealizedProfit,
+      averageCost,
+      remainingQuantity,
+      commission,
+    ).forEach { output.writeDecimal(it) }
+  }
+
+  private fun readObject(input: ObjectInputStream) {
+    instrument = input.readObject() as Instrument
+    transactionType = input.readObject() as TransactionType
+    platform = input.readObject() as Platform
+    transactionDate = LocalDate.ofEpochDay(input.readLong())
+    currency = input.readUTF()
+    quantity = input.readDecimal()
+    price = input.readDecimal()
+    realizedProfit = input.readOptionalDecimal()
+    input.readOptionalDecimal()?.let { unrealizedProfit = it }
+    averageCost = input.readOptionalDecimal()
+    input.readOptionalDecimal()?.let { remainingQuantity = it }
+    commission = input.readDecimal()
+  }
+
   companion object {
     private const val serialVersionUID: Long = -5966201828531052108L
   }

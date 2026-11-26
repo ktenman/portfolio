@@ -29,7 +29,7 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(BigDecimal("10"), BigDecimal("50.00"), testDate.minusDays(30))
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
     stubMetrics(testDate, BigDecimal("600.00"), BigDecimal("100.00"))
-    every { xirrCalculationService.calculateAdjustedXirr(any(), testDate) } returns 0.075
+    every { xirrCalculationService.calculateAdjustedXirr(any(), testDate, any()) } returns 0.075
 
     val summary = summaryService.getCurrentDaySummary()
 
@@ -43,7 +43,7 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
     val testTransaction = createBuyTransaction(BigDecimal("10"), BigDecimal("100"), testDate.minusDays(5), Platform.LIGHTYEAR)
     every { transactionService.getAllTransactions(listOf("LIGHTYEAR")) } returns listOf(testTransaction)
     stubMetrics(testDate, BigDecimal("1200.00"), BigDecimal("200.00"))
-    every { xirrCalculationService.calculateAdjustedXirr(any(), testDate) } returns 0.08
+    every { xirrCalculationService.calculateAdjustedXirr(any(), testDate, any()) } returns 0.08
 
     val result = summaryService.getCurrentDaySummaryForPlatforms(listOf(Platform.LIGHTYEAR))
 
@@ -76,7 +76,7 @@ class SummaryServiceCurrentDayTest : SummaryServiceTestBase() {
         LocalDate.of(2025, 5, 8),
         LocalDate.of(2025, 5, 9),
       )
-    every { summaryBatchProcessor.calculateSummaries(any(), any()) } returns
+    every { summaryBatchProcessor.calculateSummaries(any(), any(), any()) } returns
       summaryDates.map { date -> createSummary(date, "1100.00", "0.05", "100.00", "0.01") }
 
     val result = summaryService.getHistoricalSummariesForPlatforms(listOf(Platform.LIGHTYEAR), 0, 10)

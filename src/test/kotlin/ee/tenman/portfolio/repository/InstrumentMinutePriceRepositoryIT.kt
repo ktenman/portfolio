@@ -112,10 +112,10 @@ class InstrumentMinutePriceRepositoryIT {
   }
 
   @Test
-  fun `should select carry forward and bounded replay rows in capture order`() {
-    val first = saveInstrument("FIRST", "10")
-    val second = saveInstrument("SECOND", "20")
-    val excluded = saveInstrument("EXCLUDED", "30")
+  fun `should read each instruments price only at the replay times where it changed`() {
+    val first = saveInstrument("ESIMENE", "10")
+    val second = saveInstrument("TEINE", "20")
+    val excluded = saveInstrument("VÄLJAS", "30")
     savePrice(first, "2026-09-21T09:00:00Z", "9")
     savePrice(first, "2026-09-21T09:30:00Z", "10")
     savePrice(first, "2026-09-21T10:30:00Z", "11")
@@ -124,22 +124,34 @@ class InstrumentMinutePriceRepositoryIT {
     savePrice(second, "2026-09-21T11:00:00Z", "21")
     savePrice(excluded, "2026-09-21T10:15:00Z", "30")
 
-    val rows =
-      instrumentMinutePriceRepository.findForReplay(
+    val points =
+      instrumentMinutePriceRepository.findPriceChangesAt(
         instrumentIds = listOf(first.id, second.id),
-        from = Instant.parse("2026-09-21T10:00:00Z"),
-        until = Instant.parse("2026-09-21T11:00:00Z"),
+        times = listOf("2026-09-21T10:00:00Z", "2026-09-21T10:30:00Z", "2026-09-21T11:00:00Z").map(Instant::parse),
       )
 
-    expect(rows.map { it.capturedAt }).toEqual(
-      listOf(
-        Instant.parse("2026-09-21T09:30:00Z"),
-        Instant.parse("2026-09-21T09:45:00Z"),
-        Instant.parse("2026-09-21T10:30:00Z"),
-        Instant.parse("2026-09-21T11:00:00Z"),
+    expect(points.map { Triple(it.instrumentId, it.capturedAt.toString(), it.price.toInt()) }.toSet()).toEqual(
+      setOf(
+        Triple(first.id, "2026-09-21T10:00:00Z", 10),
+        Triple(first.id, "2026-09-21T10:30:00Z", 11),
+        Triple(second.id, "2026-09-21T10:00:00Z", 20),
+        Triple(second.id, "2026-09-21T11:00:00Z", 21),
       ),
     )
-    expect(rows.map { it.price.toInt() }).toEqual(listOf(10, 20, 11, 21))
+  }
+
+  @Test
+  fun `should leave out an instrument with no price before the first replay time`() {
+    val late = saveInstrument("HILINE", "10")
+    savePrice(late, "2026-09-21T10:45:00Z", "15")
+
+    val points =
+      instrumentMinutePriceRepository.findPriceChangesAt(
+        instrumentIds = listOf(late.id),
+        times = listOf("2026-09-21T10:00:00Z", "2026-09-21T11:00:00Z").map(Instant::parse),
+      )
+
+    expect(points.map { it.capturedAt.toString() to it.price.toInt() }).toEqual(listOf("2026-09-21T11:00:00Z" to 15))
   }
 
   @Test

@@ -34,6 +34,7 @@ class CurrentDaySummaryCacheTestConfiguration {
   @Bean
   fun platformSummaryCacheService(
     summaryService: SummaryService,
+    testCacheManager: CacheManager,
     clock: Clock,
-  ): PlatformSummaryCacheService = PlatformSummaryCacheService(summaryService, clock)
+  ): PlatformSummaryCacheService = PlatformSummaryCacheService(summaryService, testCacheManager, clock)
 }

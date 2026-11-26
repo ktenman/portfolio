@@ -2,12 +2,13 @@ package ee.tenman.portfolio.service.calculation.xirr
 
 import ee.tenman.portfolio.exception.XirrCalculationException
 import org.slf4j.LoggerFactory
-import java.time.temporal.ChronoUnit
+import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.pow
 
 class Xirr(
   private val cashFlows: List<CashFlow>,
+  schedule: XirrSchedule = XirrSchedule(cashFlows),
 ) {
   companion object {
     private const val MAX_ELEVATIONS = 1_000
@@ -17,13 +18,23 @@ class Xirr(
   }
 
   private val log = LoggerFactory.getLogger(javaClass)
-  private val endDate = cashFlows.maxOf { it.date }
-  private val startDate = cashFlows.minOf { it.date }
-
+  private val epochDays = schedule.epochDays
+  private val endDay = schedule.endDay
+  private val startDay = schedule.startDay
   private val amounts = DoubleArray(cashFlows.size) { cashFlows[it].amount }
-  private val yearsToEnd = DoubleArray(cashFlows.size) { ChronoUnit.DAYS.between(cashFlows[it].date, endDate).toDouble() / 365.25 }
+  private val invested = amounts.sumOf { if (it < 0) -it else 0.0 }
+  private val yearsToEnd = schedule.yearsToEnd
+  private val distinctYears = schedule.distinctYears
+  private val slots = schedule.slots
 
   fun getCashFlows(): List<CashFlow> = cashFlows
+
+  fun weightedInvestmentAge(calculationDate: LocalDate): Double {
+    val end = calculationDate.toEpochDay()
+    var age = 0.0
+    for (index in amounts.indices) if (amounts[index] < 0) age += (end - epochDays[index]).toDouble() * (-amounts[index] / invested)
+    return age
+  }
 
   operator fun invoke(): Double = calculate()
 
@@ -35,7 +46,7 @@ class Xirr(
       "Need both positive and negative cash flows"
     }
 
-    if (startDate == endDate) return calculateSimpleReturn()
+    if (startDay == endDay) return calculateSimpleReturn()
 
     val guess = estimateInitialRate()
     return trySequentialCalculation(guess)
@@ -94,10 +105,11 @@ class Xirr(
   }
 
   private fun newtonStep(rate: Double): Double {
+    val factors = DoubleArray(distinctYears.size) { (1 + rate).pow(distinctYears[it]) }
     var value = 0.0
     var slope = 0.0
     for (index in amounts.indices) {
-      val term = amounts[index] * (1 + rate).pow(yearsToEnd[index])
+      val term = amounts[index] * factors[slots[index]]
       value += term
       slope += term * yearsToEnd[index]
     }
@@ -105,9 +117,9 @@ class Xirr(
   }
 
   private fun estimateInitialRate(): Double {
-    val totalAmount = cashFlows.sumOf { it.amount }
-    val totalDeposits = cashFlows.filter { it.amount < 0 }.sumOf { -it.amount }
-    val years = ChronoUnit.DAYS.between(startDate, endDate).toDouble() / 365.25
+    val totalAmount = amounts.sum()
+    val totalDeposits = invested
+    val years = (endDay - startDay) / 365.25
 
     val estimatedRate =
       if (years > 0) {
@@ -118,5 +130,29 @@ class Xirr(
     val rate = estimatedRate.takeUnless { it.isNaN() } ?: ((1 + totalAmount / totalDeposits).pow(1 / years) - 1)
 
     return rate.coerceIn(-0.9, 0.9)
+  }
+}
+
+class XirrSchedule(
+  cashFlows: List<CashFlow>,
+) {
+  private val dates = cashFlows.map { it.date }
+  val epochDays = IntArray(dates.size) { dates[it].toEpochDay().toInt() }
+  val endDay = epochDays.max()
+  val startDay = epochDays.min()
+  private val days = IntArray(dates.size) { endDay - epochDays[it] }
+  val yearsToEnd = DoubleArray(dates.size) { days[it] / 365.25 }
+  private val slotOfDay = IntArray(endDay - startDay + 1) { -1 }
+  val distinctYears = distinctYears()
+  val slots = IntArray(days.size) { slotOfDay[days[it]] }
+
+  fun fits(cashFlows: List<CashFlow>): Boolean = cashFlows.size == dates.size && cashFlows.indices.all { cashFlows[it].date == dates[it] }
+
+  private fun distinctYears(): DoubleArray {
+    var count = 0
+    for (day in days) if (slotOfDay[day] < 0) slotOfDay[day] = count++
+    val years = DoubleArray(count)
+    for (index in days.indices) years[slotOfDay[days[index]]] = yearsToEnd[index]
+    return years
   }
 }

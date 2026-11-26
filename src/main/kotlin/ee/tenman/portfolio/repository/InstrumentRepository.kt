@@ -3,6 +3,7 @@ package ee.tenman.portfolio.repository
 import ee.tenman.portfolio.domain.Currency
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.LogoSource
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.ProviderName
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -27,6 +28,9 @@ interface InstrumentRepository : JpaRepository<Instrument, Long> {
   fun findByLogoSourceIsNull(): List<Instrument>
 
   fun findByUuid(uuid: UUID): Instrument?
+
+  @Query("SELECT i FROM Instrument i WHERE i.id IN (SELECT pt.instrument.id FROM PortfolioTransaction pt WHERE pt.platform IN :platforms)")
+  fun findAllTradedOn(platforms: List<Platform>): List<Instrument>
 
   @Modifying(clearAutomatically = true)
   @Query("UPDATE Instrument i SET i.currentPrice = :price WHERE i.id = :id")

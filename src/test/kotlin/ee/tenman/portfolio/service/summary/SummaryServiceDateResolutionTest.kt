@@ -33,7 +33,7 @@ class SummaryServiceDateResolutionTest : SummaryServiceTestBase() {
     every { transactionService.getAllTransactions() } returns listOf(testTransaction)
 
     stubMetrics(today, BigDecimal("1200.00"), BigDecimal("200.00"))
-    every { xirrCalculationService.calculateAdjustedXirr(any(), today) } returns 0.08
+    every { xirrCalculationService.calculateAdjustedXirr(any(), today, any()) } returns 0.08
 
     val result = summaryService.calculateSummaryForDate(today)
 
@@ -57,7 +57,7 @@ class SummaryServiceDateResolutionTest : SummaryServiceTestBase() {
     every { summaryCacheService.findByEntryDate(today) } returns existingSummary
 
     stubMetrics(today, BigDecimal("1200.00"), BigDecimal("200.00"))
-    every { xirrCalculationService.calculateAdjustedXirr(any(), today) } returns 0.08
+    every { xirrCalculationService.calculateAdjustedXirr(any(), today, any()) } returns 0.08
 
     val result = summaryService.calculateSummaryForDate(today)
 
@@ -119,6 +119,6 @@ class SummaryServiceDateResolutionTest : SummaryServiceTestBase() {
     every { summaryCacheService.findByEntryDate(date) } returns null
     every { summaryCacheService.findByEntryDate(date.minusDays(1)) } returns previousSummary
     stubMetrics(date, BigDecimal(totalValue), BigDecimal(totalProfit))
-    every { xirrCalculationService.calculateAdjustedXirr(any(), date) } returns xirr
+    every { xirrCalculationService.calculateAdjustedXirr(any(), date, any()) } returns xirr
   }
 }

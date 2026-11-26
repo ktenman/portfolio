@@ -227,10 +227,11 @@ class DailyPriceServiceTest {
   @Test
   fun `should build a price lookup answering each date from its latest earlier price`() {
     val yearAgo = testDate.minusYears(1)
-    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument), testDate) } returns
-      listOf(DailyPricePoint(testInstrument.id, testDate.minusDays(2), BigDecimal("150.5")))
-    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument), yearAgo) } returns
-      listOf(DailyPricePoint(testInstrument.id, yearAgo.minusDays(3), BigDecimal("90.25")))
+    every { dailyPriceRepository.findLatestPricePointsOnDates(listOf(testInstrument.id), listOf(testDate, yearAgo)) } returns
+      listOf(
+        DailyPricePoint(testInstrument.id, testDate.minusDays(2), BigDecimal("150.5")),
+        DailyPricePoint(testInstrument.id, yearAgo.minusDays(3), BigDecimal("90.25")),
+      )
     val lookup = dailyPriceService.buildLatestPriceLookup(listOf(testInstrument), listOf(testDate, yearAgo))
     val prices = listOf(testDate, yearAgo).map { lookup.priceOnOrBefore(testInstrument.id, it)?.toPlainString() }
     expect(prices).toEqual(listOf("150.5", "90.25"))
@@ -239,7 +240,7 @@ class DailyPriceServiceTest {
   @Test
   fun `should find the latest price of each instrument on or after the earliest date`() {
     val other = createInstrument(symbol = "ÄRI", id = 2L)
-    every { dailyPriceRepository.findLatestPricePoints(listOf(testInstrument, other), testDate) } returns
+    every { dailyPriceRepository.findLatestPricePointsOnDates(listOf(testInstrument.id, other.id), listOf(testDate)) } returns
       listOf(
         DailyPricePoint(testInstrument.id, testDate.minusDays(5), BigDecimal("150.5")),
         DailyPricePoint(other.id, testDate.minusDays(6), BigDecimal("90.25")),

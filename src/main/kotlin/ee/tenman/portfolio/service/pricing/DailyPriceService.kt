@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.pricing
 
+import ee.tenman.portfolio.configuration.aspect.SingleFlight
 import ee.tenman.portfolio.domain.DailyPrice
 import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.ProviderName
@@ -62,22 +63,23 @@ class DailyPriceService(
     earliestDate: LocalDate,
   ): Map<Long, BigDecimal> =
     dailyPriceRepository
-      .findLatestPricePoints(instruments, date)
+      .findLatestPricePointsOnDates(instruments.map { it.id }, listOf(date))
       .filterNot { it.entryDate.isBefore(earliestDate) }
       .associate { it.instrumentId to it.closePrice }
 
   @Transactional(readOnly = true)
   fun findAllByInstrument(instrument: Instrument): List<DailyPrice> = dailyPriceRepository.findAllByInstrument(instrument)
 
-  @Transactional(readOnly = true)
-  fun buildPriceLookup(instruments: Collection<Instrument>): PriceLookup =
-    PriceLookup(dailyPriceRepository.findPricePointsByInstrumentIn(instruments))
+  @SingleFlight
+  fun buildPriceLookup(
+    held: Map<Long, ClosedRange<LocalDate>>,
+    from: LocalDate,
+  ): PriceLookup = PriceLookup(dailyPriceRepository.findPricePointsSince(held, from))
 
-  @Transactional(readOnly = true)
   fun buildLatestPriceLookup(
     instruments: Collection<Instrument>,
     dates: Collection<LocalDate>,
-  ): PriceLookup = PriceLookup(dates.flatMap { dailyPriceRepository.findLatestPricePoints(instruments, it) })
+  ): PriceLookup = PriceLookup(dailyPriceRepository.findLatestPricePointsOnDates(instruments.map { it.id }, dates))
 
   @Transactional(readOnly = true)
   fun findAllExistingDates(instrument: Instrument): Set<LocalDate> = dailyPriceRepository.findAllEntryDatesByInstrument(instrument)

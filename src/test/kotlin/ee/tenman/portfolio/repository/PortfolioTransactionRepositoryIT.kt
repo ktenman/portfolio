@@ -2,6 +2,7 @@ package ee.tenman.portfolio.repository
 
 import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.configuration.IntegrationTest
@@ -12,6 +13,7 @@ import ee.tenman.portfolio.domain.TransactionType
 import jakarta.annotation.Resource
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.TestPropertySource
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -24,6 +26,9 @@ class PortfolioTransactionRepositoryIT {
 
   @Resource
   private lateinit var instrumentRepository: InstrumentRepository
+
+  @Resource
+  private lateinit var jdbcTemplate: JdbcTemplate
 
   private lateinit var testInstrument: Instrument
   private val testDate = LocalDate.of(2024, 1, 15)
@@ -138,6 +143,21 @@ class PortfolioTransactionRepositoryIT {
     val result = portfolioTransactionRepository.findAllByPlatformsWithInstruments(emptyList())
 
     expect(result).toHaveSize(0)
+  }
+
+  @Test
+  fun `should load every transaction newest first with its instrument`() {
+    val older = createAndSaveCashFlow(Platform.LHV, BigDecimal("100"), testDate.minusDays(1))
+    val newer = createAndSaveCashFlow(Platform.TREZOR, BigDecimal("200"), testDate)
+    val result = portfolioTransactionRepository.findAllNewestFirst()
+    expect(result.map { it.id to it.instrument.symbol }).toContainExactly(newer.id to "TEST", older.id to "TEST")
+  }
+
+  @Test
+  fun `should read a missing remaining quantity as zero`() {
+    createAndSaveCashFlow(Platform.LHV, BigDecimal("100"), testDate)
+    jdbcTemplate.update("UPDATE portfolio_transaction SET remaining_quantity = NULL")
+    expect(portfolioTransactionRepository.findAllNewestFirst().single().remainingQuantity).toEqualNumerically(BigDecimal.ZERO)
   }
 
   private fun createAndSaveCashFlow(

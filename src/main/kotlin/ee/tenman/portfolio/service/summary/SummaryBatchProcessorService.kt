@@ -30,27 +30,57 @@ class SummaryBatchProcessorService(
   fun calculateSummaries(
     sortedDates: List<LocalDate>,
     sortedTransactions: List<PortfolioTransaction>,
+    remainder: (LocalDate) -> List<PortfolioDailySummary>? = { null },
   ): List<PortfolioDailySummary> {
-    val priceLookup = dailyPriceService.buildPriceLookup(sortedTransactions.map { it.instrument }.distinct())
+    val first = sortedDates.firstOrNull() ?: return emptyList()
+    val from = minOf(dailySummaryCalculator.pricedDates(first).min(), sortedDates.last().minusYears(SHARED_PRICE_YEARS))
+    val holdings = dailySummaryCalculator.holdingsByPrefix(sortedTransactions)
+    val soldOut =
+      holdings(sortedTransactions).filterNot { it.held }.associate { it.instrument.id to it.transactions.last().transactionDate }
+    val priceLookup = buildPriceLookup(sortedTransactions, from, sortedDates.last(), soldOut)
     var transactionIndex = 0
-    val accumulated = mutableListOf<PortfolioTransaction>()
-    return sortedDates.map { date ->
+    val summaries = ArrayList<PortfolioDailySummary>(sortedDates.size)
+    for (date in sortedDates) {
+      remainder(date)?.let { return summaries + it }
       while (transactionIndex < sortedTransactions.size &&
         !sortedTransactions[transactionIndex].transactionDate.isAfter(date)
       ) {
-        accumulated.add(sortedTransactions[transactionIndex])
         transactionIndex++
       }
-      dailySummaryCalculator.calculateFromTransactions(accumulated.toList(), date, priceLookup)
+      val day = dailySummaryCalculator.prepareDay(sortedTransactions.subList(0, transactionIndex), date, priceLookup, holdings)
+      summaries.add(dailySummaryCalculator.calculateFromPrepared(day, priceLookup))
     }
+    return summaries
   }
+
+  fun calculateSummaryOn(
+    transactions: List<PortfolioTransaction>,
+    date: LocalDate,
+  ): PortfolioDailySummary {
+    if (transactions.isEmpty()) return dailySummaryCalculator.createEmptySummary(date)
+    val instruments = transactions.map { it.instrument }.distinct()
+    val priceLookup = dailyPriceService.buildLatestPriceLookup(instruments, dailySummaryCalculator.pricedDates(date))
+    return dailySummaryCalculator.calculateFromTransactions(transactions, date, priceLookup)
+  }
+
+  private fun buildPriceLookup(
+    transactions: List<PortfolioTransaction>,
+    from: LocalDate,
+    until: LocalDate,
+    soldOut: Map<Long, LocalDate>,
+  ): PriceLookup =
+    dailyPriceService.buildPriceLookup(
+      transactions.groupBy { it.instrument.id }.mapValues { (id, history) -> history.minOf { it.transactionDate }..(soldOut[id] ?: until) },
+      from,
+    )
 
   fun processSummariesWithTransactions(
     dates: List<LocalDate>,
     allTransactions: List<PortfolioTransaction>,
     batchSize: Int = 30,
   ): Int {
-    val priceLookup = dailyPriceService.buildPriceLookup(allTransactions.map { it.instrument }.distinct())
+    val first = dates.minOrNull() ?: return 0
+    val priceLookup = buildPriceLookup(allTransactions, dailySummaryCalculator.pricedDates(first).min(), dates.max(), emptyMap())
     return dates.chunked(batchSize).sumOf { batch ->
       processBatchWithTransactions(batch, allTransactions, priceLookup)
     }
@@ -95,5 +125,9 @@ class SummaryBatchProcessorService(
       }
     if (summaries.isEmpty()) return 0
     return summaryPersistenceService.saveSummaries(summaries)
+  }
+
+  companion object {
+    private const val SHARED_PRICE_YEARS = 5L
   }
 }

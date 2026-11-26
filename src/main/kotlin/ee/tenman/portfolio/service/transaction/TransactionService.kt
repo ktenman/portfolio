@@ -44,27 +44,18 @@ class TransactionService(
     cacheInvalidationService.evictAllRelatedCaches(null, null)
   }
 
-  @Transactional(readOnly = true)
-  fun getDistinctPlatforms(): List<Platform> = portfolioTransactionRepository.findDistinctPlatforms()
+  fun getDistinctPlatforms(): List<Platform> = transactionCacheService.getDistinctPlatforms()
 
-  @Transactional(readOnly = true)
-  fun coversEveryPlatform(platforms: List<Platform>): Boolean =
-    platforms.containsAll(portfolioTransactionRepository.findDistinctPlatforms())
+  fun coversEveryPlatform(platforms: List<Platform>): Boolean = platforms.containsAll(transactionCacheService.getDistinctPlatforms())
 
   @Transactional(readOnly = true)
   fun getAllTransactions(): List<PortfolioTransaction> = transactionCacheService.getAllTransactions()
 
-  @Transactional(readOnly = true)
-  @Cacheable(
-    value = [TRANSACTION_CACHE],
-    key = "#platforms == null or #platforms.isEmpty() ? 'transactions' : 'transactions:' + #platforms",
-    unless = "#result.isEmpty()",
-  )
   fun getAllTransactions(platforms: List<String>?): List<PortfolioTransaction> {
     if (platforms.isNullOrEmpty()) return transactionCacheService.getAllTransactions()
     val platformEnums = platforms.mapNotNull { Platform.fromStringOrNull(it) }
     if (platformEnums.isEmpty()) return emptyList()
-    return portfolioTransactionRepository.findAllByPlatformsWithInstruments(platformEnums)
+    return transactionCacheService.getAllTransactions().filter { it.platform in platformEnums }
   }
 
   @Transactional(readOnly = true)

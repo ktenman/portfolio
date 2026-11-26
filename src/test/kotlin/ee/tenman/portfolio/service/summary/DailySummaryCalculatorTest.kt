@@ -86,7 +86,7 @@ class DailySummaryCalculatorTest {
   @Test
   fun `baseline metrics receive the same price lookup as the current metrics`() {
     val lookup = PriceLookup(emptyList())
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), date.minusDays(365), lookup) } returns metrics("270")
+    every { investmentMetricsService.valuePortfolio(any(), date.minusDays(365), lookup) } returns metrics("270")
     every { investmentMetricsService.valuePortfolio(any(), date, lookup) } returns metrics("1000")
 
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(500))), date, lookup)
@@ -96,9 +96,9 @@ class DailySummaryCalculatorTest {
 
   @Test
   fun `baseline profit only counts transactions made by the baseline date`() {
-    every {
-      investmentMetricsService.calculatePortfolioMetrics(match { it.values.flatten().size == 1 }, date.minusDays(365), null)
-    } returns metrics("50")
+    val baseline = listOf(PreparedHolding(instrument, emptyList(), null, BigDecimal.ONE, emptyList()))
+    every { investmentMetricsService.prepareHoldings(match { it.values.flatten().size == 1 }) } returns baseline
+    every { investmentMetricsService.valuePortfolio(baseline, date.minusDays(365), null) } returns metrics("50")
     stubProfit(date, "415")
 
     val summary = calculator.calculateFromTransactions(listOf(buy(date.minusDays(400)), buy(date.minusDays(100))), date)
@@ -110,7 +110,6 @@ class DailySummaryCalculatorTest {
     on: LocalDate,
     profit: String,
   ) {
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), on, null) } returns metrics(profit)
     every { investmentMetricsService.valuePortfolio(any(), on, null) } returns metrics(profit)
   }
 

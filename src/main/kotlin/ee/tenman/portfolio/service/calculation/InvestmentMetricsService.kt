@@ -92,15 +92,23 @@ class InvestmentMetricsService(
     instrument.cashPriceOrNull()
       ?: instrument.currentPrice?.takeIf { it > BigDecimal.ZERO }
 
-  fun calculatePortfolioMetrics(
-    instrumentGroups: Map<Instrument, List<PortfolioTransaction>>,
-    date: LocalDate,
-    priceLookup: PriceLookup? = null,
-  ): PortfolioMetrics = valuePortfolio(prepareHoldings(instrumentGroups), date, priceLookup)
-
   fun prepareHoldings(instrumentGroups: Map<Instrument, List<PortfolioTransaction>>): List<PreparedHolding> {
     transactionService.calculateTransactionProfits(instrumentGroups.values.flatten())
     return instrumentGroups.map { (instrument, transactions) -> prepareHolding(instrument, transactions) }
+  }
+
+  fun prepareHoldingPrefixes(
+    instrument: Instrument,
+    sortedTransactions: List<PortfolioTransaction>,
+  ): List<PreparedHolding> {
+    transactionService.calculateTransactionProfits(sortedTransactions)
+    val aggregated = holdingsCalculationService.calculateAggregatedHoldingPrefixes(sortedTransactions)
+    val realized = sortedTransactions.runningFold(BigDecimal.ZERO) { sum, tx -> sum.add(InvestmentMath.realizedProfit(tx)) }
+    val cashFlows = sortedTransactions.map(xirrCalculationService::convertToCashFlow)
+    return sortedTransactions.indices.map { index ->
+      val count = index + 1
+      PreparedHolding(instrument, sortedTransactions.subList(0, count), aggregated[index], realized[count], cashFlows.subList(0, count))
+    }
   }
 
   fun valuePortfolio(
