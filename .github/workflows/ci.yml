@@ -235,7 +235,7 @@ jobs:
         if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true'
         with:
           path: build/native/nativeCompile
-          key: native-e2e-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**', '.github/workflows/ci.yml') }}
+          key: native-e2e-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**') }}
       - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
         if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true' && steps.native-e2e.outputs.cache-hit != 'true'
         with:
@@ -244,6 +244,7 @@ jobs:
       - name: Build native backend for E2E
         if: matrix.type == 'e2e' && env.BACKEND_NATIVE == 'true' && steps.native-e2e.outputs.cache-hit != 'true'
         env:
+          GRAALVM_QUICK_BUILD: true
           SCHEDULING_ENABLED: false
         run: |
           ./gradlew aotClasses -Pnative --build-cache
