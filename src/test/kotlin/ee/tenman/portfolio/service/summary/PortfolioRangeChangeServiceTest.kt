@@ -163,9 +163,7 @@ class PortfolioRangeChangeServiceTest {
   }
 
   private fun givenTransactions(vararg transactions: PortfolioTransaction) {
-    every { transactionService.getAllTransactions(any(), any(), any()) } answers {
-      transactions.filter { it.transactionDate in (secondArg<LocalDate?>() ?: LocalDate.MIN)..thirdArg<LocalDate>() }
-    }
+    every { transactionService.getAllTransactions(any<List<String>>()) } returns transactions.toList()
   }
 
   private fun givenCurrentSummary(

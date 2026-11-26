@@ -104,8 +104,41 @@ class DailyPriceRepositoryIT {
     upsert(fund, null, "11.00", date = LocalDate.of(2026, 10, 1))
     upsert(fund, null, "12.00", date = LocalDate.of(2026, 10, 2))
     upsert(fund, null, "13.00", date = LocalDate.of(2026, 10, 3))
-    val points = repository.findLatestPricePoints(listOf(fund), LocalDate.of(2026, 10, 2))
+    val points = repository.findLatestPricePointsOnDates(listOf(fund.id), listOf(LocalDate.of(2026, 10, 2)))
     expect(points.single().closePrice).toEqualNumerically(BigDecimal("12.00"))
+  }
+
+  @Test
+  fun `should return the latest price on or before each requested date`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "12.00", date = LocalDate.of(2026, 10, 2))
+    upsert(fund, null, "13.00", date = LocalDate.of(2026, 10, 3))
+    val points = repository.findLatestPricePointsOnDates(listOf(fund.id), listOf(LocalDate.of(2026, 10, 2), LocalDate.of(2026, 10, 6)))
+    expect(points.map { it.entryDate to it.closePrice.toInt() }.toSet()).toEqual(
+      setOf(LocalDate.of(2026, 10, 2) to 12, LocalDate.of(2026, 10, 3) to 13),
+    )
+  }
+
+  @Test
+  fun `should read prices from the last one before the holding started until the holding ended`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "11.00", date = LocalDate.of(2026, 10, 1))
+    upsert(fund, null, "13.00", date = LocalDate.of(2026, 10, 3))
+    upsert(fund, null, "14.00", date = LocalDate.of(2026, 10, 4))
+    upsert(fund, null, "15.00", date = LocalDate.of(2026, 10, 5))
+    val held = mapOf(fund.id to LocalDate.of(2026, 10, 2)..LocalDate.of(2026, 10, 4))
+    val points = repository.findPricePointsSince(held, LocalDate.of(2026, 9, 1))
+    expect(points.map { it.entryDate.dayOfMonth }.sorted()).toEqual(listOf(1, 3, 4))
+  }
+
+  @Test
+  fun `should seed the price window with the last price before it opens`() {
+    val fund = fund(instruments)
+    upsert(fund, null, "11.00", date = LocalDate.of(2026, 9, 20))
+    upsert(fund, null, "12.00", date = LocalDate.of(2026, 10, 3))
+    val held = mapOf(fund.id to LocalDate.of(2026, 9, 1)..LocalDate.of(2026, 10, 31))
+    val points = repository.findPricePointsSince(held, LocalDate.of(2026, 10, 1))
+    expect(points.map { it.entryDate }.sorted()).toEqual(listOf(LocalDate.of(2026, 9, 20), LocalDate.of(2026, 10, 3)))
   }
 
   private fun upsert(

@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository
 import java.time.LocalDate
 
 @Repository
-interface PortfolioTransactionRepository : JpaRepository<PortfolioTransaction, Long> {
+interface PortfolioTransactionRepository :
+  JpaRepository<PortfolioTransaction, Long>,
+  PortfolioTransactionQueries {
   @Query("SELECT pt FROM PortfolioTransaction pt JOIN FETCH pt.instrument ORDER BY pt.transactionDate DESC, pt.id DESC")
   fun findAllWithInstruments(): List<PortfolioTransaction>
 

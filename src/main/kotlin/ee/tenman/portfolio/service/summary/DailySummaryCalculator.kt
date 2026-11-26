@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.metrics.PortfolioMetrics
 import ee.tenman.portfolio.model.metrics.PreparedDay
+import ee.tenman.portfolio.model.metrics.PreparedHolding
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.pricing.PriceLookup
@@ -22,19 +23,36 @@ class DailySummaryCalculator(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     priceLookup: PriceLookup? = null,
-  ): PortfolioDailySummary = calculateFromPrepared(prepareDay(transactions, date, priceLookup), priceLookup)
+  ): PortfolioDailySummary = calculateFromPrepared(prepareDay(transactions, date, priceLookup, ::prepareHoldings), priceLookup)
 
   fun prepareDay(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     priceLookup: PriceLookup?,
+    holdings: (List<PortfolioTransaction>) -> List<PreparedHolding>,
   ): PreparedDay =
     PreparedDay(
       date = date,
-      baselineProfit = calculateBaselineProfit(transactions, baselineDate(date), priceLookup),
+      baselineProfit = calculateBaselineProfit(transactions, baselineDate(date), priceLookup, holdings),
       trailingDays = trailingDays(transactions, date),
-      holdings = investmentMetricsService.prepareHoldings(transactions.groupBy { it.instrument }),
+      holdings = holdings(transactions),
     )
+
+  fun holdingsByPrefix(sortedTransactions: List<PortfolioTransaction>): (List<PortfolioTransaction>) -> List<PreparedHolding> {
+    val prepared =
+      object : LinkedHashMap<Int, List<PreparedHolding>>(RECENT_PREFIXES * 2, LOAD_FACTOR, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, List<PreparedHolding>>): Boolean = size > RECENT_PREFIXES
+      }
+    val prefixes =
+      sortedTransactions.groupBy { it.instrument }.mapValues { (instrument, history) ->
+        investmentMetricsService.prepareHoldingPrefixes(instrument, history)
+      }
+    return { prefix ->
+      prepared.getOrPut(prefix.size) {
+        prefix.groupingBy { it.instrument }.eachCount().map { (instrument, count) -> prefixes.getValue(instrument)[count - 1] }
+      }
+    }
+  }
 
   fun calculateFromPrepared(
     day: PreparedDay,
@@ -42,7 +60,7 @@ class DailySummaryCalculator(
   ): PortfolioDailySummary {
     if (day.holdings.isEmpty()) return createEmptySummary(day.date)
     val metrics = investmentMetricsService.valuePortfolio(day.holdings, day.date, priceLookup)
-    return buildSummary(day.date, metrics, day.baselineProfit, day.trailingDays)
+    return buildSummary(day, metrics)
   }
 
   fun pricedDates(date: LocalDate): List<LocalDate> = listOf(date, baselineDate(date))
@@ -63,14 +81,18 @@ class DailySummaryCalculator(
       earningsPerDay = BigDecimal.ZERO,
     )
 
+  private fun prepareHoldings(transactions: List<PortfolioTransaction>): List<PreparedHolding> =
+    investmentMetricsService.prepareHoldings(transactions.groupBy { it.instrument })
+
   private fun calculateBaselineProfit(
     transactions: List<PortfolioTransaction>,
     baselineDate: LocalDate,
     priceLookup: PriceLookup?,
+    holdings: (List<PortfolioTransaction>) -> List<PreparedHolding>,
   ): BigDecimal {
     val earlier = transactions.filter { !it.transactionDate.isAfter(baselineDate) }
     if (earlier.isEmpty()) return BigDecimal.ZERO
-    return investmentMetricsService.calculatePortfolioMetrics(earlier.groupBy { it.instrument }, baselineDate, priceLookup).totalProfit
+    return investmentMetricsService.valuePortfolio(holdings(earlier), baselineDate, priceLookup).totalProfit
   }
 
   private fun baselineDate(date: LocalDate): LocalDate = date.minusDays(TRAILING_WINDOW_DAYS)
@@ -84,14 +106,13 @@ class DailySummaryCalculator(
   }
 
   private fun buildSummary(
-    date: LocalDate,
+    day: PreparedDay,
     metrics: PortfolioMetrics,
-    baselineProfit: BigDecimal,
-    trailingDays: Long,
   ): PortfolioDailySummary {
+    val date = day.date
     val earningsPerDay =
-      metrics.totalProfit.subtract(baselineProfit).divide(BigDecimal(trailingDays), CALCULATION_SCALE, RoundingMode.HALF_UP)
-    val xirr = xirrCalculationService.calculateAdjustedXirr(metrics.xirrCashFlows, date)
+      metrics.totalProfit.subtract(day.baselineProfit).divide(BigDecimal(day.trailingDays), CALCULATION_SCALE, RoundingMode.HALF_UP)
+    val xirr = xirrCalculationService.calculateAdjustedXirr(metrics.xirrCashFlows, date, day::xirrSchedule)
     val xirrBigDecimal = xirr?.let { BigDecimal(it) } ?: BigDecimal.ZERO
     return PortfolioDailySummary(
       entryDate = date,
@@ -107,5 +128,7 @@ class DailySummaryCalculator(
   companion object {
     private const val TRAILING_WINDOW_DAYS = 365L
     private const val CALCULATION_SCALE = 10
+    private const val RECENT_PREFIXES = 2
+    private const val LOAD_FACTOR = 0.75f
   }
 }

@@ -1,15 +1,18 @@
 package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.INTRADAY_REPLAY_CACHE
-import ee.tenman.portfolio.domain.InstrumentMinutePrice
+import ee.tenman.portfolio.domain.Instrument
+import ee.tenman.portfolio.domain.MinutePricePoint
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.dto.IntradaySummaryPointDto
 import ee.tenman.portfolio.model.metrics.PreparedDay
+import ee.tenman.portfolio.model.metrics.PreparedHolding
 import ee.tenman.portfolio.repository.InstrumentMinutePriceRepository
-import ee.tenman.portfolio.repository.PortfolioTransactionRepository
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceLookup
+import ee.tenman.portfolio.service.transaction.TransactionCacheService
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,10 +21,12 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.CompletableFuture
 
 @Service
 class IntradaySummaryReplayService(
-  private val portfolioTransactionRepository: PortfolioTransactionRepository,
+  private val transactionCacheService: TransactionCacheService,
+  private val instrumentRepository: InstrumentRepository,
   private val instrumentMinutePriceRepository: InstrumentMinutePriceRepository,
   private val dailyPriceService: DailyPriceService,
   private val dailySummaryCalculator: DailySummaryCalculator,
@@ -37,21 +42,45 @@ class IntradaySummaryReplayService(
     days: Long,
     platforms: List<Platform>,
   ): List<IntradaySummaryPointDto> {
-    val transactions =
-      portfolioTransactionRepository
-      .findAllByPlatformsWithInstruments(platforms)
-      .sortedWith(compareBy({ it.transactionDate }, { it.id }))
+    val cached = CompletableFuture.supplyAsync { transactionCacheService.getAllTransactions() }
+    val instruments = instrumentRepository.findAllTradedOn(platforms)
+    val transactions = transactions(cached.join(), platforms, instruments.associateBy { it.id })
     if (transactions.isEmpty()) return emptyList()
-    val instruments = transactions.map { it.instrument }.distinctBy { it.id }
-    val now = Instant.now(clock)
-    val from = now.minus(days, ChronoUnit.DAYS)
-    val until = now.truncatedTo(ChronoUnit.MINUTES)
-    val captures = instrumentMinutePriceRepository.findForReplay(instruments.map { it.id }, from, until)
-    if (captures.isEmpty()) return emptyList()
-    val times = timestamps(maxOf(from, captures.first().capturedAt), until, bucketSeconds(days))
-    val dates = times.map { it.atZone(clock.zone).toLocalDate() }.distinct().flatMap(dailySummaryCalculator::pricedDates)
-    return replay(times, captures, transactions, dailyPriceService.buildLatestPriceLookup(instruments, dates))
+    val times = replayTimes(days)
+    val dates = times.map { it.atZone(clock.zone).toLocalDate() }.distinct()
+    val holdings = dailySummaryCalculator.holdingsByPrefix(transactions)
+    val ids = held(transactions, dates, holdings).ifEmpty { instruments.map { it.id } }
+    val changes = CompletableFuture.supplyAsync { instrumentMinutePriceRepository.findPriceChangesAt(ids, times).groupBy { it.capturedAt } }
+    val lookup = dailyPriceService.buildLatestPriceLookup(instruments, dates.flatMap(dailySummaryCalculator::pricedDates))
+    val prepared = dates.associateWith { prepare(transactions, it, lookup, holdings) }
+    return replay(changes.join(), times, prepared, lookup)
   }
+
+  private fun replayTimes(days: Long): List<Instant> {
+    val now = Instant.now(clock)
+    return timestamps(now.minus(days, ChronoUnit.DAYS), now.truncatedTo(ChronoUnit.MINUTES), bucketSeconds(days))
+  }
+
+  private fun held(
+    transactions: List<PortfolioTransaction>,
+    dates: List<LocalDate>,
+    holdings: (List<PortfolioTransaction>) -> List<PreparedHolding>,
+  ): List<Long> =
+    dates
+      .flatMap { date -> holdings(transactions.filter { !it.transactionDate.isAfter(date) }) }
+      .filter { it.held }
+      .map { it.instrument.id }
+      .distinct()
+
+  private fun transactions(
+    cached: List<PortfolioTransaction>,
+    platforms: List<Platform>,
+    instruments: Map<Long, Instrument>,
+  ): List<PortfolioTransaction> =
+    cached
+      .filter { it.platform in platforms }
+      .onEach { it.instrument = instruments.getValue(it.instrument.id) }
+      .sortedWith(compareBy({ it.transactionDate }, { it.id }))
 
   private fun timestamps(
     from: Instant,
@@ -67,22 +96,18 @@ class IntradaySummaryReplayService(
   }
 
   private fun replay(
+    changes: Map<Instant, List<MinutePricePoint>>,
     times: List<Instant>,
-    captures: List<InstrumentMinutePrice>,
-    transactions: List<PortfolioTransaction>,
+    days: Map<LocalDate, PreparedDay>,
     lookup: PriceLookup,
   ): List<IntradaySummaryPointDto> {
-    val prices = mutableMapOf<Long, BigDecimal>()
-    val days = mutableMapOf<LocalDate, PreparedDay>()
-    var next = 0
-    return times.map { time ->
-      while (next < captures.size && !captures[next].capturedAt.isAfter(time)) {
-        prices[captures[next].instrument.id] = captures[next].price
-        next++
-      }
+    val latest = HashMap<Long, BigDecimal>()
+    return times.mapNotNull { time ->
+      changes[time]?.forEach { latest[it.instrumentId] = it.price }
       val date = time.atZone(clock.zone).toLocalDate()
-      val day = days.getOrPut(date) { prepare(transactions, date, lookup) }
-      dailySummaryCalculator.calculateFromPrepared(day, lookup.pinnedAt(date, prices)).toIntradayPointDto(time)
+      latest.takeIf { it.isNotEmpty() }?.let {
+        dailySummaryCalculator.calculateFromPrepared(days.getValue(date), lookup.pinnedAt(date, it)).toIntradayPointDto(time)
+      }
     }
   }
 
@@ -90,5 +115,6 @@ class IntradaySummaryReplayService(
     transactions: List<PortfolioTransaction>,
     date: LocalDate,
     lookup: PriceLookup,
-  ): PreparedDay = dailySummaryCalculator.prepareDay(transactions.filter { !it.transactionDate.isAfter(date) }, date, lookup)
+    holdings: (List<PortfolioTransaction>) -> List<PreparedHolding>,
+  ): PreparedDay = dailySummaryCalculator.prepareDay(transactions.filter { !it.transactionDate.isAfter(date) }, date, lookup, holdings)
 }

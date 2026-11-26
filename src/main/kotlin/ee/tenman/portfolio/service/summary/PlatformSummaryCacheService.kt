@@ -2,9 +2,11 @@ package ee.tenman.portfolio.service.summary
 
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.PLATFORM_SUMMARY_CACHE
 import ee.tenman.portfolio.configuration.RedisConfiguration.Companion.SUMMARY_CACHE
+import ee.tenman.portfolio.configuration.aspect.SingleFlight
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioDailySummary
 import ee.tenman.portfolio.domain.TimeRange
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CachePut
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
@@ -15,8 +17,10 @@ import java.time.LocalDate
 @Service
 class PlatformSummaryCacheService(
   private val summaryService: SummaryService,
+  private val cacheManager: CacheManager,
   private val clock: Clock,
 ) {
+  @SingleFlight
   @Cacheable(
     value = [SUMMARY_CACHE],
     key = "'platform-current-' + #root.target.platformKey(#platforms)",
@@ -63,13 +67,25 @@ class PlatformSummaryCacheService(
 
   @Cacheable(
     value = [PLATFORM_SUMMARY_CACHE],
-    key = "'platform-series-' + #root.target.platformKey(#platforms) + '-' + #range.name() + '-' + #root.target.today()",
+    key = "#root.target.seriesKey(#platforms, #range)",
     unless = "#result.isEmpty()",
   )
   fun getSeriesForPlatforms(
     platforms: List<Platform>,
     range: TimeRange,
-  ): List<PortfolioDailySummary> = summaryService.getSeriesForPlatforms(platforms, range)
+  ): List<PortfolioDailySummary> = summaryService.getSeriesForPlatforms(platforms, range) { cachedSeries(platforms, it) }
+
+  fun seriesKey(
+    platforms: List<Platform>,
+    range: TimeRange,
+  ): String = "platform-series-${platformKey(platforms)}-${range.name}-${today()}"
+
+  @Suppress("UNCHECKED_CAST")
+  private fun cachedSeries(
+    platforms: List<Platform>,
+    range: TimeRange,
+  ): List<PortfolioDailySummary>? =
+    cacheManager.getCache(PLATFORM_SUMMARY_CACHE)?.get(seriesKey(platforms, range))?.get() as List<PortfolioDailySummary>?
 
   fun platformKey(platforms: List<Platform>): String = platforms.map { it.name }.sorted().joinToString(",")
 

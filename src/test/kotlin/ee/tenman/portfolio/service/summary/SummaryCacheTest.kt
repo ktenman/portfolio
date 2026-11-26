@@ -127,11 +127,11 @@ class SummaryCacheTest {
     val tallinn = ZoneId.of("Europe/Tallinn")
     every { clock.zone } returns tallinn
     every { clock.instant() } returns LocalDateTime.of(2024, 3, 11, 23, 59).atZone(tallinn).toInstant()
-    every { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY) } returns listOf(summaryOn(LocalDate.of(2024, 3, 11)))
+    every { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY, any()) } returns listOf(summaryOn(LocalDate.of(2024, 3, 11)))
     platformSummaryCacheService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY)
     every { clock.instant() } returns LocalDateTime.of(2024, 3, 12, 0, 1).atZone(tallinn).toInstant()
     platformSummaryCacheService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY)
-    verify(exactly = 2) { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY) }
+    verify(exactly = 2) { summaryService.getSeriesForPlatforms(lightyear, TimeRange.ONE_DAY, any()) }
   }
 
   private fun summaryOn(date: LocalDate): PortfolioDailySummary =
@@ -147,14 +147,24 @@ class SummaryCacheTest {
 class PlatformSummaryCacheServiceTest {
   @Test
   fun `should platformKey sort platforms alphabetically`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+    val service =
+      PlatformSummaryCacheService(
+        summaryService = io.mockk.mockk(),
+        cacheManager = io.mockk.mockk(),
+        clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+      )
     val key = service.platformKey(listOf(Platform.TRADING212, Platform.TREZOR, Platform.LIGHTYEAR))
     expect(key).toEqual("LIGHTYEAR,TRADING212,TREZOR")
   }
 
   @Test
   fun `should platformKey produce same key regardless of input order`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+    val service =
+      PlatformSummaryCacheService(
+        summaryService = io.mockk.mockk(),
+        cacheManager = io.mockk.mockk(),
+        clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+      )
     val key1 = service.platformKey(listOf(Platform.LIGHTYEAR, Platform.TRADING212))
     val key2 = service.platformKey(listOf(Platform.TRADING212, Platform.LIGHTYEAR))
     expect(key1).toEqual(key2)
@@ -162,7 +172,12 @@ class PlatformSummaryCacheServiceTest {
 
   @Test
   fun `should platformKey handle single platform`() {
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+    val service =
+      PlatformSummaryCacheService(
+        summaryService = io.mockk.mockk(),
+        cacheManager = io.mockk.mockk(),
+        clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+      )
     val key = service.platformKey(listOf(Platform.LHV))
     expect(key).toEqual("LHV")
   }
@@ -170,7 +185,7 @@ class PlatformSummaryCacheServiceTest {
   @Test
   fun `should today resolve the date in the clock zone`() {
     val clock = Clock.fixed(Instant.parse("2024-03-11T22:30:00Z"), ZoneId.of("Europe/Tallinn"))
-    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), clock = clock)
+    val service = PlatformSummaryCacheService(summaryService = io.mockk.mockk(), cacheManager = io.mockk.mockk(), clock = clock)
     expect(service.today()).toEqual(LocalDate.of(2024, 3, 12))
   }
 }

@@ -58,8 +58,6 @@ abstract class SummaryServiceTestBase {
     every { clock.instant() } returns testDate.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant()
     every { clock.zone } returns ZoneId.systemDefault()
     every { portfolioDailySummaryRepository.findByEntryDate(any()) } returns null
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), any(), any()) } returns
-      PortfolioMetrics(totalValue = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO)
     every { investmentMetricsService.prepareHoldings(any()) } answers {
       firstArg<Map<Instrument, List<PortfolioTransaction>>>().map { (owner, trades) ->
         PreparedHolding(owner, trades, null, BigDecimal.ZERO, emptyList())
@@ -68,7 +66,7 @@ abstract class SummaryServiceTestBase {
     every { investmentMetricsService.valuePortfolio(any(), any(), any()) } returns
       PortfolioMetrics(totalValue = BigDecimal.ZERO, totalProfit = BigDecimal.ZERO)
     every { xirrCalculationService.buildCashFlows(any(), any(), any()) } returns emptyList()
-    every { xirrCalculationService.calculateAdjustedXirr(any(), any()) } returns 0.0
+    every { xirrCalculationService.calculateAdjustedXirr(any(), any(), any()) } returns 0.0
   }
 
   protected fun stubMetrics(
@@ -78,7 +76,6 @@ abstract class SummaryServiceTestBase {
     vararg cashFlows: CashFlow,
   ) {
     every { investmentMetricsService.valuePortfolio(any(), date) } returns metrics(totalValue, totalProfit, cashFlows)
-    every { investmentMetricsService.calculatePortfolioMetrics(any(), date) } returns metrics(totalValue, totalProfit, cashFlows)
   }
 
   private fun metrics(

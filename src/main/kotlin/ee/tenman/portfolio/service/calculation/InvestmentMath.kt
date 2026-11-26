@@ -16,10 +16,10 @@ object InvestmentMath {
     return totalCost.multiply(BigDecimal.ONE.subtract(soldShare)).setScale(CALCULATION_SCALE, RoundingMode.HALF_UP)
   }
 
-  fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal =
-    transactions
-      .filter { it.transactionType == TransactionType.SELL }
-      .sumOf { it.realizedProfit ?: BigDecimal.ZERO }
+  fun calculateRealizedProfit(transactions: List<PortfolioTransaction>): BigDecimal = transactions.sumOf(::realizedProfit)
+
+  fun realizedProfit(transaction: PortfolioTransaction): BigDecimal =
+    transaction.realizedProfit.takeIf { transaction.transactionType == TransactionType.SELL } ?: BigDecimal.ZERO
 
   fun calculateTotalBuys(transactions: List<PortfolioTransaction>): BigDecimal =
     transactions

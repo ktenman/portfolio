@@ -79,6 +79,6 @@ class PortfolioPinnedPricesTest {
       ProfitCalculationEngine().calculateProfitsForPlatform(firstArg<List<PortfolioTransaction>>(), BigDecimal.ZERO)
     }
     val service = InvestmentMetricsService(mockk<DailyPriceService>(), transactions, XirrCalculationService(clock), holdings, clock)
-    return service.calculatePortfolioMetrics(mapOf(instrument to listOf(transaction)), date, lookup).totalValue
+    return service.valuePortfolio(service.prepareHoldings(mapOf(instrument to listOf(transaction))), date, lookup).totalValue
   }
 }

@@ -19,6 +19,8 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+private val CALENDAR_RANGE = TimeRange.SIX_MONTHS
+
 @Service
 class SummaryService(
   private val portfolioDailySummaryRepository: PortfolioDailySummaryRepository,
@@ -69,7 +71,7 @@ class SummaryService(
     date: LocalDate,
   ): PortfolioDailySummary {
     val transactions = fetchSortedTransactions(platforms).filter { !it.transactionDate.isAfter(date) }
-    return dailySummaryCalculator.calculateFromTransactions(transactions, date)
+    return summaryBatchProcessor.calculateSummaryOn(transactions, date)
   }
 
   fun getCurrentDaySummaryForPlatforms(platforms: List<Platform>): PortfolioDailySummary =
@@ -92,19 +94,25 @@ class SummaryService(
     val pageStartDate = yesterday.minusDays(end - 1)
     val pageEndDate = yesterday.minusDays(start)
     val pageDates = generateDateRange(pageStartDate, pageEndDate)
-    val summaries = calculateSummariesForDates(pageDates, sortedTransactions)
+    val summaries = summaryBatchProcessor.calculateSummaries(pageDates, sortedTransactions)
     return PageImpl(summaries.reversed(), pageRequest, totalDates.toLong())
   }
 
   fun getSeriesForPlatforms(
     platforms: List<Platform>,
     range: TimeRange,
+    cachedSeries: (TimeRange) -> List<PortfolioDailySummary>? = { null },
   ): List<PortfolioDailySummary> {
     val sortedTransactions = fetchSortedTransactions(platforms)
     val firstDate = sortedTransactions.firstOrNull()?.transactionDate ?: return emptyList()
-    val dates = range.dates(firstDate, LocalDate.now(clock))
+    val today = LocalDate.now(clock)
+    val dates = range.dates(firstDate, today)
     if (dates.isEmpty()) return emptyList()
-    return calculateSummariesForDates(dates, sortedTransactions)
+    val calendar = CALENDAR_RANGE.dates(firstDate, today)
+    val calendarStart = calendar.firstOrNull()?.takeIf { it.isAfter(dates.first()) }
+    return summaryBatchProcessor.calculateSummaries(dates, sortedTransactions) { date ->
+      if (date != calendarStart) null else cachedSeries(CALENDAR_RANGE)?.takeIf { cached -> cached.map { it.entryDate } == calendar }
+    }
   }
 
   @Transactional(readOnly = true)
@@ -119,11 +127,6 @@ class SummaryService(
     transactionService
       .getAllTransactions(platforms.map { it.name })
       .sortedWith(transactionSortOrder)
-
-  private fun calculateSummariesForDates(
-    sortedDates: List<LocalDate>,
-    sortedTransactions: List<PortfolioTransaction>,
-  ): List<PortfolioDailySummary> = summaryBatchProcessor.calculateSummaries(sortedDates, sortedTransactions)
 
   private fun clearAllCaches() {
     cacheManager.getCache(INSTRUMENT_CACHE)?.clear()

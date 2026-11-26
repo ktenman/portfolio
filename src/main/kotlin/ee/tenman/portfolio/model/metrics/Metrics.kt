@@ -4,6 +4,7 @@ import ee.tenman.portfolio.domain.Instrument
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.model.holding.AggregatedHoldings
 import ee.tenman.portfolio.service.calculation.xirr.CashFlow
+import ee.tenman.portfolio.service.calculation.xirr.XirrSchedule
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -21,14 +22,21 @@ data class PreparedHolding(
   val aggregated: AggregatedHoldings?,
   val realizedProfit: BigDecimal,
   val cashFlows: List<CashFlow>,
-)
+) {
+  val held: Boolean get() = aggregated?.let { it.totalQuantity > BigDecimal.ZERO } ?: true
+}
 
 data class PreparedDay(
   val date: LocalDate,
   val baselineProfit: BigDecimal,
   val trailingDays: Long,
   val holdings: List<PreparedHolding>,
-)
+) {
+  private var schedule: XirrSchedule? = null
+
+  fun xirrSchedule(cashFlows: List<CashFlow>): XirrSchedule =
+    schedule?.takeIf { it.fits(cashFlows) } ?: XirrSchedule(cashFlows).also { schedule = it }
+}
 
 data class InstrumentMetrics(
   val totalInvestment: BigDecimal,

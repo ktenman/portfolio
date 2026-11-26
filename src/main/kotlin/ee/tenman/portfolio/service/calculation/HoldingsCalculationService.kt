@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.calculation
 
+import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.domain.TransactionType
 import ee.tenman.portfolio.model.FinancialConstants.CALCULATION_SCALE
@@ -12,34 +13,49 @@ import java.math.RoundingMode
 
 @Service
 class HoldingsCalculationService {
-  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): CurrentHoldings {
-    val (quantity, totalCost) =
+  fun calculateCurrentHoldings(transactions: List<PortfolioTransaction>): CurrentHoldings =
+    toCurrentHoldings(
       transactions
         .sortedWith(compareBy({ it.transactionDate }, { it.id }))
-        .fold(HoldingsAccumulator()) { acc, tx ->
-          when (tx.transactionType) {
-            TransactionType.BUY -> acc.applyBuy(tx)
-            TransactionType.SELL -> acc.applySell(tx)
-          }
-        }
-    val averageCost =
-      quantity
-        .takeIf { it > BigDecimal.ZERO }
-        ?.let { totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
-        ?: BigDecimal.ZERO
-    return CurrentHoldings(quantity, averageCost)
-  }
+        .fold(HoldingsAccumulator(), ::accumulate),
+    )
 
   fun calculateAggregatedHoldings(transactions: List<PortfolioTransaction>): AggregatedHoldings =
-    transactions
-      .groupBy { it.platform }
-      .values
-      .map { calculateCurrentHoldings(it) }
+    aggregate(transactions.groupBy { it.platform }.values.map { calculateCurrentHoldings(it) })
+
+  fun calculateAggregatedHoldingPrefixes(sortedTransactions: List<PortfolioTransaction>): List<AggregatedHoldings> {
+    val platforms = mutableMapOf<Platform, HoldingsAccumulator>()
+    return sortedTransactions.map { tx ->
+      platforms[tx.platform] = accumulate(platforms[tx.platform] ?: HoldingsAccumulator(), tx)
+      aggregate(platforms.values.map(::toCurrentHoldings))
+    }
+  }
+
+  private fun accumulate(
+    accumulator: HoldingsAccumulator,
+    tx: PortfolioTransaction,
+  ): HoldingsAccumulator =
+    when (tx.transactionType) {
+      TransactionType.BUY -> accumulator.applyBuy(tx)
+      TransactionType.SELL -> accumulator.applySell(tx)
+    }
+
+  private fun toCurrentHoldings(accumulator: HoldingsAccumulator): CurrentHoldings {
+    val averageCost =
+      accumulator.quantity
+        .takeIf { it > BigDecimal.ZERO }
+        ?.let { accumulator.totalCost.divide(it, CALCULATION_SCALE, RoundingMode.HALF_UP) }
+        ?: BigDecimal.ZERO
+    return CurrentHoldings(accumulator.quantity, averageCost)
+  }
+
+  private fun aggregate(holdings: List<CurrentHoldings>): AggregatedHoldings =
+    holdings
       .filter { it.quantity > BigDecimal.ZERO }
-      .fold(AggregatedHoldings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, holdings ->
+      .fold(AggregatedHoldings(BigDecimal.ZERO, BigDecimal.ZERO)) { acc, holding ->
         AggregatedHoldings(
-          totalQuantity = acc.totalQuantity.add(holdings.quantity),
-          totalInvestment = acc.totalInvestment.add(holdings.quantity.multiply(holdings.averageCost)),
+          totalQuantity = acc.totalQuantity.add(holding.quantity),
+          totalInvestment = acc.totalInvestment.add(holding.quantity.multiply(holding.averageCost)),
         )
       }
 

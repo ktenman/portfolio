@@ -8,7 +8,10 @@ import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.Version
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
 import java.io.Serializable
+import java.math.BigDecimal
 import java.time.Instant
 
 @MappedSuperclass
@@ -33,3 +36,9 @@ abstract class BaseEntity : Serializable {
   @Column(nullable = false)
   var version: Long = 0
 }
+
+internal fun ObjectOutputStream.writeDecimal(value: BigDecimal?) = writeUTF(value?.toString().orEmpty())
+
+internal fun ObjectInputStream.readDecimal(): BigDecimal = BigDecimal(readUTF())
+
+internal fun ObjectInputStream.readOptionalDecimal(): BigDecimal? = readUTF().ifEmpty { null }?.let(::BigDecimal)

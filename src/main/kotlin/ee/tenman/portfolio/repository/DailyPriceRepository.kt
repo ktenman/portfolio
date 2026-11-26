@@ -11,7 +11,9 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 @Repository
-interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
+interface DailyPriceRepository :
+  JpaRepository<DailyPrice, Long>,
+  DailyPricePointQueries {
   fun findFirstByInstrumentAndEntryDateBetweenOrderByEntryDateDesc(
     instrument: Instrument,
     startDate: LocalDate,
@@ -31,34 +33,6 @@ interface DailyPriceRepository : JpaRepository<DailyPrice, Long> {
   fun findPricePointsByInstrumentAndEntryDateGreaterThanEqual(
     instrument: Instrument,
     entryDate: LocalDate,
-  ): List<DailyPricePoint>
-
-  @Query(
-    """
-    SELECT new ee.tenman.portfolio.domain.DailyPricePoint(dp.instrument.id, dp.entryDate, dp.closePrice)
-    FROM DailyPrice dp
-    WHERE dp.instrument IN :instruments
-    """,
-  )
-  fun findPricePointsByInstrumentIn(instruments: Collection<Instrument>): List<DailyPricePoint>
-
-  @Query(
-    """
-    SELECT new ee.tenman.portfolio.domain.DailyPricePoint(i.id, latest.entryDate, latest.closePrice)
-    FROM Instrument i
-    JOIN LATERAL (
-      SELECT dp.entryDate AS entryDate, dp.closePrice AS closePrice
-      FROM DailyPrice dp
-      WHERE dp.instrument = i AND dp.entryDate <= :date
-      ORDER BY dp.entryDate DESC, dp.providerName DESC
-      LIMIT 1
-    ) latest
-    WHERE i IN :instruments
-    """,
-  )
-  fun findLatestPricePoints(
-    instruments: Collection<Instrument>,
-    date: LocalDate,
   ): List<DailyPricePoint>
 
   @Query("SELECT DISTINCT dp.entryDate FROM DailyPrice dp WHERE dp.instrument = :instrument")

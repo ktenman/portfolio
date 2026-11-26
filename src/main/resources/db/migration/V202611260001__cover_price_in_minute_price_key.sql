@@ -1,0 +1,2 @@
+ALTER TABLE instrument_minute_price DROP CONSTRAINT instrument_minute_price_instrument_id_captured_at_key;
+ALTER TABLE instrument_minute_price ADD CONSTRAINT instrument_minute_price_instrument_id_captured_at_key UNIQUE (instrument_id, captured_at) INCLUDE (price);

@@ -47,9 +47,9 @@ class RedisConfiguration {
   companion object {
     private const val SCAN_BATCH = 1000
     const val INSTRUMENT_CACHE = "instrument-cache-v5"
-    const val SUMMARY_CACHE = "summary-cache-v4"
+    const val SUMMARY_CACHE = "summary-cache-v5"
     const val INTRADAY_REPLAY_CACHE = "intraday-replay-v1"
-    const val TRANSACTION_CACHE = "transaction-cache-v6"
+    const val TRANSACTION_CACHE = "transaction-cache-v7"
     const val ONE_DAY_CACHE: String = "one-day-cache-v3"
     const val ETF_BREAKDOWN_CACHE: String = "etf:breakdown-v5"
     const val LIGHTYEAR_UUID_CACHE: String = "lightyear-uuid-v4"
@@ -57,7 +57,7 @@ class RedisConfiguration {
     const val LOGO_NAME_SEARCH_CACHE: String = "logo-name-search-v4"
     const val DIVERSIFICATION_ETFS_CACHE: String = "diversification-etfs-v6"
     const val DIVERSIFICATION_CONFIG_CACHE: String = "diversification-config-v4"
-    const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v5"
+    const val PLATFORM_SUMMARY_CACHE: String = "platform-summary-v6"
     const val SNAPSHOT_BACKFILL_CACHE: String = "snapshot-backfill-v3"
     const val VEEGO_TAX_CACHE: String = "veego-tax-v1"
     const val AUTO24_PRICE_CACHE: String = "auto24-price-v2"

@@ -6,11 +6,12 @@ import ch.tutteli.atrium.api.fluent.en_GB.toEqualNumerically
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
 import ee.tenman.portfolio.domain.DailyPricePoint
-import ee.tenman.portfolio.domain.InstrumentMinutePrice
+import ee.tenman.portfolio.domain.MinutePricePoint
 import ee.tenman.portfolio.domain.Platform
 import ee.tenman.portfolio.domain.PortfolioIntradaySummary
 import ee.tenman.portfolio.domain.PortfolioTransaction
 import ee.tenman.portfolio.repository.InstrumentMinutePriceRepository
+import ee.tenman.portfolio.repository.InstrumentRepository
 import ee.tenman.portfolio.repository.PortfolioTransactionRepository
 import ee.tenman.portfolio.service.calculation.HoldingsCalculationService
 import ee.tenman.portfolio.service.calculation.InvestmentMetricsService
@@ -18,6 +19,7 @@ import ee.tenman.portfolio.service.calculation.ProfitCalculationEngine
 import ee.tenman.portfolio.service.calculation.XirrCalculationService
 import ee.tenman.portfolio.service.pricing.DailyPriceService
 import ee.tenman.portfolio.service.pricing.PriceLookup
+import ee.tenman.portfolio.service.transaction.TransactionCacheService
 import ee.tenman.portfolio.service.transaction.TransactionService
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createBuyTransaction
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createCashInstrument
@@ -25,7 +27,7 @@ import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createInstrument
 import ee.tenman.portfolio.testing.fixture.TransactionFixtures.createSellTransaction
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.slot
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -40,7 +42,11 @@ class IntradaySummaryReplayServiceTest {
   private val selection = listOf(Platform.LIGHTYEAR, Platform.LIGHTYEAR_BUSINESS)
   private val repository = mockk<InstrumentMinutePriceRepository>()
   private val transactions = mockk<PortfolioTransactionRepository>()
+  private val cache = mockk<TransactionCacheService>()
+  private val instruments = mockk<InstrumentRepository>()
   private val daily = mockk<DailyPriceService>()
+  private val requestedIds = slot<List<Long>>()
+  private val requestedTimes = slot<List<Instant>>()
 
   @Test
   fun `should replay changing captured prices instead of the live price`() {
@@ -81,12 +87,10 @@ class IntradaySummaryReplayServiceTest {
   }
 
   @Test
-  fun `should query only the selected instruments with the complete time window`() {
+  fun `should query only the held instruments up to the last whole minute`() {
     val service = service(listOf(price("2026-09-21T12:20:00Z", "110")))
     service.getPoints(7, selection)
-    verify(exactly = 1) {
-      repository.findForReplay(listOf(1L), Instant.parse("2026-09-14T12:34:56Z"), Instant.parse("2026-09-21T12:34:00Z"))
-    }
+    expect(requestedIds.captured to requestedTimes.captured.last()).toEqual(listOf(1L) to Instant.parse("2026-09-21T12:34:00Z"))
   }
 
   @Test
@@ -179,7 +183,8 @@ class IntradaySummaryReplayServiceTest {
   @Test
   fun `should use daily prices for an instrument without a captured price`() {
     val other = createInstrument(id = 2L, symbol = "MSFT").apply { currentPrice = null }
-    val trades = listOf(buy(LocalDate.of(2026, 9, 1)), createBuyTransaction(other, BigDecimal.ONE, BigDecimal.TEN))
+    val trades =
+      listOf(buy(LocalDate.of(2026, 9, 1)), createBuyTransaction(other, BigDecimal.ONE, BigDecimal.TEN, platform = Platform.LIGHTYEAR))
     val prices = listOf(DailyPricePoint(2L, LocalDate.of(2026, 9, 20), BigDecimal("77")))
     val service = service(listOf(price("2026-09-20T12:20:00Z", "110")), trades, "2026-09-20T12:34:56Z", prices)
     expect(service.getPoints(1, selection).last().totalValue).toEqualNumerically(BigDecimal("1177"))
@@ -233,23 +238,38 @@ class IntradaySummaryReplayServiceTest {
       createSellTransaction(cash, BigDecimal("100"), BigDecimal.ONE, date, Platform.LIGHTYEAR, BigDecimal.ZERO),
       createBuyTransaction(cash, BigDecimal("100"), BigDecimal.ONE, date, Platform.LIGHTYEAR_BUSINESS, BigDecimal.ZERO),
     )
-    val captures = listOf(InstrumentMinutePrice(cash, Instant.parse("2026-09-20T12:20:00Z"), BigDecimal.ONE))
+    val captures = listOf(MinutePricePoint(cash.id, Instant.parse("2026-09-20T12:20:00Z"), BigDecimal.ONE))
     val dailyPrices = listOf(DailyPricePoint(1L, LocalDate.of(2026, 9, 20), BigDecimal.ZERO))
     val service = service(captures, trades, "2026-09-20T12:34:56Z", dailyPrices)
     expect(service.getPoints(1, selection).last().totalProfit).toEqualNumerically(BigDecimal("-90"))
   }
 
   private fun service(
-    captures: List<InstrumentMinutePrice>,
+    captures: List<MinutePricePoint>,
     trades: List<PortfolioTransaction> = listOf(buy(LocalDate.of(2026, 9, 1))),
     now: String = "2026-09-21T12:34:56Z",
     dailyPrices: List<DailyPricePoint> = emptyList(),
   ): IntradaySummaryReplayService {
-    every { transactions.findAllByPlatformsWithInstruments(any()) } returns trades
-    every { repository.findForReplay(any(), any(), any()) } returns captures
+    every { cache.getAllTransactions() } returns trades
+    every { instruments.findAllTradedOn(any()) } returns trades.map { it.instrument }.distinctBy { it.id }
+    every { repository.findPriceChangesAt(capture(requestedIds), capture(requestedTimes)) } answers {
+      val selected = captures.filter { it.instrumentId in requestedIds.captured }
+      requestedTimes.captured.let { times -> times.flatMapIndexed { index, time -> changesAt(selected, times.getOrNull(index - 1), time) } }
+    }
     every { daily.buildLatestPriceLookup(any(), any()) } returns PriceLookup(dailyPrices)
-    return IntradaySummaryReplayService(transactions, repository, daily, calculator(clock(now)), clock(now))
+    return IntradaySummaryReplayService(cache, instruments, repository, daily, calculator(clock(now)), clock(now))
   }
+
+  private fun changesAt(
+    captures: List<MinutePricePoint>,
+    since: Instant?,
+    time: Instant,
+  ): List<MinutePricePoint> =
+    captures
+      .filter { !it.capturedAt.isAfter(time) && (since == null || it.capturedAt.isAfter(since)) }
+      .groupBy { it.instrumentId }
+      .values
+      .map { it.maxBy(MinutePricePoint::capturedAt).copy(capturedAt = time) }
 
   private fun calculator(clock: Clock): DailySummaryCalculator {
     val transactionService = TransactionService(transactions, ProfitCalculationEngine(), mockk(), mockk(), clock)
@@ -263,7 +283,7 @@ class IntradaySummaryReplayServiceTest {
   private fun price(
     at: String,
     value: String,
-  ): InstrumentMinutePrice = InstrumentMinutePrice(stock, Instant.parse(at), BigDecimal(value))
+  ): MinutePricePoint = MinutePricePoint(stock.id, Instant.parse(at), BigDecimal(value))
 
   private fun buy(
     date: LocalDate,

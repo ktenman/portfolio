@@ -174,7 +174,7 @@ class SummaryServiceSeriesTest {
   fun `should request one week of dates from the batch processor`() {
     every { transactionService.getAllTransactions(listOf("LHV")) } returns listOf(transaction(LocalDate.of(2020, 1, 2)))
     val dates = slot<List<LocalDate>>()
-    every { batchProcessor.calculateSummaries(capture(dates), any()) } returns emptyList()
+    every { batchProcessor.calculateSummaries(capture(dates), any(), any()) } returns emptyList()
 
     service.getSeriesForPlatforms(listOf(Platform.LHV), TimeRange.ONE_WEEK)
 
@@ -185,7 +185,7 @@ class SummaryServiceSeriesTest {
   fun `should request every day so filtered performance math stays deposit neutral`() {
     every { transactionService.getAllTransactions(listOf("LHV")) } returns listOf(transaction(LocalDate.of(2020, 1, 2)))
     val dates = slot<List<LocalDate>>()
-    every { batchProcessor.calculateSummaries(capture(dates), any()) } returns emptyList()
+    every { batchProcessor.calculateSummaries(capture(dates), any(), any()) } returns emptyList()
 
     service.getSeriesForPlatforms(listOf(Platform.LHV), TimeRange.MAX)
 
