@@ -320,13 +320,13 @@ jobs:
           retention-days: 7
 
   visual:
-    name: 🖼️ Visual Regression Tests (${{ matrix.viewport }})
+    name: 🖼️ Visual Regression Tests (${{ matrix.shard }}/6)
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:
-        viewport: [mobile, tablet, desktop]
+        shard: [1, 2, 3, 4, 5, 6]
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
       options: --ipc=host
@@ -342,12 +342,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Run visual regression tests
-        run: npx playwright test --project='*${{ matrix.viewport }}*'
+        run: npx playwright test --fully-parallel --shard=${{ matrix.shard }}/6
       - uses: actions/upload-artifact@v7
         if: failure()
         continue-on-error: true
         with:
-          name: Visual Regression Diffs ${{ matrix.viewport }}
+          name: Visual Regression Diffs ${{ matrix.shard }}
           path: test-results/
           retention-days: 7
 
