@@ -1,17 +1,15 @@
-FROM ubuntu:26.04
+FROM cgr.dev/chainguard/wolfi-base:latest
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends ca-certificates curl libfreetype6 && \
-    rm -rf /var/lib/apt/lists/* /usr/bin/pebble && \
+RUN apk add --no-cache curl freetype && \
+    adduser -D -u 1000 portfolio && \
     mkdir /recordings && \
-    chown ubuntu:ubuntu /app /recordings
+    chown portfolio:portfolio /app /recordings
 
 COPY --from=mwader/static-ffmpeg:9.1 /ffmpeg /usr/local/bin/
 
-USER ubuntu
+USER portfolio
 
 ENV SERVER_PORT=8080
 
@@ -23,4 +21,4 @@ ARG BUILD_TIME=unknown
 ENV BUILD_HASH=${BUILD_HASH} \
     BUILD_TIME=${BUILD_TIME}
 
-COPY --chown=ubuntu:ubuntu build/native/nativeCompile/ ./
+COPY --chown=portfolio:portfolio build/native/nativeCompile/ ./
