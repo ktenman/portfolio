@@ -46,17 +46,7 @@ class RadioArchiveServiceTest {
 
   private val programmes = mockk<RadioProgrammeRepository> { every { findByUncutSinceNotNull() } returns emptyList() }
 
-  private val service by lazy {
-    RadioArchiveService(
-      reviewService,
-      storage,
-      progress,
-      programmes,
-      RadioProperties(recordings = recordings),
-      clock,
-      RadioDigestArchiveService(RadioProperties(recordings = recordings)),
-    )
-  }
+  private val service by lazy { archive(RadioProperties(recordings = recordings), clock) }
 
   private fun recording(
     name: String,
@@ -742,6 +732,61 @@ class RadioArchiveServiceTest {
     service.delete("2026-10-19-1023-kuku")
     expect(recorded(recordings)).toContain("2026-10-19-1023-kuku")
   }
+
+  @Test
+  fun `should delete a recording that ended longer ago than the retention days`() {
+    val directory = recording("2026-10-17-1055-kuku")
+    retaining(1, "2026-10-18T12:00:00Z").expire()
+    expect(Files.exists(directory)).toEqual(false)
+  }
+
+  @Test
+  fun `should keep a recording younger than the retention days`() {
+    val directory = recording("2026-10-17-1055-kuku")
+    retaining(1, "2026-10-18T10:00:00Z").expire()
+    expect(Files.exists(directory)).toEqual(true)
+  }
+
+  @Test
+  fun `should keep every recording when retention is off`() {
+    val directory = recording("2026-10-17-1055-kuku")
+    retaining(0, "2030-01-01T00:00:00Z").expire()
+    expect(Files.exists(directory)).toEqual(true)
+  }
+
+  @Test
+  fun `should not expire a recording still on air`() {
+    val directory = recording("2026-10-17-1055-kuku", RecordingState.RECORDING)
+    retaining(1, "2030-01-01T00:00:00Z").expire()
+    expect(Files.exists(directory)).toEqual(true)
+  }
+
+  @Test
+  fun `should expire the other recordings when one cannot be deleted`() {
+    val stuck = recording("2026-10-17-1055-sihik")
+    val directory = recording("2026-10-17-1055-kuku")
+    every { storage.delete(stuck) } throws IllegalStateException("SeaweedFS ei vasta")
+    retaining(1, "2030-01-01T00:00:00Z").expire()
+    expect(Files.exists(directory)).toEqual(false)
+  }
+
+  private fun retaining(
+    days: Long,
+    now: String,
+  ) = archive(RadioProperties(recordings = recordings, retentionDays = days), Clock.fixed(Instant.parse(now), ZoneOffset.UTC))
+
+  private fun archive(
+    properties: RadioProperties,
+    at: Clock,
+  ) = RadioArchiveService(
+    reviewService,
+    storage,
+    progress,
+    programmes,
+    properties,
+    at,
+    RadioDigestArchiveService(RadioProperties(recordings = recordings)),
+  )
 
   @Test
   fun `should not delete a digest through the recording endpoint`() {
