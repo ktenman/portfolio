@@ -2016,6 +2016,9 @@
       "type": "java.io.Writer"
     },
     {
+      "type": "java.lang.AutoCloseable"
+    },
+    {
       "type": "java.lang.Boolean",
       "serializable": true,
       "jniAccessible": true,
@@ -2034,23 +2037,282 @@
       ]
     },
     {
+      "type": "java.lang.Byte",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.CharSequence"
+    },
+    {
       "type": "java.lang.CharSequence[]"
+    },
+    {
+      "type": "java.lang.Character",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Class",
+      "methods": [
+        {
+          "name": "getModule",
+          "parameterTypes": []
+        },
+        {
+          "name": "getRecordComponents",
+          "parameterTypes": []
+        },
+        {
+          "name": "isRecord",
+          "parameterTypes": []
+        },
+        {
+          "name": "isSealed",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.ClassLoader",
+      "fields": [
+        {
+          "name": "classLoaderValueMap"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.ClassNotFoundException"
+    },
+    {
+      "type": "java.lang.ClassValue"
+    },
+    {
+      "type": "java.lang.Class[]"
+    },
+    {
+      "type": "java.lang.CloneNotSupportedException"
+    },
+    {
+      "type": "java.lang.Cloneable"
+    },
+    {
+      "type": "java.lang.Comparable"
+    },
+    {
+      "type": "java.lang.Comparable[]"
+    },
+    {
+      "type": "java.lang.Deprecated",
+      "methods": [
+        {
+          "name": "forRemoval",
+          "parameterTypes": []
+        },
+        {
+          "name": "since",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Double",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
     },
     {
       "type": "java.lang.Enum",
       "serializable": true
     },
     {
+      "type": "java.lang.Enum$EnumDesc"
+    },
+    {
+      "type": "java.lang.Exception"
+    },
+    {
+      "type": "java.lang.Float",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.FunctionalInterface"
+    },
+    {
+      "type": "java.lang.IllegalArgumentException"
+    },
+    {
+      "type": "java.lang.IllegalStateException"
+    },
+    {
+      "type": "java.lang.Integer",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Integer[]"
+    },
+    {
+      "type": "java.lang.InterruptedException"
+    },
+    {
+      "type": "java.lang.Iterable"
+    },
+    {
+      "type": "java.lang.Loggable"
+    },
+    {
+      "type": "java.lang.Long",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Long[]"
+    },
+    {
+      "type": "java.lang.Module",
+      "methods": [
+        {
+          "name": "isExported",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "isNativeAccessEnabled",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "java.lang.Number",
       "serializable": true
+    },
+    {
+      "type": "java.lang.Object",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "toString",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "java.lang.Object[]",
       "serializable": true
     },
     {
+      "type": "java.lang.Package"
+    },
+    {
+      "type": "java.lang.Process"
+    },
+    {
+      "type": "java.lang.ProcessHandle",
+      "methods": [
+        {
+          "name": "current",
+          "parameterTypes": []
+        },
+        {
+          "name": "pid",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Record"
+    },
+    {
+      "type": "java.lang.Runnable"
+    },
+    {
+      "type": "java.lang.Runtime",
+      "methods": [
+        {
+          "name": "version",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Runtime$Version",
+      "methods": [
+        {
+          "name": "feature",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.RuntimeException"
+    },
+    {
+      "type": "java.lang.SafeVarargs"
+    },
+    {
+      "type": "java.lang.SecurityManager",
+      "methods": [
+        {
+          "name": "checkPermission",
+          "parameterTypes": [
+            "java.security.Permission"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Short",
+      "serializable": true,
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.SingleFlight"
+    },
+    {
+      "type": "java.lang.StackTraceElement"
+    },
+    {
       "type": "java.lang.String",
       "serializable": true
+    },
+    {
+      "type": "java.lang.StringBuilder"
+    },
+    {
+      "type": "java.lang.String[]"
     },
     {
       "type": "java.lang.System",
@@ -2073,6 +2335,38 @@
           ]
         }
       ]
+    },
+    {
+      "type": "java.lang.Thread",
+      "methods": [
+        {
+          "name": "isVirtual",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Thread$Builder"
+    },
+    {
+      "type": "java.lang.Thread$State"
+    },
+    {
+      "type": "java.lang.ThreadGroup"
+    },
+    {
+      "type": "java.lang.Throwable"
+    },
+    {
+      "type": "java.lang.Void",
+      "fields": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.WrongThreadException"
     },
     {
       "type": "java.lang.annotation.Documented"
@@ -2337,18 +2631,90 @@
       "type": "java.text.DateFormat"
     },
     {
+      "type": "java.time.Clock"
+    },
+    {
+      "type": "java.time.Clock$SystemClock"
+    },
+    {
+      "type": "java.time.DayOfWeek",
+      "serializable": true
+    },
+    {
       "type": "java.time.DayOfWeek[]"
+    },
+    {
+      "type": "java.time.Duration",
+      "serializable": true
+    },
+    {
+      "type": "java.time.DurationEditor"
     },
     {
       "type": "java.time.Instant",
       "serializable": true
     },
     {
+      "type": "java.time.InstantSource"
+    },
+    {
       "type": "java.time.LocalDate",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "toString",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.time.LocalDateTime",
+      "serializable": true
+    },
+    {
+      "type": "java.time.LocalTime",
+      "serializable": true
+    },
+    {
+      "type": "java.time.Month",
+      "serializable": true
+    },
+    {
+      "type": "java.time.OffsetDateTime",
+      "serializable": true
+    },
+    {
+      "type": "java.time.OffsetTime"
+    },
+    {
+      "type": "java.time.Period",
       "serializable": true
     },
     {
       "type": "java.time.Ser",
+      "serializable": true
+    },
+    {
+      "type": "java.time.Year",
+      "serializable": true
+    },
+    {
+      "type": "java.time.YearMonth",
+      "serializable": true
+    },
+    {
+      "type": "java.time.ZoneId"
+    },
+    {
+      "type": "java.time.ZoneOffset",
+      "serializable": true
+    },
+    {
+      "type": "java.time.ZoneRegion",
+      "serializable": true
+    },
+    {
+      "type": "java.time.ZonedDateTime",
       "serializable": true
     },
     {
@@ -2373,8 +2739,32 @@
       "type": "java.time.temporal.TemporalAdjuster"
     },
     {
+      "type": "java.util.AbstractCollection",
+      "methods": [
+        {
+          "name": "toString",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.AbstractList"
+    },
+    {
+      "type": "java.util.AbstractMap"
+    },
+    {
+      "type": "java.util.AbstractSet"
+    },
+    {
       "type": "java.util.ArrayList",
-      "serializable": true
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "java.util.Arrays",
@@ -2390,14 +2780,262 @@
     },
     {
       "type": "java.util.Arrays$ArrayList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.CollSer",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collection"
+    },
+    {
+      "type": "java.util.Collections$EmptyList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.Collections$EmptyMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collections$EmptySet",
       "serializable": true
     },
     {
       "type": "java.util.Collections$SingletonList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.Collections$SingletonMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collections$SingletonSet",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collections$UnmodifiableCollection",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collections$UnmodifiableList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.Collections$UnmodifiableMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Collections$UnmodifiableRandomAccessList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.Collections$UnmodifiableSet",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Comparator"
+    },
+    {
+      "type": "java.util.Currency",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Date",
+      "serializable": true
+    },
+    {
+      "type": "java.util.EnumMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.EnumSet"
+    },
+    {
+      "type": "java.util.EnumSet$SerializationProxy",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Enumeration"
+    },
+    {
+      "type": "java.util.EventListener"
+    },
+    {
+      "type": "java.util.HashMap",
       "serializable": true
     },
     {
       "type": "java.util.HashMap$Node[]"
+    },
+    {
+      "type": "java.util.HashSet",
+      "serializable": true
+    },
+    {
+      "type": "java.util.ImmutableCollections$AbstractImmutableCollection"
+    },
+    {
+      "type": "java.util.ImmutableCollections$AbstractImmutableList"
+    },
+    {
+      "type": "java.util.ImmutableCollections$List12",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.ImmutableCollections$ListN",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.ImmutableCollections$Map1",
+      "serializable": true
+    },
+    {
+      "type": "java.util.ImmutableCollections$MapN",
+      "serializable": true
+    },
+    {
+      "type": "java.util.ImmutableCollections$Set12",
+      "serializable": true
+    },
+    {
+      "type": "java.util.ImmutableCollections$SetN",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Iterator"
+    },
+    {
+      "type": "java.util.LinkedHashMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.LinkedHashSet",
+      "serializable": true
+    },
+    {
+      "type": "java.util.LinkedList",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.util.List"
+    },
+    {
+      "type": "java.util.Locale",
+      "serializable": true
+    },
+    {
+      "type": "java.util.Map"
+    },
+    {
+      "type": "java.util.Map$Entry"
+    },
+    {
+      "type": "java.util.Optional"
+    },
+    {
+      "type": "java.util.Properties"
+    },
+    {
+      "type": "java.util.Queue"
+    },
+    {
+      "type": "java.util.RandomAccess"
+    },
+    {
+      "type": "java.util.RegularEnumSet",
+      "serializable": true
+    },
+    {
+      "type": "java.util.SequencedCollection"
+    },
+    {
+      "type": "java.util.SequencedMap"
+    },
+    {
+      "type": "java.util.ServiceLoader"
+    },
+    {
+      "type": "java.util.Set"
+    },
+    {
+      "type": "java.util.SortedMap"
+    },
+    {
+      "type": "java.util.SortedSet"
+    },
+    {
+      "type": "java.util.Spliterator"
+    },
+    {
+      "type": "java.util.SplittableRandom",
+      "methods": [
+        {
+          "name": "nextBytes",
+          "parameterTypes": [
+            "byte[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.util.TimeZone"
+    },
+    {
+      "type": "java.util.TreeMap",
+      "serializable": true
+    },
+    {
+      "type": "java.util.TreeSet",
+      "serializable": true
     },
     {
       "type": "java.util.UUID",
@@ -2605,6 +3243,153 @@
       "type": "jdk.internal.vm.annotation.IntrinsicCandidate"
     },
     {
+      "type": "kotlin.Any"
+    },
+    {
+      "type": "kotlin.Array"
+    },
+    {
+      "type": "kotlin.Boolean"
+    },
+    {
+      "type": "kotlin.BooleanArray"
+    },
+    {
+      "type": "kotlin.Byte"
+    },
+    {
+      "type": "kotlin.ByteArray"
+    },
+    {
+      "type": "kotlin.Char"
+    },
+    {
+      "type": "kotlin.CharArray"
+    },
+    {
+      "type": "kotlin.Cloneable"
+    },
+    {
+      "type": "kotlin.Comparable"
+    },
+    {
+      "type": "kotlin.Deprecated"
+    },
+    {
+      "type": "kotlin.DeprecationLevel"
+    },
+    {
+      "type": "kotlin.Double"
+    },
+    {
+      "type": "kotlin.DoubleArray"
+    },
+    {
+      "type": "kotlin.Enum"
+    },
+    {
+      "type": "kotlin.Exception"
+    },
+    {
+      "type": "kotlin.Float"
+    },
+    {
+      "type": "kotlin.FloatArray"
+    },
+    {
+      "type": "kotlin.IgnorableReturnValue"
+    },
+    {
+      "type": "kotlin.IllegalArgumentException"
+    },
+    {
+      "type": "kotlin.Int"
+    },
+    {
+      "type": "kotlin.IntArray"
+    },
+    {
+      "type": "kotlin.Lazy"
+    },
+    {
+      "type": "kotlin.Long"
+    },
+    {
+      "type": "kotlin.LongArray"
+    },
+    {
+      "type": "kotlin.Metadata",
+      "methods": [
+        {
+          "name": "bv",
+          "parameterTypes": []
+        },
+        {
+          "name": "d1",
+          "parameterTypes": []
+        },
+        {
+          "name": "d2",
+          "parameterTypes": []
+        },
+        {
+          "name": "k",
+          "parameterTypes": []
+        },
+        {
+          "name": "mv",
+          "parameterTypes": []
+        },
+        {
+          "name": "pn",
+          "parameterTypes": []
+        },
+        {
+          "name": "xi",
+          "parameterTypes": []
+        },
+        {
+          "name": "xs",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "kotlin.Nothing"
+    },
+    {
+      "type": "kotlin.Pair",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.ReplaceWith"
+    },
+    {
+      "type": "kotlin.SafePublicationLazyImpl"
+    },
+    {
+      "type": "kotlin.Short"
+    },
+    {
+      "type": "kotlin.ShortArray"
+    },
+    {
+      "type": "kotlin.SinceKotlin"
+    },
+    {
+      "type": "kotlin.String"
+    },
+    {
+      "type": "kotlin.Throwable"
+    },
+    {
+      "type": "kotlin.Triple",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.Unit"
+    },
+    {
       "type": "kotlin.annotation.AnnotationRetention"
     },
     {
@@ -2633,6 +3418,7 @@
     },
     {
       "type": "kotlin.collections.EmptyList",
+      "serializable": true,
       "methods": [
         {
           "name": "isEmpty",
@@ -2641,7 +3427,12 @@
       ]
     },
     {
-      "type": "kotlin.collections.EmptySet"
+      "type": "kotlin.collections.EmptyMap",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.collections.EmptySet",
+      "serializable": true
     },
     {
       "type": "kotlin.collections.IndexedValue"
@@ -2662,6 +3453,9 @@
       "type": "kotlin.collections.Map"
     },
     {
+      "type": "kotlin.collections.Map.Entry"
+    },
+    {
       "type": "kotlin.collections.MutableCollection"
     },
     {
@@ -2677,6 +3471,12 @@
       "type": "kotlin.collections.MutableListIterator"
     },
     {
+      "type": "kotlin.collections.MutableMap"
+    },
+    {
+      "type": "kotlin.collections.MutableMap.MutableEntry"
+    },
+    {
       "type": "kotlin.collections.MutableSet"
     },
     {
@@ -2686,7 +3486,45 @@
       "type": "kotlin.collections.Set"
     },
     {
+      "type": "kotlin.collections.builders.ListBuilder",
+      "serializable": true,
+      "methods": [
+        {
+          "name": "isEmpty",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "kotlin.collections.builders.MapBuilder",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.collections.builders.SerializedCollection",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.collections.builders.SerializedMap",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.collections.builders.SetBuilder",
+      "serializable": true
+    },
+    {
+      "type": "kotlin.coroutines.AbstractCoroutineContextElement"
+    },
+    {
       "type": "kotlin.coroutines.Continuation"
+    },
+    {
+      "type": "kotlin.coroutines.ContinuationInterceptor"
+    },
+    {
+      "type": "kotlin.coroutines.CoroutineContext"
+    },
+    {
+      "type": "kotlin.coroutines.CoroutineContext$Element"
     },
     {
       "type": "kotlin.coroutines.CoroutineContext$Key"
@@ -2698,7 +3536,13 @@
       "type": "kotlin.coroutines.jvm.internal.DebugMetadata"
     },
     {
+      "type": "kotlin.enums.EnumEntries"
+    },
+    {
       "type": "kotlin.internal.IntrinsicConstEvaluation"
+    },
+    {
+      "type": "kotlin.internal.PlatformDependent"
     },
     {
       "type": "kotlin.io.Serializable"
@@ -2737,6 +3581,12 @@
       "type": "kotlin.ranges.ClosedFloatingPointRange"
     },
     {
+      "type": "kotlin.ranges.ClosedRange"
+    },
+    {
+      "type": "kotlin.reflect.full.KClasses"
+    },
+    {
       "type": "kotlin.reflect.jvm.internal.ReflectionFactoryImpl",
       "methods": [
         {
@@ -2762,6 +3612,9 @@
     },
     {
       "type": "kotlin.text.MatchResult"
+    },
+    {
+      "type": "kotlin.text.Regex"
     },
     {
       "type": "kotlinx.coroutines.AwaitAll"
