@@ -250,6 +250,7 @@ jobs:
         env:
           GRAALVM_QUICK_BUILD: true
           SCHEDULING_ENABLED: false
+          NATIVE_IMAGE_OPTIONS: -H:+UnlockExperimentalVMOptions -H:-UsePredicates
         run: |
           ./gradlew :classes -Pnative --build-cache
           ./gradlew --stop
