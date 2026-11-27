@@ -177,6 +177,8 @@ fun podman(vararg args: String): String? =
 
 fun Test.configureE2ETestEnvironment() {
   include("**/e2e/**")
+  outputs.cacheIf { false }
+  outputs.upToDateWhen { false }
   val properties =
     mutableMapOf(
       "webdriver.chrome.logfile" to "build/reports/chromedriver.log",
