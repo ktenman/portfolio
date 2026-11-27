@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM cgr.dev/chainguard/wolfi-base:latest AS base
 
 WORKDIR /app
 
@@ -14,6 +14,8 @@ USER portfolio
 ENV SERVER_PORT=8080
 
 ENTRYPOINT ["/app/portfolio", "-Xmx1024m", "-XX:+ExitOnOutOfMemoryError", "-Duser.timezone=Europe/Tallinn"]
+
+FROM base
 
 ARG BUILD_HASH=unknown
 ARG BUILD_TIME=unknown
