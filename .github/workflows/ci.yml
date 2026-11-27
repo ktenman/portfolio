@@ -142,6 +142,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
+      - name: Warm up Firefox
+        if: matrix.type == 'e2e'
+        run: (find /usr/lib/firefox -type f -exec cat {} + && timeout 120 firefox --headless --screenshot "$RUNNER_TEMP/firefox.png" about:blank) > /dev/null 2>&1 &
       - uses: actions/setup-java@v6.3.0
         if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
         with:
@@ -253,8 +256,9 @@ jobs:
           docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend &
           docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
           docker build --quiet --target base -f src/Dockerfile.native src &
-          ./gradlew nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
+          ./gradlew :nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
           wait
+          docker build --quiet --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native .
       - name: Start services
         if: matrix.type == 'e2e'
         env:
