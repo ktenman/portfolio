@@ -121,6 +121,7 @@ jobs:
     name: 🧪 ${{ matrix.name }}
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       matrix:
         include:
@@ -247,9 +248,12 @@ jobs:
           GRAALVM_QUICK_BUILD: true
           SCHEDULING_ENABLED: false
         run: |
-          ./gradlew aotClasses -Pnative --build-cache
+          ./gradlew classes -Pnative --build-cache
           ./gradlew --stop
+          docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend &
+          docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
           ./gradlew nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
+          wait
       - name: Start services
         if: matrix.type == 'e2e'
         env:
@@ -268,7 +272,7 @@ jobs:
         run: |
           export E2E=true
           for _ in 1 2 3; do
-            ./gradlew :test --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache && exit 0
+            ./gradlew :test ${{ env.BACKEND_NATIVE == 'true' && '-Pnative -x processTestAot' || '' }} --info -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache && exit 0
             sleep 30
           done
           exit 1
