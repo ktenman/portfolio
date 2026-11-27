@@ -378,7 +378,7 @@ if (providers.gradleProperty("native").isPresent) {
       resources.autodetect()
       buildArgs.addAll(
         "-H:+UnlockExperimentalVMOptions",
-        "-H:Preserve=package=ee.tenman.portfolio.*,package=io.minio.*,package=org.simpleframework.xml.core,package=org.telegram.telegrambots.*,package=java.lang,package=java.math,package=java.time,package=java.util,package=kotlin,package=kotlin.collections.*",
+        "-H:Preserve=package=ee.tenman.portfolio.*,package=io.minio.*,package=org.simpleframework.xml.core,package=org.telegram.telegrambots.*,package=kotlin,package=kotlin.collections.*",
         "-H:ExcludeResources=META-INF/services/org\\.hibernate\\.bytecode\\.spi\\.BytecodeProvider",
         "-H:IncludeResources=org/apache/(pdfbox/resources/.*|fontbox/(cmap/[^.]+|unicode/.*\\.txt))",
         "-H:+AddAllCharsets",
