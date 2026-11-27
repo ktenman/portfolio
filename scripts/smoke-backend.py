@@ -28,6 +28,7 @@ READS = [
     '/api/portfolio-summary/xirr-windows',
     '/api/portfolio-summary/annual-windows',
     '/api/etf-breakdown',
+    '/api/etf-breakdown?etfSymbols=VUAA:GER:EUR&platforms=LIGHTYEAR',
     '/api/etf-breakdown/benchmark?symbol=VUAA:GER:EUR',
     '/api/etf-breakdown/diagnostic',
     '/api/diversification/available-etfs',
