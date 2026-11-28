@@ -3,6 +3,7 @@ package e2e
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import com.codeborne.selenide.Condition.attribute
 import com.codeborne.selenide.Condition.empty
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
@@ -80,23 +81,23 @@ class TransactionManagementE2E {
   @Test
   fun `should display platform filter buttons after data loads`() {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
-    Thread.sleep(500)
 
     val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
+    platformButtons.first().shouldBe(visible)
     expect(platformButtons.size()).toBeGreaterThan(0)
   }
 
   @Test
   fun `should toggle platform filter when clicking button`() {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
-    Thread.sleep(500)
 
     val platformButtons = elements(className("platform-btn"))
     val lightyearButton = platformButtons.findBy(text("Lightyear"))
-    val initialActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
+    val initialClass = lightyearButton.getAttribute("class").orEmpty()
+    val initialActiveState = initialClass.contains("active")
 
     lightyearButton.click()
-    Thread.sleep(500)
+    lightyearButton.shouldNotHave(attribute("class", initialClass))
 
     val newActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
     expect(newActiveState).toEqual(!initialActiveState)
@@ -139,13 +140,13 @@ class TransactionManagementE2E {
   @Test
   fun `should activate platform filter when clicking platform button`() {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
-    Thread.sleep(500)
 
     val platformButtons = elements(className("platform-btn"))
     val trezorButton = platformButtons.findBy(text("Trezor"))
-    val initialActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
+    val initialClass = trezorButton.getAttribute("class").orEmpty()
+    val initialActiveState = initialClass.contains("active")
     trezorButton.click()
-    Thread.sleep(500)
+    trezorButton.shouldNotHave(attribute("class", initialClass))
 
     val newActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
     expect(newActiveState).toEqual(!initialActiveState)
@@ -154,19 +155,16 @@ class TransactionManagementE2E {
   @Test
   fun `should toggle between select all and clear all buttons`() {
     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
-    Thread.sleep(500)
 
     val clearAllButton = elements(className("platform-btn")).findBy(text("Clear All"))
     clearAllButton.shouldBe(visible).click()
-    Thread.sleep(500)
 
-    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
+    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All")).shouldBe(visible)
     expect(selectAllButton.isDisplayed).toEqual(true)
 
     selectAllButton.click()
-    Thread.sleep(500)
 
-    val clearAllButtonAgain = elements(className("platform-btn")).findBy(text("Clear All"))
+    val clearAllButtonAgain = elements(className("platform-btn")).findBy(text("Clear All")).shouldBe(visible)
     expect(clearAllButtonAgain.isDisplayed).toEqual(true)
   }
 }
