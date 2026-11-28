@@ -259,7 +259,6 @@ jobs:
           docker build --quiet --target base -f src/Dockerfile.native src &
           ./gradlew :nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
           wait
-          docker build --quiet --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native .
       - name: Start services
         if: matrix.type == 'e2e'
         env:
@@ -273,6 +272,13 @@ jobs:
         run: |
           ./gradlew :testClasses ${{ env.BACKEND_NATIVE == 'true' && '-Pnative' || '' }} --build-cache --quiet &
           compile=$!
+          docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
+          pull=$!
+          if [ "$BACKEND_NATIVE" = true ]; then docker build --quiet --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native .; fi &
+          backend=$!
+          docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend
+          wait "$pull"
+          wait "$backend"
           docker compose -f docker-compose.e2e-minimal.yml up -d
           timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
           wait "$compile"
