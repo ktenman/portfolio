@@ -136,6 +136,12 @@ class ScheduleTest {
   }
 
   @Test
+  fun `follows Vikerraadio as Raadio 2 from a plan and heartbeat of its own`() {
+    expect(SCHEDULES.getValue("VIKERRAADIO"))
+      .toEqual(SCHEDULES.getValue("RAADIO2").copy(plan = "plan-vikerraadio.json", heartbeat = "heartbeat-vikerraadio.json"))
+  }
+
+  @Test
   fun `picks up a capture added while it waits`(
     @TempDir tmp: Path,
   ) {

@@ -437,6 +437,7 @@ export const stubRadioStations: RouteStub = async page => {
         { ...IDLE_ARIPAEV, station: Station.ELMAR },
         { ...IDLE_ARIPAEV, station: Station.SKYPLUS },
         { ...IDLE_ARIPAEV, station: Station.RAADIO2 },
+        { ...IDLE_ARIPAEV, station: Station.VIKERRAADIO },
       ],
     })
   )

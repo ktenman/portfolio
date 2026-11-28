@@ -385,6 +385,16 @@ class RecorderTest {
   }
 
   @Test
+  fun `asks a stream over HTTP for a gzipped playlist`() {
+    expect(command(KUKU, 30.0, 0, Path.of("raw"), Schedule()).joinToString(" ")).toContain("-headers Accept-Encoding: gzip\r\n -rw_timeout")
+  }
+
+  @Test
+  fun `sends no headers with a playlist on disk`() {
+    expect(command("/recordings/.aripaev/stream.m3u8", 30.0, 0, Path.of("raw"), Schedule())).notToContain("-headers")
+  }
+
+  @Test
   fun `ends the part on its own when the playlist stops growing`(
     @TempDir tmp: Path,
   ) {

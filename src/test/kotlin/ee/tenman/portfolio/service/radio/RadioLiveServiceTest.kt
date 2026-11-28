@@ -87,4 +87,10 @@ class RadioLiveServiceTest {
   fun `should pass on the plain MP3 stream of Raadio 2`() {
     expect(heard(Station.RAADIO2) { RadioProperties(recordings = directory, live = "puudub.m3u8", raadio2Live = it) } > 5.5).toEqual(true)
   }
+
+  @Test
+  fun `should pass on the plain MP3 stream of Vikerraadio`() {
+    val heard = heard(Station.VIKERRAADIO) { RadioProperties(recordings = directory, live = "puudub.m3u8", vikerraadioLive = it) }
+    expect(heard > 5.5).toEqual(true)
+  }
 }

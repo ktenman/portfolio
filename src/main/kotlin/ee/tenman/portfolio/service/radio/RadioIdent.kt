@@ -100,7 +100,10 @@ private fun identCut(
   val word = words.firstOrNull { it.start >= max(boundary.seconds, match.start) }?.start
   val end = end(timeline, span, start, word, quiet)
   if (end - start < SHORTEST) return null
-  return IdentCut(boundary.programme ?: PROGRAMME, rounded(start), rounded(end - start), match.r)
+  val programme = boundary.programme ?: PROGRAMME
+  val voice = words.filter { it.start in start..<end }
+  if (voice.isNotEmpty() && closing(voice, letters(programme)) == null) return null
+  return IdentCut(programme, rounded(start), rounded(end - start), match.r)
 }
 
 private fun sting(

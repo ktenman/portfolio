@@ -3,10 +3,13 @@ package ee.tenman.portfolio.job
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.okJson
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import ee.tenman.portfolio.configuration.JsonMapperFactory
 import ee.tenman.portfolio.domain.Station
+import ee.tenman.portfolio.err.ErrScheduleClient
 import ee.tenman.portfolio.kuku.KukuScheduleClient
 import ee.tenman.portfolio.repository.RadioAiringRepository
 import ee.tenman.portfolio.repository.RadioProgrammeRepository
@@ -168,4 +171,38 @@ abstract class RadioScheduleTestBase {
     const val ARIPAEV_AIRING = (1L shl 48) + 2
     private val SLUGS = mapOf(175L to "keskpaevatund", 231L to "tarkade-klubi")
   }
+}
+
+abstract class ErrScheduleTestBase(
+  station: Station,
+) : RadioScheduleTestBase() {
+  @Resource
+  protected lateinit var errScheduleClient: ErrScheduleClient
+
+  private val path = "/api/v1/getSchedule/${station.name.lowercase()}/"
+
+  protected fun item(
+    radiomanId: Long,
+    series: String,
+    heading: String,
+    start: ZonedDateTime,
+    end: ZonedDateTime,
+    original: ZonedDateTime? = null,
+  ) = """{"id":${start.toEpochSecond() / 60},"radiomanId":$radiomanId,"seriesName":"$series","programName":"$series",""" +
+    """"heading":"$heading","lead":"Uus muusika, külalised ja jutt","startTime":${start.toEpochSecond()},""" +
+    """"endTime":${end.toEpochSecond()},"isReplay":${original != null},"originalTime":${original?.toEpochSecond() ?: 0}}"""
+
+  protected fun schedule(
+    date: LocalDate,
+    vararg items: String,
+  ) {
+    wireMockServer.stubFor(get(urlPathMatching("$path\\d+")).willReturn(okJson(body())))
+    val midnight = date.atStartOfDay(tallinn).toEpochSecond()
+    wireMockServer.stubFor(get(urlPathEqualTo("$path$midnight")).willReturn(okJson(body(*items))))
+  }
+
+  protected fun requested(): List<Long> =
+    wireMockServer.findAll(getRequestedFor(urlPathMatching("$path\\d+"))).map { it.url.substringAfterLast('/').toLong() }
+
+  private fun body(vararg items: String) = """{"data":{"channels":[{"items":[${items.joinToString(",")}]}]}}"""
 }

@@ -4,30 +4,19 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeEmpty
 import ch.tutteli.atrium.api.fluent.en_GB.toContain
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor
-import com.github.tomakehurst.wiremock.client.WireMock.okJson
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
-import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import ee.tenman.portfolio.configuration.IntegrationTest
 import ee.tenman.portfolio.domain.Station
-import ee.tenman.portfolio.err.ErrScheduleClient
 import ee.tenman.portfolio.service.radio.ProgrammeChoice
 import ee.tenman.portfolio.service.radio.RadioProperties
 import ee.tenman.portfolio.service.radio.id
 import io.mockk.mockk
-import jakarta.annotation.Resource
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZonedDateTime
 
 @IntegrationTest
-class Raadio2ScheduleJobIT : RadioScheduleTestBase() {
-  @Resource
-  private lateinit var errScheduleClient: ErrScheduleClient
-
+class Raadio2ScheduleJobIT : ErrScheduleTestBase(Station.RAADIO2) {
   @Test
   fun `should ask for eight days each from its midnight in Tallinn across the clock change`() {
     val date = LocalDate.of(2027, 3, 25)
@@ -66,7 +55,7 @@ class Raadio2ScheduleJobIT : RadioScheduleTestBase() {
   @Test
   fun `should title an airing after its series when ERR lists it without a heading or repeat fields`() {
     val times = """"startTime":${at("23:05").toEpochSecond()},"endTime":${at("23:55").toEpochSecond()}"""
-    schedule(day, """{"radiomanId":49,"seriesName":"R2 Öö",$times}""")
+    schedule(day, """{"radiomanId":49,"seriesName":"R2 Öö","programName":"R2 Öö",$times}""")
     job().execute()
     expect(radioAiringRepository.findAll().map { it.title }).toContain("R2 Öö")
   }
@@ -82,33 +71,4 @@ class Raadio2ScheduleJobIT : RadioScheduleTestBase() {
     clock: Clock = this.clock,
     properties: RadioProperties = radioProperties,
   ) = Raadio2ScheduleJob(errScheduleClient, radioScheduleService, jobExecutionService, mockk(), clock, properties)
-
-  private fun item(
-    radiomanId: Long,
-    series: String,
-    heading: String,
-    start: ZonedDateTime,
-    end: ZonedDateTime,
-    original: ZonedDateTime? = null,
-  ) = """{"id":${start.toEpochSecond() / 60},"radiomanId":$radiomanId,"seriesName":"$series","programName":"$series",""" +
-    """"heading":"$heading","lead":"Uus muusika, külalised ja jutt","startTime":${start.toEpochSecond()},""" +
-    """"endTime":${end.toEpochSecond()},"isReplay":${original != null},"originalTime":${original?.toEpochSecond() ?: 0}}"""
-
-  private fun body(vararg items: String) = """{"data":{"channels":[{"items":[${items.joinToString(",")}]}]}}"""
-
-  private fun schedule(
-    date: LocalDate,
-    vararg items: String,
-  ) {
-    wireMockServer.stubFor(get(urlPathMatching(PATH)).willReturn(okJson(body())))
-    val midnight = date.atStartOfDay(tallinn).toEpochSecond()
-    wireMockServer.stubFor(get(urlPathEqualTo("/api/v1/getSchedule/raadio2/$midnight")).willReturn(okJson(body(*items))))
-  }
-
-  private fun requested(): List<Long> =
-    wireMockServer.findAll(getRequestedFor(urlPathMatching(PATH))).map { it.url.substringAfterLast('/').toLong() }
-
-  private companion object {
-    const val PATH = "/api/v1/getSchedule/raadio2/\\d+"
-  }
 }

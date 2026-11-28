@@ -28,7 +28,25 @@ class RadioIdentTest {
   fun `should count the first word from the cut when the jingle is cut out`() {
     val tape = taped(LOUD to 10.0..30.0)
     val boundary = ended(10.0).copy(seconds = 14.0)
-    expect(identCuts(tape, listOf(boundary), spoken(11.0, 16.0), emptyList()).map { it.seconds }).toEqual(listOf(5.8))
+    expect(
+      identCuts(tape, listOf(boundary), said(11.0, "Keskpäevatund") + spoken(16.0), emptyList()).map { it.seconds },
+    ).toEqual(listOf(5.8))
+  }
+
+  @Test
+  fun `should keep a jingle whose voice ends with the programme's name`() {
+    val tape = taped(LOUD to 10.0..30.0)
+    val boundary = ended(10.0).copy(seconds = 14.0)
+    val words = said(10.5, "Kuku", "Raadio", "eetris", "on", "Keskpäeva", "tund.") + spoken(16.0)
+    expect(identCuts(tape, listOf(boundary), words, emptyList()).map { it.seconds }).toEqual(listOf(5.8))
+  }
+
+  @Test
+  fun `should skip a jingle whose voice says more than the programme's name`() {
+    val tape = taped(LOUD to 10.0..30.0)
+    val boundary = ended(10.0).copy(seconds = 14.0)
+    val words = said(10.5, "Keskpäevatunni", "toob", "teieni", "Haus", "galerii,", "tutvu", "oksjoniga") + spoken(16.0)
+    expect(identCuts(tape, listOf(boundary), words, emptyList())).toEqual(emptyList())
   }
 
   @Test

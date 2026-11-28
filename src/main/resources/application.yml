@@ -179,7 +179,6 @@ scheduling:
 
 radio:
   recordings: ${RADIO_RECORDINGS:/recordings}
-  stations: ${RADIO_STATIONS:KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2}
   drop-raw: ${RADIO_DROP_RAW:true}
   retention-days: ${RADIO_RETENTION_DAYS:30}
 
