@@ -145,6 +145,18 @@ jobs:
       - name: Warm up Firefox
         if: matrix.type == 'e2e'
         run: (find /usr/lib/firefox -type f -exec cat {} + && timeout 120 firefox --headless --screenshot "$RUNNER_TEMP/firefox.png" about:blank) > /dev/null 2>&1 &
+      - name: Prebuild E2E images
+        if: matrix.type == 'e2e'
+        run: |
+          compose="docker compose -f docker-compose.e2e-minimal.yml"
+          ($compose pull --quiet postgres redis seaweedfs nginx && $compose up -d postgres redis seaweedfs) > "$RUNNER_TEMP/e2e-deps.log" 2>&1 &
+          echo $! >> "$RUNNER_TEMP/e2e.pids"
+          $compose build --quiet frontend > "$RUNNER_TEMP/e2e-frontend.log" 2>&1 &
+          echo $! >> "$RUNNER_TEMP/e2e.pids"
+          if [ "$BACKEND_NATIVE" = true ]; then
+            docker build --quiet --target base -t portfolio-backend-base -f src/Dockerfile.native src > "$RUNNER_TEMP/e2e-backend.log" 2>&1 &
+            echo $! >> "$RUNNER_TEMP/e2e.pids"
+          fi
       - uses: actions/setup-java@v6.3.0
         if: matrix.type == 'backend' || matrix.type == 'e2e' || matrix.type == 'radio'
         with:
@@ -250,15 +262,11 @@ jobs:
         env:
           GRAALVM_QUICK_BUILD: true
           SCHEDULING_ENABLED: false
-          NATIVE_IMAGE_OPTIONS: -H:+UnlockExperimentalVMOptions -H:-UsePredicates
+          NATIVE_IMAGE_OPTIONS: -H:+UnlockExperimentalVMOptions -H:-UsePredicates -J-XX:+UseTransparentHugePages
         run: |
-          ./gradlew :classes -Pnative --build-cache
+          ./gradlew :testClasses -Pnative --build-cache
           ./gradlew --stop
-          docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend &
-          docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
-          docker build --quiet --target base -f src/Dockerfile.native src &
           ./gradlew :nativeCompile -Pnative --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
-          wait
       - name: Start services
         if: matrix.type == 'e2e'
         env:
@@ -267,20 +275,13 @@ jobs:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
           MINIO_BUCKET_NAME: portfolio-logos
-          E2E_BACKEND_CONTEXT: ${{ env.BACKEND_NATIVE == 'true' && '.' || './src' }}
-          E2E_BACKEND_DOCKERFILE: ${{ env.BACKEND_NATIVE == 'true' && 'src/Dockerfile.native' || 'Dockerfile.e2e' }}
+          COMPOSE_FILE: ${{ env.BACKEND_NATIVE == 'true' && 'docker-compose.e2e-minimal.yml:docker-compose.e2e-native.yml' || 'docker-compose.e2e-minimal.yml' }}
         run: |
           ./gradlew :testClasses ${{ env.BACKEND_NATIVE == 'true' && '-Pnative' || '' }} --build-cache --quiet &
           compile=$!
-          docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
-          pull=$!
-          if [ "$BACKEND_NATIVE" = true ]; then docker build --quiet --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native .; fi &
-          backend=$!
-          docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend
-          wait "$pull"
-          wait "$backend"
-          docker compose -f docker-compose.e2e-minimal.yml up -d
-          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
+          while read -r pid; do tail --pid="$pid" -f /dev/null; done < "$RUNNER_TEMP/e2e.pids"
+          cat "$RUNNER_TEMP"/e2e-*.log
+          docker compose up -d --wait --wait-timeout 120
           wait "$compile"
       - name: Run E2E tests
         if: matrix.type == 'e2e'
@@ -336,7 +337,6 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
             build/reports/selenide/
-            build/reports/jacoco/test/html/
           retention-days: 7
 
   visual:

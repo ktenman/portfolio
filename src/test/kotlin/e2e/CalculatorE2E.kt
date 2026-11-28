@@ -9,6 +9,8 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
 import com.codeborne.selenide.Condition
+import com.codeborne.selenide.Condition.empty
+import com.codeborne.selenide.Condition.exactText
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.value
 import com.codeborne.selenide.Condition.visible
@@ -109,13 +111,13 @@ class CalculatorE2E {
     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
 
     taxRateInput.value = "0"
-    Thread.sleep(500)
+    firstDataRow.find(By.tagName("td"), 4).shouldBe(empty)
 
     val taxAmountWithZeroRate = firstDataRow.find(By.tagName("td"), 4).text()
     expect(taxAmountWithZeroRate).toBeEmpty()
 
     taxRateInput.value = "25"
-    Thread.sleep(500)
+    firstDataRow.find(By.tagName("td"), 4).shouldNotBe(empty)
 
     val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
     expect(taxAmountWithRate).notToBeEmpty()
@@ -126,8 +128,9 @@ class CalculatorE2E {
   fun `should calculate total worth as invested plus net profit`() {
     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
 
+    val initialTax = firstDataRow.find(By.tagName("td"), 4).text()
     taxRateInput.value = "30"
-    Thread.sleep(500)
+    firstDataRow.find(By.tagName("td"), 4).shouldNotHave(exactText(initialTax))
 
     val totalInvestedText = firstDataRow.find(By.tagName("td"), 1).text().replace("[^0-9.]".toRegex(), "")
     val grossProfitText = firstDataRow.find(By.tagName("td"), 2).text().replace("[^0-9.]".toRegex(), "")
@@ -146,8 +149,9 @@ class CalculatorE2E {
     taxRateInput.value = "18.5"
     taxRateInput.shouldHave(value("18.5"))
 
+    val initialWorth = yearSummaryTable.find(By.tagName("tr"), 1).find(By.tagName("td"), 3).text()
     annualReturnInput.value = "10"
-    Thread.sleep(500)
+    yearSummaryTable.find(By.tagName("tr"), 1).find(By.tagName("td"), 3).shouldNotHave(exactText(initialWorth))
 
     taxRateInput.shouldHave(value("18.5"))
   }
