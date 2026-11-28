@@ -12,7 +12,7 @@ COPY tsconfig.json ./
 COPY tsconfig.node.json ./
 COPY vite.config.ts ./
 
-RUN npm run build && find /app -name "index.html"
+RUN npx vite build && find /app -name "index.html"
 
 # Verify that the dist directory exists and contains the expected files.
 # This is just for debugging purposes. You can remove this line once everything works fine.

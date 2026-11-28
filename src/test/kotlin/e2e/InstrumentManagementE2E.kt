@@ -3,6 +3,7 @@ package e2e
 import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.verbs.expect
+import com.codeborne.selenide.Condition.attribute
 import com.codeborne.selenide.Condition.text
 import com.codeborne.selenide.Condition.visible
 import com.codeborne.selenide.Selenide.element
@@ -66,10 +67,11 @@ class InstrumentManagementE2E {
     platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
 
     val firstPlatformButton = platformButtons.first()
-    val initialActiveState = firstPlatformButton.getAttribute("class")?.contains("active") ?: false
+    val initialClass = firstPlatformButton.getAttribute("class").orEmpty()
+    val initialActiveState = initialClass.contains("active")
 
     firstPlatformButton.click()
-    Thread.sleep(300)
+    firstPlatformButton.shouldNotHave(attribute("class", initialClass))
 
     val newActiveState = firstPlatformButton.getAttribute("class")?.contains("active") ?: false
     expect(newActiveState).toEqual(!initialActiveState)
@@ -135,9 +137,9 @@ class InstrumentManagementE2E {
 
     val toggleSwitch = element(className("toggle-switch"))
     toggleSwitch.click()
-    Thread.sleep(500)
 
     val updatedRows = elements(cssSelector("table tbody tr"))
+    updatedRows.first().shouldBe(visible)
     expect(updatedRows.size()).toBeGreaterThan(0)
   }
 
@@ -148,9 +150,8 @@ class InstrumentManagementE2E {
 
     val clearAllButton = platformButtons.findBy(text("Clear All"))
     clearAllButton.click()
-    Thread.sleep(500)
 
-    val selectAllButton = platformButtons.findBy(text("Select All"))
+    val selectAllButton = platformButtons.findBy(text("Select All")).shouldBe(visible)
     expect(selectAllButton.isDisplayed).toEqual(true)
   }
 }
