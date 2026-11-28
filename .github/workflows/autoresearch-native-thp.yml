@@ -1,0 +1,50 @@
+name: Autoresearch native THP
+
+on:
+  push:
+    branches: ['autoresearch/**']
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: native ${{ matrix.order }} ${{ matrix.rep }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [baseline-first, variant-first]
+        rep: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-java@v6.3.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - uses: graalvm/setup-graalvm@60e76998d25690099182b796e99b8804da582d90 # v1.6.10
+        with:
+          java-version: '25'
+          distribution: 'graalvm-community'
+      - name: Build both shapes
+        env:
+          GRAALVM_QUICK_BUILD: true
+          SCHEDULING_ENABLED: false
+          ORDER: ${{ matrix.order }}
+        run: |
+          lscpu | grep -E 'Model name'
+          cat /sys/kernel/mm/transparent_hugepage/enabled /sys/kernel/mm/transparent_hugepage/defrag
+          ./gradlew :classes -Pnative --build-cache
+          ./gradlew --stop
+          build() {
+            if [ "$1" = variant ]; then export NATIVE_IMAGE_OPTIONS='-H:+UnlockExperimentalVMOptions -H:-UsePredicates -J-XX:+UseTransparentHugePages'; else export NATIVE_IMAGE_OPTIONS='-H:+UnlockExperimentalVMOptions -H:-UsePredicates'; fi
+            echo "=== BUILD $1 START $(date +%s)"
+            ./gradlew :nativeCompile -Pnative --rerun --build-cache --no-daemon -Dorg.gradle.jvmargs=-Xmx1g
+            echo "=== BUILD $1 END $(date +%s)"
+            ls -l build/native/nativeCompile/portfolio
+          }
+          if [ "$ORDER" = baseline-first ]; then build baseline; build variant; else build variant; build baseline; fi
