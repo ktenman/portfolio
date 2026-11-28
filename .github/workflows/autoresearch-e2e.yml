@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        order: ['H V VB VF VFB', 'V VB VF VFB H', 'VB VF VFB H V', 'VF VFB H V VB', 'VFB H V VB VF']
+        order: ['V VD VDU VDB VDBU VDBUE', 'VD VDU VDB VDBU VDBUE V', 'VDU VDB VDBU VDBUE V VD', 'VDB VDBU VDBUE V VD VDU', 'VDBU VDBUE V VD VDU VDB', 'VDBUE V VD VDU VDB VDBU']
         rep: [1, 2]
     steps:
       - uses: actions/checkout@v7
@@ -55,26 +55,26 @@ jobs:
             rm -rf build/classes build/kotlin build/resources build/tmp build/test-results build/reports build/jacoco node_modules dist ~/.npm/_cacache
           }
           shape() {
-            name=$1; files="-f docker-compose.e2e-minimal.yml"; front=image; back=image
-            case "$name" in
-              H) files="-f probe/compose.h.yml" ;;
-              VB) files="$files -f probe/backend-mount.yml"; back=mount ;;
-              VF) files="$files -f probe/frontend-host.yml"; front=host ;;
-              VFB) files="$files -f probe/frontend-host.yml -f probe/backend-mount.yml"; front=host; back=mount ;;
-            esac
+            name=$1; files="-f docker-compose.e2e-minimal.yml"; front=image; back=image; early=0; head=0
+            case "$name" in *B*) files="$files -f probe/backend-mount.yml"; back=mount ;; esac
+            case "$name" in *U*) early=1 ;; esac
+            case "$name" in *E) head=8 ;; esac
             compose="docker compose --project-directory . $files"
             reset
+            rm -f ui/Dockerfile.dockerignore src/Dockerfile.native.dockerignore
+            case "$name" in *D*) cp probe/ui.dockerignore ui/Dockerfile.dockerignore; cp probe/native.dockerignore src/Dockerfile.native.dockerignore ;; esac
             rm -f /tmp/parts
-            start=$(date +%s.%N)
-            ./gradlew :testClasses -Pnative --build-cache --quiet > /tmp/compile-$name.log 2>&1 &
-            compile=$!
-            (t=$(date +%s.%N); docker compose --project-directory . -f docker-compose.e2e-minimal.yml pull --quiet postgres redis seaweedfs nginx; if [ $front = host ]; then docker pull -q nginx:stable-alpine-slim > /dev/null; fi; echo "pull=$(since $t)" >> /tmp/parts) &
+            (t=$(date +%s.%N); docker compose --project-directory . -f docker-compose.e2e-minimal.yml pull --quiet postgres redis seaweedfs nginx; echo "pull=$(since $t)" >> /tmp/parts; if [ $early = 1 ]; then $compose up -d --quiet-pull postgres redis seaweedfs > /dev/null 2>&1; fi) &
             pull=$!
             (t=$(date +%s.%N); if [ $back = image ]; then docker build --progress=plain --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native . ; else docker build --progress=plain -t portfolio-backend-base --target base -f src/Dockerfile.native src; fi > /tmp/backend-$name.log 2>&1; echo "backend=$(since $t)" >> /tmp/parts) &
             backend=$!
-            t=$(date +%s.%N)
-            if [ $front = host ]; then npm ci --include=optional --no-audit --no-fund --loglevel=error > /dev/null && npx vite build --logLevel error > /dev/null; else $compose build --quiet frontend; fi
-            echo "frontend=$(since $t)" >> /tmp/parts
+            (t=$(date +%s.%N); $compose build --quiet frontend; echo "frontend=$(since $t)" >> /tmp/parts) &
+            frontend=$!
+            sleep $head
+            start=$(date +%s.%N)
+            ./gradlew :testClasses -Pnative --build-cache --quiet > /tmp/compile-$name.log 2>&1 &
+            compile=$!
+            wait "$frontend"
             wait "$pull"; wait "$backend"
             t=$(date +%s.%N)
             $compose up -d --quiet-pull > /tmp/up-$name.log 2>&1
@@ -83,6 +83,8 @@ jobs:
             healthy=$(since $start)
             wait "$compile"
             services=$(since $start)
+            continue_tests=0
+            [ $continue_tests = 1 ] || { echo "=== SHAPE $name services $services healthy $healthy tests 0 status 0 $(sort /tmp/parts | tr '\n' ' ')"; grep -E '^#[0-9]+ (\[|DONE)' /tmp/backend-$name.log | paste -sd' ' | cut -c1-1500; return; }
             t=$(date +%s.%N)
             E2E=true ./gradlew :test -Pnative -x processTestAot -x bootJar -Pheadless=true --build-cache --quiet > /tmp/test-$name.log 2>&1
             status=$?

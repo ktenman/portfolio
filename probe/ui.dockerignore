@@ -1,0 +1,7 @@
+*
+!package.json
+!package-lock.json
+!ui/
+!tsconfig.json
+!tsconfig.node.json
+!vite.config.ts
