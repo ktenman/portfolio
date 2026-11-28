@@ -1,0 +1,49 @@
+name: Autoresearch testClasses daemon
+
+on:
+  push:
+    branches: ['autoresearch/**']
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    name: compile ${{ matrix.order }} ${{ matrix.rep }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        order: [cold-first, warm-first]
+        rep: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-java@v6.3.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Time both shapes
+        env:
+          SCHEDULING_ENABLED: false
+          ORDER: ${{ matrix.order }}
+        run: |
+          lscpu | grep -E 'Model name'
+          compile() {
+            s=$(date +%s%N)
+            ./gradlew :compileTestKotlin -Pnative --build-cache --quiet --rerun
+            echo "=== $1 $(( ($(date +%s%N) - s) / 1000000 ))"
+          }
+          cold() { ./gradlew --stop; compile cold; }
+          warm() { ./gradlew :classes -Pnative --build-cache --quiet; compile warm; }
+          noop() {
+            ./gradlew --stop
+            s=$(date +%s%N)
+            ./gradlew :testClasses -Pnative --build-cache --quiet
+            echo "=== noop $(( ($(date +%s%N) - s) / 1000000 ))"
+          }
+          ./gradlew :classes -Pnative --build-cache --quiet
+          if [ "$ORDER" = cold-first ]; then cold; warm; noop; cold; warm; noop; else warm; cold; noop; warm; cold; noop; fi
