@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        order: ['V VD VDU VDB VDBU VDBUE', 'VD VDU VDB VDBU VDBUE V', 'VDU VDB VDBU VDBUE V VD', 'VDB VDBU VDBUE V VD VDU', 'VDBU VDBUE V VD VDU VDB', 'VDBUE V VD VDU VDB VDBU']
+        order: ['V VW VBU VBUW', 'VW VBU VBUW V', 'VBU VBUW V VW', 'VBUW V VW VBU']
         rep: [1, 2]
     steps:
       - uses: actions/checkout@v7
@@ -58,6 +58,7 @@ jobs:
             name=$1; files="-f docker-compose.e2e-minimal.yml"; front=image; back=image; early=0; head=0
             case "$name" in *B*) files="$files -f probe/backend-mount.yml"; back=mount ;; esac
             case "$name" in *U*) early=1 ;; esac
+            waitup=0; case "$name" in *W*) waitup=1 ;; esac
             case "$name" in *E) head=8 ;; esac
             compose="docker compose --project-directory . $files"
             reset
@@ -77,13 +78,17 @@ jobs:
             wait "$frontend"
             wait "$pull"; wait "$backend"
             t=$(date +%s.%N)
-            $compose up -d --quiet-pull > /tmp/up-$name.log 2>&1
-            timeout 120 bash -c "until [ \$($compose ps | grep -c '(healthy)') -ge 5 ]; do sleep 1; done"
+            if [ $waitup = 1 ]; then
+              $compose up -d --quiet-pull --wait --wait-timeout 120 > /tmp/up-$name.log 2>&1
+            else
+              $compose up -d --quiet-pull > /tmp/up-$name.log 2>&1
+              timeout 120 bash -c "until [ \$($compose ps | grep -c '(healthy)') -ge 5 ]; do sleep 2; done"
+            fi
             echo "up=$(since $t)" >> /tmp/parts
             healthy=$(since $start)
             wait "$compile"
             services=$(since $start)
-            continue_tests=0
+            continue_tests=1
             [ $continue_tests = 1 ] || { echo "=== SHAPE $name services $services healthy $healthy tests 0 status 0 $(sort /tmp/parts | tr '\n' ' ')"; grep -E '^#[0-9]+ (\[|DONE)' /tmp/backend-$name.log | paste -sd' ' | cut -c1-1500; return; }
             t=$(date +%s.%N)
             E2E=true ./gradlew :test -Pnative -x processTestAot -x bootJar -Pheadless=true --build-cache --quiet > /tmp/test-$name.log 2>&1
