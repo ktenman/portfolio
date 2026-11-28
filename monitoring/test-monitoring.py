@@ -302,7 +302,7 @@ def check_compose():
     radio = sorted(name for name, service in services.items() if 'radio' in service.get('profiles', []))
     workers = [name for name in radio if name.startswith('radio-worker-')]
     assert all(services[name][cap] == worker[cap] for name in workers for cap in caps), workers
-    stations = dict(entry.split(':') for entry in re.search(r"STATIONS='([^']+)'", deploy).group(1).split())
+    stations = radio_stations(deploy)
     deployed = sorted(name for names in stations.values() for name in names.split(','))
     assert deployed == radio, f'the deploy must start or stop every radio service by its station, lists {deployed}'
     for station, names in stations.items():
@@ -604,6 +604,10 @@ def workflow_step(workflow, name):
     return textwrap.dedent(step.split('run: |\n', 1)[1])
 
 
+def radio_stations(deploy):
+    return dict(entry.split(':') for entry in re.search(r"STATIONS='([^']+)'", deploy).group(1).split())
+
+
 def check_host_gates():
     root = ROOT.parent
     healthcheck = run_path(str(root / 'healthcheck.py'))
@@ -642,7 +646,7 @@ def check_host_gates():
         assert logs == sorted(f'{service}.log' for service in services), logs
         step = workflow_step(deploy, 'Deploy with Docker Compose')
         for heartbeat, code in {'running 0': 0, 'restarting 1': 1, 'running 1': 1}.items():
-            command = f'{environment}export HEARTBEAT="{heartbeat}" RADIO_STATIONS=KUKU,ARIPAEV,ELMAR,SKYPLUS,RAADIO2\n{step}'
+            command = f'{environment}export HEARTBEAT="{heartbeat}"\n{step}'
             assert run('bash', '-eo', 'pipefail', '-c', command, check=False).returncode == code, heartbeat
         log = Path(directory) / 'docker.log'
 
@@ -659,11 +663,12 @@ def check_host_gates():
             result, stopped, _ = radio('true', stations)
             assert result.returncode != 0 and stations in result.stdout and not log.exists(), (stations, result, stopped)
         _, stopped, profiles = radio('true', 'KUKU,ARIPAEV,SKYPLUS,RAADIO2')
-        assert stopped == [['radio-bridge-elmar', 'radio-worker-elmar']], stopped
+        assert stopped == [['radio-bridge-elmar', 'radio-worker-elmar', 'radio-worker-vikerraadio']], stopped
         assert profiles == {'radio-kuku,radio-aripaev,radio-skyplus,radio-raadio2'}, profiles
+        _, _, profiles = radio('true', '')
+        assert profiles == {','.join(f'radio-{station.lower()}' for station in radio_stations(deploy))}, profiles
         _, stopped, _ = radio('false', 'KUKU,ARIPAEV,ELMAR,SKYPLUS')
-        assert len(stopped) == 1 and sorted(stopped[0]) == sorted(['radio-worker', 'radio-bridge', 'radio-worker-aripaev',
-            'radio-bridge-elmar', 'radio-worker-elmar', 'radio-bridge-skyplus', 'radio-worker-skyplus', 'radio-worker-raadio2']), stopped
+        assert len(stopped) == 1 and sorted(stopped[0]) == sorted(','.join(radio_stations(deploy).values()).split(',')), stopped
     cleanup = (root / 'scripts/docker-cleanup.py').read_text()
     compile(cleanup, 'docker-cleanup.py', 'exec')
     assert 'container prune -f --filter until=1h' in cleanup

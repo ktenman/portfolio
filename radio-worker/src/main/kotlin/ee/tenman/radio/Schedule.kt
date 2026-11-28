@@ -18,13 +18,11 @@ data class Schedule(
   val audio: String = "mp3",
 )
 
+private val ERR = Schedule(segment = 1.92, lookback = 7_080.0, audio = "aac")
+
 val SCHEDULES =
-  mapOf(
-    "ARIPAEV" to Schedule("plan-aripaev.json", "heartbeat-aripaev.json"),
-    "ELMAR" to Schedule("plan-elmar.json", "heartbeat-elmar.json"),
-    "SKYPLUS" to Schedule("plan-skyplus.json", "heartbeat-skyplus.json"),
-    "RAADIO2" to Schedule("plan-raadio2.json", "heartbeat-raadio2.json", segment = 1.92, lookback = 7_080.0, audio = "aac"),
-  )
+  mapOf("ARIPAEV" to Schedule(), "ELMAR" to Schedule(), "SKYPLUS" to Schedule(), "RAADIO2" to ERR, "VIKERRAADIO" to ERR)
+    .mapValues { (station, shape) -> station.lowercase().let { shape.copy(plan = "plan-$it.json", heartbeat = "heartbeat-$it.json") } }
 
 fun planned(
   recordings: Path,

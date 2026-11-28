@@ -9,8 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable
   url = "\${err.url}",
 )
 interface ErrScheduleClient {
-  @GetMapping("/api/v1/getSchedule/raadio2/{midnight}")
+  @GetMapping("/api/v1/getSchedule/{channel}/{midnight}")
   fun getSchedule(
+    @PathVariable channel: String,
     @PathVariable midnight: Long,
   ): ErrSchedule
 }

@@ -116,7 +116,7 @@ class RadioControllerIT {
 
   @Test
   fun `should refuse a live station that does not exist`() {
-    mockMvc.perform(mvcGet("/api/radio/live").param("station", "vikerraadio")).andExpect(status().isBadRequest)
+    mockMvc.perform(mvcGet("/api/radio/live").param("station", "puudub")).andExpect(status().isBadRequest)
   }
 
   @Test
@@ -128,7 +128,7 @@ class RadioControllerIT {
   fun `should list one entry per station`() {
     mockMvc
       .perform(mvcGet("/api/radio/station"))
-      .andExpect(jsonPath("$[*].station", contains("KUKU", "ARIPAEV", "ELMAR", "SKYPLUS", "RAADIO2")))
+      .andExpect(jsonPath("$[*].station", contains("KUKU", "ARIPAEV", "ELMAR", "SKYPLUS", "RAADIO2", "VIKERRAADIO")))
   }
 
   @Test

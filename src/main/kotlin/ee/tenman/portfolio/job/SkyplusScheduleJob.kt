@@ -38,7 +38,7 @@ class SkyplusScheduleJob(
     val today = LocalDate.now(clock)
     val from = today.atStartOfDay(clock.zone).toInstant()
     val until = today.plusDays(1).atStartOfDay(clock.zone).toInstant()
-    radioScheduleService.replace(Station.SKYPLUS, skyplusAirings(rows, today, AmsScheduleJob.DAYS, clock.zone), from, until)
+    radioScheduleService.replace(Station.SKYPLUS, skyplusAirings(rows, today, StationScheduleJob.DAYS, clock.zone), from, until)
     radioScheduleService.plan()
   }
 }

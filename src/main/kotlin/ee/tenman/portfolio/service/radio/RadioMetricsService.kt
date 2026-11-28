@@ -27,7 +27,7 @@ class RadioMetricsService(
 
   override fun bindTo(registry: MeterRegistry) {
     missed = MultiGauge.builder("portfolio.radio.missed.capture").register(registry)
-    radioProperties.stations.filter { it.playlist != null }.forEach { station ->
+    radioProperties.stations.filter(Station::bridged).forEach { station ->
       Gauge
         .builder("portfolio.radio.bridge.timestamp.seconds", this) { it.bridged[station] ?: Double.NaN }
         .tag("station", station.label)
@@ -89,6 +89,7 @@ class RadioMetricsService(
         Station.ELMAR to "ElmarScheduleJob",
         Station.SKYPLUS to "SkyplusScheduleJob",
         Station.RAADIO2 to "Raadio2ScheduleJob",
+        Station.VIKERRAADIO to "VikerraadioScheduleJob",
       )
   }
 }

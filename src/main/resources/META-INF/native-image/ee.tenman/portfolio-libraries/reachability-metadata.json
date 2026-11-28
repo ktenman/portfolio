@@ -9311,7 +9311,13 @@
       "glob": "ee/tenman/portfolio/job/AmsScheduleJob.class"
     },
     {
+      "glob": "ee/tenman/portfolio/job/ErrScheduleJob.class"
+    },
+    {
       "glob": "ee/tenman/portfolio/job/RadioDigestShowJob.class"
+    },
+    {
+      "glob": "ee/tenman/portfolio/job/StationScheduleJob.class"
     },
     {
       "glob": "ee/tenman/portfolio/openrouter/OpenRouterVisionRequest$ContentPart.class"

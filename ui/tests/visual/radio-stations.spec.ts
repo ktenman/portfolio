@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }, testInfo) => {
 test('the radio tab offers a chip per listed station', async ({ page }) => {
   await openRoute(page, '/radio')
   const chips = page.getByRole('group', { name: 'Station' })
-  await expect(chips.getByRole('button')).toHaveCount(6)
+  await expect(chips.getByRole('button')).toHaveCount(7)
   await settleAndFreeze(page)
   await expect(chips).toHaveScreenshot('radio-stations-chips.png')
 })
@@ -26,13 +26,13 @@ test('the station chips swipe sideways on a phone to reach the last station', as
   await openRoute(page, '/radio')
   const chips = page.getByRole('group', { name: 'Station' })
   await chips.evaluate(row => row.scrollTo({ left: row.scrollWidth }))
-  await expect(chips.getByRole('button', { name: 'Raadio 2' })).toBeInViewport({ ratio: 1 })
+  await expect(chips.getByRole('button').last()).toBeInViewport({ ratio: 1 })
 })
 
 test('the recorded time card draws a track per listed station', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await openRoute(page, '/radio/catch-up')
-  await expect(page.getByTestId('radio-day-track')).toHaveCount(5)
+  await expect(page.getByTestId('radio-day-track')).toHaveCount(6)
   await settleAndFreeze(page)
   await expect(page).toHaveScreenshot('radio-stations-catch-up.png', { fullPage: true })
 })
@@ -42,7 +42,7 @@ test('the recorded time card draws Now as one line through every station', async
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop')
   await openRoute(page, '/radio/catch-up')
-  await expect(page.getByTestId('radio-day-track')).toHaveCount(5)
+  await expect(page.getByTestId('radio-day-track')).toHaveCount(6)
   const line = (await page.getByTestId('radio-day-now').boundingBox())!
   const clock = (await page.getByTestId('radio-day-clock').boundingBox())!
   const ticks = await page

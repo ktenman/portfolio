@@ -17,6 +17,8 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -124,13 +126,14 @@ class RadioMetricsServiceTest {
     RadioMetricsService(radioScheduleService, jobExecutionRepository, RadioProperties(recordings = directory)).bindTo(registry)
     expect(registry.get("portfolio.radio.schedule.failed").gauges().map { it.id.getTag("station") })
       .toContain.inAnyOrder.only
-      .values("Kuku", "Äripäev", "Elmar", "Sky Plus", "Raadio 2")
+      .values("Kuku", "Äripäev", "Elmar", "Sky Plus", "Raadio 2", "Vikerraadio")
   }
 
-  @Test
-  fun `should register no bridge time for Raadio 2, which reads the stream of ERR itself`() {
-    Files.writeString(directory.resolve(Station.RAADIO2.heartbeat), """{"seen":0,"until":0}""")
-    expect(refreshed().find("portfolio.radio.bridge.timestamp.seconds").tag("station", "Raadio 2").gauge()).toEqual(null)
+  @ParameterizedTest
+  @EnumSource(Station::class, names = ["RAADIO2", "VIKERRAADIO"])
+  fun `should register no bridge time for a station that reads the stream of ERR itself`(station: Station) {
+    Files.writeString(directory.resolve(station.heartbeat), """{"seen":0,"until":0}""")
+    expect(refreshed().find("portfolio.radio.bridge.timestamp.seconds").tag("station", station.label).gauge()).toEqual(null)
   }
 
   @Test

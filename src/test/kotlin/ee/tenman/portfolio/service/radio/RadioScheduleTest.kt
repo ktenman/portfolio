@@ -252,7 +252,8 @@ class RadioScheduleTest {
 
   @Test
   fun `should need the hours of storage the stations table lists`() {
-    expect(Station.entries.map { it.bytesPerHour }).toContainExactly(230_400_000L, 172_800_000L, 230_400_000L, 259_200_000L, 173_700_000L)
+    expect(Station.entries.map { it.bytesPerHour })
+      .toContainExactly(230_400_000L, 172_800_000L, 230_400_000L, 259_200_000L, 173_700_000L, 173_700_000L)
   }
 
   @Test

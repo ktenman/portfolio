@@ -130,7 +130,9 @@ internal fun command(
   base: Path,
   schedule: Schedule,
 ): List<String> =
-  listOf(tool("ffmpeg"), "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n", "-rw_timeout", "15000000") +
+  listOf(tool("ffmpeg"), "-hide_banner", "-nostdin", "-nostats", "-loglevel", "info", "-n") +
+    (if (source.startsWith("http://") || source.startsWith("https://")) listOf("-headers", "Accept-Encoding: gzip\r\n") else emptyList()) +
+    listOf("-rw_timeout", "15000000") +
     (if (live(source)) listOf("-m3u8_hold_counters", "10") else emptyList()) +
     (if (reach > 0) listOf("-live_start_index", "${-(BEHIND + reach)}") else emptyList()) +
     listOf("-t", "%.3f".format(Locale.ROOT, seconds + extra(reach, schedule.segment)), "-i", source) +

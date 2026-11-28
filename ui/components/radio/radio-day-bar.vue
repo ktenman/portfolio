@@ -15,7 +15,10 @@
         class="grid grid-cols-[72px_minmax(0,1fr)] items-end gap-x-3"
         data-testid="radio-day-track"
       >
-        <span class="h-7 text-sm leading-7 font-medium" data-testid="radio-day-station">
+        <span
+          class="h-7 text-sm leading-7 font-medium whitespace-nowrap"
+          data-testid="radio-day-station"
+        >
           {{ STATIONS[track.station] }}
         </span>
         <div class="@container relative pt-10">
