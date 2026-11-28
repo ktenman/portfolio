@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        order: ['T0 TS TF TSF TE TJ TQ', 'TS TF TSF TE TJ TQ T0', 'TF TSF TE TJ TQ T0 TS', 'TSF TE TJ TQ T0 TS TF', 'TE TJ TQ T0 TS TF TSF', 'TJ TQ T0 TS TF TSF TE', 'TQ T0 TS TF TSF TE TJ']
+        order: ['TB TP2 TP4', 'TP2 TP4 TB', 'TP4 TB TP2', 'TB TP4 TP2', 'TP2 TB TP4', 'TP4 TP2 TB']
     steps:
       - uses: actions/checkout@v7
       - name: Warm up Firefox
@@ -60,14 +60,10 @@ jobs:
           lscpu | grep -E 'Model name'
           export E2E=true
           shape() {
-            name=$1; patches=""; extra="--info"
+            name=$1; patches="sleeps"; extra="--info -x jacocoTestReport"
             case "$name" in
-              TS) patches="sleeps" ;;
-              TF) patches="forks" ;;
-              TSF) patches="sleeps forks" ;;
-              TE) patches="eager" ;;
-              TJ) extra="--info -x jacocoTestReport" ;;
-              TQ) extra="" ;;
+              TP2) patches="sleeps par2" ;;
+              TP4) patches="sleeps par4" ;;
             esac
             for p in $patches; do git apply probe/$p.patch; done
             ./gradlew :testClasses -Pnative --build-cache --quiet > /dev/null 2>&1
@@ -87,5 +83,5 @@ jobs:
             echo "=== SHAPE $name tests $tests status $status junit $summary"
             if [ $status != 0 ]; then grep -E 'FAILED|Exception|expected' /tmp/test-$name.log | head -20; fi
           }
-          for round in 1 2; do for name in $ORDER; do shape "$name"; done; done
+          for round in 1 2 3; do for name in $ORDER; do shape "$name"; done; done
           git status --short

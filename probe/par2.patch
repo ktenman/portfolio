@@ -1,0 +1,16 @@
+diff --git a/build.gradle.kts b/build.gradle.kts
+index b5aa894ed..ec81759c7 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -183,6 +183,11 @@ fun Test.configureE2ETestEnvironment() {
+     mutableMapOf(
+       "webdriver.chrome.logfile" to "build/reports/chromedriver.log",
+       "webdriver.chrome.verboseLogging" to "true",
++      "junit.jupiter.execution.parallel.enabled" to "true",
++      "junit.jupiter.execution.parallel.mode.default" to "same_thread",
++      "junit.jupiter.execution.parallel.mode.classes.default" to "concurrent",
++      "junit.jupiter.execution.parallel.config.strategy" to "fixed",
++      "junit.jupiter.execution.parallel.config.fixed.parallelism" to "2",
+     )
+   if (project.hasProperty("headless")) {
+     properties["chromeoptions.args"] = "--headless,--no-sandbox,--disable-gpu"
