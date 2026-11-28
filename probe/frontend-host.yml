@@ -1,0 +1,7 @@
+services:
+  frontend:
+    image: nginx:stable-alpine-slim
+    build: !reset null
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./ui/frontend-nginx.conf:/etc/nginx/conf.d/default.conf:ro

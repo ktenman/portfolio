@@ -1,0 +1,7 @@
+services:
+  backend:
+    image: portfolio-backend-base
+    build: !reset null
+    entrypoint: ["/opt/portfolio/portfolio", "-Xmx1024m", "-XX:+ExitOnOutOfMemoryError", "-Duser.timezone=Europe/Tallinn"]
+    volumes:
+      - ./build/native/nativeCompile:/opt/portfolio:ro

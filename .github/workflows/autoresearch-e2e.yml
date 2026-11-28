@@ -1,0 +1,99 @@
+name: Autoresearch E2E shapes
+
+on:
+  push:
+    branches: ['autoresearch/**']
+
+permissions:
+  contents: read
+
+jobs:
+  shapes:
+    name: shapes ${{ matrix.order }} ${{ matrix.rep }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        order: ['H V VB VF VFB', 'V VB VF VFB H', 'VB VF VFB H V', 'VF VFB H V VB', 'VFB H V VB VF']
+        rep: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Warm up Firefox
+        run: (find /usr/lib/firefox -type f -exec cat {} + && timeout 120 firefox --headless --screenshot "$RUNNER_TEMP/firefox.png" about:blank) > /dev/null 2>&1 &
+      - uses: actions/setup-java@v6.3.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
+        with:
+          cache-read-only: true
+      - uses: actions/cache/restore@v6
+        with:
+          path: build/native/nativeCompile
+          key: native-e2e-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**') }}
+          fail-on-cache-miss: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Warm the build cache
+        run: ./gradlew :testClasses -Pnative --build-cache --quiet && ./gradlew --stop
+      - name: Time each shape
+        env:
+          ORDER: ${{ matrix.order }}
+          E2E_BACKEND_CONTEXT: .
+          E2E_BACKEND_DOCKERFILE: src/Dockerfile.native
+        run: |
+          set +e
+          lscpu | grep -E 'Model name'
+          since() { echo "$(date +%s.%N) - $1" | bc | xargs printf '%.1f'; }
+          reset() {
+            docker compose --project-directory . -f docker-compose.e2e-minimal.yml down -v > /dev/null 2>&1
+            docker system prune -af --volumes > /dev/null
+            docker builder prune -af > /dev/null
+            ./gradlew --stop -q > /dev/null 2>&1
+            rm -rf build/classes build/kotlin build/resources build/tmp build/test-results build/reports build/jacoco node_modules dist ~/.npm/_cacache
+          }
+          shape() {
+            name=$1; files="-f docker-compose.e2e-minimal.yml"; front=image; back=image
+            case "$name" in
+              H) files="-f probe/compose.h.yml" ;;
+              VB) files="$files -f probe/backend-mount.yml"; back=mount ;;
+              VF) files="$files -f probe/frontend-host.yml"; front=host ;;
+              VFB) files="$files -f probe/frontend-host.yml -f probe/backend-mount.yml"; front=host; back=mount ;;
+            esac
+            compose="docker compose --project-directory . $files"
+            reset
+            rm -f /tmp/parts
+            start=$(date +%s.%N)
+            ./gradlew :testClasses -Pnative --build-cache --quiet > /tmp/compile-$name.log 2>&1 &
+            compile=$!
+            (t=$(date +%s.%N); docker compose --project-directory . -f docker-compose.e2e-minimal.yml pull --quiet postgres redis seaweedfs nginx; if [ $front = host ]; then docker pull -q nginx:stable-alpine-slim > /dev/null; fi; echo "pull=$(since $t)" >> /tmp/parts) &
+            pull=$!
+            (t=$(date +%s.%N); if [ $back = image ]; then docker build --progress=plain --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native . ; else docker build --progress=plain -t portfolio-backend-base --target base -f src/Dockerfile.native src; fi > /tmp/backend-$name.log 2>&1; echo "backend=$(since $t)" >> /tmp/parts) &
+            backend=$!
+            t=$(date +%s.%N)
+            if [ $front = host ]; then npm ci --include=optional --no-audit --no-fund --loglevel=error > /dev/null && npx vite build --logLevel error > /dev/null; else $compose build --quiet frontend; fi
+            echo "frontend=$(since $t)" >> /tmp/parts
+            wait "$pull"; wait "$backend"
+            t=$(date +%s.%N)
+            $compose up -d --quiet-pull > /tmp/up-$name.log 2>&1
+            timeout 120 bash -c "until [ \$($compose ps | grep -c '(healthy)') -ge 5 ]; do sleep 1; done"
+            echo "up=$(since $t)" >> /tmp/parts
+            healthy=$(since $start)
+            wait "$compile"
+            services=$(since $start)
+            t=$(date +%s.%N)
+            E2E=true ./gradlew :test -Pnative -x processTestAot -x bootJar -Pheadless=true --build-cache --quiet > /tmp/test-$name.log 2>&1
+            status=$?
+            tests=$(since $t)
+            echo "=== SHAPE $name services $services healthy $healthy tests $tests status $status $(sort /tmp/parts | tr '\n' ' ')"
+            if [ $status != 0 ]; then tail -40 /tmp/test-$name.log; tail -20 /tmp/up-$name.log; $compose ps; docker logs portfolio-backend 2>&1 | tail -20; fi
+            grep -E '^#[0-9]+ (\[|DONE)' /tmp/backend-$name.log | paste -sd' ' | cut -c1-900
+            python3 - "$name" <<'PY'
+          import glob, sys, xml.etree.ElementTree as tree
+          cases = [(float(c.get('time')), c.get('classname').split('.')[-1], c.get('name')) for path in glob.glob('build/test-results/test/*.xml') for c in tree.parse(path).getroot().iter('testcase')]
+          print('TESTS', sys.argv[1], len(cases), round(sum(t for t, _, _ in cases), 1), ' | '.join(f'{t:.1f} {k}.{n[:50]}' for t, k, n in sorted(cases, reverse=True)[:8]))
+          PY
+          }
+          for name in $ORDER; do shape "$name"; done
