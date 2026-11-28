@@ -1,5 +1,6 @@
 package ee.tenman.portfolio.service.radio
 
+import ch.tutteli.atrium.api.fluent.en_GB.toContainExactly
 import ch.tutteli.atrium.api.fluent.en_GB.toEqual
 import ch.tutteli.atrium.api.fluent.en_GB.toHaveSize
 import ch.tutteli.atrium.api.verbs.expect
@@ -12,12 +13,13 @@ class ErrScheduleTest {
   private fun item(
     radiomanId: Long = 45L,
     seriesName: String = "R2 Top 15",
+    programName: String = seriesName,
     heading: String = "R2 Top 15",
     start: Long = 1795777500L,
     end: Long = 1795781100L,
     replay: Boolean = false,
     original: Long = 0L,
-  ) = ErrScheduleItem(radiomanId, seriesName, heading, start, end, replay, original)
+  ) = ErrScheduleItem(radiomanId, seriesName, programName, heading, start, end, replay, original)
 
   @Test
   fun `should link a repeat to the airing it repeats`() {
@@ -62,8 +64,12 @@ class ErrScheduleTest {
 
   @Test
   fun `should keep apart two series that share one name`() {
-    val items = listOf(item(radiomanId = 1661, seriesName = "Uudistesaated"), item(radiomanId = 1663, seriesName = "Uudistesaated"))
-    val airings = errAirings(Station.VIKERRAADIO, items)
-    expect(airings.map { it.show.externalId }.distinct()).toHaveSize(2)
+    val items =
+      listOf(
+        item(radiomanId = 1661, seriesName = "Uudistesaated", programName = "Keskpäevased uudised"),
+        item(radiomanId = 1663, seriesName = "Uudistesaated", programName = "Pärastlõunased uudised"),
+      )
+    expect(errAirings(Station.VIKERRAADIO, items).map { it.show.name to it.show.externalId })
+      .toContainExactly("Keskpäevased uudised" to id("VIKERRAADIO/1661"), "Pärastlõunased uudised" to id("VIKERRAADIO/1663"))
   }
 }

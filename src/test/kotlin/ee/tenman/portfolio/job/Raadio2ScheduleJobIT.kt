@@ -55,7 +55,7 @@ class Raadio2ScheduleJobIT : ErrScheduleTestBase(Station.RAADIO2) {
   @Test
   fun `should title an airing after its series when ERR lists it without a heading or repeat fields`() {
     val times = """"startTime":${at("23:05").toEpochSecond()},"endTime":${at("23:55").toEpochSecond()}"""
-    schedule(day, """{"radiomanId":49,"seriesName":"R2 Öö",$times}""")
+    schedule(day, """{"radiomanId":49,"seriesName":"R2 Öö","programName":"R2 Öö",$times}""")
     job().execute()
     expect(radioAiringRepository.findAll().map { it.title }).toContain("R2 Öö")
   }

@@ -31,6 +31,7 @@ data class ErrChannel(
 data class ErrScheduleItem(
   val radiomanId: Long,
   val seriesName: String,
+  val programName: String,
   val heading: String? = null,
   val startTime: Long,
   val endTime: Long,

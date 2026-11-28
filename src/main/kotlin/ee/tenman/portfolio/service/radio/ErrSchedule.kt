@@ -14,9 +14,10 @@ private fun airing(
   item: ErrScheduleItem,
 ): ScheduledAiring {
   val series = "${station.name}/${item.radiomanId}"
-  val show = ScheduledShow(id(series), item.seriesName, safe(fold(item.seriesName)), null)
+  val name = item.programName.removeSuffix("*").trim()
+  val show = ScheduledShow(id(series), name, safe(fold(name)), null)
   val original = item.originalTime?.takeIf { item.isReplay }?.let { id("$series/$it") }
   val start = Instant.ofEpochSecond(item.startTime)
   val end = Instant.ofEpochSecond(item.endTime)
-  return ScheduledAiring(id("$series/${item.startTime}"), show, item.heading ?: item.seriesName, start, end, original)
+  return ScheduledAiring(id("$series/${item.startTime}"), show, item.heading ?: name, start, end, original)
 }
