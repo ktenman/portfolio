@@ -1,0 +1,91 @@
+name: Autoresearch E2E test shapes
+
+on:
+  push:
+    branches: ['autoresearch/**']
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: tests ${{ matrix.order }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        order: ['T0 TS TF TSF TE TJ TQ', 'TS TF TSF TE TJ TQ T0', 'TF TSF TE TJ TQ T0 TS', 'TSF TE TJ TQ T0 TS TF', 'TE TJ TQ T0 TS TF TSF', 'TJ TQ T0 TS TF TSF TE', 'TQ T0 TS TF TSF TE TJ']
+    steps:
+      - uses: actions/checkout@v7
+      - name: Warm up Firefox
+        run: (find /usr/lib/firefox -type f -exec cat {} + && timeout 120 firefox --headless --screenshot "$RUNNER_TEMP/firefox.png" about:blank) > /dev/null 2>&1 &
+      - uses: actions/setup-java@v6.3.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c
+        with:
+          cache-read-only: true
+      - uses: actions/cache/restore@v6
+        with:
+          path: build/native/nativeCompile
+          key: native-e2e-${{ hashFiles('src/main/**', 'build.gradle.kts', 'settings.gradle.kts', 'gradle/**') }}
+          fail-on-cache-miss: true
+      - name: Start services
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+          MINIO_BUCKET_NAME: portfolio-logos
+          E2E_BACKEND_CONTEXT: .
+          E2E_BACKEND_DOCKERFILE: src/Dockerfile.native
+        run: |
+          ./gradlew :testClasses -Pnative --build-cache --quiet &
+          compile=$!
+          docker compose -f docker-compose.e2e-minimal.yml pull --quiet --ignore-buildable &
+          pull=$!
+          docker build --quiet --output type=image,name=portfolio-backend,compression=uncompressed,unpack=true -f src/Dockerfile.native . &
+          backend=$!
+          docker compose -f docker-compose.e2e-minimal.yml build --quiet frontend
+          wait "$pull"
+          wait "$backend"
+          docker compose -f docker-compose.e2e-minimal.yml up -d
+          timeout 120 bash -c 'until [ $(docker compose -f docker-compose.e2e-minimal.yml ps | grep -c "(healthy)") -ge 5 ]; do sleep 2; done'
+          wait "$compile"
+      - name: Time each shape
+        env:
+          ORDER: ${{ matrix.order }}
+        run: |
+          set +e
+          lscpu | grep -E 'Model name'
+          export E2E=true
+          shape() {
+            name=$1; patches=""; extra="--info"
+            case "$name" in
+              TS) patches="sleeps" ;;
+              TF) patches="forks" ;;
+              TSF) patches="sleeps forks" ;;
+              TE) patches="eager" ;;
+              TJ) extra="--info -x jacocoTestReport" ;;
+              TQ) extra="" ;;
+            esac
+            for p in $patches; do git apply probe/$p.patch; done
+            ./gradlew :testClasses -Pnative --build-cache --quiet > /dev/null 2>&1
+            rm -rf build/test-results build/reports
+            t=$(date +%s.%N)
+            ./gradlew :test -Pnative -x processTestAot $extra -x bootJar -Dselenide.reportsFolder=build/reports/selenide -Pheadless=true --build-cache > /tmp/test-$name.log 2>&1
+            status=$?
+            tests=$(echo "$(date +%s.%N) - $t" | bc | xargs printf '%.1f')
+            for p in $patches; do git apply -R probe/$p.patch; done
+            summary=$(python3 - "$name" <<'PY'
+          import glob, sys, xml.etree.ElementTree as tree
+          cases = [(float(c.get('time')), c.get('classname').split('.')[-1], c.get('name'), c.find('failure') is not None or c.find('error') is not None) for path in glob.glob('build/test-results/test/*.xml') for c in tree.parse(path).getroot().iter('testcase')]
+          suites = [tree.parse(path).getroot() for path in glob.glob('build/test-results/test/*.xml')]
+          print(len(cases), round(sum(t for t, _, _, _ in cases), 1), 'failed', sum(f for *_, f in cases), 'suites', ' '.join(f"{s.get('name').split('.')[-1]}={s.get('time')}@{s.get('timestamp')[11:19]}" for s in suites))
+          PY
+          )
+            echo "=== SHAPE $name tests $tests status $status junit $summary"
+            if [ $status != 0 ]; then grep -E 'FAILED|Exception|expected' /tmp/test-$name.log | head -20; fi
+          }
+          for round in 1 2; do for name in $ORDER; do shape "$name"; done; done
+          git status --short

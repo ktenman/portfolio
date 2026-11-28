@@ -1,0 +1,11 @@
+diff --git a/src/test/kotlin/e2e/BrowserConfig.kt b/src/test/kotlin/e2e/BrowserConfig.kt
+index 623bfb69b..3695e0513 100644
+--- a/src/test/kotlin/e2e/BrowserConfig.kt
++++ b/src/test/kotlin/e2e/BrowserConfig.kt
+@@ -11,5 +11,6 @@ object BrowserConfig {
+     Configuration.screenshots = true
+     Configuration.savePageSource = true
+     Configuration.fastSetValue = true
++    Configuration.pageLoadStrategy = "eager"
+   }
+ }

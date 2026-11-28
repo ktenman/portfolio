@@ -1,0 +1,178 @@
+diff --git a/src/test/kotlin/e2e/CalculatorE2E.kt b/src/test/kotlin/e2e/CalculatorE2E.kt
+index 01a541aeb..ee0003294 100644
+--- a/src/test/kotlin/e2e/CalculatorE2E.kt
++++ b/src/test/kotlin/e2e/CalculatorE2E.kt
+@@ -9,6 +9,8 @@ import ch.tutteli.atrium.api.fluent.en_GB.toBeLessThanOrEqualTo
+ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+ import ch.tutteli.atrium.api.verbs.expect
+ import com.codeborne.selenide.Condition
++import com.codeborne.selenide.Condition.empty
++import com.codeborne.selenide.Condition.exactText
+ import com.codeborne.selenide.Condition.text
+ import com.codeborne.selenide.Condition.value
+ import com.codeborne.selenide.Condition.visible
+@@ -109,13 +111,13 @@ class CalculatorE2E {
+     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
+ 
+     taxRateInput.value = "0"
+-    Thread.sleep(500)
++    firstDataRow.find(By.tagName("td"), 4).shouldBe(empty)
+ 
+     val taxAmountWithZeroRate = firstDataRow.find(By.tagName("td"), 4).text()
+     expect(taxAmountWithZeroRate).toBeEmpty()
+ 
+     taxRateInput.value = "25"
+-    Thread.sleep(500)
++    firstDataRow.find(By.tagName("td"), 4).shouldNotBe(empty)
+ 
+     val taxAmountWithRate = firstDataRow.find(By.tagName("td"), 4).text()
+     expect(taxAmountWithRate).notToBeEmpty()
+@@ -126,8 +128,9 @@ class CalculatorE2E {
+   fun `should calculate total worth as invested plus net profit`() {
+     val firstDataRow = yearSummaryTable.find(By.tagName("tr"), 1)
+ 
++    val initialTax = firstDataRow.find(By.tagName("td"), 4).text()
+     taxRateInput.value = "30"
+-    Thread.sleep(500)
++    firstDataRow.find(By.tagName("td"), 4).shouldNotHave(exactText(initialTax))
+ 
+     val totalInvestedText = firstDataRow.find(By.tagName("td"), 1).text().replace("[^0-9.]".toRegex(), "")
+     val grossProfitText = firstDataRow.find(By.tagName("td"), 2).text().replace("[^0-9.]".toRegex(), "")
+@@ -146,8 +149,9 @@ class CalculatorE2E {
+     taxRateInput.value = "18.5"
+     taxRateInput.shouldHave(value("18.5"))
+ 
++    val initialWorth = yearSummaryTable.find(By.tagName("tr"), 1).find(By.tagName("td"), 3).text()
+     annualReturnInput.value = "10"
+-    Thread.sleep(500)
++    yearSummaryTable.find(By.tagName("tr"), 1).find(By.tagName("td"), 3).shouldNotHave(exactText(initialWorth))
+ 
+     taxRateInput.shouldHave(value("18.5"))
+   }
+diff --git a/src/test/kotlin/e2e/InstrumentManagementE2E.kt b/src/test/kotlin/e2e/InstrumentManagementE2E.kt
+index a92a169f4..29f772f11 100644
+--- a/src/test/kotlin/e2e/InstrumentManagementE2E.kt
++++ b/src/test/kotlin/e2e/InstrumentManagementE2E.kt
+@@ -3,6 +3,7 @@ package e2e
+ import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+ import ch.tutteli.atrium.api.verbs.expect
++import com.codeborne.selenide.Condition.attribute
+ import com.codeborne.selenide.Condition.text
+ import com.codeborne.selenide.Condition.visible
+ import com.codeborne.selenide.Selenide.element
+@@ -66,10 +67,11 @@ class InstrumentManagementE2E {
+     platformButtons.first().shouldBe(visible, Duration.ofSeconds(10))
+ 
+     val firstPlatformButton = platformButtons.first()
+-    val initialActiveState = firstPlatformButton.getAttribute("class")?.contains("active") ?: false
++    val initialClass = firstPlatformButton.getAttribute("class").orEmpty()
++    val initialActiveState = initialClass.contains("active")
+ 
+     firstPlatformButton.click()
+-    Thread.sleep(300)
++    firstPlatformButton.shouldNotHave(attribute("class", initialClass))
+ 
+     val newActiveState = firstPlatformButton.getAttribute("class")?.contains("active") ?: false
+     expect(newActiveState).toEqual(!initialActiveState)
+@@ -135,9 +137,9 @@ class InstrumentManagementE2E {
+ 
+     val toggleSwitch = element(className("toggle-switch"))
+     toggleSwitch.click()
+-    Thread.sleep(500)
+ 
+     val updatedRows = elements(cssSelector("table tbody tr"))
++    updatedRows.first().shouldBe(visible)
+     expect(updatedRows.size()).toBeGreaterThan(0)
+   }
+ 
+@@ -148,9 +150,8 @@ class InstrumentManagementE2E {
+ 
+     val clearAllButton = platformButtons.findBy(text("Clear All"))
+     clearAllButton.click()
+-    Thread.sleep(500)
+ 
+-    val selectAllButton = platformButtons.findBy(text("Select All"))
++    val selectAllButton = platformButtons.findBy(text("Select All")).shouldBe(visible)
+     expect(selectAllButton.isDisplayed).toEqual(true)
+   }
+ }
+diff --git a/src/test/kotlin/e2e/TransactionManagementE2E.kt b/src/test/kotlin/e2e/TransactionManagementE2E.kt
+index 6deef8dfa..6fc4517ac 100644
+--- a/src/test/kotlin/e2e/TransactionManagementE2E.kt
++++ b/src/test/kotlin/e2e/TransactionManagementE2E.kt
+@@ -3,6 +3,7 @@ package e2e
+ import ch.tutteli.atrium.api.fluent.en_GB.toBeGreaterThan
+ import ch.tutteli.atrium.api.fluent.en_GB.toEqual
+ import ch.tutteli.atrium.api.verbs.expect
++import com.codeborne.selenide.Condition.attribute
+ import com.codeborne.selenide.Condition.empty
+ import com.codeborne.selenide.Condition.text
+ import com.codeborne.selenide.Condition.visible
+@@ -80,23 +81,23 @@ class TransactionManagementE2E {
+   @Test
+   fun `should display platform filter buttons after data loads`() {
+     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+-    Thread.sleep(500)
+ 
+     val platformButtons = elements(cssSelector(".platform-buttons .platform-btn"))
++    platformButtons.first().shouldBe(visible)
+     expect(platformButtons.size()).toBeGreaterThan(0)
+   }
+ 
+   @Test
+   fun `should toggle platform filter when clicking button`() {
+     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+-    Thread.sleep(500)
+ 
+     val platformButtons = elements(className("platform-btn"))
+     val lightyearButton = platformButtons.findBy(text("Lightyear"))
+-    val initialActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
++    val initialClass = lightyearButton.getAttribute("class").orEmpty()
++    val initialActiveState = initialClass.contains("active")
+ 
+     lightyearButton.click()
+-    Thread.sleep(500)
++    lightyearButton.shouldNotHave(attribute("class", initialClass))
+ 
+     val newActiveState = lightyearButton.getAttribute("class")?.contains("active") ?: false
+     expect(newActiveState).toEqual(!initialActiveState)
+@@ -139,13 +140,13 @@ class TransactionManagementE2E {
+   @Test
+   fun `should activate platform filter when clicking platform button`() {
+     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+-    Thread.sleep(500)
+ 
+     val platformButtons = elements(className("platform-btn"))
+     val trezorButton = platformButtons.findBy(text("Trezor"))
+-    val initialActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
++    val initialClass = trezorButton.getAttribute("class").orEmpty()
++    val initialActiveState = initialClass.contains("active")
+     trezorButton.click()
+-    Thread.sleep(500)
++    trezorButton.shouldNotHave(attribute("class", initialClass))
+ 
+     val newActiveState = trezorButton.getAttribute("class")?.contains("active") ?: false
+     expect(newActiveState).toEqual(!initialActiveState)
+@@ -154,19 +155,16 @@ class TransactionManagementE2E {
+   @Test
+   fun `should toggle between select all and clear all buttons`() {
+     element(tagName("table")).shouldBe(visible, Duration.ofSeconds(10))
+-    Thread.sleep(500)
+ 
+     val clearAllButton = elements(className("platform-btn")).findBy(text("Clear All"))
+     clearAllButton.shouldBe(visible).click()
+-    Thread.sleep(500)
+ 
+-    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All"))
++    val selectAllButton = elements(className("platform-btn")).findBy(text("Select All")).shouldBe(visible)
+     expect(selectAllButton.isDisplayed).toEqual(true)
+ 
+     selectAllButton.click()
+-    Thread.sleep(500)
+ 
+-    val clearAllButtonAgain = elements(className("platform-btn")).findBy(text("Clear All"))
++    val clearAllButtonAgain = elements(className("platform-btn")).findBy(text("Clear All")).shouldBe(visible)
+     expect(clearAllButtonAgain.isDisplayed).toEqual(true)
+   }
+ }

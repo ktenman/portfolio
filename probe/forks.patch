@@ -1,0 +1,12 @@
+diff --git a/build.gradle.kts b/build.gradle.kts
+index b5aa894ed..6e5064f6d 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -177,6 +177,7 @@ fun podman(vararg args: String): String? =
+ 
+ fun Test.configureE2ETestEnvironment() {
+   include("**/e2e/**")
++  maxParallelForks = 2
+   outputs.cacheIf { false }
+   outputs.upToDateWhen { false }
+   val properties =
