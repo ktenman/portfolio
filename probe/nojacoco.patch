@@ -1,0 +1,22 @@
+diff --git a/build.gradle.kts b/build.gradle.kts
+index b5aa894ed..25ccd7086 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -132,8 +132,8 @@ val test by tasks.getting(Test::class) {
+   } else {
+     exclude("**/e2e/**")
+     maxParallelForks = 2
++    finalizedBy(":jacocoTestReport")
+   }
+-  finalizedBy(":jacocoTestReport")
+ 
+   jvmArgs("-Xmx1g")
+ 
+@@ -177,6 +177,7 @@ fun podman(vararg args: String): String? =
+ 
+ fun Test.configureE2ETestEnvironment() {
+   include("**/e2e/**")
++  extensions.configure<JacocoTaskExtension> { isEnabled = false }
+   outputs.cacheIf { false }
+   outputs.upToDateWhen { false }
+   val properties =
